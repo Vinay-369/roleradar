@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  /* RoleRadar token system — a "signal" palette: deep graphite base,
+     a radar-sweep teal-green accent for positive/ready states, and a
+     warm amber for attention/gap states. Deliberately not the generic
+     cream+terracotta or near-black+acid-green AI defaults. */
+  --color-ink-950: #0f1417;
+  --color-ink-900: #161d21;
+  --color-ink-800: #212b30;
+  --color-ink-700: #334049;
+  --color-ink-500: #64757f;
+  --color-ink-300: #a6b3ba;
+  --color-ink-100: #e7ecee;
+  --color-ink-50: #f6f8f9;
+
+  --color-signal-600: #0e7c66;
+  --color-signal-500: #12967a;
+  --color-signal-400: #2fb593;
+
+  --color-amber-600: #b3720a;
+  --color-amber-500: #d68f1a;
+
+  --color-alert-600: #b33a3a;
+
+  --font-display: "Sora", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+body {
+  @apply bg-ink-50 text-ink-900 font-body antialiased;
+}
+
+@keyframes rr-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rr-page-transition {
+  animation: rr-fade-in 0.28s ease-out;
+}
+
+@keyframes rr-fade-in-up {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: rr-fade-in-up 0.2s ease-out;
+}
+
+@keyframes rr-pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-soft {
+  animation: rr-pulse-soft 1.6s ease-in-out infinite;
+}
+
+@keyframes rr-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.rr-skeleton {
+  background: linear-gradient(90deg, #eef1f2 25%, #f6f8f9 37%, #eef1f2 63%);
+  background-size: 400px 100%;
+  animation: rr-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes rr-ring-draw {
+  from { stroke-dashoffset: var(--rr-ring-circumference); }
+}
+
+.rr-ring-progress {
+  animation: rr-ring-draw 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}

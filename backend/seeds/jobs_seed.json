@@ -1,0 +1,1996 @@
+[
+  {
+    "id": "job_001",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Accenture",
+    "industry": "Consulting",
+    "description": "Accenture is looking for a talented Backend Developer to join our Consulting team in Chennai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Accenture is looking for a talented Backend Developer to join our Consulting team in Chennai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 1,
+    "experience_max": 4,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 10,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 10,
+    "apply_url": "https://www.accenture.com/in-en/careers"
+  },
+  {
+    "id": "job_002",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "Flipkart",
+    "industry": "E-commerce",
+    "description": "Flipkart is looking for a talented Frontend Developer to join our E-commerce team in Bangalore. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Flipkart is looking for a talented Frontend Developer to join our E-commerce team in Bangalore. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 1,
+    "experience_max": 4,
+    "job_type": "full_time",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 9,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 3,
+    "apply_url": "https://www.flipkartcareers.com/"
+  },
+  {
+    "id": "job_003",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented Backend Developer to join our Cloud & Retail team in Mumbai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Amazon is looking for a talented Backend Developer to join our Cloud & Retail team in Mumbai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 3,
+    "experience_max": 6,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 14,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 9,
+    "apply_url": "https://www.amazon.jobs/en/locations/bangalore-india"
+  },
+  {
+    "id": "job_004",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "CRED",
+    "industry": "FinTech",
+    "description": "CRED is looking for a talented Backend Developer to join our FinTech team in Mumbai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "CRED is looking for a talented Backend Developer to join our FinTech team in Mumbai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 1,
+    "experience_max": 4,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 10,
+    "salary_max": 14,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 2,
+    "apply_url": "https://careers.cred.club/"
+  },
+  {
+    "id": "job_005",
+    "source": "live",
+    "title": "DevOps Engineer",
+    "company": "Razorpay",
+    "industry": "FinTech",
+    "description": "Razorpay is looking for a talented DevOps Engineer to join our FinTech team in Mumbai. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Razorpay is looking for a talented DevOps Engineer to join our FinTech team in Mumbai. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 10,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 5,
+    "apply_url": "https://razorpay.com/jobs/"
+  },
+  {
+    "id": "job_006",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "CRED",
+    "industry": "FinTech",
+    "description": "CRED is looking for a talented Backend Developer to join our FinTech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "CRED is looking for a talented Backend Developer to join our FinTech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 3,
+    "experience_max": 6,
+    "job_type": "full_time",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": 12,
+    "salary_max": 14,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 8,
+    "apply_url": "https://careers.cred.club/"
+  },
+  {
+    "id": "job_007",
+    "source": "live",
+    "title": "DevOps Engineer",
+    "company": "Postman",
+    "industry": "Developer Tools",
+    "description": "Postman is looking for a talented DevOps Engineer to join our Developer Tools team in Hyderabad. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Postman is looking for a talented DevOps Engineer to join our Developer Tools team in Hyderabad. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 3,
+    "experience_max": 6,
+    "job_type": "full_time",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 9,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.postman.com/company/careers/"
+  },
+  {
+    "id": "job_008",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Wipro",
+    "industry": "IT Services",
+    "description": "Wipro is looking for a talented Data Analyst to join our IT Services team in Remote. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Wipro is looking for a talented Data Analyst to join our IT Services team in Remote. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 2,
+    "experience_max": 5,
+    "job_type": "full_time",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": 12,
+    "salary_max": 16,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 2,
+    "apply_url": "https://careers.wipro.com/"
+  },
+  {
+    "id": "job_009",
+    "source": "live",
+    "title": "DevOps Engineer",
+    "company": "BrowserStack",
+    "industry": "Developer Tools",
+    "description": "BrowserStack is looking for a talented DevOps Engineer to join our Developer Tools team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "BrowserStack is looking for a talented DevOps Engineer to join our Developer Tools team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": 20,
+    "salary_max": 22,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://www.browserstack.com/careers"
+  },
+  {
+    "id": "job_010",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Freshworks",
+    "industry": "Product",
+    "description": "Freshworks is looking for a talented Data Analyst to join our Product team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Freshworks is looking for a talented Data Analyst to join our Product team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 10,
+    "salary_max": 13,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 10,
+    "apply_url": "https://www.freshworks.com/company/careers/"
+  },
+  {
+    "id": "job_011",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Chargebee",
+    "industry": "SaaS",
+    "description": "Chargebee is looking for a talented Backend Developer to join our SaaS team in Bangalore. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Chargebee is looking for a talented Backend Developer to join our SaaS team in Bangalore. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": 24,
+    "salary_max": 28,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 6,
+    "apply_url": "https://www.chargebee.com/careers/"
+  },
+  {
+    "id": "job_012",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "CRED",
+    "industry": "FinTech",
+    "description": "CRED is looking for a talented Frontend Developer to join our FinTech team in Gurgaon. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "CRED is looking for a talented Frontend Developer to join our FinTech team in Gurgaon. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Gurgaon",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 14,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 6,
+    "apply_url": "https://careers.cred.club/"
+  },
+  {
+    "id": "job_013",
+    "source": "live",
+    "title": "Full Stack Developer",
+    "company": "Innovaccer",
+    "industry": "HealthTech",
+    "description": "Innovaccer is looking for a talented Full Stack Developer to join our HealthTech team in Chennai. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Innovaccer is looking for a talented Full Stack Developer to join our HealthTech team in Chennai. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 20,
+    "salary_max": 24,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://innovaccer.com/careers"
+  },
+  {
+    "id": "job_014",
+    "source": "live",
+    "title": "QA Automation Engineer",
+    "company": "Groww",
+    "industry": "FinTech",
+    "description": "Groww is looking for a talented QA Automation Engineer to join our FinTech team in Pune. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Groww is looking for a talented QA Automation Engineer to join our FinTech team in Pune. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Pune",
+    "is_remote": false,
+    "salary_min": 16,
+    "salary_max": 22,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://groww.in/careers"
+  },
+  {
+    "id": "job_015",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "Infosys",
+    "industry": "IT Services",
+    "description": "Infosys is looking for a talented Frontend Developer to join our IT Services team in Pune. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Infosys is looking for a talented Frontend Developer to join our IT Services team in Pune. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Pune",
+    "is_remote": false,
+    "salary_min": 24,
+    "salary_max": 30,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://www.infosys.com/careers/"
+  },
+  {
+    "id": "job_016",
+    "source": "live",
+    "title": "QA Automation Engineer",
+    "company": "Wipro",
+    "industry": "IT Services",
+    "description": "Wipro is looking for a talented QA Automation Engineer to join our IT Services team in Noida. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Wipro is looking for a talented QA Automation Engineer to join our IT Services team in Noida. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Noida",
+    "is_remote": false,
+    "salary_min": 16,
+    "salary_max": 20,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 8,
+    "apply_url": "https://careers.wipro.com/"
+  },
+  {
+    "id": "job_017",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "TCS",
+    "industry": "IT Services",
+    "description": "TCS is looking for a talented Frontend Developer to join our IT Services team in Remote. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "TCS is looking for a talented Frontend Developer to join our IT Services team in Remote. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 3,
+    "experience_max": 6,
+    "job_type": "full_time",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": 24,
+    "salary_max": 28,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 1,
+    "apply_url": "https://www.tcs.com/careers/india"
+  },
+  {
+    "id": "job_018",
+    "source": "live",
+    "title": "QA Automation Engineer",
+    "company": "Postman",
+    "industry": "Developer Tools",
+    "description": "Postman is looking for a talented QA Automation Engineer to join our Developer Tools team in Bangalore. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Postman is looking for a talented QA Automation Engineer to join our Developer Tools team in Bangalore. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": 20,
+    "salary_max": 24,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 8,
+    "apply_url": "https://www.postman.com/company/careers/"
+  },
+  {
+    "id": "job_019",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "Freshworks",
+    "industry": "Product",
+    "description": "Freshworks is looking for a talented Frontend Developer to join our Product team in Chennai. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Freshworks is looking for a talented Frontend Developer to join our Product team in Chennai. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 2,
+    "experience_max": 5,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 12,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 2,
+    "apply_url": "https://www.freshworks.com/company/careers/"
+  },
+  {
+    "id": "job_020",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Flipkart",
+    "industry": "E-commerce",
+    "description": "Flipkart is looking for a talented Backend Developer to join our E-commerce team in Bangalore. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Flipkart is looking for a talented Backend Developer to join our E-commerce team in Bangalore. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 2,
+    "experience_max": 5,
+    "job_type": "full_time",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 10,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.flipkartcareers.com/"
+  },
+  {
+    "id": "job_021",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Swiggy",
+    "industry": "Consumer Tech",
+    "description": "Swiggy is looking for a talented Backend Developer to join our Consumer Tech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Swiggy is looking for a talented Backend Developer to join our Consumer Tech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 12,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://careers.swiggy.com/"
+  },
+  {
+    "id": "job_022",
+    "source": "live",
+    "title": "Full Stack Developer",
+    "company": "Flipkart",
+    "industry": "E-commerce",
+    "description": "Flipkart is looking for a talented Full Stack Developer to join our E-commerce team in Noida. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Flipkart is looking for a talented Full Stack Developer to join our E-commerce team in Noida. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Noida",
+    "is_remote": false,
+    "salary_min": 16,
+    "salary_max": 19,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.flipkartcareers.com/"
+  },
+  {
+    "id": "job_023",
+    "source": "live",
+    "title": "QA Automation Engineer",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented QA Automation Engineer to join our Cloud & Retail team in Chennai. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Amazon is looking for a talented QA Automation Engineer to join our Cloud & Retail team in Chennai. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 3,
+    "experience_max": 6,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 20,
+    "salary_max": 24,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 6,
+    "apply_url": "https://www.amazon.jobs/en/locations/bangalore-india"
+  },
+  {
+    "id": "job_024",
+    "source": "live",
+    "title": "Android Developer",
+    "company": "BrowserStack",
+    "industry": "Developer Tools",
+    "description": "BrowserStack is looking for a talented Android Developer to join our Developer Tools team in Hyderabad. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "BrowserStack is looking for a talented Android Developer to join our Developer Tools team in Hyderabad. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Kotlin",
+      "Android SDK",
+      "REST APIs"
+    ],
+    "skills_nice_to_have": [
+      "Git",
+      "Jetpack Compose"
+    ],
+    "responsibilities": [
+      "Build native Android features with modern architecture",
+      "Optimize mobile application performance and UI fluidity",
+      "Publish and maintain Play Store releases"
+    ],
+    "experience_min": 2,
+    "experience_max": 5,
+    "job_type": "full_time",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 11,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 1,
+    "apply_url": "https://www.browserstack.com/careers"
+  },
+  {
+    "id": "job_025",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Chargebee",
+    "industry": "SaaS",
+    "description": "Chargebee is looking for a talented Backend Developer to join our SaaS team in Chennai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Chargebee is looking for a talented Backend Developer to join our SaaS team in Chennai. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 1,
+    "experience_max": 4,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 8,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 10,
+    "apply_url": "https://www.chargebee.com/careers/"
+  },
+  {
+    "id": "job_026",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Infosys",
+    "industry": "IT Services",
+    "description": "Infosys is looking for a talented Data Analyst to join our IT Services team in Bangalore. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Infosys is looking for a talented Data Analyst to join our IT Services team in Bangalore. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": 24,
+    "salary_max": 28,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://www.infosys.com/careers/"
+  },
+  {
+    "id": "job_027",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented Data Analyst to join our Cloud & Retail team in Noida. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Amazon is looking for a talented Data Analyst to join our Cloud & Retail team in Noida. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Noida",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 11,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://www.amazon.jobs/en/locations/bangalore-india"
+  },
+  {
+    "id": "job_028",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Microsoft",
+    "industry": "Enterprise Tech",
+    "description": "Microsoft is looking for a talented Data Analyst to join our Enterprise Tech team in Chennai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Microsoft is looking for a talented Data Analyst to join our Enterprise Tech team in Chennai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 2,
+    "experience_max": 5,
+    "job_type": "full_time",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 8,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 10,
+    "apply_url": "https://careers.microsoft.com/"
+  },
+  {
+    "id": "job_029",
+    "source": "live",
+    "title": "DevOps Engineer",
+    "company": "Groww",
+    "industry": "FinTech",
+    "description": "Groww is looking for a talented DevOps Engineer to join our FinTech team in Noida. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Groww is looking for a talented DevOps Engineer to join our FinTech team in Noida. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Noida",
+    "is_remote": false,
+    "salary_min": 24,
+    "salary_max": 26,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 10,
+    "apply_url": "https://groww.in/careers"
+  },
+  {
+    "id": "job_030",
+    "source": "live",
+    "title": "Backend Developer",
+    "company": "Accenture",
+    "industry": "Consulting",
+    "description": "Accenture is looking for a talented Backend Developer to join our Consulting team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Accenture is looking for a talented Backend Developer to join our Consulting team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Gurgaon",
+    "is_remote": false,
+    "salary_min": 24,
+    "salary_max": 26,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 3,
+    "apply_url": "https://www.accenture.com/in-en/careers"
+  },
+  {
+    "id": "job_031",
+    "source": "live",
+    "title": "Data Analyst",
+    "company": "Razorpay",
+    "industry": "FinTech",
+    "description": "Razorpay is looking for a talented Data Analyst to join our FinTech team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Razorpay is looking for a talented Data Analyst to join our FinTech team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 1,
+    "experience_max": 4,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 12,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": false,
+    "posted_days_ago": 7,
+    "apply_url": "https://razorpay.com/jobs/"
+  },
+  {
+    "id": "job_032",
+    "source": "live",
+    "title": "Frontend Developer",
+    "company": "Swiggy",
+    "industry": "Consumer Tech",
+    "description": "Swiggy is looking for a talented Frontend Developer to join our Consumer Tech team in Hyderabad. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Swiggy is looking for a talented Frontend Developer to join our Consumer Tech team in Hyderabad. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": 6,
+    "salary_max": 8,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://careers.swiggy.com/"
+  },
+  {
+    "id": "job_033",
+    "source": "live",
+    "title": "Full Stack Developer",
+    "company": "Swiggy",
+    "industry": "Consumer Tech",
+    "description": "Swiggy is looking for a talented Full Stack Developer to join our Consumer Tech team in Noida. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Swiggy is looking for a talented Full Stack Developer to join our Consumer Tech team in Noida. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Noida",
+    "is_remote": false,
+    "salary_min": 8,
+    "salary_max": 14,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 0,
+    "apply_url": "https://careers.swiggy.com/"
+  },
+  {
+    "id": "job_034",
+    "source": "live",
+    "title": "QA Automation Engineer",
+    "company": "Freshworks",
+    "industry": "Product",
+    "description": "Freshworks is looking for a talented QA Automation Engineer to join our Product team in Mumbai. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Freshworks is looking for a talented QA Automation Engineer to join our Product team in Mumbai. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": 10,
+    "salary_max": 16,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.freshworks.com/company/careers/"
+  },
+  {
+    "id": "job_035",
+    "source": "live",
+    "title": "Android Developer",
+    "company": "Groww",
+    "industry": "FinTech",
+    "description": "Groww is looking for a talented Android Developer to join our FinTech team in Remote. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. Candidates with strong problem-solving skills and project experience are preferred.",
+    "jd_text": "Groww is looking for a talented Android Developer to join our FinTech team in Remote. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. Candidates with strong problem-solving skills and project experience are preferred.",
+    "skills_required": [
+      "Kotlin",
+      "Android SDK",
+      "REST APIs"
+    ],
+    "skills_nice_to_have": [
+      "Git",
+      "Jetpack Compose"
+    ],
+    "responsibilities": [
+      "Build native Android features with modern architecture",
+      "Optimize mobile application performance and UI fluidity",
+      "Publish and maintain Play Store releases"
+    ],
+    "experience_min": 0,
+    "experience_max": 3,
+    "job_type": "full_time",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": 8,
+    "salary_max": 10,
+    "salary_disclosed": true,
+    "stipend_min": null,
+    "internship_duration_months": null,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://groww.in/careers"
+  },
+  {
+    "id": "job_036",
+    "source": "live",
+    "title": "Backend Developer Intern",
+    "company": "Flipkart",
+    "industry": "E-commerce",
+    "description": "Flipkart is looking for a talented Backend Developer Intern to join our E-commerce team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Flipkart is looking for a talented Backend Developer Intern to join our E-commerce team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Gurgaon",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 8,
+    "apply_url": "https://www.flipkartcareers.com/"
+  },
+  {
+    "id": "job_037",
+    "source": "live",
+    "title": "Full Stack Developer Intern",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented Full Stack Developer Intern to join our Cloud & Retail team in Bangalore. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Amazon is looking for a talented Full Stack Developer Intern to join our Cloud & Retail team in Bangalore. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 10,
+    "apply_url": "https://internshala.com/internships"
+  },
+  {
+    "id": "job_038",
+    "source": "live",
+    "title": "QA Automation Engineer Intern",
+    "company": "Swiggy",
+    "industry": "Consumer Tech",
+    "description": "Swiggy is looking for a talented QA Automation Engineer Intern to join our Consumer Tech team in Hyderabad. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Swiggy is looking for a talented QA Automation Engineer Intern to join our Consumer Tech team in Hyderabad. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 6,
+    "apply_url": "https://internshala.com/internships"
+  },
+  {
+    "id": "job_039",
+    "source": "live",
+    "title": "DevOps Engineer Intern",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented DevOps Engineer Intern to join our Cloud & Retail team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Amazon is looking for a talented DevOps Engineer Intern to join our Cloud & Retail team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.linkedin.com/jobs/search/?keywords=software+internship"
+  },
+  {
+    "id": "job_040",
+    "source": "live",
+    "title": "Full Stack Developer Intern",
+    "company": "Meesho",
+    "industry": "E-commerce",
+    "description": "Meesho is looking for a talented Full Stack Developer Intern to join our E-commerce team in Remote. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Meesho is looking for a talented Full Stack Developer Intern to join our E-commerce team in Remote. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 35000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 0,
+    "apply_url": "https://www.meesho.io/jobs"
+  },
+  {
+    "id": "job_041",
+    "source": "live",
+    "title": "Frontend Developer Intern",
+    "company": "Innovaccer",
+    "industry": "HealthTech",
+    "description": "Innovaccer is looking for a talented Frontend Developer Intern to join our HealthTech team in Hyderabad. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Innovaccer is looking for a talented Frontend Developer Intern to join our HealthTech team in Hyderabad. Responsibilities include: Build responsive, modern UI components; Collaborate with UI/UX designers and backend teams; Optimize frontend application load times and UX. Required skills: React, TypeScript, Tailwind CSS, REST APIs, State Management. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "React",
+      "TypeScript",
+      "Tailwind CSS"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "State Management"
+    ],
+    "responsibilities": [
+      "Build responsive, modern UI components",
+      "Collaborate with UI/UX designers and backend teams",
+      "Optimize frontend application load times and UX"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://wellfound.com/jobs"
+  },
+  {
+    "id": "job_042",
+    "source": "live",
+    "title": "DevOps Engineer Intern",
+    "company": "Swiggy",
+    "industry": "Consumer Tech",
+    "description": "Swiggy is looking for a talented DevOps Engineer Intern to join our Consumer Tech team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Swiggy is looking for a talented DevOps Engineer Intern to join our Consumer Tech team in Remote. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://careers.swiggy.com/"
+  },
+  {
+    "id": "job_043",
+    "source": "live",
+    "title": "Backend Developer Intern",
+    "company": "Amazon",
+    "industry": "Cloud & Retail",
+    "description": "Amazon is looking for a talented Backend Developer Intern to join our Cloud & Retail team in Remote. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Amazon is looking for a talented Backend Developer Intern to join our Cloud & Retail team in Remote. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 1,
+    "apply_url": "https://wellfound.com/jobs"
+  },
+  {
+    "id": "job_044",
+    "source": "live",
+    "title": "Full Stack Developer Intern",
+    "company": "Accenture",
+    "industry": "Consulting",
+    "description": "Accenture is looking for a talented Full Stack Developer Intern to join our Consulting team in Remote. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Accenture is looking for a talented Full Stack Developer Intern to join our Consulting team in Remote. Responsibilities include: Develop end-to-end features across frontend and backend; Manage cloud infrastructure and deployments; Participate in agile sprints and code reviews. Required skills: React, Node.js, PostgreSQL, Docker, AWS, Python. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "React",
+      "Node.js",
+      "PostgreSQL"
+    ],
+    "skills_nice_to_have": [
+      "Docker",
+      "AWS",
+      "Python"
+    ],
+    "responsibilities": [
+      "Develop end-to-end features across frontend and backend",
+      "Manage cloud infrastructure and deployments",
+      "Participate in agile sprints and code reviews"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 25000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 3,
+    "apply_url": "https://razorpay.com/jobs/"
+  },
+  {
+    "id": "job_045",
+    "source": "live",
+    "title": "Android Developer Intern",
+    "company": "CRED",
+    "industry": "FinTech",
+    "description": "CRED is looking for a talented Android Developer Intern to join our FinTech team in Remote. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. This is an internship position open to fresh graduates and students.",
+    "jd_text": "CRED is looking for a talented Android Developer Intern to join our FinTech team in Remote. Responsibilities include: Build native Android features with modern architecture; Optimize mobile application performance and UI fluidity; Publish and maintain Play Store releases. Required skills: Kotlin, Android SDK, REST APIs, Git, Jetpack Compose. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Kotlin",
+      "Android SDK",
+      "REST APIs"
+    ],
+    "skills_nice_to_have": [
+      "Git",
+      "Jetpack Compose"
+    ],
+    "responsibilities": [
+      "Build native Android features with modern architecture",
+      "Optimize mobile application performance and UI fluidity",
+      "Publish and maintain Play Store releases"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 4,
+    "apply_url": "https://careers.cred.club/"
+  },
+  {
+    "id": "job_046",
+    "source": "live",
+    "title": "Backend Developer Intern",
+    "company": "Infosys",
+    "industry": "IT Services",
+    "description": "Infosys is looking for a talented Backend Developer Intern to join our IT Services team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Infosys is looking for a talented Backend Developer Intern to join our IT Services team in Gurgaon. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Gurgaon",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 7,
+    "apply_url": "https://www.linkedin.com/jobs/search/?keywords=software+internship"
+  },
+  {
+    "id": "job_047",
+    "source": "live",
+    "title": "QA Automation Engineer Intern",
+    "company": "Flipkart",
+    "industry": "E-commerce",
+    "description": "Flipkart is looking for a talented QA Automation Engineer Intern to join our E-commerce team in Bangalore. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Flipkart is looking for a talented QA Automation Engineer Intern to join our E-commerce team in Bangalore. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Bangalore",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 8,
+    "apply_url": "https://www.flipkartcareers.com/"
+  },
+  {
+    "id": "job_048",
+    "source": "live",
+    "title": "DevOps Engineer Intern",
+    "company": "Infosys",
+    "industry": "IT Services",
+    "description": "Infosys is looking for a talented DevOps Engineer Intern to join our IT Services team in Pune. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Infosys is looking for a talented DevOps Engineer Intern to join our IT Services team in Pune. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Pune",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 35000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 5,
+    "apply_url": "https://www.infosys.com/careers/"
+  },
+  {
+    "id": "job_049",
+    "source": "live",
+    "title": "DevOps Engineer Intern",
+    "company": "Infosys",
+    "industry": "IT Services",
+    "description": "Infosys is looking for a talented DevOps Engineer Intern to join our IT Services team in Chennai. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Infosys is looking for a talented DevOps Engineer Intern to join our IT Services team in Chennai. Responsibilities include: Manage automated CI/CD deployment pipelines; Maintain Kubernetes clusters and cloud infrastructure; Monitor uptime and cloud security compliance. Required skills: Docker, Kubernetes, AWS, CI/CD, Linux, Terraform. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Docker",
+      "Kubernetes",
+      "AWS"
+    ],
+    "skills_nice_to_have": [
+      "CI/CD",
+      "Linux",
+      "Terraform"
+    ],
+    "responsibilities": [
+      "Manage automated CI/CD deployment pipelines",
+      "Maintain Kubernetes clusters and cloud infrastructure",
+      "Monitor uptime and cloud security compliance"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 9,
+    "apply_url": "https://www.linkedin.com/jobs/search/?keywords=software+internship"
+  },
+  {
+    "id": "job_050",
+    "source": "live",
+    "title": "Data Analyst Intern",
+    "company": "Zoho",
+    "industry": "Product",
+    "description": "Zoho is looking for a talented Data Analyst Intern to join our Product team in Pune. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Zoho is looking for a talented Data Analyst Intern to join our Product team in Pune. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Pune",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 5,
+    "apply_url": "https://internshala.com/internships"
+  },
+  {
+    "id": "job_051",
+    "source": "live",
+    "title": "Data Analyst Intern",
+    "company": "Groww",
+    "industry": "FinTech",
+    "description": "Groww is looking for a talented Data Analyst Intern to join our FinTech team in Remote. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Groww is looking for a talented Data Analyst Intern to join our FinTech team in Remote. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Remote",
+    "is_remote": true,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 20000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 0,
+    "apply_url": "https://internshala.com/internships"
+  },
+  {
+    "id": "job_052",
+    "source": "live",
+    "title": "Data Analyst Intern",
+    "company": "Microsoft",
+    "industry": "Enterprise Tech",
+    "description": "Microsoft is looking for a talented Data Analyst Intern to join our Enterprise Tech team in Chennai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "jd_text": "Microsoft is looking for a talented Data Analyst Intern to join our Enterprise Tech team in Chennai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Chennai",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 35000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 3,
+    "apply_url": "https://careers.microsoft.com/"
+  },
+  {
+    "id": "job_053",
+    "source": "live",
+    "title": "Data Analyst Intern",
+    "company": "TCS",
+    "industry": "IT Services",
+    "description": "TCS is looking for a talented Data Analyst Intern to join our IT Services team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "jd_text": "TCS is looking for a talented Data Analyst Intern to join our IT Services team in Mumbai. Responsibilities include: Analyze complex business and product datasets; Build executive dashboards and reports; Deliver actionable data-driven insights. Required skills: SQL, Python, Excel, Data Visualization, Power BI. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "SQL",
+      "Python",
+      "Excel"
+    ],
+    "skills_nice_to_have": [
+      "Data Visualization",
+      "Power BI"
+    ],
+    "responsibilities": [
+      "Analyze complex business and product datasets",
+      "Build executive dashboards and reports",
+      "Deliver actionable data-driven insights"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Mumbai",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 25000,
+    "internship_duration_months": 3,
+    "fresher_friendly": true,
+    "posted_days_ago": 4,
+    "apply_url": "https://www.tcs.com/careers/india"
+  },
+  {
+    "id": "job_054",
+    "source": "live",
+    "title": "QA Automation Engineer Intern",
+    "company": "BrowserStack",
+    "industry": "Developer Tools",
+    "description": "BrowserStack is looking for a talented QA Automation Engineer Intern to join our Developer Tools team in Gurgaon. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "jd_text": "BrowserStack is looking for a talented QA Automation Engineer Intern to join our Developer Tools team in Gurgaon. Responsibilities include: Develop automated end-to-end test suites; Perform regression and API load testing; Identify and report functional bugs early. Required skills: Selenium, Python, API Testing, Test Automation, Postman. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Selenium",
+      "Python",
+      "API Testing"
+    ],
+    "skills_nice_to_have": [
+      "Test Automation",
+      "Postman"
+    ],
+    "responsibilities": [
+      "Develop automated end-to-end test suites",
+      "Perform regression and API load testing",
+      "Identify and report functional bugs early"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Gurgaon",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 15000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 2,
+    "apply_url": "https://www.browserstack.com/careers"
+  },
+  {
+    "id": "job_055",
+    "source": "live",
+    "title": "Backend Developer Intern",
+    "company": "CRED",
+    "industry": "FinTech",
+    "description": "CRED is looking for a talented Backend Developer Intern to join our FinTech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "jd_text": "CRED is looking for a talented Backend Developer Intern to join our FinTech team in Hyderabad. Responsibilities include: Design and build scalable RESTful microservices; Ensure database integrity and system performance; Write comprehensive unit and integration tests. Required skills: Python, FastAPI, MongoDB, REST APIs, Docker. This is an internship position open to fresh graduates and students.",
+    "skills_required": [
+      "Python",
+      "FastAPI",
+      "MongoDB"
+    ],
+    "skills_nice_to_have": [
+      "REST APIs",
+      "Docker"
+    ],
+    "responsibilities": [
+      "Design and build scalable RESTful microservices",
+      "Ensure database integrity and system performance",
+      "Write comprehensive unit and integration tests"
+    ],
+    "experience_min": 0,
+    "experience_max": 1,
+    "job_type": "internship",
+    "location": "Hyderabad",
+    "is_remote": false,
+    "salary_min": null,
+    "salary_max": null,
+    "salary_disclosed": false,
+    "stipend_min": 35000,
+    "internship_duration_months": 6,
+    "fresher_friendly": true,
+    "posted_days_ago": 6,
+    "apply_url": "https://careers.cred.club/"
+  }
+]
