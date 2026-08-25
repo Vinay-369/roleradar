@@ -1,10 +1,14 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Briefcase, ArrowRight, Sparkles, Search, Target } from "lucide-react";
+import { Briefcase, ArrowRight, Sparkles, Search } from "lucide-react";
 import { getRecommendedMatches } from "../../lib/jobs";
 import { getProfile } from "../../lib/profile";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
+import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
+import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
 export function Jobs() {
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
@@ -17,21 +21,9 @@ export function Jobs() {
   const [minLpa, setMinLpa] = useState<string>("ALL");
   const [remoteFilter, setRemoteFilter] = useState<string>("ALL");
   const [experienceFilter, setExperienceFilter] = useState<string>("ALL");
+  const [dateFilter, setDateFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"recent" | "match" | "salary">("recent");
   const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const targetRolesList = useMemo(() => {
-    const roles = new Set<string>();
-    if (profile?.target_roles) {
-      profile.target_roles.forEach((r) => roles.add(r));
-    }
-    roles.add("Full Stack Developer");
-    roles.add("Backend Developer");
-    roles.add("Frontend Developer");
-    roles.add("Data Scientist");
-    roles.add("DevOps Engineer");
-    roles.add("Software Engineer");
-    return Array.from(roles);
-  }, [profile]);
 
   const filteredJobs = useMemo(() => {
     if (!matches) return [];
@@ -71,7 +63,6 @@ export function Jobs() {
 
       // 4. Experience Filter
       if (experienceFilter !== "ALL") {
-        // Evaluate experience score or title indicators
         const titleLower = job.job_title.toLowerCase();
         if (experienceFilter === "fresher") {
           if (titleLower.includes("senior") || titleLower.includes("lead") || titleLower.includes("staff") || titleLower.includes("principal")) {
@@ -88,7 +79,15 @@ export function Jobs() {
         }
       }
 
-      // 5. Keyword search query
+      // 5. Date Posted Recency Filter
+      if (dateFilter !== "ALL") {
+        const maxDays = Number(dateFilter);
+        if (job.posted_days_ago !== undefined && job.posted_days_ago > maxDays) {
+          return false;
+        }
+      }
+
+      // 6. Keyword search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = job.job_title.toLowerCase().includes(q);
@@ -102,9 +101,17 @@ export function Jobs() {
       return true;
     });
 
-    // Rank by highest ATS match score descending
-    return list.sort((a, b) => b.overall_score - a.overall_score);
-  }, [matches, selectedRole, minLpa, remoteFilter, experienceFilter, searchQuery]);
+    // Default: Sort by most recent posting date first
+    if (sortBy === "recent") {
+      return list.sort((a, b) => (a.posted_days_ago ?? 0) - (b.posted_days_ago ?? 0));
+    } else if (sortBy === "match") {
+      return list.sort((a, b) => b.overall_score - a.overall_score);
+    } else if (sortBy === "salary") {
+      return list.sort((a, b) => (b.salary_min ?? 0) - (a.salary_min ?? 0));
+    }
+
+    return list;
+  }, [matches, selectedRole, minLpa, remoteFilter, experienceFilter, dateFilter, sortBy, searchQuery]);
 
   return (
     <div className="max-w-3xl">
@@ -122,52 +129,20 @@ export function Jobs() {
       </div>
 
       <p className="text-ink-500 mb-5 text-sm">
-        Real-time job openings ranked by ATS compatibility match with your master resume.
+        Real-time job openings sorted by most recent posting date.
       </p>
 
       {/* Target Role & Advanced Filters Card */}
       <div className="bg-white rounded-xl border border-ink-100 p-4 mb-6 shadow-xs space-y-4">
-        {/* Target Role Selector Pills */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-ink-700 flex items-center gap-1.5">
-              <Target size={13} className="text-signal-600" /> Filter by Target Role:
-            </label>
-            {selectedRole !== "ALL" && (
-              <button
-                onClick={() => setSelectedRole("ALL")}
-                className="text-[11px] text-signal-600 hover:underline font-medium"
-              >
-                Reset Role
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              onClick={() => setSelectedRole("ALL")}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                selectedRole === "ALL"
-                  ? "bg-ink-950 text-white shadow-xs"
-                  : "bg-ink-50 text-ink-700 hover:bg-ink-100"
-              }`}
-            >
-              All Openings
-            </button>
-            {targetRolesList.map((role) => (
-              <button
-                key={role}
-                onClick={() => setSelectedRole(role)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  selectedRole === role
-                    ? "bg-ink-950 text-white shadow-xs"
-                    : "bg-ink-50 text-ink-700 hover:bg-ink-100"
-                }`}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Target Role Dropdown Selector */}
+        <RoleDropdownSelector
+          label="Filter by Target Role:"
+          selectedRole={selectedRole}
+          onRoleChange={setSelectedRole}
+          roles={ALL_JOB_ROLES}
+          includeAllOption={true}
+          allOptionLabel="All Openings"
+        />
 
         {/* Multi-Filter Controls: Search, Min LPA, Workplace, Experience */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-3 border-t border-ink-50">
@@ -223,50 +198,67 @@ export function Jobs() {
             </select>
           </div>
         </div>
-      </div>
 
-      {isLoading && (
-        <div className="p-8 text-center bg-white rounded-lg border border-ink-100 shadow-xs">
-          <span className="inline-block w-3 h-3 rounded-full bg-signal-500 animate-pulse mb-2" />
-          <p className="text-sm text-ink-600 font-medium">Matching real-time job openings with your resume…</p>
-        </div>
-      )}
+        {/* Date Posted & Sort Order Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-ink-50">
+          <div>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+            >
+              <option value="ALL">Date Posted: Any Time</option>
+              <option value="1">Date Posted: Past 24 Hours</option>
+              <option value="3">Date Posted: Past 3 Days</option>
+              <option value="7">Date Posted: Past Week</option>
+              <option value="14">Date Posted: Past 2 Weeks</option>
+              <option value="30">Date Posted: Past Month</option>
+            </select>
+          </div>
 
-      {!isLoading && filteredJobs.length === 0 && (
-        <div className="rounded-xl border border-ink-100 bg-white p-8 text-center shadow-xs">
-          <Briefcase size={32} className="text-ink-300 mx-auto mb-2" />
-          <h3 className="font-display text-base text-ink-900 mb-1">No Jobs Matching Current Filter</h3>
-          <p className="text-xs text-ink-500 max-w-sm mx-auto mb-4">
-            Try adjusting your target role or salary filters, or tailor your resume for any external posting.
-          </p>
-          <div className="flex justify-center gap-2">
-            <button
-              onClick={() => {
-                setSelectedRole("ALL");
-                setMinLpa("ALL");
-                setRemoteFilter("ALL");
-                setExperienceFilter("ALL");
-                setSearchQuery("");
-              }}
-              className="rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-800 px-4 py-2 text-xs font-semibold"
+          <div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
             >
-              Reset All Filters
-            </button>
-            <Link
-              to="/resume/tailor-custom"
-              className="rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-4 py-2 text-xs font-semibold shadow-xs"
-            >
-              Tailor External JD
-            </Link>
+              <option value="recent">Sort by: Most Recent Posting Date (Default)</option>
+              <option value="match">Sort by: Highest Match Score</option>
+              <option value="salary">Sort by: Compensation (High to Low)</option>
+            </select>
           </div>
         </div>
+      </div>
+
+      {isLoading && <SkeletonCard count={4} />}
+
+      {!isLoading && filteredJobs.length === 0 && (
+        <EmptyState
+          icon={Briefcase}
+          title="No jobs matching your filter criteria"
+          description="Try adjusting your target role, date posted, or compensation filters, or tailor your resume for an external job posting."
+          actionText="Reset All Filters"
+          onAction={() => {
+            setSelectedRole("ALL");
+            setMinLpa("ALL");
+            setRemoteFilter("ALL");
+            setExperienceFilter("ALL");
+            setDateFilter("ALL");
+            setSortBy("recent");
+            setSearchQuery("");
+          }}
+          secondaryActionText="Tailor for External JD"
+          secondaryActionHref="/resume/tailor-custom"
+        />
       )}
 
       {filteredJobs.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1 text-xs text-ink-500">
-            <span>Showing <strong>{filteredJobs.length}</strong> real-time openings</span>
-            <span className="text-[11px] font-semibold text-signal-700">Ranked by Highest ATS Match ↓</span>
+            <span>Showing <strong>{filteredJobs.length}</strong> openings</span>
+            <span className="text-[11px] font-semibold text-signal-700">
+              {sortBy === "recent" ? "Sorted by Most Recent Posting Date ↓" : sortBy === "match" ? "Sorted by Match Score ↓" : "Sorted by Compensation ↓"}
+            </span>
           </div>
           {filteredJobs.map((job) => (
             <JobMatchCard key={job.job_id} job={job} />

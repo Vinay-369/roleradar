@@ -110,9 +110,16 @@ def _detect_sections(text: str) -> tuple[list[str], list[str]]:
         if any(v in detected for v in variants):
             present_canonical.add(canon)
 
-    required_canonical = {"skills", "experience", "education"}
-    missing = sorted(required_canonical - present_canonical)
-    return detected, missing
+    has_practical = "experience" in present_canonical or "projects" in present_canonical or any("internship" in d for d in detected)
+    missing = []
+    if "skills" not in present_canonical:
+        missing.append("skills")
+    if "education" not in present_canonical:
+        missing.append("education")
+    if not has_practical:
+        missing.append("experience")
+
+    return detected, sorted(missing)
 
 
 def analyze_parseability(text: str, blocks: list[dict], file_type: str, has_tables: bool | None) -> ParseabilityResult:

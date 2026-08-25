@@ -1,0 +1,51 @@
+/**
+ * Standard comprehensive job and internship roles across the software industry.
+ * Used for role dropdown selectors across Jobs, Internships, Interview Prep,
+ * Learning Roadmap, and Skill Gap Analysis.
+ */
+
+export const ALL_JOB_ROLES: string[] = [
+  "Full Stack Developer",
+  "Software Engineer",
+  "Backend Developer",
+  "Frontend Developer",
+  "Mobile App Developer",
+  "Data Scientist",
+  "Data Engineer",
+  "Machine Learning Engineer",
+  "AI / NLP Engineer",
+  "Data Analyst",
+  "DevOps Engineer",
+  "Cloud Architect",
+  "Cloud Engineer",
+  "Site Reliability Engineer (SRE)",
+  "Cybersecurity Engineer",
+  "Information Security Analyst",
+  "QA / Test Automation Engineer",
+  "Product Manager",
+  "Technical Product Manager",
+  "UI/UX Designer",
+  "Systems Administrator",
+  "Database Administrator (DBA)",
+  "Embedded Systems Engineer",
+  "Firmware Engineer",
+  "Blockchain Developer",
+  "Game Developer",
+];
+
+export const ALL_INTERNSHIP_ROLES: string[] = [
+  "Software Engineering Intern",
+  "Full Stack Intern",
+  "Frontend Intern",
+  "Backend Intern",
+  "Mobile Developer Intern",
+  "Data Science Intern",
+  "Machine Learning / AI Intern",
+  "Data Analyst Intern",
+  "DevOps / Cloud Intern",
+  "QA / Testing Intern",
+  "Cybersecurity Intern",
+  "UI/UX Design Intern",
+  "Product Management Intern",
+  "Systems Engineering Intern",
+];

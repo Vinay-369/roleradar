@@ -19,9 +19,10 @@ class LMStudioProvider:
         system_prompt: str,
         user_prompt: str,
         json_mode: bool = False,
+        model_override: str | None = None,
     ) -> str:
         payload = {
-            "model": self._model,
+            "model": model_override or self._model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},

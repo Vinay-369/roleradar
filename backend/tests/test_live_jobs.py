@@ -65,7 +65,7 @@ def configured_settings():
 
 
 def test_provider_refuses_to_init_without_credentials():
-    settings = Settings(JWT_SECRET="test")  # no Adzuna keys
+    settings = Settings(JWT_SECRET="test", ADZUNA_APP_ID="", ADZUNA_APP_KEY="")  # no Adzuna keys
     with pytest.raises(AdzunaConfigError):
         AdzunaJobProvider(settings)
 

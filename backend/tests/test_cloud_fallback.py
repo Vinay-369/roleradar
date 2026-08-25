@@ -170,12 +170,14 @@ async def test_ai_service_integration_with_cloud_fallback(monkeypatch):
     )
     ai_service = AIService(settings)
 
+    from app.core.ai_service.schemas import StructuredTailoringResult
+
     tailoring_res = await ai_service.generate_resume_rewrite(
         master_resume_json='{"skills": ["Python", "FastAPI"]}',
         jd_text="Looking for FastAPI developer.",
         user_id="test_user"
     )
 
-    assert isinstance(tailoring_res, TailoringResult)
+    assert isinstance(tailoring_res, StructuredTailoringResult)
     assert len(tailoring_res.changes) == 1
     assert tailoring_res.changes[0].proposed == "Architected FastAPI backend services."

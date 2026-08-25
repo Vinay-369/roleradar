@@ -14,12 +14,20 @@ class GenerateTailoringRequest(BaseModel):
 
 class ChangeOut(BaseModel):
     change_id: str
+    section: str = "EXPERIENCE"
+    change_type: str = "TEXT_REWRITE"
     original: str
     proposed: str
     reason: str
     source_evidence: str
     confidence: float
     status: ChangeStatus
+    target_bullet_index: int | None = None
+    fabrication_warning: str | None = None
+    before_order: list[str] | None = None
+    after_order: list[str] | None = None
+    applied_safely: bool | None = None
+    validation_error: str | None = None
 
 
 class TailoredResumeOut(BaseModel):
@@ -30,6 +38,14 @@ class TailoredResumeOut(BaseModel):
     changes: list[ChangeOut]
     is_finalized: bool
     final_text: str | None = None
+    parsed: dict | None = None
+    audit: dict | None = None
+    tailored_scores: dict | None = None
+    sections_evaluated: list[str] = []
+    sections_changed: list[str] = []
+    unmatched_gaps: list[str] = []
+    validation_summary: dict | None = None
+    one_page_fit: bool | None = None
     created_at: str
 
 

@@ -34,6 +34,19 @@ class PlatformComplianceOut(BaseModel):
     tips: list[str]
 
 
+class ScoreCategoryOut(BaseModel):
+    category_name: str
+    max_points: int
+    points_awarded: int
+    key_findings: str
+
+
+class ActionPlanItemOut(BaseModel):
+    type: str  # "Skill Placement" | "Context Optimization" | "Formatting Correction"
+    title: str
+    description: str
+
+
 class ATSScoreOut(BaseModel):
     overall: int
     keyword_coverage: int
@@ -46,5 +59,11 @@ class ATSScoreOut(BaseModel):
     company: str
     keyword_density: float = 1.5
     over_optimization_warning: bool = False
+    knockout_passed: bool = True
+    knockout_reason: str | None = None
+    match_status: str = "High Match (>=80%)"
+    categories: list[ScoreCategoryOut] = []
+    action_plan: list[ActionPlanItemOut] = []
     match_guidance: MatchGuidanceOut | None = None
     platform_compliance: PlatformComplianceOut | None = None
+

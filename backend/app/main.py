@@ -15,6 +15,9 @@ async def lifespan(app: FastAPI):
     from app.modules.jobs.services import ensure_seed_loaded
     await ensure_seed_loaded(get_db())
 
+    from app.modules.auth.services import ensure_demo_user
+    await ensure_demo_user(get_db())
+
     yield
     await close_mongo_connection()
 

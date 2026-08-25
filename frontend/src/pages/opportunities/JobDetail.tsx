@@ -85,12 +85,6 @@ export function JobDetail() {
           Tailor resume for this job
         </Link>
         <Link
-          to="/growth/skill-gaps"
-          className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-700 px-4 py-2 text-sm font-medium transition-transform active:scale-95"
-        >
-          Skill gaps
-        </Link>
-        <Link
           to={`/growth/roadmap/${job.id}`}
           className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-700 px-4 py-2 text-sm font-medium transition-transform active:scale-95"
         >
@@ -101,6 +95,12 @@ export function JobDetail() {
           className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-700 px-4 py-2 text-sm font-medium transition-transform active:scale-95"
         >
           Interview prep for {job.company}
+        </Link>
+        <Link
+          to={`/copilot?job_id=${encodeURIComponent(job.id)}&company=${encodeURIComponent(job.company)}&role=${encodeURIComponent(job.title)}&prompt=${encodeURIComponent(`I am preparing to apply for the ${job.title} role at ${job.company}. How should I position my resume, what key competencies should I emphasize, and what interview strategies should I prepare?`)}`}
+          className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-700 px-4 py-2 text-sm font-medium transition-transform active:scale-95"
+        >
+          🤖 Ask Copilot
         </Link>
         {(() => {
           const directApplyUrl = (job.apply_url && !job.apply_url.includes("example.com"))

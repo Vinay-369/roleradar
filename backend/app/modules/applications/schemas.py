@@ -8,7 +8,8 @@ class ApplicationStatus(str, Enum):
     TAILORED = "TAILORED"
     QUEUED = "QUEUED"
     APPLIED = "APPLIED"
-    VIEWED = "VIEWED"
+    SHORTLISTED = "SHORTLISTED"
+    VIEWED = "VIEWED"  # Kept for legacy backward compatibility
     INTERVIEW = "INTERVIEW"
     OFFER = "OFFER"
     REJECTED = "REJECTED"
@@ -48,3 +49,5 @@ class ApplicationPackageOut(BaseModel):
     resume_source: str  # "tailored" | "master" | "none"
     cover_letter: str | None
     checklist: list[str]
+    tailored_version_id: str | None = None
+

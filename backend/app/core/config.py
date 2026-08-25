@@ -8,7 +8,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(".env", "backend/.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # --- App ---
     APP_NAME: str = "RoleRadar"
@@ -39,15 +43,15 @@ class Settings(BaseSettings):
     AI_PROVIDER: str = "ollama"  # "ollama" | "lmstudio" | "cloud_fallback"
 
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "phi4-mini"  # Microsoft Phi-4 Mini (3.8B) for fast, accurate local inference
-
-    LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
+    OLLAMA_MODEL: str = "phi4-mini:latest"  # Fast, accurate local model
+    OLLAMA_CHAT_MODEL: str | None = None  # Uses OLLAMA_MODEL or auto-detects available installed model
+    COPILOT_MODEL: str | None = None
     LMSTUDIO_MODEL: str = "local-model"
 
     # Optional cloud fallback — only used if AI_PROVIDER=cloud_fallback
     CLOUD_FALLBACK_PROVIDER: str = "gemini"  # "gemini" | "openai"
     CLOUD_FALLBACK_API_KEY: str = ""
-    CLOUD_FALLBACK_MODEL: str = "gemini-2.0-flash"
+    CLOUD_FALLBACK_MODEL: str = "gemini-2.5-flash"
 
     AI_REQUEST_TIMEOUT_SECONDS: int = 300
     AI_MAX_RETRIES: int = 2  # for JSON-repair retry loop

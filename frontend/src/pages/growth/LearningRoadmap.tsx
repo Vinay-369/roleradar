@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Map as MapIcon, Target, Sparkles, BookOpen, ExternalLink, Code2 } from "lucide-react";
+import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2 } from "lucide-react";
 import { getProfile } from "../../lib/profile";
 import { getRoadmap, getSkillGaps, type SkillGap } from "../../lib/learning";
+import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
+import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
 function getResourceLabel(url: string, index: number): { label: string; tag: string } {
   const lower = url.toLowerCase();
@@ -129,12 +131,11 @@ export function LearningRoadmap() {
   const { jobId } = useParams<{ jobId?: string }>();
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
-  const [customRole, setCustomRole] = useState("");
-  const [selectedRolePill, setSelectedRolePill] = useState("");
+  const defaultRole = profile?.target_roles?.[0] || "Full Stack Developer";
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [useGeneralMode, setUseGeneralMode] = useState(!jobId);
 
-  const defaultRole = profile?.target_roles?.[0] || "Full Stack Developer";
-  const activeRole = selectedRolePill || customRole || defaultRole;
+  const activeRole = selectedRole || defaultRole;
 
   const { data: roadmap, isLoading: roadmapLoading } = useQuery({
     queryKey: ["roadmap-custom", useGeneralMode ? null : jobId, activeRole],
@@ -177,44 +178,16 @@ export function LearningRoadmap() {
         A step-by-step learning progression built from real market requirements with curated study resources and project guides.
       </p>
 
-      {/* Target Role Selector */}
+      {/* Target Role Selector Card */}
       <div className="bg-white rounded-xl border border-ink-100 p-4 mb-6 shadow-xs">
-        <p className="text-xs font-medium uppercase tracking-wider text-ink-500 mb-2.5 flex items-center gap-1.5">
-          <Target size={13} className="text-signal-600" /> Roadmap for Target Role:
-        </p>
-
-        {/* Quick select pills */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {(profile?.target_roles || ["Full Stack Developer", "Backend Developer", "Frontend Developer", "Data Scientist"]).map((r) => {
-            const isSelected = activeRole.toLowerCase() === r.toLowerCase();
-            return (
-              <button
-                key={r}
-                onClick={() => {
-                  setSelectedRolePill(r);
-                  setCustomRole("");
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  isSelected ? "bg-ink-950 text-white" : "bg-ink-50 text-ink-700 hover:bg-ink-100"
-                }`}
-              >
-                {r}
-              </button>
-            );
-          })}
-        </div>
-
-        <div>
-          <input
-            value={customRole}
-            onChange={(e) => {
-              setCustomRole(e.target.value);
-              setSelectedRolePill("");
-            }}
-            placeholder={`Or enter any role to generate a custom roadmap (e.g. ${activeRole})…`}
-            className="w-full rounded-md border border-ink-100 px-3 py-1.5 text-xs outline-none focus:border-signal-500"
-          />
-        </div>
+        <RoleDropdownSelector
+          label="Roadmap for Target Role:"
+          selectedRole={activeRole}
+          onRoleChange={setSelectedRole}
+          roles={ALL_JOB_ROLES}
+          includeAllOption={false}
+          helperText="Select or specify any target role to generate a personalized multi-week learning progression."
+        />
       </div>
 
       {roadmapLoading && (

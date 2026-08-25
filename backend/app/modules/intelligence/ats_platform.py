@@ -94,14 +94,18 @@ def detect_platform_from_url(url: str) -> ATSPlatform:
 def evaluate_platform_compliance(
     resume_text: str,
     parseability_data: dict,
-    platform: ATSPlatform | str = ATSPlatform.GENERIC,
+    platform: ATSPlatform | str | None = ATSPlatform.GENERIC,
     keyword_density: float = 0.0,
 ) -> PlatformComplianceResult:
-    if isinstance(platform, str):
+    if isinstance(platform, ATSPlatform):
+        pass
+    elif isinstance(platform, str):
         try:
             platform = ATSPlatform(platform.lower())
         except ValueError:
             platform = ATSPlatform.GENERIC
+    else:
+        platform = ATSPlatform.GENERIC
 
     meta = PLATFORM_METADATA.get(platform, PLATFORM_METADATA[ATSPlatform.GENERIC])
     warnings: list[PlatformWarning] = []
@@ -122,18 +126,18 @@ def evaluate_platform_compliance(
             })
             compliance_score -= 15
 
-        if keyword_density > 3.0:
+        if keyword_density >= 3.5:
             warnings.append({
                 "severity": "high",
                 "title": "Workday Keyword Density Ceiling Exceeded",
-                "message": f"Keyword density is {keyword_density:.1f}% (>3.0%). Workday triggers keyword-stuffing flags when key terms repeat excessively.",
+                "message": f"Peak keyword density is {keyword_density:.1f}% (>=3.5%). Workday triggers keyword-stuffing flags when key terms repeat excessively.",
             })
             compliance_score -= 10
-        elif keyword_density > 2.2:
+        elif keyword_density > 2.8:
             warnings.append({
                 "severity": "medium",
                 "title": "Approaching Keyword Density Ceiling",
-                "message": f"Keyword density is {keyword_density:.1f}%. Target 1.5%–2.5% for natural Workday parsing.",
+                "message": f"Peak keyword density is {keyword_density:.1f}%. Target 1.0%–2.5% for natural Workday parsing.",
             })
 
         if missing_sections:

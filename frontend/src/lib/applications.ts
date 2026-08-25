@@ -1,7 +1,7 @@
 import { apiClient } from "./apiClient";
 
 export type ApplicationStatus =
-  | "SAVED" | "TAILORED" | "QUEUED" | "APPLIED" | "VIEWED" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
+  | "SAVED" | "TAILORED" | "QUEUED" | "APPLIED" | "SHORTLISTED" | "VIEWED" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN";
 
 export type Application = {
   id: string;
@@ -25,6 +25,7 @@ export type ApplicationPackage = {
   resume_source: "tailored" | "master" | "none";
   cover_letter: string | null;
   checklist: string[];
+  tailored_version_id?: string | null;
 };
 
 export async function saveApplication(jobId: string, tailoredResumeId?: string): Promise<Application> {
@@ -48,4 +49,8 @@ export async function updateApplicationStatus(id: string, status: ApplicationSta
 export async function getApplicationPackage(id: string): Promise<ApplicationPackage> {
   const res = await apiClient.get<ApplicationPackage>(`/applications/${id}/package`);
   return res.data;
+}
+
+export async function deleteApplication(id: string): Promise<void> {
+  await apiClient.delete(`/applications/${id}`);
 }

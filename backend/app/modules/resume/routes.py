@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -6,6 +7,8 @@ from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.resume import repositories as repo
 from app.modules.resume import services
+from app.modules.resume.parsing.action_verbs import analyze_action_verbs
+from app.modules.resume.parsing.skills_depth import analyze_skills_depth
 from app.modules.resume.parsing.text_extraction import CorruptedFileError, UnsupportedFileTypeError
 from app.modules.resume.schemas import AchievementCreate, AchievementOut, MasterResumeOut
 
@@ -13,15 +16,51 @@ router = APIRouter()
 
 
 def _to_out(doc: dict) -> MasterResumeOut:
+    parsed = doc.get("parsed", {})
+    action_verbs = doc.get("action_verbs")
+    skills_depth = doc.get("skills_depth")
+    
+    if action_verbs is None:
+        combined = parsed.get("experience_raw", []) + parsed.get("projects_raw", [])
+        action_verbs = asdict(analyze_action_verbs(combined))
+
+    if skills_depth is None:
+        skills_depth = asdict(analyze_skills_depth(parsed.get("skills", [])))
+
+    strict_ats_score = doc.get("strict_ats_score")
+    ats_status = doc.get("ats_status")
+    if strict_ats_score is None or ats_status is None:
+        parseability = doc.get("parseability", {})
+        recruiter_impact = doc.get("recruiter_impact", {})
+        has_email = bool(parseability.get("contact_info_found", {}).get("email"))
+        has_phone = bool(parseability.get("contact_info_found", {}).get("phone"))
+        is_multi_col = bool(parseability.get("likely_multi_column"))
+        strict_ats_score, ats_status = services.compute_strict_ats_benchmark(
+            parseability_score=parseability.get("score", 0),
+            recruiter_score=recruiter_impact.get("score", 0),
+            action_verb_score=action_verbs.get("score", 0),
+            skills_depth_score=skills_depth.get("score", 0),
+            is_multi_col=is_multi_col,
+            has_email=has_email,
+            has_phone=has_phone,
+        )
+
+    created_at_val = doc.get("created_at")
+    created_at_str = created_at_val.isoformat() if hasattr(created_at_val, "isoformat") else str(created_at_val)
+
     return MasterResumeOut(
         id=str(doc["_id"]),
         version=doc["version"],
         file_name=doc["file_name"],
         file_type=doc["file_type"],
-        parsed=doc["parsed"],
+        parsed=parsed,
         parseability=doc["parseability"],
         recruiter_impact=doc["recruiter_impact"],
-        created_at=doc["created_at"].isoformat(),
+        action_verbs=action_verbs,
+        skills_depth=skills_depth,
+        strict_ats_score=strict_ats_score,
+        ats_status=ats_status,
+        created_at=created_at_str,
     )
 
 
@@ -56,13 +95,15 @@ async def get_master_resume(
 
 
 def _achievement_to_out(doc: dict) -> AchievementOut:
+    created_at_val = doc.get("created_at")
+    created_at_str = created_at_val.isoformat() if hasattr(created_at_val, "isoformat") else str(created_at_val)
     return AchievementOut(
         id=str(doc["_id"]),
         title=doc["title"],
         description=doc["description"],
         metrics=doc.get("metrics"),
         skills_tags=doc.get("skills_tags", []),
-        created_at=doc["created_at"].isoformat(),
+        created_at=created_at_str,
     )
 
 

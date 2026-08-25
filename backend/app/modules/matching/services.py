@@ -105,10 +105,13 @@ async def get_or_compute_matches(
                 "salary_max": job.get("salary_max"),
                 "stipend_min": job.get("stipend_min"),
                 "stipend_max": job.get("stipend_max"),
+                "posted_days_ago": job.get("posted_days_ago", 0),
+                "created_at": str(job.get("created_at") or job.get("created") or ""),
             })
 
         # 3. Cache newly computed matches
         await repo.save_cached_matches(db, user_id, resume_version, newly_computed_to_cache)
 
-    results.sort(key=lambda r: r["overall_score"], reverse=True)
+    # Sort by most recent posting date first (lowest posted_days_ago)
+    results.sort(key=lambda r: (r.get("posted_days_ago", 0), -r.get("overall_score", 0)))
     return results

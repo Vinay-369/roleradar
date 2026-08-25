@@ -52,6 +52,7 @@ async def list_jobs(
         "min_lpa": min_lpa,
         "fresher_friendly_only": fresher_friendly_only,
         "skill": skill,
+        "limit": 500,
     }
 
     # Build a personalized live-fetch query from the candidate's own

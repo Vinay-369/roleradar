@@ -23,7 +23,7 @@ export function Settings() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="font-display text-2xl text-ink-900 mb-6">Settings</h1>
+      <h1 className="font-display text-2xl text-ink-900 mb-6">Profile</h1>
 
       <div className="rounded-lg border border-ink-100 bg-white p-5 mb-4">
         <p className="text-xs font-medium uppercase tracking-wider text-ink-500 mb-3">Account</p>

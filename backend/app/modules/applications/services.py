@@ -16,6 +16,9 @@ from app.modules.resume import repositories as resume_repo
 from app.modules.tailoring import repositories as tailoring_repo
 
 
+from app.db.mongo import Collections
+
+
 class DuplicateApplicationError(Exception):
     pass
 
@@ -60,6 +63,12 @@ async def update_application(db: AsyncIOMotorDatabase, user_id: str, application
     return app
 
 
+async def delete_application(db: AsyncIOMotorDatabase, user_id: str, application_id: str) -> None:
+    deleted = await repo.delete_application(db, user_id, application_id)
+    if not deleted:
+        raise ApplicationNotFoundError(f"Application {application_id} not found.")
+
+
 async def build_application_package(db: AsyncIOMotorDatabase, user_id: str, application_id: str) -> dict:
     app = await repo.get_application(db, user_id, application_id)
     if app is None:
@@ -67,12 +76,26 @@ async def build_application_package(db: AsyncIOMotorDatabase, user_id: str, appl
 
     resume_text = None
     resume_source = "none"
+    tailored_version_id = app.get("tailored_resume_id")
 
-    if app.get("tailored_resume_id"):
-        version = await tailoring_repo.get_version(db, user_id, app["tailored_resume_id"])
+    if tailored_version_id:
+        version = await tailoring_repo.get_version(db, user_id, tailored_version_id)
         if version and version.get("is_finalized") and version.get("final_text"):
             resume_text = version["final_text"]
             resume_source = "tailored"
+        else:
+            tailored_version_id = None
+
+    # Check if there is any finalized tailored version for this job
+    if resume_text is None and app.get("job_id"):
+        cursor = db[Collections.RESUME_VERSIONS].find(
+            {"user_id": user_id, "job_id": app["job_id"], "is_finalized": True}
+        ).sort("created_at", -1)
+        versions = await cursor.to_list(length=1)
+        if versions and versions[0].get("final_text"):
+            resume_text = versions[0]["final_text"]
+            resume_source = "tailored"
+            tailored_version_id = str(versions[0]["_id"])
 
     if resume_text is None:
         master = await resume_repo.get_active_master_resume(db, user_id)
@@ -81,12 +104,11 @@ async def build_application_package(db: AsyncIOMotorDatabase, user_id: str, appl
             resume_source = "master"
 
     checklist = [
-        "Review the tailored resume once more before submitting",
-        f"Open the official application page: {app['apply_url']}",
-        "Attach the downloaded PDF/DOCX resume",
-        "Double check contact details are current",
-        "Submit the application yourself on the company's site",
-        "Come back and mark this application as Applied",
+        "Review your tailored resume and verified key qualifications",
+        f"Open the official employer application portal: {app['apply_url']}",
+        "Upload/attach your ATS-optimized PDF or DOCX resume",
+        "Confirm your contact details and links (GitHub, LinkedIn)",
+        "Submit the application yourself directly on the employer's official portal",
     ]
 
     return {
@@ -95,6 +117,8 @@ async def build_application_package(db: AsyncIOMotorDatabase, user_id: str, appl
         "apply_url": app["apply_url"],
         "resume_text": resume_text,
         "resume_source": resume_source,
-        "cover_letter": None,  # Phase 7 (AIService.generate_cover_letter) will populate this
+        "cover_letter": None,
         "checklist": checklist,
+        "tailored_version_id": tailored_version_id,
     }
+

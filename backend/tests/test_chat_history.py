@@ -23,7 +23,7 @@ class FakeChatProvider:
     def __init__(self):
         self.last_user_prompt = None
 
-    async def complete(self, system_prompt, user_prompt, json_mode=False):
+    async def complete(self, system_prompt, user_prompt, json_mode=False, **kwargs):
         self.last_user_prompt = user_prompt
         return "This is a reply."
 

@@ -43,7 +43,7 @@ def extract_pdf(file_bytes: bytes) -> tuple[str, list[dict]]:
     return "\n".join(full_text_parts), blocks
 
 
-def extract_docx(file_bytes: bytes) -> tuple[str, list[dict]]:
+def extract_docx(file_bytes: bytes) -> tuple[str, list[dict], bool]:
     try:
         document = Document(io.BytesIO(file_bytes))
     except Exception as exc:

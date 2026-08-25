@@ -14,6 +14,7 @@ class MockAIProvider:
         system_prompt: str,
         user_prompt: str,
         json_mode: bool = False,
+        model_override: str | None = None,
     ) -> str:
         # Check if prompting for resume tailoring
         if "resume tailoring" in system_prompt.lower() or "PROPOSE TAILORING" in user_prompt.upper() or "MASTER RESUME" in user_prompt:

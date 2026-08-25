@@ -36,7 +36,7 @@ async def recommended_matches(
     }
     await jobs_services.refresh_live_jobs(db, settings, live_filters)
 
-    search_filters: dict = {}
+    search_filters: dict = {"limit": 500}
     if job_type:
         search_filters["job_type"] = job_type
     if live_only:

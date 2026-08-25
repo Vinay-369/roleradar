@@ -22,6 +22,19 @@ export type PlatformCompliance = {
   tips: string[];
 };
 
+export type ScoreCategory = {
+  category_name: string;
+  max_points: number;
+  points_awarded: number;
+  key_findings: string;
+};
+
+export type ActionPlanItem = {
+  type: string;
+  title: string;
+  description: string;
+};
+
 export type ATSScore = {
   overall: number;
   keyword_coverage: number;
@@ -34,13 +47,20 @@ export type ATSScore = {
   company: string;
   keyword_density?: number;
   over_optimization_warning?: boolean;
+  knockout_passed?: boolean;
+  knockout_reason?: string | null;
+  match_status?: string;
+  categories?: ScoreCategory[];
+  action_plan?: ActionPlanItem[];
   match_guidance?: MatchGuidance;
   platform_compliance?: PlatformCompliance;
 };
 
-export async function getATSScore(jobId: string, platform?: string): Promise<ATSScore> {
+export async function getATSScore(jobId: string, platform?: string, versionId?: string): Promise<ATSScore> {
   const params: Record<string, string> = {};
   if (platform) params.platform = platform;
+  if (versionId) params.version_id = versionId;
   const res = await apiClient.get<ATSScore>(`/intelligence/ats/${jobId}`, { params });
   return res.data;
 }
+

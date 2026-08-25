@@ -119,3 +119,36 @@ def test_one_skill_per_line_is_not_collapsed_into_one_string():
     text = "Name\nSkills\nPython\nFastAPI\nMongoDB\nDocker\nExperience\nDid stuff\n"
     structured = structure_resume_text(text)
     assert structured["skills"] == ["Python", "FastAPI", "MongoDB", "Docker"]
+
+
+@pytest.mark.asyncio
+async def test_four_pillar_audit_integration():
+    from mongomock_motor import AsyncMongoMockClient
+    from app.core.config import Settings
+    from app.modules.resume.services import ingest_resume
+
+    db = AsyncMongoMockClient()["test_db"]
+    settings = Settings(MAX_UPLOAD_MB=10)
+    pdf_bytes = _read("good_resume.pdf")
+
+    doc = await ingest_resume(
+        db=db,
+        settings=settings,
+        user_id="test_user_123",
+        filename="good_resume.pdf",
+        file_bytes=pdf_bytes,
+    )
+
+    assert doc["version"] == 1
+    assert "parseability" in doc
+    assert "recruiter_impact" in doc
+    assert "action_verbs" in doc
+    assert "skills_depth" in doc
+    assert "strict_ats_score" in doc
+    assert "ats_status" in doc
+
+    assert doc["parseability"]["score"] >= 70
+    assert doc["action_verbs"]["score"] >= 50
+    assert doc["skills_depth"]["score"] >= 50
+    assert doc["strict_ats_score"] >= 50
+    assert doc["ats_status"]["status"] in {"passed", "review", "at_risk"}

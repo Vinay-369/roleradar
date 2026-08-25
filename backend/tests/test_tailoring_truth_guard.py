@@ -28,7 +28,7 @@ def db():
 
 @pytest.fixture
 def settings():
-    return Settings(JWT_SECRET="test-secret")
+    return Settings(JWT_SECRET="test-secret", EMBEDDING_PROVIDER="mock")
 
 
 class FakeTailoringProvider:
@@ -245,3 +245,49 @@ async def test_generate_tailoring_requires_either_job_id_or_custom_jd(db, settin
 
     with pytest.raises(tailoring_services.MissingJobOrJDError):
         await tailoring_services.generate_tailoring(db, ai_service, user_id)
+
+
+@pytest.mark.asyncio
+async def test_delete_tailored_version_removes_it_completely(db, settings):
+    user, _ = await auth_services.register_user(db, settings, "delete_tailor@example.com", "supersecret1", "D", None)
+    user_id = str(user["_id"])
+
+    from app.modules.resume import repositories as resume_repo
+    await resume_repo.create_master_resume(
+        db, user_id, version=1, file_name="r.pdf", file_type="pdf",
+        raw_text="text", parsed={"skills": []},
+        parseability={"score": 80, "issues": [], "detected_sections": [], "missing_standard_sections": [],
+                       "contact_info_found": {}, "likely_multi_column": False, "word_count": 5},
+        recruiter_impact={"score": 70, "bullets_analyzed": 0, "quantified_bullets": 0, "weak_verb_bullets": 0,
+                           "quantification_rate": 0, "issues": []},
+    )
+
+    ai_service = AIService(settings)
+    ai_service._provider = FakeTailoringProvider()
+
+    version = await tailoring_services.generate_tailoring(
+        db, ai_service, user_id,
+        job_id=None,
+        custom_company="DeleteMe Corp",
+        custom_role_title="Backend",
+        custom_jd_text="Looking for a Python engineer.",
+    )
+    version_id = str(version["_id"])
+
+    # Verify created
+    from app.modules.tailoring import repositories as repo
+    found = await repo.get_version(db, user_id, version_id)
+    assert found is not None
+
+    # Delete version
+    success = await tailoring_services.delete_tailored_version(db, user_id, version_id)
+    assert success is True
+
+    # Verify deleted
+    found_after = await repo.get_version(db, user_id, version_id)
+    assert found_after is None
+
+    # Deleting again raises VersionNotFoundError
+    with pytest.raises(tailoring_services.VersionNotFoundError):
+        await tailoring_services.delete_tailored_version(db, user_id, version_id)
+

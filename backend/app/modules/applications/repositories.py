@@ -66,3 +66,12 @@ async def update_application(db: AsyncIOMotorDatabase, user_id: str, application
     updates["updated_at"] = datetime.now(timezone.utc)
     await db[Collections.APPLICATIONS].update_one({"_id": app["_id"]}, {"$set": updates})
     return await get_application(db, user_id, application_id)
+
+
+async def delete_application(db: AsyncIOMotorDatabase, user_id: str, application_id: str) -> bool:
+    try:
+        oid = ObjectId(application_id)
+    except Exception:
+        return False
+    result = await db[Collections.APPLICATIONS].delete_one({"_id": oid, "user_id": user_id})
+    return result.deleted_count > 0

@@ -12,6 +12,15 @@ dist/
 
 # Env
 .env
+.env.*
+*.env
+backend/.env
+
+# Temporary / test outputs
+*.pdf
+*.docx
+backend/test_out.*
+.vscode/
 
 # Storage
 backend/storage/uploads/*
@@ -21,3 +30,4 @@ backend/storage/generated/*
 
 # OS
 .DS_Store
+Thumbs.db

@@ -26,22 +26,25 @@ class CloudFallbackProvider:
         system_prompt: str,
         user_prompt: str,
         json_mode: bool = False,
+        model_override: str | None = None,
     ) -> str:
         provider = self._settings.CLOUD_FALLBACK_PROVIDER.lower()
         if provider == "gemini":
-            return await self._complete_gemini(system_prompt, user_prompt, json_mode)
+            return await self._complete_gemini(system_prompt, user_prompt, json_mode, model_override)
         elif provider in ("openai", "groq", "openrouter", "together", "deepseek"):
-            return await self._complete_openai_compatible(system_prompt, user_prompt, json_mode)
+            return await self._complete_openai_compatible(system_prompt, user_prompt, json_mode, model_override)
         raise NotImplementedError(
             f"Cloud fallback provider '{provider}' is not supported. "
             "Supported providers: gemini, openai, groq, openrouter, together, deepseek."
         )
 
-    async def _complete_gemini(self, system_prompt: str, user_prompt: str, json_mode: bool) -> str:
-        model = self._settings.CLOUD_FALLBACK_MODEL or "gemini-2.0-flash"
+    async def _complete_gemini(self, system_prompt: str, user_prompt: str, json_mode: bool, model_override: str | None = None) -> str:
+        raw_model = model_override or self._settings.CLOUD_FALLBACK_MODEL or "gemini-2.5-flash"
+        model = raw_model.strip("'\" \t\r\n").removeprefix("models/")
+        api_key = (self._settings.CLOUD_FALLBACK_API_KEY or "").strip("'\" \t\r\n")
         url = (
             f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key={self._settings.CLOUD_FALLBACK_API_KEY}"
+            f"{model}:generateContent?key={api_key}"
         )
         payload = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
@@ -57,7 +60,7 @@ class CloudFallbackProvider:
             data = resp.json()
             return data["candidates"][0]["content"]["parts"][0]["text"]
 
-    async def _complete_openai_compatible(self, system_prompt: str, user_prompt: str, json_mode: bool) -> str:
+    async def _complete_openai_compatible(self, system_prompt: str, user_prompt: str, json_mode: bool, model_override: str | None = None) -> str:
         provider = self._settings.CLOUD_FALLBACK_PROVIDER.lower()
         base_urls = {
             "openai": "https://api.openai.com/v1",
@@ -67,7 +70,7 @@ class CloudFallbackProvider:
             "deepseek": "https://api.deepseek.com/v1",
         }
         base_url = base_urls.get(provider, "https://api.openai.com/v1")
-        model = self._settings.CLOUD_FALLBACK_MODEL or ("gpt-4o-mini" if provider == "openai" else "llama-3.3-70b-versatile")
+        model = model_override or self._settings.CLOUD_FALLBACK_MODEL or ("gpt-4o-mini" if provider == "openai" else "llama-3.3-70b-versatile")
 
         headers = {
             "Authorization": f"Bearer {self._settings.CLOUD_FALLBACK_API_KEY}",

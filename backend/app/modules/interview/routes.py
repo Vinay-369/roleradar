@@ -94,6 +94,32 @@ async def get_interview_questions_for_role(
     return await _generate_prep(db, ai_service, str(current_user["_id"]), job_id=job_id, role=role, company=company)
 
 
+@router.get("/curated/{role_name}", response_model=InterviewPrepOut)
+async def get_curated_interview_questions(
+    role_name: str,
+    company: str | None = Query(default=None, description="Optional target company"),
+    current_user: dict = Depends(get_current_user),
+):
+    from app.modules.interview.role_banks import get_curated_role_questions
+
+    target_company = company or "Target Company"
+    curated_raw = get_curated_role_questions(role_name)
+
+    questions = []
+    for q in curated_raw:
+        q_copy = dict(q)
+        q_copy["question"] = q_copy["question"].replace("{comp}", target_company).replace("{target_role}", role_name)
+        q_copy["sample_answer"] = q_copy["sample_answer"].replace("{comp}", target_company).replace("{target_role}", role_name)
+        questions.append(q_copy)
+
+    return InterviewPrepOut(
+        job_title=role_name,
+        company=target_company,
+        questions=questions,
+        real_experiences_search_url=_build_real_experiences_search_url(target_company, role_name),
+    )
+
+
 @router.get("/{job_id}/questions", response_model=InterviewPrepOut)
 async def get_interview_questions(
     job_id: str,

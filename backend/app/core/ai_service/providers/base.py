@@ -12,6 +12,7 @@ class AIProvider(Protocol):
         system_prompt: str,
         user_prompt: str,
         json_mode: bool = False,
+        model_override: str | None = None,
     ) -> str:
         """Return the raw text completion from the runtime model."""
         ...

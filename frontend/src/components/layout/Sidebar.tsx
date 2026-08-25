@@ -1,10 +1,9 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Copy, Target,
-  Briefcase, GraduationCap, Bookmark, ListChecks, Kanban,
-  Map, MessageCircleQuestion, Bot, Settings as SettingsIcon, LogOut, X,
+  Briefcase, GraduationCap, Bookmark,
+  Map, MessageCircleQuestion, Bot, X,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
 
 type NavItem = { label: string; to: string; icon: React.ComponentType<{ size?: number; className?: string }> };
 type NavGroup = { label: string; items: NavItem[] };
@@ -15,7 +14,6 @@ const groups: NavGroup[] = [
     label: "Resume",
     items: [
       { label: "Master Resume", to: "/resume/master", icon: FileText },
-      { label: "Skill Gaps", to: "/growth/skill-gaps", icon: Target },
       { label: "Tailored Versions", to: "/resume/versions", icon: Copy },
     ],
   },
@@ -28,40 +26,31 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    label: "Applications",
-    items: [
-      { label: "Application Queue", to: "/applications/queue", icon: ListChecks },
-      { label: "Application Tracker", to: "/applications/tracker", icon: Kanban },
-    ],
-  },
-  {
     label: "Career Growth",
     items: [
+      { label: "Skill Gaps", to: "/growth/skill-gaps", icon: Target },
       { label: "Learning Roadmap", to: "/growth/roadmap", icon: Map },
       { label: "Interview Preparation", to: "/growth/interview", icon: MessageCircleQuestion },
     ],
   },
-  { label: "", items: [{ label: "Career Copilot", to: "/copilot", icon: Bot }] },
-  { label: "", items: [{ label: "Settings", to: "/settings", icon: SettingsIcon }] },
+  {
+    label: "AI Strategist",
+    items: [
+      { label: "Career Copilot", to: "/copilot", icon: Bot },
+    ],
+  },
 ];
 
-interface SidebarProps {
+export function Sidebar({
+  mobileOpen = false,
+  onClose,
+}: {
   mobileOpen?: boolean;
   onClose?: () => void;
-}
-
-export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
-  const { user, logout } = useAuth();
-
-  const handleNavClick = () => {
-    if (onClose) {
-      onClose();
-    }
-  };
-
+}) {
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
+      {/* Mobile backdrop */}
       {mobileOpen && (
         <div
           onClick={onClose}
@@ -95,11 +84,11 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           )}
         </div>
 
-        <nav className="space-y-6 flex-1">
-          {groups.map((group, i) => (
-            <div key={i}>
+        <nav className="flex-1 space-y-6">
+          {groups.map((group, gIdx) => (
+            <div key={gIdx}>
               {group.label && (
-                <p className="px-2 mb-2 text-xs font-medium uppercase tracking-wider text-ink-500">
+                <p className="px-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-500">
                   {group.label}
                 </p>
               )}
@@ -110,20 +99,17 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                     <li key={item.to}>
                       <NavLink
                         to={item.to}
-                        onClick={handleNavClick}
+                        onClick={onClose}
                         className={({ isActive }) =>
-                          `group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-all duration-150 relative ${
+                          `group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all ${
                             isActive
-                              ? "bg-ink-800 text-white"
-                              : "text-ink-300 hover:bg-ink-900 hover:text-white hover:translate-x-0.5"
+                              ? "bg-ink-800 text-white font-semibold shadow-2xs"
+                              : "text-ink-300 hover:text-white hover:bg-ink-900"
                           }`
                         }
                       >
                         {({ isActive }) => (
                           <>
-                            {isActive && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-full bg-signal-400" />
-                            )}
                             <Icon size={16} className={isActive ? "text-signal-400" : "text-ink-500 group-hover:text-ink-200"} />
                             {item.label}
                           </>
@@ -136,17 +122,6 @@ export function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </div>
           ))}
         </nav>
-
-        <div className="px-2 pt-4 border-t border-ink-800">
-          {user && <p className="text-xs text-ink-500 mb-2 truncate">{user.email}</p>}
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 text-sm text-ink-300 hover:text-white transition-colors"
-          >
-            <LogOut size={14} />
-            Log out
-          </button>
-        </div>
       </aside>
     </>
   );

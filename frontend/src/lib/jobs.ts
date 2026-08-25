@@ -24,6 +24,8 @@ export type JobMatch = {
   salary_max?: number | null;
   stipend_min?: number | null;
   stipend_max?: number | null;
+  posted_days_ago?: number;
+  created_at?: string;
 };
 
 export async function getRecommendedMatches(jobType?: "full_time" | "internship", liveOnly?: boolean): Promise<JobMatch[]> {

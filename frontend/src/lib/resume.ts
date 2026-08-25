@@ -12,6 +12,41 @@ export type ParseabilityOut = {
   word_count: number;
 };
 
+export type ActionVerbOut = {
+  score: number;
+  total_bullets: number;
+  strong_verb_bullets: number;
+  weak_verb_bullets: number;
+  power_verb_rate: number;
+  strong_verbs_found: string[];
+  weak_verbs_found: string[];
+  issues: string[];
+  recommendations: string[];
+};
+
+export type SkillCategoryDomain = {
+  id: string;
+  name: string;
+  items: string[];
+};
+
+export type SkillsDepthOut = {
+  score: number;
+  total_skills: number;
+  verified_skills_count: number;
+  domain_coverage_count: number;
+  categorized_domains: SkillCategoryDomain[];
+  missing_domains: string[];
+  issues: string[];
+  recommendations: string[];
+};
+
+export type ATSStatusOut = {
+  status: "passed" | "review" | "at_risk";
+  label: string;
+  color: string;
+};
+
 export type MasterResumeOut = {
   id: string;
   version: number;
@@ -38,6 +73,10 @@ export type MasterResumeOut = {
     quantification_rate: number;
     issues: string[];
   };
+  action_verbs?: ActionVerbOut;
+  skills_depth?: SkillsDepthOut;
+  strict_ats_score?: number;
+  ats_status?: ATSStatusOut;
   created_at: string;
 };
 

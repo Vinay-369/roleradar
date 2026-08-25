@@ -44,7 +44,7 @@ export function ScoreRing({ value, size = 72, strokeWidth = 6, label }: Props) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-display text-lg" style={{ color }}>{Math.round(value)}</span>
+          <span className="font-display text-lg font-bold" style={{ color }}>{Math.round(value)}</span>
         </div>
       </div>
       {label && <p className="text-xs text-ink-500 mt-1.5 text-center">{label}</p>}

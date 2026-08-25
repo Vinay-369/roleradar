@@ -28,6 +28,10 @@ async def create_master_resume(
     parsed: dict,
     parseability: dict,
     recruiter_impact: dict,
+    action_verbs: dict | None = None,
+    skills_depth: dict | None = None,
+    strict_ats_score: int = 100,
+    ats_status: dict | None = None,
 ) -> dict:
     now = datetime.now(timezone.utc)
     doc = {
@@ -40,6 +44,10 @@ async def create_master_resume(
         "parsed": parsed,
         "parseability": parseability,
         "recruiter_impact": recruiter_impact,
+        "action_verbs": action_verbs,
+        "skills_depth": skills_depth,
+        "strict_ats_score": strict_ats_score,
+        "ats_status": ats_status,
         "created_at": now,
     }
     result = await db[Collections.MASTER_RESUMES].insert_one(doc)

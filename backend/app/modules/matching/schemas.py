@@ -25,3 +25,5 @@ class JobMatchOut(BaseModel):
     salary_max: float | None = None
     stipend_min: int | None = None
     stipend_max: int | None = None
+    posted_days_ago: int | None = 0
+    created_at: str | None = None

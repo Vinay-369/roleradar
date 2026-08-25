@@ -7,18 +7,14 @@ stays out of the AI path (Feature 28) and is fully explainable.
 import re
 from dataclasses import dataclass, field
 
-WEAK_VERBS = {
-    "helped", "assisted", "worked on", "responsible for", "involved in",
-    "participated in", "handled", "was part of", "did", "tasked with",
-}
+from app.modules.resume.parsing.action_verbs import STRONG_ACTION_VERBS, WEAK_PASSIVE_VERBS
 
-STRONG_VERB_HINTS = {
-    "built", "designed", "developed", "implemented", "led", "optimized",
-    "reduced", "increased", "automated", "launched", "architected",
-    "improved", "created", "shipped", "deployed", "migrated", "refactored",
-}
+WEAK_VERBS = WEAK_PASSIVE_VERBS
+STRONG_VERB_HINTS = STRONG_ACTION_VERBS
 
 QUANTIFICATION_RE = re.compile(r"\d+(\.\d+)?\s*(%|percent|x|ms|s\b|hrs?|hours?|users?|\+)?", re.IGNORECASE)
+
+
 
 
 @dataclass
@@ -43,8 +39,9 @@ class RecruiterImpactResult:
 
 def _analyze_bullet(text: str) -> BulletAnalysis:
     lower = text.lower()
-    has_weak = any(lower.startswith(v) or f" {v}" in lower for v in WEAK_VERBS)
-    has_strong = any(lower.startswith(v) for v in STRONG_VERB_HINTS)
+    has_weak = any(lower.startswith(v) or f" {v}" in lower for v in WEAK_PASSIVE_VERBS)
+    first_word = lower.split()[0].rstrip(".,;:") if lower.split() else ""
+    has_strong = first_word in STRONG_ACTION_VERBS or any(lower.startswith(v) for v in STRONG_ACTION_VERBS)
     has_quant = bool(QUANTIFICATION_RE.search(text))
     return BulletAnalysis(
         text=text,
@@ -53,6 +50,7 @@ def _analyze_bullet(text: str) -> BulletAnalysis:
         has_quantification=has_quant,
         word_count=len(text.split()),
     )
+
 
 
 def analyze_recruiter_impact(bullets: list[str]) -> RecruiterImpactResult:
