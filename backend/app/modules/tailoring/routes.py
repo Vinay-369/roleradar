@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -14,6 +15,8 @@ from app.modules.tailoring.schemas import (
     GenerateTailoringRequest,
     TailoredResumeOut,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -65,6 +68,7 @@ async def generate(
     except services.JobNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except Exception as exc:
+        logger.exception("Tailoring generation encountered an error: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Tailoring generation failed: {exc}. Please try again later.",

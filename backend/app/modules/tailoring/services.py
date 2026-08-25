@@ -37,6 +37,7 @@ from app.modules.tailoring import repositories as repo
 from app.modules.tailoring.export import render_text_from_structured
 from app.modules.tailoring.validation import (
     PROTECTED_SECTION_NAMES,
+    _canonicalize_skill,
     compute_deterministic_skill_reorder,
     detect_fabricated_claims,
     extract_technical_terms,
