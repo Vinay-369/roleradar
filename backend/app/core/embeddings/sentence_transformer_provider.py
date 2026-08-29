@@ -11,6 +11,9 @@ Implements the EmbeddingProvider protocol (similarity: text_a, text_b -> float [
 """
 
 
+from typing import Any
+
+
 class SentenceTransformerEmbeddingProvider:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         try:
@@ -27,7 +30,7 @@ class SentenceTransformerEmbeddingProvider:
             self._model = SentenceTransformer(model_name, local_files_only=True)
         except Exception:
             self._model = SentenceTransformer(model_name)
-        self._cache: dict[str, any] = {}
+        self._cache: dict[str, Any] = {}
 
     def _get_embedding(self, text: str):
         cleaned = text.strip().lower()
@@ -45,4 +48,4 @@ class SentenceTransformerEmbeddingProvider:
         if emb_a is None or emb_b is None:
             return 0.0
         score = self._util.cos_sim(emb_a, emb_b).item()
-        return float(max(0.0, min(1.0, score)))
+        return max(0.0, min(1.0, score))
