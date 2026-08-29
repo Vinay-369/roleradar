@@ -25,9 +25,14 @@ backend/test_out.*
 # Storage
 backend/storage/uploads/*
 backend/storage/generated/*
+backend/storage/db/
+backend/storage/*.log
+backend/tmp/
+*.log
 !backend/storage/uploads/.gitkeep
 !backend/storage/generated/.gitkeep
 
 # OS
 .DS_Store
 Thumbs.db
+

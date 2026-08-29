@@ -39,10 +39,10 @@ class MockTailoringAIProvider:
             "changes": [
                 {
                     "change_id": "c1",
-                    "original": "Worked on backend APIs",
+                    "original": "Worked on backend REST APIs with Python, reducing latency by 45%",
                     "proposed": "Architected high-throughput REST APIs with Python, FastAPI, Docker, and MongoDB, reducing latency by 45%",
-                    "reason": "Aligns with target JD technical keywords and adds quantified metrics",
-                    "source_evidence": "Candidate built backend APIs with Python",
+                    "reason": "Aligns with target JD technical keywords and adds strong action verb",
+                    "source_evidence": "Worked on backend REST APIs with Python, reducing latency by 45%",
                     "confidence": 0.95,
                     "status": "PENDING",
                 }
@@ -108,8 +108,8 @@ async def test_finalize_tailoring_persists_quality_audit_and_boosts_metrics(db, 
 
     master_resume_text = (
         "Alex Kumar\nalex@example.com · 9876543210\n\n"
-        "SKILLS\nPython, JavaScript\n\n"
-        "EXPERIENCE\nWorked on backend APIs\n\n"
+        "SKILLS\nPython, FastAPI, Docker, MongoDB, REST APIs, JavaScript\n\n"
+        "EXPERIENCE\nWorked on backend REST APIs with Python, reducing latency by 45%\n\n"
         "EDUCATION\nB.Tech in Computer Science\n"
     )
     from app.modules.resume import repositories as resume_repo
@@ -117,13 +117,13 @@ async def test_finalize_tailoring_persists_quality_audit_and_boosts_metrics(db, 
         db, user_id, version=1, file_name="resume.pdf", file_type="pdf",
         raw_text=master_resume_text,
         parsed={
-            "skills": ["Python", "JavaScript"],
-            "experience_raw": ["Worked on backend APIs"],
+            "skills": ["Python", "FastAPI", "Docker", "MongoDB", "REST APIs", "JavaScript"],
+            "experience_raw": ["Worked on backend REST APIs with Python, reducing latency by 45%"],
         },
         parseability={"score": 85, "issues": [], "detected_sections": [], "missing_standard_sections": [],
                        "contact_info_found": {"email": True, "phone": True}, "likely_multi_column": False, "word_count": 30},
-        recruiter_impact={"score": 50, "bullets_analyzed": 1, "quantified_bullets": 0, "weak_verb_bullets": 1,
-                           "quantification_rate": 0.0, "issues": ["Weak verb"]},
+        recruiter_impact={"score": 50, "bullets_analyzed": 1, "quantified_bullets": 1, "weak_verb_bullets": 1,
+                           "quantification_rate": 1.0, "issues": ["Weak verb"]},
     )
 
     await jobs_services.ensure_seed_loaded(db)
@@ -168,20 +168,23 @@ async def test_get_ats_score_with_version_id_produces_different_results(db, sett
 
     master_text = (
         "Tester Name\ntester@example.com · 9876543210\n\n"
-        "SKILLS\nHTML, CSS\n\n"
+        "SKILLS\nHTML, CSS, Python, FastAPI, Docker, MongoDB, REST APIs\n\n"
         "EXPERIENCE\n"
         "Software Engineer at Acme Corp\n"
-        "• Worked on backend APIs\n\n"
+        "• Worked on backend REST APIs with Python, reducing latency by 45%\n\n"
         "EDUCATION\nB.Sc in CS, 2022\n"
     )
     await resume_repo.create_master_resume(
         db, user_id, version=1, file_name="master.pdf", file_type="pdf",
         raw_text=master_text,
-        parsed={"skills": ["HTML", "CSS"], "experience_raw": ["Worked on backend APIs"]},
+        parsed={
+            "skills": ["HTML", "CSS", "Python", "FastAPI", "Docker", "MongoDB", "REST APIs"],
+            "experience_raw": ["Worked on backend REST APIs with Python, reducing latency by 45%"],
+        },
         parseability={"score": 75, "issues": [], "detected_sections": [], "missing_standard_sections": [],
                        "contact_info_found": {"email": True, "phone": True}, "likely_multi_column": False, "word_count": 25},
-        recruiter_impact={"score": 40, "bullets_analyzed": 1, "quantified_bullets": 0, "weak_verb_bullets": 1,
-                           "quantification_rate": 0.0, "issues": ["Weak verb"]},
+        recruiter_impact={"score": 50, "bullets_analyzed": 1, "quantified_bullets": 1, "weak_verb_bullets": 1,
+                           "quantification_rate": 1.0, "issues": ["Weak verb"]},
     )
 
     await jobs_services.ensure_seed_loaded(db)
@@ -212,10 +215,10 @@ async def test_get_ats_score_with_version_id_produces_different_results(db, sett
     master_ats = await get_ats_score(job_id=job["id"], version_id=None, current_user=user, db=db, settings=settings)
     tailored_ats = await get_ats_score(job_id=job["id"], version_id=version_id, current_user=user, db=db, settings=settings)
 
-    # Proves they produce DIFFERENT results
+    # Proves they produce DIFFERENT and IMPROVED results
     assert master_ats.overall != tailored_ats.overall
-    assert tailored_ats.readability > master_ats.readability
-    assert tailored_ats.keyword_coverage >= master_ats.keyword_coverage
+    assert tailored_ats.overall > master_ats.overall
+    assert tailored_ats.required_skills > master_ats.required_skills
 
 
 @pytest.mark.asyncio
@@ -282,21 +285,24 @@ async def test_finalize_computes_and_persists_tailored_scores_feedback_loop(db, 
 
     master_text = (
         "Alex Kumar\nalex@example.com · 9876543210\n\n"
-        "SKILLS\nJavaScript, CSS\n\n"
+        "SKILLS\nJavaScript, CSS, Python, FastAPI, Docker, MongoDB, REST APIs\n\n"
         "EXPERIENCE\n"
         "Software Engineer at Acme Corp\n"
-        "• Worked on backend APIs\n\n"
+        "• Worked on backend REST APIs with Python, reducing latency by 45%\n\n"
         "EDUCATION\nB.Tech in Computer Science\n"
     )
     from app.modules.resume import repositories as resume_repo
     await resume_repo.create_master_resume(
         db, user_id, version=1, file_name="master.pdf", file_type="pdf",
         raw_text=master_text,
-        parsed={"skills": ["JavaScript", "CSS"], "experience_raw": ["Worked on backend APIs"]},
+        parsed={
+            "skills": ["JavaScript", "CSS", "Python", "FastAPI", "Docker", "MongoDB", "REST APIs"],
+            "experience_raw": ["Worked on backend REST APIs with Python, reducing latency by 45%"],
+        },
         parseability={"score": 80, "issues": [], "detected_sections": [], "missing_standard_sections": [],
                        "contact_info_found": {"email": True, "phone": True}, "likely_multi_column": False, "word_count": 25},
-        recruiter_impact={"score": 45, "bullets_analyzed": 1, "quantified_bullets": 0, "weak_verb_bullets": 1,
-                           "quantification_rate": 0.0, "issues": ["Weak verb"]},
+        recruiter_impact={"score": 45, "bullets_analyzed": 1, "quantified_bullets": 1, "weak_verb_bullets": 1,
+                           "quantification_rate": 1.0, "issues": ["Weak verb"]},
     )
 
     await jobs_services.ensure_seed_loaded(db)
@@ -333,7 +339,7 @@ async def test_finalize_computes_and_persists_tailored_scores_feedback_loop(db, 
 async def test_finalize_warns_visibly_when_tailored_resume_scores_lower_than_master(db, settings):
     """
     Acceptance Criteria 3: If a tailored version somehow scores LOWER than
-    the original master resume (e.g. key technical skills were removed),
+    the original master resume (e.g. action verbs weakened),
     finalize_tailoring() must detect the score drop and attach an explicit
     score_warning on tailored_scores — it must NEVER happen silently.
     """
@@ -373,7 +379,7 @@ async def test_finalize_warns_visibly_when_tailored_resume_scores_lower_than_mas
     jobs = await jobs_repo.find_jobs(db, {}, limit=1)
     job = jobs[0]
 
-    # Mock provider proposing a degradation (replacing comprehensive skills with generic text)
+    # Mock provider proposing a degradation (replacing strong action verb with weak verb while preserving substance)
     class DegradingTailoringProvider:
         async def complete(
             self,
@@ -386,11 +392,11 @@ async def test_finalize_warns_visibly_when_tailored_resume_scores_lower_than_mas
                 "changes": [
                     {
                         "change_id": "c_degrade",
-                        "original": "SKILLS\nPython, FastAPI, Docker, Kubernetes, PostgreSQL, Redis, AWS, CI/CD, React",
-                        "proposed": "SKILLS\nBasic Computer Skills",
-                        "reason": "Simplify skills",
-                        "source_evidence": "Candidate master resume",
-                        "confidence": 0.5,
+                        "original": "Architected distributed microservices platform processing 10M daily transactions",
+                        "proposed": "Assisted with microservices platform processing 10M daily transactions",
+                        "reason": "Simplify action verb",
+                        "source_evidence": "Architected distributed microservices platform processing 10M daily transactions",
+                        "confidence": 0.95,
                         "status": "PENDING",
                     }
                 ]
@@ -419,9 +425,9 @@ async def test_finalize_warns_visibly_when_tailored_resume_scores_lower_than_mas
 @pytest.mark.asyncio
 async def test_finalize_prevents_corrupted_edits_from_entering_final_text(db, settings):
     """
-    Acceptance Criteria 3: If an approved change would corrupt structure or drop
-    quantified metrics, finalize_tailoring() refuses to apply the bad splice,
-    flags the error on the change, and keeps final_text safe.
+    Acceptance Criteria 3: If an edit lacks verified source evidence or drops
+    quantified metrics, Truth Guard flags it as NEEDS_USER_INPUT, refuses
+    direct approval, and keeps final_text safe.
     """
     import json
     user, _ = await auth_services.register_user(db, settings, "corrupt_test@example.com", "supersecret1", "Tester", None)
@@ -480,11 +486,11 @@ async def test_finalize_prevents_corrupted_edits_from_entering_final_text(db, se
     version = await tailoring_services.generate_tailoring(db, ai_service, user_id, job["id"])
     version_id = str(version["_id"])
 
-    await tailoring_services.set_change_status(db, user_id, version_id, "c_strip_metric", ChangeStatus.APPROVED)
+    # Truth Guard marks it NEEDS_USER_INPUT and blocks direct approval
+    with pytest.raises(tailoring_services.InvalidChangeStatusError):
+        await tailoring_services.set_change_status(db, user_id, version_id, "c_strip_metric", ChangeStatus.APPROVED)
+
     finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id, settings=settings)
 
-    # final_text preserved the metric and rejected the destructive splice
+    # final_text preserved the metric and excluded the unapproved splice
     assert "reducing cloud bill by 35%" in finalized["final_text"]
-    change = finalized["changes"][0]
-    assert change["applied_safely"] is False
-    assert "quantified metric" in change["validation_error"]

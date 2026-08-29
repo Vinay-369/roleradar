@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Check,
-  X,
   ShieldCheck,
   Sparkles,
   Download,
@@ -18,7 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
-  Layers,
+  Eye,
 } from "lucide-react";
 import {
   generateTailoring,
@@ -194,29 +192,12 @@ function ATSScorePanel({ jobId, versionId }: { jobId: string; versionId?: string
 }
 
 function ChangeCard({
-  versionId,
   change,
-  onUpdated,
 }: {
   versionId: string;
   change: Change;
   onUpdated: () => void;
 }) {
-  const queryClient = useQueryClient();
-  const toast = useToast();
-
-  const mutation = useMutation({
-    mutationFn: (status: "APPROVED" | "REJECTED") =>
-      updateChangeStatus(versionId, change.change_id, status),
-    onSuccess: (_, status) => {
-      queryClient.invalidateQueries({ queryKey: ["tailoring", versionId] });
-      queryClient.invalidateQueries({ queryKey: ["ats-score"] });
-      onUpdated();
-      toast.success(status === "APPROVED" ? "Change approved!" : "Change excluded.");
-    },
-    onError: () => toast.error("Failed to update change status."),
-  });
-
   const isReorder = change.change_type === "SKILL_REORDER";
   const sectionLabel = change.section || "EXPERIENCE";
 
@@ -289,56 +270,7 @@ function ChangeCard({
         </p>
       </div>
 
-      <p className="text-xs text-ink-600 mb-3"><span className="font-bold text-ink-800">Why:</span> {change.reason}</p>
-
-      {change.status === "APPROVED" && (
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-ink-50">
-          <span className="text-xs font-bold text-signal-700 flex items-center gap-1.5">
-            <Check size={14} className="text-signal-600" /> Approved for Final Export
-          </span>
-          <button
-            onClick={() => mutation.mutate("REJECTED")}
-            disabled={mutation.isPending}
-            className="text-xs text-ink-500 hover:text-alert-600 hover:underline font-medium"
-          >
-            Undo / Exclude
-          </button>
-        </div>
-      )}
-
-      {change.status === "REJECTED" && (
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-ink-50">
-          <span className="text-xs font-bold text-alert-600 flex items-center gap-1.5">
-            <X size={14} className="text-alert-600" /> Excluded from Export
-          </span>
-          <button
-            onClick={() => mutation.mutate("APPROVED")}
-            disabled={mutation.isPending}
-            className="text-xs text-signal-600 hover:text-signal-700 hover:underline font-semibold"
-          >
-            Re-approve
-          </button>
-        </div>
-      )}
-
-      {change.status !== "APPROVED" && change.status !== "REJECTED" && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => mutation.mutate("APPROVED")}
-            disabled={mutation.isPending}
-            className="rounded-lg bg-signal-500 hover:bg-signal-600 text-white px-3.5 py-1.5 text-xs font-semibold disabled:opacity-60 shadow-xs transition-colors"
-          >
-            Approve Change
-          </button>
-          <button
-            onClick={() => mutation.mutate("REJECTED")}
-            disabled={mutation.isPending}
-            className="rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-700 px-3.5 py-1.5 text-xs font-semibold disabled:opacity-60 transition-colors"
-          >
-            Exclude
-          </button>
-        </div>
-      )}
+      <p className="text-xs text-ink-600"><span className="font-bold text-ink-800">Why:</span> {change.reason}</p>
     </div>
   );
 }
@@ -407,39 +339,19 @@ export function TailorReview() {
     queryClient.invalidateQueries({ queryKey: ["ats-score"] });
   }
 
-  const handleApproveAllHighConfidence = async () => {
+  const handleApplyAllChanges = async () => {
     if (!version?.id) return;
     setBatchApproving(true);
     try {
-      const highConfidence = version.changes.filter(
-        (c) => c.status === "PENDING" && c.confidence >= 0.85
-      );
-      for (const c of highConfidence) {
+      const pendingChanges = version.changes.filter((c) => c.status === "PENDING");
+      for (const c of pendingChanges) {
         await updateChangeStatus(version.id, c.change_id, "APPROVED");
       }
       refresh();
-      toast.success(`Approved ${highConfidence.length} high-confidence change(s)!`);
+      await finalize.mutateAsync(version.id);
+      toast.success("Applied verified changes and finalized resume. Unverified changes were excluded.");
     } catch {
-      toast.error("Failed batch approval.");
-    } finally {
-      setBatchApproving(false);
-    }
-  };
-
-  const handleApproveSection = async (sectionName: string) => {
-    if (!version?.id) return;
-    setBatchApproving(true);
-    try {
-      const sectionChanges = version.changes.filter(
-        (c) => (c.section || "EXPERIENCE").toUpperCase() === sectionName.toUpperCase() && c.status === "PENDING"
-      );
-      for (const c of sectionChanges) {
-        await updateChangeStatus(version.id, c.change_id, "APPROVED");
-      }
-      refresh();
-      toast.success(`Approved all pending changes in ${sectionName}!`);
-    } catch {
-      toast.error(`Failed to approve section ${sectionName}.`);
+      toast.error("Failed to apply changes.");
     } finally {
       setBatchApproving(false);
     }
@@ -447,17 +359,39 @@ export function TailorReview() {
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>("modern");
 
-  const downloadFile = async (url: string, filename: string) => {
+  const previewPdf = async (url: string) => {
     try {
       const res = await apiClient.get(url, { responseType: "blob" });
-      const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 120000);
+    } catch {
+      toast.error("Failed to preview PDF.");
+    }
+  };
+
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const isPdf = filename.toLowerCase().endsWith(".pdf");
+      const mimeType = isPdf
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const res = await apiClient.get(url, { responseType: "blob" });
+      const blob = new Blob([res.data], { type: mimeType });
+      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(link);
+      // Keep blob URL alive so browser download shelf / viewer has time to access the file
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 60000);
       toast.success(`Downloaded ${filename}`);
     } catch {
       toast.error("Download failed. Please try again.");
@@ -491,9 +425,6 @@ export function TailorReview() {
   }
 
   if (!version) return <p className="text-ink-500 text-sm">Loading…</p>;
-
-  const pendingCount = version.changes.filter((c) => c.status === "PENDING" || c.status === "NEEDS_USER_INPUT").length;
-  const sectionsAvailable = Array.from(new Set(version.changes.map((c) => (c.section || "EXPERIENCE").toUpperCase())));
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -589,35 +520,6 @@ export function TailorReview() {
         </div>
       )}
 
-      {/* Section Quick Batch Approval Bar */}
-      {!version.is_finalized && pendingCount > 0 && (
-        <div className="rounded-xl border border-ink-100 bg-ink-50/60 p-3.5 flex items-center justify-between flex-wrap gap-2 mb-6">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-ink-800">
-            <Layers size={14} className="text-signal-600" />
-            <span>Section Batch Approvals:</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {sectionsAvailable.map((sec) => {
-              const count = version.changes.filter(
-                (c) => (c.section || "EXPERIENCE").toUpperCase() === sec && c.status === "PENDING"
-              ).length;
-              if (count === 0) return null;
-              return (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => handleApproveSection(sec)}
-                  disabled={batchApproving}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-ink-200 hover:border-signal-500 hover:text-signal-700 text-ink-700 text-xs font-semibold transition-all shadow-2xs disabled:opacity-50"
-                >
-                  Approve All {sec} ({count})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Action Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -625,20 +527,20 @@ export function TailorReview() {
             Proposed Changes ({version.changes.length})
           </h2>
           <p className="text-xs text-ink-500">
-            {version.changes.filter((c) => c.status === "APPROVED").length} Approved • {pendingCount} Pending • {version.changes.filter((c) => c.status === "REJECTED").length} Excluded
+            All changes are verified against your master resume with zero fabrication.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {!version.is_finalized && pendingCount > 0 && (
+          {!version.is_finalized && (
             <button
               type="button"
-              onClick={handleApproveAllHighConfidence}
-              disabled={batchApproving}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-xs font-bold transition-colors disabled:opacity-60"
+              onClick={handleApplyAllChanges}
+              disabled={batchApproving || finalize.isPending}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-500 hover:bg-signal-600 text-white text-xs font-bold transition-colors shadow-xs disabled:opacity-60"
             >
-              <Sparkles size={12} />
-              <span>{batchApproving ? "Approving…" : "Approve High-Confidence"}</span>
+              <Sparkles size={13} />
+              <span>{batchApproving || finalize.isPending ? "Applying All Changes…" : "Apply All Changes"}</span>
             </button>
           )}
           <ResumeDiffModal version={version} />
@@ -655,11 +557,12 @@ export function TailorReview() {
       {/* Finalize CTA & Post-Finalize Results */}
       {!version.is_finalized ? (
         <button
-          onClick={() => version.id && finalize.mutate(version.id)}
-          disabled={finalize.isPending}
-          className="rounded-lg bg-signal-500 hover:bg-signal-600 text-white px-5 py-2.5 text-xs font-bold shadow-xs disabled:opacity-60 transition-colors"
+          onClick={handleApplyAllChanges}
+          disabled={batchApproving || finalize.isPending}
+          className="rounded-lg bg-signal-500 hover:bg-signal-600 text-white px-5 py-2.5 text-xs font-bold shadow-xs disabled:opacity-60 transition-colors flex items-center gap-1.5"
         >
-          {finalize.isPending ? "Finalizing & Verifying 1-Page Layout…" : pendingCount > 0 ? `Finalize (${pendingCount} pending will be excluded)` : "Finalize tailored resume"}
+          <Sparkles size={13} />
+          <span>{batchApproving || finalize.isPending ? "Applying All Changes & Finalizing…" : "Apply All Changes"}</span>
         </button>
       ) : (
         <div className="space-y-4 animate-fade-in-up">
@@ -746,15 +649,25 @@ export function TailorReview() {
             </div>
             <div className="flex flex-wrap gap-2.5">
               <button
+                type="button"
+                onClick={() => previewPdf(`/tailoring/${version.id}/export/pdf?template=${selectedTemplate}`)}
+                className="rounded-lg bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors"
+              >
+                <Eye size={13} />
+                <span>Preview PDF in Browser</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => downloadFile(`/tailoring/${version.id}/export/pdf?template=${selectedTemplate}`, `resume_${version.company}_${selectedTemplate}.pdf`)}
-                className="rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-5 py-2.5 text-xs font-bold shadow-xs flex items-center gap-1.5"
+                className="rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-5 py-2.5 text-xs font-bold shadow-xs flex items-center gap-1.5 transition-colors"
               >
                 <Download size={13} />
                 <span>Download PDF ({TEMPLATES.find((t) => t.id === selectedTemplate)?.label})</span>
               </button>
               <button
+                type="button"
                 onClick={() => downloadFile(`/tailoring/${version.id}/export/docx?template=${selectedTemplate}`, `resume_${version.company}_${selectedTemplate}.docx`)}
-                className="rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-800 px-5 py-2.5 text-xs font-bold flex items-center gap-1.5"
+                className="rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-800 px-5 py-2.5 text-xs font-bold flex items-center gap-1.5 transition-colors"
               >
                 <Download size={13} />
                 <span>Download DOCX</span>

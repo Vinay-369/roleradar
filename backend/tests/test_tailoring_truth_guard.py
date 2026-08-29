@@ -18,6 +18,11 @@ from app.modules.auth import services as auth_services
 from app.modules.jobs import services as jobs_services
 from app.modules.resume import services as resume_services
 from app.modules.tailoring import services as tailoring_services
+from app.modules.tailoring.validation import (
+    detect_dropped_source_skills,
+    detect_unsupported_metrics,
+    has_verbatim_source_evidence,
+)
 
 
 @pytest.fixture
@@ -110,7 +115,7 @@ async def test_finalize_only_applies_approved_changes(db, settings):
         "app.core.ai_service.schemas", fromlist=["ChangeStatus"]
     ).ChangeStatus.APPROVED)
 
-    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id)
+    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id, settings=settings)
 
     assert "Engineered a high-throughput REST API" in finalized["final_text"]
     # The unapproved, unevidenced fabrication must never appear, even
@@ -133,7 +138,7 @@ async def test_finalize_excludes_pending_changes_by_default(db, settings):
     version_id = str(version["_id"])
 
     # No approvals at all — finalize immediately.
-    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id)
+    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id, settings=settings)
 
     assert "Engineered a high-throughput REST API" not in finalized["final_text"]
     assert finalized["final_text"] == (
@@ -161,9 +166,42 @@ async def test_needs_user_input_change_cannot_be_silently_approved_into_final(db
 
     from app.core.ai_service.schemas import ChangeStatus
     await tailoring_services.set_change_status(db, user_id, version_id, "c2", ChangeStatus.REJECTED)
-    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id)
+    finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id, settings=settings)
 
     assert "Expert in Kubernetes" not in finalized["final_text"]
+
+
+def test_truth_guard_flags_metrics_added_by_a_rewrite():
+    original = "Built a FastAPI service for internal reporting."
+    proposed = "Engineered a FastAPI service that reduced reporting time by 65%."
+
+    assert detect_unsupported_metrics(original, proposed) == ["65%"]
+
+
+def test_truth_guard_flags_dropped_skills_and_generic_evidence():
+    original = "Developed an AI-powered Streamlit application using OpenCV and Python."
+    proposed = "Architected responsive full-stack features using Java."
+
+    dropped = detect_dropped_source_skills(original, proposed)
+    assert "opencv" in dropped
+    assert "python" in dropped
+    assert has_verbatim_source_evidence(original, "Master resume project") is False
+    assert has_verbatim_source_evidence(original, "using OpenCV and Python") is True
+
+
+@pytest.mark.asyncio
+async def test_needs_user_input_change_cannot_be_approved_without_regeneration(db, settings):
+    user_id, job_id = await _setup_user_with_resume_and_job(db, settings)
+    ai_service = AIService(settings)
+    ai_service._provider = FakeTailoringProvider()
+
+    version = await tailoring_services.generate_tailoring(db, ai_service, user_id, job_id)
+    from app.core.ai_service.schemas import ChangeStatus
+
+    with pytest.raises(tailoring_services.InvalidChangeStatusError):
+        await tailoring_services.set_change_status(
+            db, user_id, str(version["_id"]), "c2", ChangeStatus.APPROVED
+        )
 
 
 @pytest.mark.asyncio
@@ -290,4 +328,3 @@ async def test_delete_tailored_version_removes_it_completely(db, settings):
     # Deleting again raises VersionNotFoundError
     with pytest.raises(tailoring_services.VersionNotFoundError):
         await tailoring_services.delete_tailored_version(db, user_id, version_id)
-

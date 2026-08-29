@@ -150,15 +150,12 @@ class AIService:
         # 1. Tailor Summary
         summary_result = None
         if summary and len(summary.strip()) > 10:
-            proposed_summary = (
-                f"Aspiring {target_role} with strong technical foundation in {', '.join(top_skills[:3]) if top_skills else 'software development'}. "
-                f"Passionate about building scalable, high-performance systems and contributing to innovative engineering initiatives{comp_context}."
-            )
+            orig_sum = summary.strip()
             summary_result = SummaryTailoring(
-                original=summary.strip(),
-                proposed=proposed_summary,
-                reason=f"Targets {target_role} and highlights top JD matching skills ({', '.join(top_skills[:3])}).",
-                source_evidence="Master Resume verified summary and core skills.",
+                original=orig_sum,
+                proposed=orig_sum,
+                reason=f"Retains verified professional summary aligned with {target_role}.",
+                source_evidence=orig_sum,
                 confidence=0.95,
                 status=ChangeStatus.PENDING,
                 change_id="chg_summary",
@@ -171,69 +168,60 @@ class AIService:
             additions=[],
         )
 
-        # 3. Exhaustive Experience Bullet Decisions
+        # 3. Exhaustive Experience Bullet Decisions (Grounding & Metric Preserving)
         exp_results = []
+        strong_verbs = ["Architected", "Engineered", "Implemented", "Spearheaded", "Optimized", "Scaled"]
         for idx, bullet in enumerate(experience):
             orig_b = bullet.strip()
             if not orig_b:
                 continue
-            if idx == 0:
-                proposed_b = f"Spearheaded core backend modules using {', '.join(top_skills[:2]) if top_skills else 'modern frameworks'}, improving system reliability and reducing processing latency by 25%."
-                exp_results.append(BulletRewrite(
-                    bullet_index=idx,
-                    original=orig_b,
-                    proposed=proposed_b,
-                    action="REWRITE",
-                    reason=f"Aligns technical vocabulary with {target_role} JD requirements and highlights quantified impact.",
-                    source_evidence="Master Resume work experience background.",
-                    confidence=0.93,
-                    status=ChangeStatus.PENDING,
-                    change_id=f"chg_exp_{idx}",
-                ))
+            chosen_verb = strong_verbs[idx % len(strong_verbs)]
+            words = orig_b.split()
+            if words and not words[0].lower().startswith(("architect", "engineer", "implement", "spearhead", "optimize", "scale", "build")):
+                refined_b = f"{chosen_verb} " + " ".join(words[1:]) if len(words) > 1 else orig_b
             else:
-                exp_results.append(BulletRewrite(
-                    bullet_index=idx,
-                    original=orig_b,
-                    proposed=orig_b,
-                    action="KEEP",
-                    reason="Bullet already demonstrates verified technical achievement.",
-                    source_evidence="Master Resume work experience background.",
-                    confidence=0.98,
-                    status=ChangeStatus.PENDING,
-                    change_id=f"chg_exp_{idx}",
-                ))
+                refined_b = orig_b
 
-        # 4. Exhaustive Project Bullet Decisions
+            exp_results.append(BulletRewrite(
+                bullet_index=idx,
+                original=orig_b,
+                proposed=refined_b,
+                action="REWRITE" if refined_b != orig_b else "KEEP",
+                reason=f"Enhances opening action verb for {target_role} while strictly preserving all source metrics and technologies.",
+                source_evidence=orig_b,
+                confidence=0.95,
+                status=ChangeStatus.PENDING,
+                change_id=f"chg_exp_{idx}",
+            ))
+
+        # 4. Exhaustive Project Bullet Decisions (Grounding & Metric Preserving)
         proj_results = []
+        proj_verbs = ["Engineered", "Developed", "Architected", "Deployed", "Built"]
         for idx, bullet in enumerate(projects):
             orig_b = bullet.strip()
             if not orig_b:
                 continue
-            if idx == 0:
-                proposed_b = f"Architected and deployed responsive full-stack features utilizing {top_skills[0] if top_skills else 'modern architecture'}, optimizing database queries and backend throughput."
-                proj_results.append(BulletRewrite(
-                    bullet_index=idx,
-                    original=orig_b,
-                    proposed=proposed_b,
-                    action="REWRITE",
-                    reason=f"Injects strong technical action verbs and emphasizes {top_skills[0] if top_skills else 'core technology'}.",
-                    source_evidence="Master Resume verified project implementation.",
-                    confidence=0.91,
-                    status=ChangeStatus.PENDING,
-                    change_id=f"chg_proj_{idx}",
-                ))
+            chosen_verb = proj_verbs[idx % len(proj_verbs)]
+            lines = orig_b.split("\n")
+            last_line = lines[-1].strip()
+            words = last_line.split()
+            if words and not words[0].lower().startswith(("architect", "engineer", "implement", "spearhead", "optimize", "scale", "build", "develop")):
+                refined_last = f"{chosen_verb} " + " ".join(words[1:]) if len(words) > 1 else last_line
             else:
-                proj_results.append(BulletRewrite(
-                    bullet_index=idx,
-                    original=orig_b,
-                    proposed=orig_b,
-                    action="KEEP",
-                    reason="Maintains verified technical implementation details.",
-                    source_evidence="Master Resume verified project implementation.",
-                    confidence=0.98,
-                    status=ChangeStatus.PENDING,
-                    change_id=f"chg_proj_{idx}",
-                ))
+                refined_last = last_line
+            refined_b = "\n".join(lines[:-1] + [refined_last]) if len(lines) > 1 else refined_last
+
+            proj_results.append(BulletRewrite(
+                bullet_index=idx,
+                original=orig_b,
+                proposed=refined_b,
+                action="REWRITE" if refined_b != orig_b else "KEEP",
+                reason=f"Applies strong technical action verb while maintaining verified project substance.",
+                source_evidence=orig_b,
+                confidence=0.95,
+                status=ChangeStatus.PENDING,
+                change_id=f"chg_proj_{idx}",
+            ))
 
         sec_changed = ["SKILLS"]
         if summary_result and summary_result.proposed != summary_result.original:

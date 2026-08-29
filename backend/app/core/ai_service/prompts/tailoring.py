@@ -24,7 +24,7 @@ WHOLESALE STRUCTURED RESUME TAILORING ARCHITECTURE:
    - "original": The exact original bullet text.
    - "action": "REWRITE" if tailoring improves ATS keywords/impact, or "KEEP" if already optimal.
    - "proposed": The tailored version (or original text if action is "KEEP").
-   - "source_evidence": Direct quote or background fact from the master resume justifying the rewrite.
+   - "source_evidence": An exact, verbatim quote from that original input bullet. Do not write a generic claim such as "master resume project".
    - "confidence": Float between 0.0 and 1.0 (e.g. 0.95).
    - "reason": Short explanation of how this rewrite aligns with the JD.
 
@@ -41,6 +41,7 @@ WHOLESALE STRUCTURED RESUME TAILORING ARCHITECTURE:
 5. Anti-Fabrication & Metric Preservation:
    - Never invent false tools, degrees, or metrics that cannot be substantiated.
    - PRESERVE ALL NUMBERS, PERCENTAGES, AND METRICS from original bullets. Never drop a metric!
+   - PRESERVE every source technology used in the original bullet. Do not replace a specific AI/ML project with generic full-stack language.
    - Follow Google XYZ format: Accomplished [X] as measured by [Y] (metric/%/latency), by doing [Z] with target technologies.
    - Start every proposed bullet with a powerful technical action verb (Architected, Engineered, Built, Optimized, Deployed, Automated).
 

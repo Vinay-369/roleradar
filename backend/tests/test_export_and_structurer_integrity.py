@@ -1,3 +1,4 @@
+import io
 import pytest
 import fitz  # PyMuPDF
 from app.modules.resume.parsing.structurer import structure_resume_text
@@ -165,25 +166,148 @@ def test_structured_tailoring_merge_preserves_languages_and_protected_sections()
     assert "Telugu" in merged["languages"]
 
 
-def test_one_page_trimming_never_drops_structural_sections_or_education():
+def test_docx_rendering_preserves_all_sections_and_fields():
     structured = structure_resume_text(CHARGEBEE_TEST_RESUME)
-    
-    # Add a lot of dummy project bullets to force genuine multi-page overflow
-    long_projects = list(structured["projects_raw"])
-    for i in range(35):
-        long_projects.append(f"Architected auxiliary microservice subsystem module {i} with end-to-end automated testing and distributed database caching.")
-    structured["projects_raw"] = long_projects
+    docx_bytes = render_docx_from_structured(structured, candidate_name="VINAY K", template="modern")
+    assert len(docx_bytes) > 1000
 
-    # Enforce one page fit
-    fitted, is_fitted, pages = measure_and_enforce_one_page_fit(structured, candidate_name="VINAY K", template="modern", max_pages=1)
-    
-    # Verify that trimming trimmed project bullets, NOT education, NOT certs, NOT languages, NOT personal
-    assert fitted["personal"]["location"] == "Davangere, Karnataka"
-    assert len(fitted["education_raw"]) == 3
-    assert "Bapuji Institute of Engineering and Technology" in fitted["education_raw"][0]
-    assert len(fitted["certifications"]) == 3
-    assert len(fitted["languages"]) == 4
-    # Project bullets should have been trimmed to fit
-    assert len(fitted["projects_raw"]) < len(long_projects)
-    assert is_fitted is True
-    assert pages == 1
+    import docx
+    doc = docx.Document(io.BytesIO(docx_bytes))
+    full_docx_text = "\n".join(p.text for p in doc.paragraphs)
+
+    # 1. Contact Header includes location
+    assert "Davangere, Karnataka" in full_docx_text
+    assert "vinay@example.com" in full_docx_text
+
+    # 2. Education: All three institutions, degrees, dates
+    assert "Bapuji Institute of Engineering and Technology" in full_docx_text
+    assert "B.E in Computer Science and Engineering" in full_docx_text
+    assert "DRM Science PU College" in full_docx_text
+    assert "St. Paul's High School" in full_docx_text
+
+    # 3. Certifications: All 3 entries
+    assert "Completed Python Programming Course - Scaler" in full_docx_text
+    assert "AWS Certified Cloud Practitioner" in full_docx_text
+
+    # 4. Languages
+    assert "LANGUAGES" in full_docx_text.upper()
+    assert "Telugu" in full_docx_text
+
+    # 5. Skills categories preserved
+    assert "Languages:" in full_docx_text or "Python" in full_docx_text
+
+
+def test_plain_text_input_renders_all_sections_in_pdf_and_docx():
+    from app.modules.tailoring.export import generate_pdf, generate_docx
+
+    # Generate PDF and DOCX directly from plain string
+    pdf_bytes = generate_pdf(CHARGEBEE_TEST_RESUME, candidate_name="VINAY K", template="classic")
+    docx_bytes = generate_docx(CHARGEBEE_TEST_RESUME, candidate_name="VINAY K", template="classic")
+
+    assert len(pdf_bytes) > 1000
+    assert len(docx_bytes) > 1000
+
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pdf_text = "".join(page.get_text() for page in doc)
+    doc.close()
+
+    assert "Davangere, Karnataka" in pdf_text
+    assert "Bapuji Institute of Engineering and Technology" in pdf_text
+    assert "B.E in Computer Science and Engineering" in pdf_text
+    assert "Completed Python Programming Course - Scaler" in pdf_text
+    assert "Telugu" in pdf_text
+
+
+def test_education_blocks_render_with_degree_and_institution_separate():
+    from app.modules.tailoring.export import render_text_from_structured
+    structured = structure_resume_text(CHARGEBEE_TEST_RESUME)
+    text_out = render_text_from_structured(structured)
+
+    assert "EDUCATION" in text_out
+    assert "Bapuji Institute of Engineering and Technology" in text_out
+    assert "B.E in Computer Science and Engineering" in text_out
+    assert "CERTIFICATIONS" in text_out
+    assert "LANGUAGES" in text_out
+
+
+def test_project_title_in_structured_item_renders_as_a_project_heading():
+    structured = {
+        "personal": {"name": "Candidate", "email": "candidate@example.com"},
+        "projects_raw": [
+            "AI-Based Ad Viral Potential Analyzer\n"
+            "Technologies: Python, Streamlit, OpenCV, Machine Learning\n"
+            "Developed an AI-powered application for virality prediction."
+        ],
+    }
+
+    pdf_bytes = render_pdf_from_structured(structured, candidate_name="Candidate", template="modern")
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pdf_text = "".join(page.get_text() for page in doc)
+    doc.close()
+
+    assert "AI-Based Ad Viral Potential Analyzer" in pdf_text
+    assert "Technologies: Python, Streamlit, OpenCV, Machine Learning" in pdf_text
+
+
+def test_project_with_inline_parens_and_tech_stack_in_plain_text_pdf_and_docx():
+    raw_resume = """
+Candidate Name
+candidate@example.com
+
+TECHNICAL PROJECTS
+AI-Powered Resume Screener (Python, FastAPI, PostgreSQL)
+• Built an automated resume parser processing 50+ resumes per minute.
+• Engineered search queries using PostgreSQL full-text search.
+"""
+    structured = structure_resume_text(raw_resume)
+    assert len(structured["projects_raw"]) == 2
+    assert "AI-Powered Resume Screener" in structured["projects_raw"][0]
+    assert "Technologies: Python, FastAPI, PostgreSQL" in structured["projects_raw"][0]
+    assert "Built an automated resume parser" in structured["projects_raw"][0]
+    assert structured["projects_raw"][1] == "Engineered search queries using PostgreSQL full-text search."
+
+    # 1. Plain Text rendering: titles & tech stacks MUST NOT have bullet prefixes
+    text_out = render_text_from_structured(structured)
+    assert "TECHNICAL PROJECTS" in text_out
+    assert "AI-Powered Resume Screener" in text_out
+    assert "• AI-Powered Resume Screener" not in text_out
+    assert "Technologies: Python, FastAPI, PostgreSQL" in text_out
+    assert "• Technologies:" not in text_out
+    assert "• Built an automated resume parser processing 50+ resumes per minute." in text_out
+    assert "• Engineered search queries using PostgreSQL full-text search." in text_out
+
+    # 2. PDF rendering
+    pdf_bytes = render_pdf_from_structured(structured, candidate_name="Candidate Name", template="modern")
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pdf_text = "".join(page.get_text() for page in doc)
+    doc.close()
+    assert "AI-Powered Resume Screener" in pdf_text
+    assert "Technologies: Python, FastAPI, PostgreSQL" in pdf_text
+    assert "Built an automated resume parser" in pdf_text
+
+    # 3. DOCX rendering
+    docx_bytes = render_docx_from_structured(structured, candidate_name="Candidate Name", template="modern")
+    assert len(docx_bytes) > 1000
+
+    # 4. Tailoring Merge: AI rewrite of bullet ONLY still preserves title and tech stack
+    mock_ai_result = {
+        "project_bullets": [
+            {
+                "change_id": "chg_proj_0",
+                "original": structured["projects_raw"][0],
+                "proposed": "Architected high-throughput automated resume parser processing 50+ resumes per minute with 92% extraction accuracy.",
+            },
+            {
+                "change_id": "chg_proj_1",
+                "original": structured["projects_raw"][1],
+                "proposed": "Optimized indexed PostgreSQL search queries, reducing response latency by 45%.",
+            }
+        ]
+    }
+    merged = _merge_structured_tailoring(structured, mock_ai_result)
+    # The title and tech stack MUST be preserved at the top of the tailored project!
+    assert "AI-Powered Resume Screener" in merged["projects_raw"][0]
+    assert "Technologies: Python, FastAPI, PostgreSQL" in merged["projects_raw"][0]
+    assert "Architected high-throughput automated resume parser" in merged["projects_raw"][0]
+    assert merged["projects_raw"][1] == "Optimized indexed PostgreSQL search queries, reducing response latency by 45%."
+

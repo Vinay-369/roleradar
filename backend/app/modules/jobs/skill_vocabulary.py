@@ -118,7 +118,8 @@ KNOWN_SKILLS: list[str] = [
     # AI, ML & Data Science
     "Machine Learning", "Deep Learning", "Natural Language Processing", "Computer Vision", "Large Language Models",
     "Generative AI", "Retrieval-Augmented Generation", "LangChain", "LlamaIndex", "PyTorch", "TensorFlow", "Keras",
-    "scikit-learn", "XGBoost", "LightGBM", "Pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn",
+    "scikit-learn", "Random Forest", "XGBoost", "LightGBM", "Pandas", "NumPy", "SciPy", "Matplotlib", "Seaborn",
+    "OpenCV", "Streamlit",
     "Hugging Face Transformers", "Vector Databases", "Pinecone", "Qdrant", "ChromaDB", "Milvus", "Weaviate", "FAISS",
     "ONNX", "MLflow", "Ray", "Weights & Biases", "Prompt Engineering", "Fine-Tuning", "Reinforcement Learning",
 
@@ -217,4 +218,3 @@ def extract_skills_from_text(text: str) -> list[str]:
 
     # Return sorted list for deterministic results
     return sorted(found_skills)
-

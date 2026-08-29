@@ -34,13 +34,21 @@ from app.modules.resume.parsing.skills_depth import analyze_skills_depth
 from app.modules.resume.parsing.structurer import structure_resume_text
 from app.modules.resume.services import compute_strict_ats_benchmark
 from app.modules.tailoring import repositories as repo
-from app.modules.tailoring.export import render_text_from_structured
+from app.modules.tailoring.export import (
+    render_text_from_structured,
+    _is_project_title_line,
+    _is_tech_stack_line,
+    _clean_title_and_date,
+)
 from app.modules.tailoring.validation import (
     PROTECTED_SECTION_NAMES,
     _canonicalize_skill,
     compute_deterministic_skill_reorder,
     detect_fabricated_claims,
+    detect_dropped_source_skills,
+    detect_unsupported_metrics,
     extract_technical_terms,
+    has_verbatim_source_evidence,
     is_target_in_protected_section,
     measure_and_enforce_one_page_fit,
     validate_protected_sections,
@@ -72,6 +80,30 @@ class InvalidChangeStatusError(Exception):
 def _extract_quantified_metrics(text: str) -> list[str]:
     """Extract numbers, percentages, multipliers, currency metrics."""
     return re.findall(r"(?:\b\d+(?:\.\d+)?%?|\$\d+(?:\.\d+)?(?:k|m|b)?|\b\d+[xXkKMmB]\b)", text)
+
+
+def _truth_guard_warning(
+    original: str,
+    proposed: str,
+    jd_text: str,
+    master_skills: list[str],
+    source_evidence: str = "",
+    require_verbatim_evidence: bool = False,
+) -> str | None:
+    """Reject new tools and measurable outcomes that lack source evidence."""
+    unsupported_terms = detect_fabricated_claims(original, proposed, jd_text, master_skills)
+    unsupported_metrics = detect_unsupported_metrics(original, proposed)
+    dropped_skills = detect_dropped_source_skills(original, proposed)
+    messages: list[str] = []
+    if unsupported_terms:
+        messages.append(f"Technical competency ({', '.join(unsupported_terms)}) not found in master resume background")
+    if unsupported_metrics:
+        messages.append(f"Measurable claim ({', '.join(unsupported_metrics)}) was not present in the source bullet")
+    if dropped_skills:
+        messages.append(f"Source competency ({', '.join(dropped_skills)}) was removed from the rewritten bullet")
+    if require_verbatim_evidence and not has_verbatim_source_evidence(original, source_evidence):
+        messages.append("Source evidence must quote the original bullet before this rewrite can be applied")
+    return ". ".join(messages) if messages else None
 
 
 def _validate_and_apply_change(text: str, original: str, proposed: str, change_id: str = "") -> tuple[str, bool, str | None]:
@@ -180,10 +212,23 @@ def _merge_structured_tailoring(
         merged_proj = []
         for idx, item in enumerate(proj_rewrites):
             cid = item.get("change_id") or f"chg_proj_{idx}"
+            orig_str = item.get("original", "")
             if approved_change_ids is None or cid in approved_change_ids:
-                merged_proj.append(item.get("proposed", item.get("original", "")))
+                prop_str = item.get("proposed", orig_str)
             else:
-                merged_proj.append(item.get("original", ""))
+                prop_str = orig_str
+
+            # Preserve project title and tech stack header lines from original if not present in proposed
+            orig_sub_lines = [l.strip() for l in orig_str.split("\n") if l.strip()]
+            if len(orig_sub_lines) > 1:
+                header_lines = [
+                    l for l in orig_sub_lines[:-1]
+                    if _is_project_title_line(l) or _is_tech_stack_line(l) or _clean_title_and_date(l)
+                ]
+                if header_lines and not any(h in prop_str for h in header_lines):
+                    prop_str = "\n".join(header_lines + [prop_str])
+
+            merged_proj.append(prop_str)
         merged["projects_raw"] = merged_proj
     else:
         merged["projects_raw"] = list(master_proj)
@@ -285,17 +330,15 @@ async def generate_tailoring(
                 continue
 
             # Anti-Fabrication Check
-            unconfirmed = detect_fabricated_claims(
+            warning = _truth_guard_warning(
                 change_dict.get("original", ""),
                 change_dict.get("proposed", ""),
                 job["jd_text"],
                 master_skills,
             )
-            if unconfirmed:
+            if warning:
                 change_dict["status"] = ChangeStatus.NEEDS_USER_INPUT.value
-                change_dict["fabrication_warning"] = (
-                    f"Technical competency ({', '.join(unconfirmed)}) not found in master resume background."
-                )
+                change_dict["fabrication_warning"] = warning
                 change_dict["confidence"] = min(change_dict.get("confidence", 0.8), 0.60)
 
             changes.append(change_dict)
@@ -399,10 +442,17 @@ async def generate_tailoring(
                 "target_bullet_index": exp_b.bullet_index,
             }
             if is_rewrite:
-                unconfirmed = detect_fabricated_claims(exp_b.original, exp_b.proposed, job["jd_text"], master_skills)
-                if unconfirmed:
+                warning = _truth_guard_warning(
+                    exp_b.original,
+                    exp_b.proposed,
+                    job["jd_text"],
+                    master_skills,
+                    exp_b.source_evidence,
+                    require_verbatim_evidence=True,
+                )
+                if warning:
                     b_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
-                    b_chg["fabrication_warning"] = f"Technical competency ({', '.join(unconfirmed)}) not found in master resume background."
+                    b_chg["fabrication_warning"] = warning
                     b_chg["confidence"] = min(b_chg["confidence"], 0.60)
             changes.append(b_chg)
 
@@ -423,10 +473,17 @@ async def generate_tailoring(
                 "target_bullet_index": proj_b.bullet_index,
             }
             if is_rewrite:
-                unconfirmed = detect_fabricated_claims(proj_b.original, proj_b.proposed, job["jd_text"], master_skills)
-                if unconfirmed:
+                warning = _truth_guard_warning(
+                    proj_b.original,
+                    proj_b.proposed,
+                    job["jd_text"],
+                    master_skills,
+                    proj_b.source_evidence,
+                    require_verbatim_evidence=True,
+                )
+                if warning:
                     b_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
-                    b_chg["fabrication_warning"] = f"Technical competency ({', '.join(unconfirmed)}) not found in master resume background."
+                    b_chg["fabrication_warning"] = warning
                     b_chg["confidence"] = min(b_chg["confidence"], 0.60)
             changes.append(b_chg)
 
@@ -460,6 +517,17 @@ async def set_change_status(
 ) -> dict:
     if status not in (ChangeStatus.APPROVED, ChangeStatus.REJECTED):
         raise InvalidChangeStatusError("Users may only set a change to APPROVED or REJECTED.")
+
+    current = await repo.get_version(db, user_id, version_id)
+    if current is None:
+        raise VersionNotFoundError(f"Version {version_id} not found.")
+    change = next((item for item in current.get("changes", []) if item.get("change_id") == change_id), None)
+    if change is None:
+        raise VersionNotFoundError(f"Change {change_id} was not found in version {version_id}.")
+    if change.get("status") == ChangeStatus.NEEDS_USER_INPUT.value and status == ChangeStatus.APPROVED:
+        raise InvalidChangeStatusError(
+            "This change lacks verified source evidence. Update the master resume or regenerate the tailoring proposal instead of approving it."
+        )
 
     version = await repo.update_change_status(db, user_id, version_id, change_id, status.value)
     if version is None:

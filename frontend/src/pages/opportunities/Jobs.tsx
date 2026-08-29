@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Briefcase, ArrowRight, Sparkles, Search } from "lucide-react";
 import { getRecommendedMatches } from "../../lib/jobs";
-import { getProfile } from "../../lib/profile";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
@@ -11,7 +10,6 @@ import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
 export function Jobs() {
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
   const { data: matches, isLoading } = useQuery({
     queryKey: ["matches", "full_time"],
     queryFn: () => getRecommendedMatches("full_time"),

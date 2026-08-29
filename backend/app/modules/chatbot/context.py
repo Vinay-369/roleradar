@@ -26,7 +26,11 @@ class CopilotContext:
     missing_context_notes: list[str] = field(default_factory=list)
 
 
-async def build_copilot_context(user_id: str, db: AsyncIOMotorDatabase | None = None) -> CopilotContext:
+async def build_copilot_context(
+    user_id: str,
+    db: AsyncIOMotorDatabase | None = None,
+    settings: "Settings | None" = None,
+) -> CopilotContext:
     """
     Pulls real, user-scoped data from every module that has something
     to say about this candidate. Every query is filtered by user_id at
@@ -80,8 +84,8 @@ async def build_copilot_context(user_id: str, db: AsyncIOMotorDatabase | None = 
         from app.core.config import get_settings
         from app.core.embeddings.factory import build_embedding_provider
 
-        settings = get_settings()
-        embedder = build_embedding_provider(settings)
+        active_settings = settings or get_settings()
+        embedder = build_embedding_provider(active_settings)
         candidate = {
             "skills": resume["parsed"].get("skills", []),
             "target_roles": profile.get("target_roles", []),

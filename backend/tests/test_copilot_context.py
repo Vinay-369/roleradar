@@ -19,13 +19,13 @@ def db():
 
 @pytest.fixture
 def settings():
-    return Settings(JWT_SECRET="test-secret")
+    return Settings(JWT_SECRET="test-secret", EMBEDDING_PROVIDER="mock")
 
 
 @pytest.mark.asyncio
 async def test_context_is_honest_when_nothing_exists_yet(db, settings):
     user, _ = await auth_services.register_user(db, settings, "empty@example.com", "supersecret1", "E", None)
-    context = await build_copilot_context(str(user["_id"]), db)
+    context = await build_copilot_context(str(user["_id"]), db, settings=settings)
 
     assert context.profile_summary is None
     assert context.resume_intelligence is None
@@ -59,7 +59,7 @@ async def test_context_reflects_real_profile_and_resume_once_they_exist(db, sett
 
     await jobs_services.ensure_seed_loaded(db)
 
-    context = await build_copilot_context(user_id, db)
+    context = await build_copilot_context(user_id, db, settings=settings)
 
     assert context.profile_summary["category"] == "FRESHER"
     assert context.profile_summary["target_roles"] == ["Backend Developer"]
@@ -82,5 +82,5 @@ async def test_context_never_leaks_another_users_applications(db, settings):
 
     await app_services.save_application(db, str(user_a["_id"]), job["id"], None, None)
 
-    context_b = await build_copilot_context(str(user_b["_id"]), db)
+    context_b = await build_copilot_context(str(user_b["_id"]), db, settings=settings)
     assert context_b.active_applications == []

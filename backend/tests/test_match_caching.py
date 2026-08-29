@@ -57,7 +57,7 @@ def sample_jobs():
 
 @pytest.mark.asyncio
 async def test_first_call_computes_and_caches_matches(db, sample_candidate, sample_jobs):
-    settings = Settings(EMBEDDING_PROVIDER="sentence_transformer")
+    settings = Settings(EMBEDDING_PROVIDER="mock")
     user_id = "user_123"
 
     # Initial state: cache is empty
@@ -76,7 +76,7 @@ async def test_first_call_computes_and_caches_matches(db, sample_candidate, samp
 
 @pytest.mark.asyncio
 async def test_subsequent_call_uses_cache_without_calling_compute_match(db, sample_candidate, sample_jobs, monkeypatch):
-    settings = Settings(EMBEDDING_PROVIDER="sentence_transformer")
+    settings = Settings(EMBEDDING_PROVIDER="mock")
     user_id = "user_123"
 
     # First call: computes and caches
@@ -101,7 +101,7 @@ async def test_subsequent_call_uses_cache_without_calling_compute_match(db, samp
 
 @pytest.mark.asyncio
 async def test_partial_cache_computes_only_newly_added_jobs(db, sample_candidate, sample_jobs, monkeypatch):
-    settings = Settings(EMBEDDING_PROVIDER="sentence_transformer")
+    settings = Settings(EMBEDDING_PROVIDER="mock")
     user_id = "user_123"
 
     # Cache job_1 first
@@ -131,7 +131,7 @@ async def test_partial_cache_computes_only_newly_added_jobs(db, sample_candidate
 
 @pytest.mark.asyncio
 async def test_cache_invalidation(db, sample_candidate, sample_jobs):
-    settings = Settings(EMBEDDING_PROVIDER="sentence_transformer")
+    settings = Settings(EMBEDDING_PROVIDER="mock")
     user_id = "user_123"
 
     await get_or_compute_matches(

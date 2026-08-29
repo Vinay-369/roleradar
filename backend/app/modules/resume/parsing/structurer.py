@@ -22,7 +22,7 @@ SECTION_PATTERNS = {
 # Strict bullet prefix regex: matches standard bullet glyphs and numbered lists (e.g. '1. ', '• ')
 # NEVER matches degree abbreviations like 'B.E', 'B.Tech', 'M.Tech', 'B.Sc', 'M.S.'
 _BULLET_PREFIX_RE = re.compile(
-    r"^(?:[•\-\*\u2022\u2023\u25E6\u2043\u2219\u25AA\u25AB\u27A4\u2714\u2713\u279C\u2192\u25BA\u25B6\u25C6\u25C7\u25CF\u25CB\u2718\u2717\u2705\u27A2\u2794\u2714]|\d{1,2}[\.\)]|\([a-zA-Z0-9]+\)|[a-zA-Z]\))\s+",
+    r"^(?:[•\-\*\u2013\u2014\u2022\u2023\u25E6\u2043\u2219\u25AA\u25AB\u27A4\u2714\u2713\u279C\u2192\u25BA\u25B6\u25C6\u25C7\u25CF\u25CB\u2718\u2717\u2705\u27A2\u2794\u2714\ufffd]|\d{1,2}[\.\)]|\([a-zA-Z0-9]+\)|[a-zA-Z]\))\s+",
     re.UNICODE,
 )
 
@@ -42,8 +42,16 @@ def _split_into_sections(lines: list[str]) -> dict[str, list[str]]:
     sections["_preamble"] = []
 
     current = "_preamble"
-    for line in lines:
+    for index, line in enumerate(lines):
         stripped = line.strip()
+        next_line = lines[index + 1].strip() if index + 1 < len(lines) else ""
+
+        # PDF layout extraction can split "Technical Skills" across two
+        # visual columns, leaving the word "Technical" appended to the last
+        # education line. Remove only that known orphan when the next line is
+        # the actual Skills heading.
+        if next_line.lower() == "skills" and re.search(r"\btechnical$", stripped, re.IGNORECASE):
+            stripped = re.sub(r"\s+technical$", "", stripped, flags=re.IGNORECASE).strip()
         if not stripped:
             if current in sections and sections[current] and sections[current][-1] != "":
                 sections[current].append("")  # preserve blank line as paragraph separator
@@ -156,6 +164,21 @@ _DATE_ONLY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Resume parsers frequently return an entire paragraph as one line.  Keeping
+# that paragraph intact makes it impossible to audit or tailor individual
+# achievements.  This deliberately only splits at conventional sentence
+# boundaries; wrapped lines without terminal punctuation remain one statement.
+_SENTENCE_BOUNDARY_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9])")
+
+_EVIDENCE_VERB_RE = re.compile(
+    r"\b(?:architected|built|created|developed|engineered|implemented|designed|optimized|automated|deployed|led|managed|launched|integrated|reduced|increased|improved|delivered)\b",
+    re.IGNORECASE,
+)
+_NON_EXPERIENCE_EVIDENCE_RE = re.compile(
+    r"\b(?:graduated|bachelor|master|b\.tech|b\.e\.?|degree|university|college|school|awarded|award|hackathon|certified|certification)\b",
+    re.IGNORECASE,
+)
+
 
 def _is_tech_stack_or_meta(line: str) -> bool:
     s = line.strip()
@@ -174,6 +197,35 @@ def _is_tech_stack_or_meta(line: str) -> bool:
 from app.modules.resume.parsing.action_verbs import STRONG_ACTION_VERBS
 
 
+def _split_unstructured_evidence(text: str) -> list[str]:
+    """Turn a paragraph into independently reviewable evidence statements.
+
+    This is normalization, not generation: every returned item is an exact
+    sentence from the uploaded resume.  It lets downstream scoring and the
+    Truth Guard reason about a long paragraph as separate candidate claims.
+    """
+    candidates = _SENTENCE_BOUNDARY_RE.split(text.strip())
+    return [candidate.strip() for candidate in candidates if len(candidate.split()) >= 3]
+
+
+def _recover_unheaded_evidence(preamble_lines: list[str]) -> list[str]:
+    """Recover work/project facts when a resume has no section headings.
+
+    A candidate's name, contacts, education, awards, and generic objective are
+    deliberately excluded.  The heuristic only promotes text containing an
+    explicit delivery verb, so it does not turn arbitrary prose into work
+    history.
+    """
+    recovered: list[str] = []
+    for line in preamble_lines:
+        if _is_location_or_contact_line(line) or _NON_EXPERIENCE_EVIDENCE_RE.search(line):
+            continue
+        for sentence in _split_unstructured_evidence(line):
+            if _EVIDENCE_VERB_RE.search(sentence):
+                recovered.append(sentence)
+    return recovered
+
+
 def _bulletize(lines: list[str]) -> list[str]:
     """Splits a raw section block into clean individual bullets for experience and projects."""
     raw_bullets: list[str] = []
@@ -185,8 +237,9 @@ def _bulletize(lines: list[str]) -> list[str]:
         if _is_tech_stack_or_meta(stripped):
             continue
 
-        has_bullet_prefix = bool(_BULLET_PREFIX_RE.match(stripped))
-        cleaned = _BULLET_PREFIX_RE.sub("", stripped).strip()
+        standalone_bullet = stripped in {"•", "-", "*", "–", "—", "�"}
+        has_bullet_prefix = standalone_bullet or bool(_BULLET_PREFIX_RE.match(stripped))
+        cleaned = "" if standalone_bullet else _BULLET_PREFIX_RE.sub("", stripped).strip()
         if not cleaned:
             continue
 
@@ -200,11 +253,11 @@ def _bulletize(lines: list[str]) -> list[str]:
         elif raw_bullets and not _is_tech_stack_or_meta(stripped):
             prev_ended = raw_bullets[-1].endswith((".", ";", "!"))
             if prev_ended:
-                raw_bullets.append(cleaned)
+                raw_bullets.extend(_split_unstructured_evidence(cleaned))
             else:
                 raw_bullets[-1] = raw_bullets[-1].rstrip() + " " + cleaned
         else:
-            raw_bullets.append(cleaned)
+            raw_bullets.extend(_split_unstructured_evidence(cleaned))
 
     # Filter out standalone project titles
     final_bullets = []
@@ -214,8 +267,132 @@ def _bulletize(lines: list[str]) -> list[str]:
         if len(b.split()) <= 7 and not any(w.lower() in STRONG_ACTION_VERBS for w in b.split()[:2]) and not re.search(r"\d", b):
             continue
         final_bullets.append(b)
-
     return final_bullets
+
+
+def _looks_like_project_title(line: str) -> bool:
+    """Identify a compact project heading without mistaking it for a bullet."""
+    cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
+    if not cleaned or _BULLET_PREFIX_RE.match(line) or _is_tech_stack_or_meta(cleaned):
+        return False
+    first_word = cleaned.split()[0].lower().rstrip(":,")
+    return (
+        1 <= len(cleaned.split()) <= 18
+        and not cleaned.endswith((".", ";", "!"))
+        and not _EVIDENCE_VERB_RE.match(first_word)
+    )
+
+
+def _bulletize_projects(lines: list[str]) -> list[str]:
+    """Preserve a project heading and technology line with its first bullet.
+
+    Keeping this context in the editable source makes it impossible for a
+    rewrite to silently detach a project claim from the project it describes.
+    """
+    bullets: list[str] = []
+    current_title = ""
+    current_tech = ""
+    first_bullet_for_project = False
+    pending_bullet = False
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or _DATE_ONLY_RE.match(stripped):
+            continue
+        standalone_bullet = stripped in {"•", "-", "*", "–", "—", ""}
+        has_bullet_prefix = standalone_bullet or bool(_BULLET_PREFIX_RE.match(stripped))
+        cleaned = "" if standalone_bullet else _BULLET_PREFIX_RE.sub("", stripped).strip()
+        if not cleaned:
+            pending_bullet = pending_bullet or has_bullet_prefix
+            continue
+        if pending_bullet:
+            has_bullet_prefix = True
+            pending_bullet = False
+
+        # Extract title and inline tech stack in parentheses e.g. "AI Screener (Python, FastAPI)"
+        paren_stack = re.search(r"^(.*?)\s*\(([^)]+)\)\s*$", cleaned)
+        if not has_bullet_prefix and paren_stack:
+            t_cand = paren_stack.group(1).strip()
+            s_cand = paren_stack.group(2).strip()
+            if 1 <= len(t_cand.split()) <= 14 and ("," in s_cand or any(k in s_cand.lower() for k in ["python", "java", "react", "node", "fastapi", "sql", "aws", "docker", "c++", "ml", "ai", "js", "ts", "html", "css"])):
+                if first_bullet_for_project and current_title:
+                    ctx = [current_title]
+                    if current_tech:
+                        ctx.append(f"Technologies: {current_tech}")
+                    bullets.append("\n".join(ctx))
+                current_title = t_cand
+                current_tech = s_cand
+                first_bullet_for_project = True
+                continue
+
+        # Some PDF extractors place the right-aligned technology stack on the
+        # same line as a project title. Split only when a known language/tool
+        # visibly begins that comma-separated stack.
+        inline_stack = re.search(
+            r"\b(Python|Java|JavaScript|TypeScript|C\+\+|C|TensorFlow|Keras|React|Node\.js|Flask|FastAPI|PostgreSQL|MongoDB|Docker)\s*,",
+            cleaned,
+            re.IGNORECASE,
+        )
+        if not has_bullet_prefix and inline_stack and inline_stack.start() > 0:
+            if first_bullet_for_project and current_title:
+                ctx = [current_title]
+                if current_tech:
+                    ctx.append(f"Technologies: {current_tech}")
+                bullets.append("\n".join(ctx))
+            current_title = cleaned[:inline_stack.start()].strip(" |-–—(")
+            current_tech = cleaned[inline_stack.start():].strip(" )")
+            first_bullet_for_project = True
+            continue
+
+        if first_bullet_for_project and not has_bullet_prefix and _is_tech_stack_or_meta(cleaned):
+            tech_val = re.sub(r"^(?:tech stack|technologies|tools & tech|stack)\s*:\s*", "", cleaned, flags=re.IGNORECASE).strip()
+            current_tech = tech_val or cleaned
+            continue
+
+        if first_bullet_for_project and not has_bullet_prefix and re.search(r"[,|]", cleaned) and len(cleaned.split()) <= 16 and not cleaned.endswith((".", ";", "!")):
+            current_tech = cleaned
+            continue
+
+        if not has_bullet_prefix and _looks_like_project_title(cleaned):
+            if first_bullet_for_project and current_title:
+                ctx = [current_title]
+                if current_tech:
+                    ctx.append(f"Technologies: {current_tech}")
+                bullets.append("\n".join(ctx))
+            current_title = cleaned
+            current_tech = ""
+            first_bullet_for_project = True
+            continue
+
+        # If a project title was waiting for its first bullet/evidence
+        if first_bullet_for_project and current_title:
+            context = [current_title]
+            if current_tech:
+                context.append(f"Technologies: {current_tech}")
+            context.append(cleaned)
+            bullets.append("\n".join(context))
+            first_bullet_for_project = False
+            continue
+
+        if has_bullet_prefix:
+            bullets.append(cleaned)
+            continue
+
+        if bullets and not bullets[-1].rstrip().endswith((".", ";", "!")):
+            bullets[-1] = bullets[-1].rstrip() + " " + cleaned
+            continue
+
+        # Keep wrapped unbulleted prose as evidence when no project title was
+        # detected. This matches the forgiving behaviour of _bulletize.
+        bullets.extend(_split_unstructured_evidence(cleaned))
+
+    if first_bullet_for_project and current_title:
+        ctx = [current_title]
+        if current_tech:
+            ctx.append(f"Technologies: {current_tech}")
+        bullets.append("\n".join(ctx))
+
+    return bullets
 
 
 def _structure_education(lines: list[str]) -> list[str]:
@@ -325,6 +502,18 @@ def _is_location_or_contact_line(text: str) -> bool:
     return False
 
 
+def _extract_categorized_skills(lines: list[str]) -> list[str]:
+    """Preserves categorized skill lines (e.g. 'Languages: Python, Java', 'Databases: PostgreSQL')."""
+    cat_lines: list[str] = []
+    for line in lines:
+        cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
+        if not cleaned or _is_location_or_contact_line(cleaned):
+            continue
+        if ":" in cleaned and len(cleaned.split(":")[0].split()) <= 6:
+            cat_lines.append(cleaned)
+    return cat_lines
+
+
 def _split_skills(lines: list[str], full_text: str) -> list[str]:
     """
     Extracts skills with high recall and robust location/contact filtering.
@@ -376,13 +565,23 @@ def structure_resume_text(full_text: str) -> dict:
 
     personal = _extract_personal(sections["_preamble"], full_text)
     skills = _split_skills(sections["skills"], full_text)
+    skills_categorized = _extract_categorized_skills(sections["skills"])
+    experience_bullets = _bulletize(sections["experience"])
+    project_bullets = _bulletize_projects(sections["projects"])
+
+    # Truly unstructured resumes may put all evidence under the header block.
+    # Treat those statements as experience only when neither editable section
+    # was found; otherwise explicit section structure always wins.
+    if not experience_bullets and not project_bullets:
+        experience_bullets = _recover_unheaded_evidence(sections["_preamble"])
 
     return {
         "personal": personal,
         "summary": " ".join(sections["summary"]) if sections["summary"] else None,
         "skills": skills,
-        "experience_raw": _bulletize(sections["experience"]),
-        "projects_raw": _bulletize(sections["projects"]),
+        "skills_categorized": skills_categorized,
+        "experience_raw": experience_bullets,
+        "projects_raw": project_bullets,
         "internships_raw": _bulletize(sections["internships"]),
         "education_raw": _structure_education(sections["education"]),
         "certifications": _extract_list_items(sections["certifications"]),

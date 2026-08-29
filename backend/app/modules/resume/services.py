@@ -77,7 +77,7 @@ def compute_strict_ats_benchmark(
     if strict_score >= 80:
         status_info = {
             "status": "passed",
-            "label": "PASSED ATS FILTER — Shortlist Ready",
+            "label": "STRONG ATS READINESS — Review Before Applying",
             "color": "text-signal-700 bg-signal-500/10 border-signal-500/30",
         }
     elif strict_score >= 65:

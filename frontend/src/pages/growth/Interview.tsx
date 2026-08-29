@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   MessageCircleQuestion, ExternalLink, Sparkles,
   ChevronDown, ChevronUp, AlertTriangle, Lightbulb,
-  Video, Code2, Users, Briefcase, Target, Star, CheckCircle2,
+  Video, Code2, Users, Briefcase, Star, CheckCircle2,
   Timer, Play, RotateCcw, Bot,
 } from "lucide-react";
 import { getProfile } from "../../lib/profile";

@@ -134,6 +134,80 @@ def test_messy_resume_1_no_headers_recovers_skills_and_personal():
     assert "python" in skills_lower
     assert "fastapi" in skills_lower
     assert "docker" in skills_lower
+    assert len(structured["experience_raw"]) == 2
+    assert any("backend services" in bullet for bullet in structured["experience_raw"])
+    assert any("notification service" in bullet for bullet in structured["experience_raw"])
+
+
+def test_unstructured_experience_paragraph_is_split_into_evidence_bullets():
+    text = """
+Candidate Name
+candidate@example.com
+EXPERIENCE
+Built a FastAPI service for order processing. Optimized PostgreSQL queries, reducing dashboard latency by 42%. Deployed the service with Docker and GitHub Actions.
+"""
+    structured = structure_resume_text(text)
+
+    assert structured["experience_raw"] == [
+        "Built a FastAPI service for order processing.",
+        "Optimized PostgreSQL queries, reducing dashboard latency by 42%.",
+        "Deployed the service with Docker and GitHub Actions.",
+    ]
+
+
+def test_split_technical_skills_heading_does_not_pollute_education():
+    text = """
+Candidate Name
+candidate@example.com
+EDUCATION
+Example High School
+SSLC - 88% Technical
+Skills
+Python, Flask
+"""
+    structured = structure_resume_text(text)
+
+    assert "Technical" not in " ".join(structured["education_raw"])
+    assert "Python" in structured["skills"]
+
+
+def test_project_title_and_stack_are_preserved_with_first_project_bullet():
+    text = """
+Candidate Name
+candidate@example.com
+PROJECTS
+AI-Based Ad Viral Potential Analyzer
+Python, Streamlit, OpenCV, Machine Learning
+• Developed an AI-powered application for virality prediction.
+• Implemented OpenCV feature extraction for video analysis.
+"""
+    structured = structure_resume_text(text)
+
+    assert structured["projects_raw"][0] == (
+        "AI-Based Ad Viral Potential Analyzer\n"
+        "Technologies: Python, Streamlit, OpenCV, Machine Learning\n"
+        "Developed an AI-powered application for virality prediction."
+    )
+    assert structured["projects_raw"][1] == "Implemented OpenCV feature extraction for video analysis."
+
+
+def test_project_parser_handles_pdf_extracted_standalone_bullets_and_wrapped_lines():
+    text = """
+Candidate Name
+candidate@example.com
+PROJECTS
+Cataract Prediction System Using Deep Learning                                  Python, TensorFlow, Keras
+–
+Convolutional Neural Network model using Python and TensorFlow to detect cataracts from
+retinal images, achieving 91% validation accuracy.
+"""
+    structured = structure_resume_text(text)
+
+    assert structured["projects_raw"] == [
+        "Cataract Prediction System Using Deep Learning\n"
+        "Technologies: Python, TensorFlow, Keras\n"
+        "Convolutional Neural Network model using Python and TensorFlow to detect cataracts from retinal images, achieving 91% validation accuracy."
+    ]
 
 
 def test_messy_resume_2_exotic_bullets_and_categories():

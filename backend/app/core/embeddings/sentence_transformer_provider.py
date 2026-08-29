@@ -23,7 +23,10 @@ class SentenceTransformerEmbeddingProvider:
             ) from exc
         self._util = util
         self._torch = torch
-        self._model = SentenceTransformer(model_name)
+        try:
+            self._model = SentenceTransformer(model_name, local_files_only=True)
+        except Exception:
+            self._model = SentenceTransformer(model_name)
         self._cache: dict[str, any] = {}
 
     def _get_embedding(self, text: str):

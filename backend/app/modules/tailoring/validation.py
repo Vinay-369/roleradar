@@ -10,6 +10,7 @@ import io
 import re
 import fitz  # PyMuPDF
 
+from app.modules.jobs.skill_vocabulary import extract_skills_from_text
 from app.modules.resume.parsing.skills_depth import DOMAIN_DEFINITIONS
 
 # Aliases mapping abbreviations and common synonyms to canonical technical terms
@@ -56,6 +57,11 @@ PROTECTED_SECTION_NAMES = {
     "PERSONAL INFO",
     "CONTACT",
 }
+
+_METRIC_CLAIM_RE = re.compile(
+    r"(?:\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\+?\s*%?|\b\d+(?:\.\d+)?\+?\s*(?:%|percent|x|ms|s|secs?|seconds?|mins?|minutes?|hours?|days?|users?|requests?|records?|rows?|transactions?|deployments?|regions?))",
+    re.IGNORECASE,
+)
 
 
 def _canonicalize_skill(skill: str) -> str:
@@ -114,6 +120,37 @@ def detect_fabricated_claims(
             ungrounded_terms.append(tech)
 
     return sorted(list(set(ungrounded_terms)))
+
+
+def detect_unsupported_metrics(original: str, proposed: str) -> list[str]:
+    """Return measurable claims introduced by a bullet rewrite.
+
+    A rewrite may improve wording but cannot manufacture a percentage, scale,
+    duration, or throughput result.  Numeric tokens without a unit are not
+    treated as metrics so normal sentence numbering does not create noise.
+    """
+    def normalize(metric: str) -> str:
+        value = metric.lower().replace(",", "").replace("+", "")
+        value = re.sub(r"\s+", "", value)
+        return value.replace("percent", "%")
+
+    original_metrics = {normalize(metric) for metric in _METRIC_CLAIM_RE.findall(original)}
+    proposed_metrics = {normalize(metric) for metric in _METRIC_CLAIM_RE.findall(proposed)}
+    return sorted(proposed_metrics - original_metrics)
+
+
+def detect_dropped_source_skills(original: str, proposed: str) -> list[str]:
+    """Detect technical evidence removed from a rewritten source bullet."""
+    original_skills = {skill.lower() for skill in extract_skills_from_text(original)}
+    proposed_skills = {skill.lower() for skill in extract_skills_from_text(proposed)}
+    return sorted(original_skills - proposed_skills)
+
+
+def has_verbatim_source_evidence(original: str, source_evidence: str) -> bool:
+    """Require a concrete quotation, not an AI-written claim of grounding."""
+    original_normalized = " ".join(original.lower().split())
+    evidence_normalized = " ".join(source_evidence.lower().split())
+    return bool(evidence_normalized and len(evidence_normalized) >= 12 and evidence_normalized in original_normalized)
 
 
 def compute_deterministic_skill_reorder(
@@ -195,8 +232,8 @@ def validate_protected_sections(
     errors: list[str] = []
     
     # 1. Check Education preservation
-    master_edu = master_parsed.get("education", [])
-    final_edu = final_parsed.get("education", [])
+    master_edu = master_parsed.get("education_raw", master_parsed.get("education", []))
+    final_edu = final_parsed.get("education_raw", final_parsed.get("education", []))
     
     if master_edu and not final_edu:
         errors.append("Education section was deleted or corrupted in tailored output.")
@@ -204,8 +241,8 @@ def validate_protected_sections(
         errors.append(f"Education entries reduced from {len(master_edu)} to {len(final_edu)}.")
 
     # 2. Check Personal Contact Info preservation
-    master_contact = master_parsed.get("personal_info", {})
-    final_contact = final_parsed.get("personal_info", {})
+    master_contact = master_parsed.get("personal", master_parsed.get("personal_info", {}))
+    final_contact = final_parsed.get("personal", final_parsed.get("personal_info", {}))
 
     if master_contact.get("email") and not final_contact.get("email"):
         errors.append("Candidate email contact was dropped during tailoring.")

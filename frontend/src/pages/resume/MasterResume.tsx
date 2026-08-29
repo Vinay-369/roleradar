@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   UploadCloud, FileText, Check, AlertCircle, AlertTriangle, Layers,
@@ -166,6 +167,14 @@ export function MasterResume() {
             Enterprise 4-Pillar ATS benchmark, strict pass/fail filtering evaluation, and categorized competencies.
           </p>
         </div>
+        {resume && (
+          <Link
+            to="/resume/tailor-custom"
+            className="shrink-0 rounded-lg bg-signal-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-colors hover:bg-signal-600"
+          >
+            Paste JD &amp; Tailor
+          </Link>
+        )}
       </div>
 
       {/* Upload button bar / dropzone */}
