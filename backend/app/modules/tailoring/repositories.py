@@ -19,9 +19,27 @@ async def create_version(
     unmatched_gaps: list[str] | None = None,
     parsed: dict | None = None,
     structured: dict | None = None,
+    candidate_classification: dict | None = None,
+    resume_strategy: dict | None = None,
+    evidence_mapping: list[dict] | None = None,
+    matched_skills: list[str] | None = None,
+    missing_skills: list[str] | None = None,
+    partial_skills: list[str] | None = None,
+    ats_readability_findings: dict | None = None,
 ) -> dict:
     now = datetime.now(timezone.utc)
-    doc = {
+    
+    # Query if an existing version already exists for this job or company
+    query: dict[str, Any] = {"user_id": user_id}
+    if job_id and not job_id.startswith("custom-"):
+        query["job_id"] = job_id
+    else:
+        query["company"] = company
+        query["job_title"] = job_title
+
+    existing = await db[Collections.RESUME_VERSIONS].find_one(query)
+
+    doc_fields = {
         "user_id": user_id,
         "job_id": job_id,
         "job_title": job_title,
@@ -32,13 +50,41 @@ async def create_version(
         "unmatched_gaps": unmatched_gaps or [],
         "parsed": parsed or {},
         "structured": structured or {},
+        "candidate_classification": candidate_classification,
+        "resume_strategy": resume_strategy,
+        "evidence_mapping": evidence_mapping,
+        "matched_skills": matched_skills,
+        "missing_skills": missing_skills,
+        "partial_skills": partial_skills,
+        "ats_readability_findings": ats_readability_findings,
         "is_finalized": False,
         "final_text": None,
-        "created_at": now,
+        "updated_at": now,
     }
-    result = await db[Collections.RESUME_VERSIONS].insert_one(doc)
-    doc["_id"] = result.inserted_id
-    return doc
+
+    if existing:
+        doc_fields["created_at"] = existing.get("created_at", now)
+        await db[Collections.RESUME_VERSIONS].update_one({"_id": existing["_id"]}, {"$set": doc_fields})
+        doc_fields["_id"] = existing["_id"]
+        # Clean up any duplicate legacy documents for the exact same job/company
+        await db[Collections.RESUME_VERSIONS].delete_many({
+            "user_id": user_id,
+            "_id": {"$ne": existing["_id"]},
+            **({"job_id": job_id} if (job_id and not job_id.startswith("custom-")) else {"company": company, "job_title": job_title}),
+        })
+        return doc_fields
+    else:
+        doc_fields["created_at"] = now
+        result = await db[Collections.RESUME_VERSIONS].insert_one(doc_fields)
+        doc_fields["_id"] = result.inserted_id
+        return doc_fields
+
+
+async def get_version_by_job(db: AsyncIOMotorDatabase, user_id: str, job_id: str) -> dict | None:
+    return await db[Collections.RESUME_VERSIONS].find_one(
+        {"user_id": user_id, "job_id": job_id},
+        sort=[("created_at", -1)],
+    )
 
 
 async def get_version(db: AsyncIOMotorDatabase, user_id: str, version_id: str) -> dict | None:
@@ -62,6 +108,16 @@ async def update_change_status(db: AsyncIOMotorDatabase, user_id: str, version_i
     return await get_version(db, user_id, version_id)
 
 
+async def update_parsed_resume(db: AsyncIOMotorDatabase, user_id: str, version_id: str, parsed: dict) -> dict | None:
+    version = await get_version(db, user_id, version_id)
+    if version is None:
+        return None
+    await db[Collections.RESUME_VERSIONS].update_one(
+        {"_id": version["_id"]}, {"$set": {"parsed": parsed}}
+    )
+    return await get_version(db, user_id, version_id)
+
+
 async def finalize_version(
     db: AsyncIOMotorDatabase,
     user_id: str,
@@ -73,6 +129,13 @@ async def finalize_version(
     tailored_scores: dict | None = None,
     validation_summary: dict | None = None,
     one_page_fit: bool | None = None,
+    candidate_classification: dict | None = None,
+    resume_strategy: dict | None = None,
+    evidence_mapping: list[dict] | None = None,
+    matched_skills: list[str] | None = None,
+    missing_skills: list[str] | None = None,
+    partial_skills: list[str] | None = None,
+    ats_readability_findings: dict | None = None,
 ) -> dict | None:
     version = await get_version(db, user_id, version_id)
     if version is None:
@@ -90,6 +153,20 @@ async def finalize_version(
         set_fields["validation_summary"] = validation_summary
     if one_page_fit is not None:
         set_fields["one_page_fit"] = one_page_fit
+    if candidate_classification is not None:
+        set_fields["candidate_classification"] = candidate_classification
+    if resume_strategy is not None:
+        set_fields["resume_strategy"] = resume_strategy
+    if evidence_mapping is not None:
+        set_fields["evidence_mapping"] = evidence_mapping
+    if matched_skills is not None:
+        set_fields["matched_skills"] = matched_skills
+    if missing_skills is not None:
+        set_fields["missing_skills"] = missing_skills
+    if partial_skills is not None:
+        set_fields["partial_skills"] = partial_skills
+    if ats_readability_findings is not None:
+        set_fields["ats_readability_findings"] = ats_readability_findings
     await db[Collections.RESUME_VERSIONS].update_one(
         {"_id": version["_id"]}, {"$set": set_fields}
     )
@@ -98,7 +175,22 @@ async def finalize_version(
 
 async def list_versions(db: AsyncIOMotorDatabase, user_id: str) -> list[dict]:
     cursor = db[Collections.RESUME_VERSIONS].find({"user_id": user_id}).sort("created_at", -1)
-    return await cursor.to_list(length=100)
+    all_versions = await cursor.to_list(length=200)
+    seen_keys = set()
+    deduped = []
+    for v in all_versions:
+        # Key by job_id if present and not custom, else by normalized company + job_title
+        j_id = v.get("job_id")
+        if j_id and not j_id.startswith("custom-"):
+            key = f"job_{j_id}"
+        else:
+            comp = str(v.get("company", "")).strip().lower()
+            role = str(v.get("job_title", "")).strip().lower()
+            key = f"comp_{comp}_{role}"
+        if key not in seen_keys:
+            seen_keys.add(key)
+            deduped.append(v)
+    return deduped
 
 
 async def delete_version(db: AsyncIOMotorDatabase, user_id: str, version_id: str) -> bool:

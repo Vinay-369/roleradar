@@ -20,6 +20,8 @@ from app.modules.resume import services as resume_services
 from app.modules.tailoring import services as tailoring_services
 from app.modules.tailoring.validation import (
     detect_dropped_source_skills,
+    detect_sentence_fragments_and_truncation,
+    detect_unsupported_action_verbs_and_scope,
     detect_unsupported_metrics,
     has_verbatim_source_evidence,
 )
@@ -328,3 +330,95 @@ async def test_delete_tailored_version_removes_it_completely(db, settings):
     # Deleting again raises VersionNotFoundError
     with pytest.raises(tailoring_services.VersionNotFoundError):
         await tailoring_services.delete_tailored_version(db, user_id, version_id)
+
+
+def test_detect_unsupported_action_verbs_and_scope_audit():
+    source_cataract = (
+        "Convolutional Neural Network (CNN) image classification model using Python, "
+        "TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+
+    # 1. Unsupported deployment claim on a student/research DL model
+    unsupported_deployed = (
+        "Deployed a convolutional Neural Network (CNN) image classification model using Python, "
+        "TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+    violations = detect_unsupported_action_verbs_and_scope(source_cataract, unsupported_deployed)
+    assert any("Deployment claim (deployed)" in v for v in violations)
+
+    # 2. Unsupported leadership claim
+    unsupported_leadership = (
+        "Spearheaded the development of a Convolutional Neural Network (CNN) image classification model "
+        "using Python, TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+    violations_lead = detect_unsupported_action_verbs_and_scope(source_cataract, unsupported_leadership)
+    assert any("Leadership claim (spearheaded)" in v for v in violations_lead)
+
+    # 3. Unsupported architecture escalation
+    unsupported_arch = (
+        "Architected a scalable Convolutional Neural Network (CNN) image classification model "
+        "using Python, TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+    violations_arch = detect_unsupported_action_verbs_and_scope(source_cataract, unsupported_arch)
+    assert any("Architecture claim (architected)" in v for v in violations_arch)
+
+    # 4. Verified faithful paraphrase with neutral engineering verb
+    verified_developed = (
+        "Developed a Convolutional Neural Network (CNN) image classification model using Python, "
+        "TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+    violations_dev = detect_unsupported_action_verbs_and_scope(source_cataract, verified_developed)
+    assert len(violations_dev) == 0
+
+    verified_built = (
+        "Built a Convolutional Neural Network (CNN) image classification model using Python, "
+        "TensorFlow, and Keras to detect cataracts from retinal images, achieving 91% validation accuracy."
+    )
+    violations_built = detect_unsupported_action_verbs_and_scope(source_cataract, verified_built)
+    assert len(violations_built) == 0
+
+
+def test_truth_guard_rejects_sentence_fragments_and_headless_bullets():
+    """
+    Truth Guard Rule: Every source evidence unit must produce either:
+    1. A complete faithful paraphrase, OR
+    2. A complete tailored rewrite supported by the same evidence.
+    It must NEVER produce an incomplete sentence fragment, headless bullet, or orphaned continuation.
+    """
+    # 1. Concrete regression: Headless noun fragment missing 'Engineered a'
+    source_cdn = "Engineered a global CDN distribution optimized for low-latency communication."
+    headless_cdn = "• global CDN distribution optimized for low-latency communication."
+    violations_cdn = detect_sentence_fragments_and_truncation(source_cdn, headless_cdn)
+    assert len(violations_cdn) > 0
+    assert any("lowercase" in v or "fragment" in v or "action verb" in v for v in violations_cdn)
+
+    # 2. Orphaned continuation starting with conjunction
+    source_cicd = "Built automated CI/CD pipeline using GitHub Actions."
+    orphaned_prop = "and deployed on AWS"
+    violations_conj = detect_sentence_fragments_and_truncation(source_cicd, orphaned_prop)
+    assert len(violations_conj) > 0
+    assert any("orphaned continuation" in v for v in violations_conj)
+
+    # 3. Abruptly truncated sentence ending in dangling preposition/comma
+    source_db = "Optimized database queries for PostgreSQL."
+    truncated_prop = "Optimized database queries for,"
+    violations_trunc = detect_sentence_fragments_and_truncation(source_db, truncated_prop)
+    assert len(violations_trunc) > 0
+    assert any("truncated" in v or "dangling" in v for v in violations_trunc)
+
+    # 4. Valid faithful paraphrase must be accepted
+    valid_paraphrase = "Engineered global CDN distribution optimized for low latency."
+    violations_valid = detect_sentence_fragments_and_truncation(source_cdn, valid_paraphrase)
+    assert len(violations_valid) == 0
+
+    # 5. Truth Guard service warning check
+    warning = tailoring_services._truth_guard_warning(
+        original=source_cdn,
+        proposed=headless_cdn,
+        jd_text="We need engineers with CDN experience.",
+        master_skills=["CDN", "Distributed Systems"],
+    )
+    assert warning is not None
+    assert any(term in warning.lower() for term in ["fragment", "lowercase", "action verb"])
+
+

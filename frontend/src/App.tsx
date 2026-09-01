@@ -10,7 +10,7 @@ const Onboarding = lazy(() => import("./pages/Onboarding").then((m) => ({ defaul
 const Dashboard = lazy(() => import("./pages/Dashboard").then((m) => ({ default: m.Dashboard })));
 const MasterResume = lazy(() => import("./pages/resume/MasterResume").then((m) => ({ default: m.MasterResume })));
 const TailoredVersions = lazy(() => import("./pages/resume/TailoredVersions").then((m) => ({ default: m.TailoredVersions })));
-const TailorReview = lazy(() => import("./pages/resume/TailorReview").then((m) => ({ default: m.TailorReview })));
+const TailorReview = lazy(() => import("./pages/resume/TailorReview").then((m) => ({ default: m.TailorReview || m.default })));
 const CustomTailor = lazy(() => import("./pages/resume/CustomTailor").then((m) => ({ default: m.CustomTailor })));
 const Jobs = lazy(() => import("./pages/opportunities/Jobs").then((m) => ({ default: m.Jobs })));
 const Internships = lazy(() => import("./pages/opportunities/Internships").then((m) => ({ default: m.Internships })));

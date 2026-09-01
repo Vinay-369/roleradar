@@ -44,6 +44,69 @@ export type ValidationSummary = {
   errors?: string[];
 };
 
+export type CandidateClassification = {
+  classification: string;
+  career_profile?: string | null;
+  experience_level: string;
+  experience_depth: string;
+  project_depth: string;
+  internship_presence: string;
+  leadership_evidence: string;
+  professional_role_count: number;
+  career_continuity: string;
+  years_of_experience: number;
+  is_student: boolean;
+  has_leadership_evidence: boolean;
+  confidence: number;
+};
+
+export type ResumeStrategy = {
+  candidate_type: string;
+  template_variant: string;
+  highlight_education_top: boolean;
+  section_priority: string[];
+  max_bullets_per_entry: number;
+  emphasize_projects: boolean;
+  recommended_length_pages: number;
+  focus_areas: string[];
+};
+
+export type RequirementEvidenceMapping = {
+  requirement_id: string;
+  requirement_text: string;
+  category: string;
+  status: "EXACT_MATCH" | "SUPPORTED" | "RELATED" | "PARTIAL" | "MISSING" | "CONFLICTING";
+  matched_skills: string[];
+  matched_entity_ids: string[];
+  relevance_score: number;
+  notes: string;
+};
+
+export type ATSReadabilityFindings = {
+  factual_validation?: {
+    is_valid: boolean;
+    verified_claims_count: number;
+    unverified_claims: string[];
+    boundary_violations: string[];
+    protected_sections_intact: boolean;
+  };
+  ats_format_validation?: {
+    overall_ats_score: number;
+    standard_headings_score: number;
+    section_order_score: number;
+    bullet_consistency_score: number;
+    date_consistency_score: number;
+    readability_score: number;
+    keyword_stuffing_risk: boolean;
+    length_status: string;
+    unusual_symbols_detected: string[];
+    parsing_risks: string[];
+    layout_risks: string[];
+    missing_critical_sections: string[];
+    actionable_recommendations: string[];
+  };
+};
+
 export type TailoredResume = {
   id: string;
   job_id: string;
@@ -60,6 +123,13 @@ export type TailoredResume = {
   unmatched_gaps?: string[];
   validation_summary?: ValidationSummary | null;
   one_page_fit?: boolean | null;
+  candidate_classification?: CandidateClassification | null;
+  resume_strategy?: ResumeStrategy | null;
+  evidence_mapping?: RequirementEvidenceMapping[] | null;
+  matched_skills?: string[] | null;
+  missing_skills?: string[] | null;
+  partial_skills?: string[] | null;
+  ats_readability_findings?: ATSReadabilityFindings | null;
   created_at: string;
 };
 
@@ -82,6 +152,16 @@ export async function getTailoredVersion(versionId: string): Promise<TailoredRes
   return res.data;
 }
 
+export async function getTailoredVersionForJob(jobId: string): Promise<TailoredResume | null> {
+  try {
+    const res = await apiClient.get<TailoredResume>(`/tailoring/job/${jobId}`);
+    return res.data;
+  } catch (err: any) {
+    if (err.response?.status === 404) return null;
+    throw err;
+  }
+}
+
 export async function listTailoredVersions(): Promise<TailoredResume[]> {
   const res = await apiClient.get<TailoredResume[]>("/tailoring");
   return res.data;
@@ -89,6 +169,11 @@ export async function listTailoredVersions(): Promise<TailoredResume[]> {
 
 export async function updateChangeStatus(versionId: string, changeId: string, status: "APPROVED" | "REJECTED"): Promise<TailoredResume> {
   const res = await apiClient.put<TailoredResume>(`/tailoring/${versionId}/changes/${changeId}`, { status });
+  return res.data;
+}
+
+export async function updateParsedResume(versionId: string, parsed: Record<string, any>): Promise<TailoredResume> {
+  const res = await apiClient.put<TailoredResume>(`/tailoring/${versionId}/resume`, { parsed });
   return res.data;
 }
 

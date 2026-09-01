@@ -15,6 +15,7 @@ import logging
 import re
 import uuid
 from dataclasses import asdict
+from typing import Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.ai_service.schemas import ChangeStatus, ChangeType, StructuredTailoringResult
@@ -46,6 +47,9 @@ from app.modules.tailoring.validation import (
     compute_deterministic_skill_reorder,
     detect_fabricated_claims,
     detect_dropped_source_skills,
+    detect_entity_boundary_violations,
+    detect_sentence_fragments_and_truncation,
+    detect_unsupported_action_verbs_and_scope,
     detect_unsupported_metrics,
     extract_technical_terms,
     has_verbatim_source_evidence,
@@ -77,9 +81,7 @@ class InvalidChangeStatusError(Exception):
     pass
 
 
-def _extract_quantified_metrics(text: str) -> list[str]:
-    """Extract numbers, percentages, multipliers, currency metrics."""
-    return re.findall(r"(?:\b\d+(?:\.\d+)?%?|\$\d+(?:\.\d+)?(?:k|m|b)?|\b\d+[xXkKMmB]\b)", text)
+from app.modules.resume.metrics import extract_quantified_metrics, _extract_quantified_metrics
 
 
 def _truth_guard_warning(
@@ -89,16 +91,28 @@ def _truth_guard_warning(
     master_skills: list[str],
     source_evidence: str = "",
     require_verbatim_evidence: bool = False,
+    entity_id: str = "",
+    all_evidence_units: list[Any] | None = None,
 ) -> str | None:
-    """Reject new tools and measurable outcomes that lack source evidence."""
+    """Reject new tools, unverified metrics, ungrounded scope escalations, and sentence fragments."""
     unsupported_terms = detect_fabricated_claims(original, proposed, jd_text, master_skills)
     unsupported_metrics = detect_unsupported_metrics(original, proposed)
+    unsupported_scope = detect_unsupported_action_verbs_and_scope(original, proposed)
     dropped_skills = detect_dropped_source_skills(original, proposed)
+    boundary_violations = detect_entity_boundary_violations(entity_id, proposed, all_evidence_units) if entity_id else []
+    fragment_violations = detect_sentence_fragments_and_truncation(original, proposed)
+
     messages: list[str] = []
     if unsupported_terms:
         messages.append(f"Technical competency ({', '.join(unsupported_terms)}) not found in master resume background")
     if unsupported_metrics:
         messages.append(f"Measurable claim ({', '.join(unsupported_metrics)}) was not present in the source bullet")
+    if unsupported_scope:
+        messages.extend(unsupported_scope)
+    if fragment_violations:
+        messages.extend(fragment_violations)
+    if boundary_violations:
+        messages.extend(boundary_violations)
     if dropped_skills:
         messages.append(f"Source competency ({', '.join(dropped_skills)}) was removed from the rewritten bullet")
     if require_verbatim_evidence and not has_verbatim_source_evidence(original, source_evidence):
@@ -107,7 +121,7 @@ def _truth_guard_warning(
 
 
 def _validate_and_apply_change(text: str, original: str, proposed: str, change_id: str = "") -> tuple[str, bool, str | None]:
-    """Validates a change against metric loss and section header corruption."""
+    """Validates a change against metric loss, section header corruption, and sentence fragmentation."""
     if not original or not proposed:
         return text, True, None
 
@@ -122,6 +136,11 @@ def _validate_and_apply_change(text: str, original: str, proposed: str, change_i
     prop_headers = [h for h in ("SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION", "CERTIFICATIONS") if h in proposed.upper()]
     if orig_headers and not prop_headers:
         err = f"could not safely apply change {change_id} — section header ({', '.join(orig_headers)}) corrupted"
+        return text, False, err
+
+    frag_errors = detect_sentence_fragments_and_truncation(original, proposed)
+    if frag_errors:
+        err = f"could not safely apply change {change_id} — {'; '.join(frag_errors)}"
         return text, False, err
 
     if original in text:
@@ -155,11 +174,18 @@ def _merge_structured_tailoring(
     merged = {
         # PROTECTED SECTIONS: 100% untouched from master resume
         "personal": copy.deepcopy(master_parsed.get("personal", {}) or master_parsed.get("personal_info", {}) or {}),
+        "education": copy.deepcopy(master_parsed.get("education", [])),
         "education_raw": copy.deepcopy(master_parsed.get("education_raw", master_parsed.get("education", []))),
+        "experience": copy.deepcopy(master_parsed.get("experience", [])),
+        "projects": copy.deepcopy(master_parsed.get("projects", [])),
         "certifications": copy.deepcopy(master_parsed.get("certifications", [])),
         "achievements": copy.deepcopy(master_parsed.get("achievements", [])),
+        "publications": copy.deepcopy(master_parsed.get("publications", [])),
+        "research": copy.deepcopy(master_parsed.get("research", [])),
         "languages": copy.deepcopy(master_parsed.get("languages", [])),
         "links": copy.deepcopy(master_parsed.get("links", [])),
+        "additional_sections": copy.deepcopy(master_parsed.get("additional_sections", [])),
+        "evidence_units": copy.deepcopy(master_parsed.get("evidence_units", [])),
     }
 
     # 1. Summary
@@ -189,29 +215,57 @@ def _merge_structured_tailoring(
             if sk and sk.lower() not in {s.lower() for s in active_skills}:
                 active_skills.append(sk)
     merged["skills"] = active_skills
+    if master_parsed.get("skills_categorized"):
+        merged["skills_categorized"] = copy.deepcopy(master_parsed["skills_categorized"])
 
-    # 3. Experience Bullets
+    # 3. Experience Bullets - 100% Retain All Master Bullets (Tailor only targeted entries)
     master_exp = master_parsed.get("experience_raw", [])
     exp_rewrites = result_dict.get("experience_bullets", [])
     if exp_rewrites:
-        merged_exp = []
+        merged_exp = list(master_exp)
         for idx, item in enumerate(exp_rewrites):
             cid = item.get("change_id") or f"chg_exp_{idx}"
+            b_idx = item.get("bullet_index", idx)
+            orig_str = item.get("original", "")
             if approved_change_ids is None or cid in approved_change_ids:
-                merged_exp.append(item.get("proposed", item.get("original", "")))
+                prop_str = item.get("proposed", orig_str)
             else:
-                merged_exp.append(item.get("original", ""))
+                prop_str = orig_str
+
+            matched = False
+            # Check if b_idx matches orig_str directly
+            if 0 <= b_idx < len(merged_exp) and orig_str and (orig_str in merged_exp[b_idx] or merged_exp[b_idx] in orig_str):
+                merged_exp[b_idx] = prop_str
+                matched = True
+            else:
+                # Search by exact or normalized original string across all entries
+                clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig_str).strip()
+                for m_i, m_b in enumerate(merged_exp):
+                    if orig_str and (orig_str in m_b or m_b in orig_str):
+                        merged_exp[m_i] = prop_str
+                        matched = True
+                        break
+                    elif clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_b.lower():
+                        merged_exp[m_i] = prop_str
+                        matched = True
+                        break
+
+                if not matched and 0 <= b_idx < len(merged_exp) and not orig_str:
+                    merged_exp[b_idx] = prop_str
+                elif not matched and prop_str and not any(prop_str in m_b for m_b in merged_exp):
+                    merged_exp.append(prop_str)
         merged["experience_raw"] = merged_exp
     else:
         merged["experience_raw"] = list(master_exp)
 
-    # 4. Project Bullets
+    # 4. Project Bullets - 100% Retain All Master Projects (Tailor only targeted entries)
     master_proj = master_parsed.get("projects_raw", [])
     proj_rewrites = result_dict.get("project_bullets", [])
     if proj_rewrites:
-        merged_proj = []
+        merged_proj = list(master_proj)
         for idx, item in enumerate(proj_rewrites):
             cid = item.get("change_id") or f"chg_proj_{idx}"
+            b_idx = item.get("bullet_index", idx)
             orig_str = item.get("original", "")
             if approved_change_ids is None or cid in approved_change_ids:
                 prop_str = item.get("proposed", orig_str)
@@ -228,7 +282,28 @@ def _merge_structured_tailoring(
                 if header_lines and not any(h in prop_str for h in header_lines):
                     prop_str = "\n".join(header_lines + [prop_str])
 
-            merged_proj.append(prop_str)
+            matched = False
+            # Check if b_idx matches orig_str directly
+            if 0 <= b_idx < len(merged_proj) and orig_str and (orig_str in str(merged_proj[b_idx]) or str(merged_proj[b_idx]) in orig_str):
+                merged_proj[b_idx] = prop_str
+                matched = True
+            else:
+                clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig_str).strip()
+                for m_i, m_p in enumerate(merged_proj):
+                    m_p_str = str(m_p)
+                    if orig_str and (orig_str in m_p_str or m_p_str in orig_str):
+                        merged_proj[m_i] = prop_str
+                        matched = True
+                        break
+                    elif clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_p_str.lower():
+                        merged_proj[m_i] = prop_str
+                        matched = True
+                        break
+
+                if not matched and 0 <= b_idx < len(merged_proj) and not orig_str:
+                    merged_proj[b_idx] = prop_str
+                elif not matched and prop_str and not any(prop_str in str(m_p) for m_p in merged_proj):
+                    merged_proj.append(prop_str)
         merged["projects_raw"] = merged_proj
     else:
         merged["projects_raw"] = list(master_proj)
@@ -271,15 +346,40 @@ async def generate_tailoring(
     else:
         raise MissingJobOrJDError("Provide either job_id or a pasted custom_jd_text.")
 
-    master_parsed = resume.get("parsed") or {}
+    from app.core.caching import (
+        get_cached_candidate_profile,
+        set_cached_candidate_profile,
+        get_cached_jd_requirements,
+        set_cached_jd_requirements,
+    )
+    from app.modules.resume.models import CandidateProfile
+    from app.modules.jobs.taxonomy import analyze_job_description
+
     master_raw_text = resume.get("raw_text", "")
-    if master_raw_text and (not master_parsed.get("personal") or not master_parsed.get("education_raw")):
-        structured_fallback = structure_resume_text(master_raw_text)
-        for k, v in structured_fallback.items():
-            if not master_parsed.get(k):
-                master_parsed[k] = v
+    candidate_profile = None
+    if master_raw_text:
+        cached_prof = get_cached_candidate_profile(master_raw_text)
+        master_parsed = structure_resume_text(master_raw_text)
+        if resume.get("parsed", {}).get("personal"):
+            master_parsed["personal"] = copy.deepcopy(resume["parsed"]["personal"])
+        if resume.get("parsed", {}).get("certifications") and not master_parsed.get("certifications"):
+            master_parsed["certifications"] = copy.deepcopy(resume["parsed"]["certifications"])
+        if cached_prof:
+            candidate_profile = cached_prof
+        else:
+            candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, master_raw_text)
+            set_cached_candidate_profile(master_raw_text, candidate_profile)
+    else:
+        master_parsed = resume.get("parsed") or {}
+        candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, "")
 
     master_skills = master_parsed.get("skills", [])
+
+    # JD Analysis (Cached & Reused)
+    jd_reqs = get_cached_jd_requirements(job["jd_text"], job.get("title", ""))
+    if jd_reqs is None:
+        jd_reqs = analyze_job_description(job["jd_text"], job.get("title", ""))
+        set_cached_jd_requirements(job["jd_text"], job.get("title", ""), jd_reqs)
 
     # 1. Deterministic Skill Reordering & Gap Analysis
     reordered_skills, matched_skills, unmatched_jd_skills, was_reordered = compute_deterministic_skill_reorder(
@@ -335,6 +435,8 @@ async def generate_tailoring(
                 change_dict.get("proposed", ""),
                 job["jd_text"],
                 master_skills,
+                entity_id=change_dict.get("change_id", ""),
+                all_evidence_units=candidate_profile.evidence_units,
             )
             if warning:
                 change_dict["status"] = ChangeStatus.NEEDS_USER_INPUT.value
@@ -388,9 +490,9 @@ async def generate_tailoring(
         # Skill Additions with strict source grounding validation
         all_master_text = (
             (master_raw_text or "") + " " +
-            " ".join(master_parsed.get("skills", [])) + " " +
-            " ".join(master_parsed.get("experience_raw", [])) + " " +
-            " ".join(master_parsed.get("projects_raw", []))
+            " ".join(master_parsed.get("skills") or []) + " " +
+            " ".join(master_parsed.get("experience_raw") or []) + " " +
+            " ".join(master_parsed.get("projects_raw") or [])
         ).lower()
 
         for idx, addition in enumerate(result.skills.additions):
@@ -449,6 +551,8 @@ async def generate_tailoring(
                     master_skills,
                     exp_b.source_evidence,
                     require_verbatim_evidence=True,
+                    entity_id=f"exp_{exp_b.bullet_index}",
+                    all_evidence_units=candidate_profile.evidence_units,
                 )
                 if warning:
                     b_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
@@ -480,6 +584,8 @@ async def generate_tailoring(
                     master_skills,
                     proj_b.source_evidence,
                     require_verbatim_evidence=True,
+                    entity_id=f"proj_{proj_b.bullet_index}",
+                    all_evidence_units=candidate_profile.evidence_units,
                 )
                 if warning:
                     b_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
@@ -490,11 +596,34 @@ async def generate_tailoring(
     # 5. Compute Sections and Gaps
     present_sections = ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]
     sections_evaluated = list(dict.fromkeys(result.sections_evaluated + present_sections))
+    # 5. Compute Sections and Gaps
+    present_sections = ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]
+    sections_evaluated = list(dict.fromkeys(result.sections_evaluated + present_sections))
     sections_changed = list(dict.fromkeys([c.get("section", "EXPERIENCE").upper() for c in changes]))
     unmatched_gaps = list(dict.fromkeys(result.unmatched_gaps + unmatched_jd_skills))
 
     # Initial pure-data merge
     initial_parsed = _merge_structured_tailoring(master_parsed, result_dict, approved_change_ids=None)
+
+    # 6. Compute Rich Intelligence Artifacts
+    from app.modules.resume.classification import classify_candidate_profile
+    from app.modules.tailoring.strategy import resolve_template_strategy
+    from app.modules.jobs.taxonomy import analyze_job_description
+    from app.modules.matching.evidence_mapping import map_resume_to_jd_evidence
+    from app.modules.intelligence.ats_readability_validator import evaluate_ats_and_readability
+
+    classification = classify_candidate_profile(candidate_profile)
+    strategy = resolve_template_strategy(classification)
+    mapping = map_resume_to_jd_evidence(candidate_profile, jd_reqs)
+    ats_audit = evaluate_ats_and_readability(initial_parsed, master_data=candidate_profile)
+
+    candidate_classification_dict = classification.model_dump(mode="json")
+    resume_strategy_dict = strategy.model_dump(mode="json")
+    evidence_mapping_list = [m.model_dump(mode="json") for m in mapping.mappings]
+    matched_skills_list = list(dict.fromkeys(matched_skills + [s for m in mapping.mappings for s in m.matched_skills]))
+    missing_skills_list = list(dict.fromkeys(mapping.missing_must_haves + mapping.missing_preferred + unmatched_gaps))
+    partial_skills_list = list(dict.fromkeys([m.requirement_text for m in mapping.mappings if m.status.value in ("PARTIAL", "RELATED")]))
+    ats_findings_dict = ats_audit.model_dump(mode="json")
 
     version = await repo.create_version(
         db,
@@ -508,6 +637,13 @@ async def generate_tailoring(
         unmatched_gaps=unmatched_gaps,
         parsed=initial_parsed,
         structured=result_dict,
+        candidate_classification=candidate_classification_dict,
+        resume_strategy=resume_strategy_dict,
+        evidence_mapping=evidence_mapping_list,
+        matched_skills=matched_skills_list,
+        missing_skills=missing_skills_list,
+        partial_skills=partial_skills_list,
+        ats_readability_findings=ats_findings_dict,
     )
     return version
 
@@ -570,7 +706,7 @@ async def finalize_tailoring(
     final_parsed = copy.deepcopy(master_parsed)
     final_text = master_raw_text
 
-    # Apply approved changes with strict metric and safety validation
+    # 1. Apply approved changes with strict metric and safety validation
     for change in changes_list:
         if change.get("status") == ChangeStatus.APPROVED.value:
             orig = change.get("original", "")
@@ -591,48 +727,69 @@ async def finalize_tailoring(
             change["applied_safely"] = True
             change["validation_error"] = None
 
-            # Apply to structured dictionary
-            sec = (change.get("section") or "EXPERIENCE").upper()
-            chg_type = change.get("change_type", "TEXT_REWRITE")
+    # Merge structured tailoring using canonical unified pure-data pipeline
+    final_parsed = copy.deepcopy(master_parsed)
+    final_text = master_raw_text
 
-            if sec == "SUMMARY" or orig == master_parsed.get("summary"):
-                final_parsed["summary"] = prop
-            elif chg_type == ChangeType.SKILL_REORDER.value:
-                final_parsed["skills"] = change.get("after_order", final_parsed.get("skills", []))
-            elif chg_type == ChangeType.KEYWORD_INJECTION.value:
-                if prop and prop not in final_parsed.get("skills", []):
-                    final_parsed.setdefault("skills", []).append(prop)
-            elif sec == "EXPERIENCE":
-                clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
-                replaced = False
-                for idx, b in enumerate(final_parsed.get("experience_raw", [])):
-                    if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
-                        final_parsed["experience_raw"][idx] = prop
-                        replaced = True
-                        break
-                if not replaced and prop:
-                    final_parsed.setdefault("experience_raw", []).append(prop)
-            elif sec == "PROJECTS":
-                clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
-                replaced = False
-                for idx, b in enumerate(final_parsed.get("projects_raw", [])):
-                    if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
-                        final_parsed["projects_raw"][idx] = prop
-                        replaced = True
-                        break
-                if not replaced and prop:
-                    final_parsed.setdefault("projects_raw", []).append(prop)
+    if changes_list:
+        for change in changes_list:
+            if change.get("status") == ChangeStatus.APPROVED.value and change.get("applied_safely", True):
+                orig = change.get("original", "")
+                prop = change.get("proposed", "")
+                sec = (change.get("section") or "EXPERIENCE").upper()
+                chg_type = change.get("change_type", "TEXT_REWRITE")
 
-            # Apply to final_text if master_raw_text exists
-            if final_text:
+                if sec == "SUMMARY" or orig == master_parsed.get("summary"):
+                    final_parsed["summary"] = prop
+                elif chg_type == ChangeType.SKILL_REORDER.value:
+                    final_parsed["skills"] = change.get("after_order", final_parsed.get("skills", []))
+                elif chg_type == ChangeType.KEYWORD_INJECTION.value:
+                    if prop and prop not in final_parsed.get("skills", []):
+                        final_parsed.setdefault("skills", []).append(prop)
+                elif sec == "EXPERIENCE":
+                    clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
+                    replaced = False
+                    for idx, b in enumerate(final_parsed.get("experience_raw", [])):
+                        if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
+                            final_parsed["experience_raw"][idx] = prop
+                            replaced = True
+                            break
+                    if not replaced and prop:
+                        final_parsed.setdefault("experience_raw", []).append(prop)
+                elif sec == "PROJECTS":
+                    clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
+                    replaced = False
+                    for idx, b in enumerate(final_parsed.get("projects_raw", [])):
+                        if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
+                            orig_sub_lines = [l.strip() for l in b.split("\n") if l.strip()]
+                            if len(orig_sub_lines) > 1:
+                                header_lines = [
+                                    l for l in orig_sub_lines[:-1]
+                                    if _is_project_title_line(l) or _is_tech_stack_line(l) or _clean_title_and_date(l)
+                                ]
+                                if header_lines and not any(h in prop for h in header_lines):
+                                    prop = "\n".join(header_lines + [prop])
+                            final_parsed["projects_raw"][idx] = prop
+                            replaced = True
+                            break
+                    if not replaced and prop:
+                        final_parsed.setdefault("projects_raw", []).append(prop)
+
+    # Apply approved text replacements to final_text if master_raw_text exists
+    if final_text:
+        for change in changes_list:
+            if change.get("status") == ChangeStatus.APPROVED.value and change.get("applied_safely", True):
+                orig = change.get("original", "")
+                prop = change.get("proposed", "")
                 if orig and orig in final_text:
                     final_text = final_text.replace(orig, prop, 1)
                 elif orig:
                     clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
-                    if clean_orig in final_text:
+                    if clean_orig and clean_orig in final_text:
                         final_text = final_text.replace(clean_orig, prop, 1)
-
-    if not final_text:
+                    else:
+                        final_text = render_text_from_structured(final_parsed)
+    else:
         final_text = render_text_from_structured(final_parsed)
 
     # 2. Deterministic 1-Page PDF Fit Measurement & Trimming on the Real Structured PDF
@@ -765,6 +922,10 @@ async def finalize_tailoring(
         "errors": prot_errors,
     }
 
+    from app.modules.intelligence.ats_readability_validator import evaluate_ats_and_readability
+    final_ats_audit = evaluate_ats_and_readability(final_parsed, master_data=master_parsed)
+    final_ats_findings = final_ats_audit.model_dump(mode="json")
+
     return await repo.finalize_version(
         db,
         user_id,
@@ -776,7 +937,20 @@ async def finalize_tailoring(
         tailored_scores=tailored_scores,
         validation_summary=validation_summary,
         one_page_fit=fits_one_page,
+        ats_readability_findings=final_ats_findings,
     ) or version
+
+
+async def update_parsed_resume(
+    db: AsyncIOMotorDatabase, user_id: str, version_id: str, parsed: dict
+) -> dict:
+    version = await repo.get_version(db, user_id, version_id)
+    if version is None:
+        raise VersionNotFoundError(f"Version {version_id} not found.")
+    updated = await repo.update_parsed_resume(db, user_id, version_id, parsed)
+    if updated is None:
+        raise VersionNotFoundError(f"Version {version_id} not found.")
+    return updated
 
 
 async def delete_tailored_version(db: AsyncIOMotorDatabase, user_id: str, version_id: str) -> bool:

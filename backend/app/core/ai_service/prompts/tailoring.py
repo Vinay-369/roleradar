@@ -1,75 +1,87 @@
 """
-Prompt template for company & role-specific resume tailoring (Truth Guard v7 - Wholesale Structured Engine).
-Enforces whole-document structured evaluation, deterministic metric preservation, granular bullet rewrites, and anti-fabrication constraints.
+Prompt template for company & role-specific resume tailoring.
+Includes:
+- v8_compact_fast: High-speed compact diff generation (350-500 tokens output)
+- v7_structured: Wholesale structured fallback engine
 """
 
-TAILORING_PROMPT_VERSION = "v7_structured"
+TAILORING_PROMPT_VERSION = "v8_compact_fast"
 
-TAILORING_SYSTEM_PROMPT = """You are RoleRadar's expert enterprise ATS optimization and technical recruiter engine.
-Your mission is to boost the candidate's ATS Match Score and Recruiter Impact to 90%+ while maintaining 100% truthfulness and grounded source evidence.
+COMPACT_TAILORING_SYSTEM_PROMPT = """You are RoleRadar's expert enterprise ATS optimization and technical recruiter engine.
+Your mission is to boost the candidate's ATS Match Score to 90%+ with 100% truthfulness and zero fabrication.
 
-WHOLESALE STRUCTURED RESUME TAILORING ARCHITECTURE:
-1. Complete Section-by-Section Structured Evaluation:
-   You are provided with ONLY the editable sections of the candidate's structured resume:
-   - "summary": The candidate's summary or objective statement.
-   - "skills": The list of verified skills currently listed by the candidate.
-   - "experience_bullets": The list of work experience bullet points.
-   - "project_bullets": The list of technical and academic project bullet points.
-   Note: Protected sections (Education, Certifications, Contact details) are intentionally excluded from your input.
+COMPACT TAILORING PLAN INSTRUCTIONS:
+1. Summary:
+   - Provide a concise 1-2 sentence tailored professional summary aligned with the target role and backed by verified candidate experience.
 
-2. Exhaustive Bullet-by-Bullet Decision:
-   You must evaluate EVERY bullet in `experience_bullets` and `project_bullets`. Do not skip any bullet!
-   For each bullet at its exact 0-indexed position:
-   - "bullet_index": The integer index matching the input array.
-   - "original": The exact original bullet text.
-   - "action": "REWRITE" if tailoring improves ATS keywords/impact, or "KEEP" if already optimal.
-   - "proposed": The tailored version (or original text if action is "KEEP").
-   - "source_evidence": An exact, verbatim quote from that original input bullet. Do not write a generic claim such as "master resume project".
-   - "confidence": Float between 0.0 and 1.0 (e.g. 0.95).
-   - "reason": Short explanation of how this rewrite aligns with the JD.
+2. Targeted Bullet Rewrites (ONLY for bullets that benefit from alignment):
+   - You do NOT need to rewrite all bullets.
+   - For bullets that can be sharpened with stronger action verbs or better JD context, output ONLY:
+     {"bullet_index": <int>, "proposed": "<rewritten bullet>", "reason": "<short justification>"}
+   - Standardized Formula: ACTION VERB + TASK + METHOD/TECHNOLOGY + RESULT/PURPOSE.
+   - Do NOT echo back the original text.
+   - Do NOT output unchanged bullets.
 
-3. Skills Optimization & Evidenced Additions:
-   - "ordered_skills": Reorder the candidate's existing skills array so that technologies most demanded by the JD appear FIRST.
-   - "additions": List any skills clearly evidenced in the candidate's experience or projects that were omitted from the original skills list. Each addition MUST have a valid "source_evidence" referencing the specific project/experience bullet where the tool was used. NEVER add a skill that the candidate has never used.
+3. Strict Anti-Fabrication & Metric Preservation:
+   - PRESERVE ALL METRICS, DATES, AND PERCENTAGES (e.g. 70%, 99.8%, 40k, $200k+, 60 FPS).
+   - NEVER invent new technologies or tools that were not in the candidate's background.
 
-4. Professional Summary:
-   - "original": The original summary.
-   - "proposed": A compelling 2-3 sentence tailored executive summary highlighting the candidate's verified competencies directly targeting the role.
-   - "source_evidence": Reference to candidate's verified skills and project experience.
-   - "reason": Why this summary strengthens candidate positioning.
+4. Unmatched Gaps:
+   - List any mandatory JD skills that the candidate completely lacks in `unmatched_gaps`. NEVER hallucinate them into candidate bullets.
 
-5. Anti-Fabrication & Metric Preservation:
-   - Never invent false tools, degrees, or metrics that cannot be substantiated.
-   - PRESERVE ALL NUMBERS, PERCENTAGES, AND METRICS from original bullets. Never drop a metric!
-   - PRESERVE every source technology used in the original bullet. Do not replace a specific AI/ML project with generic full-stack language.
-   - Follow Google XYZ format: Accomplished [X] as measured by [Y] (metric/%/latency), by doing [Z] with target technologies.
-   - Start every proposed bullet with a powerful technical action verb (Architected, Engineered, Built, Optimized, Deployed, Automated).
-
-6. Unmatched Gaps:
-   - If the JD requires mandatory skills/technologies completely absent from the candidate's background, add the skill name to `unmatched_gaps`. NEVER hallucinate missing skills into bullets.
-
-7. Output Schema:
-   Return a JSON object conforming to StructuredTailoringResult with keys:
-   - "summary": SummaryTailoring object
-   - "skills": {"ordered_skills": [...], "additions": [...]}
-   - "experience_bullets": list of BulletRewrite objects for every experience bullet
-   - "project_bullets": list of BulletRewrite objects for every project bullet
-   - "unmatched_gaps": list of strings
-   - "sections_evaluated": list of strings (e.g. ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"])
-   - "sections_changed": list of strings (e.g. ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS"])
+Output ONLY valid JSON matching this schema:
+{
+  "summary": "...",
+  "experience_rewrites": [{"bullet_index": 0, "proposed": "...", "reason": "..."}],
+  "project_rewrites": [{"bullet_index": 0, "proposed": "...", "reason": "..."}],
+  "unmatched_gaps": ["..."]
+}
 """
+
+TAILORING_SYSTEM_PROMPT = COMPACT_TAILORING_SYSTEM_PROMPT
+
+
+def build_compact_tailoring_user_prompt(
+    candidate_summary: str,
+    experience_bullets: list[dict],
+    project_bullets: list[dict],
+    skills: list[str],
+    jd_role: str,
+    jd_company: str,
+    jd_must_haves: list[str],
+    jd_responsibilities: list[str],
+) -> str:
+    exp_formatted = "\n".join([f"[{b['index']}] ({b.get('entity', '')}) {b['text']}" for b in experience_bullets])
+    proj_formatted = "\n".join([f"[{b['index']}] ({b.get('entity', '')}) {b['text']}" for b in project_bullets])
+    must_haves = ", ".join(jd_must_haves[:10])
+    resps = "\n".join([f"- {r}" for r in jd_responsibilities[:5]])
+
+    return f"""TARGET ROLE: {jd_role} at {jd_company}
+KEY REQUIREMENTS: {must_haves}
+KEY RESPONSIBILITIES:
+{resps}
+
+CANDIDATE PROFILE:
+Summary: {candidate_summary}
+Verified Skills: {', '.join(skills[:25])}
+
+EXPERIENCE BULLETS:
+{exp_formatted or '(None)'}
+
+PROJECT BULLETS:
+{proj_formatted or '(None)'}
+
+Output the compact JSON tailoring plan. Rewrite only bullets that benefit from JD alignment."""
 
 
 def build_tailoring_user_prompt(editable_resume_json: str, jd_text: str, company: str = "", role: str = "") -> str:
     comp_header = f"TARGET COMPANY: {company}\n" if company else ""
     role_header = f"TARGET ROLE: {role}\n" if role else ""
-    return f"""EDITABLE RESUME SUB-OBJECT (structured JSON — source of truth):
+    return f"""EDITABLE RESUME SUB-OBJECT:
 {editable_resume_json}
 
-{comp_header}{role_header}TARGET JOB / INTERNSHIP DESCRIPTION:
+{comp_header}{role_header}TARGET JOB DESCRIPTION:
 {jd_text}
 
-Perform a wholesale structured rewrite across SUMMARY, SKILLS, EXPERIENCE, and PROJECTS.
-Ensure every bullet point has an explicit evaluation with preserved metrics and grounded source evidence.
-Output ONLY valid JSON matching the StructuredTailoringResult schema.
-"""
+Output the compact JSON tailoring plan. Rewrite only bullets that benefit from JD alignment."""
+

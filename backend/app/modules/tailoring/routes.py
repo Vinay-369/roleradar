@@ -13,6 +13,7 @@ from app.modules.tailoring.export import generate_docx, generate_pdf
 from app.modules.tailoring.schemas import (
     ChangeStatusUpdate,
     GenerateTailoringRequest,
+    ResumeUpdateRequest,
     TailoredResumeOut,
 )
 
@@ -42,7 +43,14 @@ def _to_out(doc: dict) -> TailoredResumeOut:
         unmatched_gaps=doc.get("unmatched_gaps", []),
         validation_summary=doc.get("validation_summary"),
         one_page_fit=doc.get("one_page_fit"),
-        created_at=doc["created_at"].isoformat(),
+        candidate_classification=doc.get("candidate_classification"),
+        resume_strategy=doc.get("resume_strategy"),
+        evidence_mapping=doc.get("evidence_mapping"),
+        matched_skills=doc.get("matched_skills"),
+        missing_skills=doc.get("missing_skills"),
+        partial_skills=doc.get("partial_skills"),
+        ats_readability_findings=doc.get("ats_readability_findings"),
+        created_at=doc["created_at"].isoformat() if hasattr(doc["created_at"], "isoformat") else str(doc["created_at"]),
     )
 
 
@@ -73,6 +81,18 @@ async def generate(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Tailoring generation failed: {exc}. Please try again later.",
         )
+    return _to_out(version)
+
+
+@router.get("/job/{job_id}", response_model=TailoredResumeOut)
+async def get_version_for_job(
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    version = await repo.get_version_by_job(db, str(current_user["_id"]), job_id)
+    if version is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No tailored resume for this job.")
     return _to_out(version)
 
 
@@ -130,6 +150,22 @@ async def update_change(
     return _to_out(version)
 
 
+@router.put("/{version_id}/resume", response_model=TailoredResumeOut)
+async def update_resume(
+    version_id: str,
+    body: ResumeUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    try:
+        version = await services.update_parsed_resume(
+            db, str(current_user["_id"]), version_id, body.parsed
+        )
+    except services.VersionNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    return _to_out(version)
+
+
 @router.post("/{version_id}/finalize", response_model=TailoredResumeOut)
 async def finalize(
     version_id: str,
@@ -144,11 +180,11 @@ async def finalize(
     return _to_out(version)
 
 
-def _require_finalized(version: dict) -> None:
-    if not version.get("is_finalized") or (not version.get("parsed") and not version.get("final_text")):
+def _require_exportable(version: dict) -> None:
+    if not version.get("parsed") and not version.get("final_text"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This version isn't finalized yet — approve your changes and finalize before exporting.",
+            detail="Resume content not available for export.",
         )
 
 
@@ -162,7 +198,7 @@ async def export_pdf(
     version = await repo.get_version(db, str(current_user["_id"]), version_id)
     if version is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Version not found.")
-    _require_finalized(version)
+    _require_exportable(version)
 
     content = version.get("parsed") or version.get("final_text")
     candidate_name = current_user.get("full_name", "")
@@ -186,7 +222,7 @@ async def export_docx(
     version = await repo.get_version(db, str(current_user["_id"]), version_id)
     if version is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Version not found.")
-    _require_finalized(version)
+    _require_exportable(version)
 
     content = version.get("parsed") or version.get("final_text")
     candidate_name = current_user.get("full_name", "")

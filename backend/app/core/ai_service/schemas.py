@@ -74,6 +74,20 @@ class TailoringChange(BaseModel):
     after_order: list[str] | None = None
 
 
+class CompactBulletRewrite(BaseModel):
+    bullet_index: int
+    proposed: str
+    reason: str = ""
+
+
+class CompactTailoringPlan(BaseModel):
+    summary: str | None = None
+    experience_rewrites: list[CompactBulletRewrite] = Field(default_factory=list)
+    project_rewrites: list[CompactBulletRewrite] = Field(default_factory=list)
+    unmatched_gaps: list[str] = Field(default_factory=list)
+    changes: list[TailoringChange] = Field(default_factory=list)
+
+
 class StructuredTailoringResult(BaseModel):
     summary: SummaryTailoring | None = None
     skills: SkillsTailoring = Field(default_factory=SkillsTailoring)

@@ -17,8 +17,8 @@ from typing import Any
 class SentenceTransformerEmbeddingProvider:
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         try:
-            from sentence_transformers import SentenceTransformer, util
-            import torch
+            from sentence_transformers import SentenceTransformer, util  # type: ignore
+            import torch  # type: ignore
         except ImportError as exc:
             raise RuntimeError(
                 "sentence-transformers is not installed. Run "

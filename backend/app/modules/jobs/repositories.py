@@ -28,4 +28,11 @@ async def find_jobs(db: AsyncIOMotorDatabase, mongo_filter: dict, limit: int = 1
 
 
 async def get_job_by_id(db: AsyncIOMotorDatabase, job_id: str) -> dict | None:
-    return await db[Collections.JOBS].find_one({"id": job_id})
+    job = await db[Collections.JOBS].find_one({"id": job_id})
+    if not job:
+        from bson import ObjectId
+        if ObjectId.is_valid(job_id):
+            job = await db[Collections.JOBS].find_one({"_id": ObjectId(job_id)})
+        if not job:
+            job = await db[Collections.JOBS].find_one({"_id": job_id})
+    return job

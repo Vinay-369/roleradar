@@ -46,8 +46,20 @@ class TailoredResumeOut(BaseModel):
     unmatched_gaps: list[str] = []
     validation_summary: dict | None = None
     one_page_fit: bool | None = None
+    candidate_classification: dict | None = None
+    resume_strategy: dict | None = None
+    evidence_mapping: list[dict] | None = None
+    matched_skills: list[str] | None = None
+    missing_skills: list[str] | None = None
+    partial_skills: list[str] | None = None
+    ats_readability_findings: dict | None = None
     created_at: str
 
 
 class ChangeStatusUpdate(BaseModel):
     status: ChangeStatus  # APPROVED or REJECTED only, enforced in service layer
+
+
+class ResumeUpdateRequest(BaseModel):
+    parsed: dict
+

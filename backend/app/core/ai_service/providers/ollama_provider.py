@@ -49,10 +49,12 @@ class OllamaProvider:
                     {"role": "user", "content": user_prompt},
                 ],
                 "stream": False,
+                "keep_alive": "30m",
                 "options": {
                     "temperature": 0.2,
                     "top_p": 0.9,
-                    "num_ctx": 2048,
+                    "num_ctx": 4096,
+                    "num_predict": 1024,
                 },
             }
             if json_mode:

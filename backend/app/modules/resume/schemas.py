@@ -8,22 +8,22 @@ class ParseabilityIssueOut(BaseModel):
 
 
 class ParseabilityOut(BaseModel):
-    score: int
-    issues: list[ParseabilityIssueOut]
-    detected_sections: list[str]
-    missing_standard_sections: list[str]
-    contact_info_found: dict
-    likely_multi_column: bool
-    word_count: int
+    score: int = 80
+    issues: list[ParseabilityIssueOut] = Field(default_factory=list)
+    detected_sections: list[str] = Field(default_factory=list)
+    missing_standard_sections: list[str] = Field(default_factory=list)
+    contact_info_found: dict = Field(default_factory=dict)
+    likely_multi_column: bool = False
+    word_count: int = 0
 
 
 class RecruiterImpactOut(BaseModel):
-    score: int
-    bullets_analyzed: int
-    quantified_bullets: int
-    weak_verb_bullets: int
-    quantification_rate: float
-    issues: list[str]
+    score: int = 80
+    bullets_analyzed: int = 0
+    quantified_bullets: int = 0
+    weak_verb_bullets: int = 0
+    quantification_rate: float = 0.0
+    issues: list[str] = Field(default_factory=list)
 
 
 class ActionVerbOut(BaseModel):

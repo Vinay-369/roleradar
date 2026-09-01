@@ -20,6 +20,10 @@ backend/.env
 *.pdf
 *.docx
 backend/test_out.*
+backend/scratch/
+backend/scratch_*.py
+backend/forensic_debug.py
+backend/scripts/*_report.json
 .vscode/
 
 # Storage

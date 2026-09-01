@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Trash2, Loader2, Copy, Sparkles } from "lucide-react";
+import { ArrowRight, Trash2, Loader2, Copy, Sparkles, Eye } from "lucide-react";
 import { listTailoredVersions, deleteTailoredVersion } from "../../lib/tailoring";
 import { ResumeDiffModal } from "../../components/resume/ResumeDiffModal";
+import { ResumePreviewModal } from "../../components/resume/ResumePreviewModal";
 import { useToast } from "../../context/ToastContext";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
@@ -97,7 +98,7 @@ export function TailoredVersions() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center flex-wrap">
                   {isConfirming ? (
                     <div className="flex items-center gap-1.5 bg-alert-50 border border-alert-200 px-2.5 py-1 rounded-xl">
                       <span className="text-[11px] font-bold text-alert-800">Delete version?</span>
@@ -120,6 +121,20 @@ export function TailoredVersions() {
                     </div>
                   ) : (
                     <>
+                      <ResumePreviewModal
+                        versionId={v.id}
+                        company={v.company}
+                        jobTitle={v.job_title}
+                        triggerButton={
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold shadow-2xs transition-all hover:border-signal-500"
+                          >
+                            <Eye size={13} className="text-signal-600" />
+                            <span>Preview</span>
+                          </button>
+                        }
+                      />
                       <ResumeDiffModal version={v} />
                       <Link
                         to={`/resume/tailor/${v.job_id}?version=${v.id}`}

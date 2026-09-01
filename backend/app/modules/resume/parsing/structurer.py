@@ -4,30 +4,94 @@ and spaCy NLP fallback for messy, unstandardized human resumes.
 Guarantees 100% preservation of Education, Certifications, Languages, and Contact Info.
 """
 import re
+from typing import Any
 from app.modules.jobs.skill_vocabulary import extract_skills_from_text
+from app.modules.resume.parsing.action_verbs import STRONG_ACTION_VERBS
 from app.modules.resume.parsing.parseability import EMAIL_RE, PHONE_RE, URL_RE
 
 SECTION_PATTERNS = {
-    "summary": r"^\s*(summary|career summary|professional summary|objective|career objective|profile|personal profile|about me)\s*$",
-    "skills": r"^\s*(skills|technical skills|key skills|core skills|core competencies|skills & expertise|skills & technologies|tech stack|technical proficiencies|areas of expertise|technologies|tools & technologies)\s*$",
-    "experience": r"^\s*(experience|work experience|professional experience|employment history|work history|career history|experience & employment|relevant experience|employment)\s*$",
-    "projects": r"^\s*(projects|academic projects|key projects|personal projects|technical projects|notable projects|portfolio projects|selected projects)\s*$",
-    "internships": r"^\s*(internships?|internship experience|industrial training|industry training)\s*$",
-    "education": r"^\s*(education|academic background|academics|qualifications|educational qualifications|academic profile|education & qualifications)\s*$",
-    "certifications": r"^\s*(certifications?|certificates|licenses|courses & certifications|professional certifications)\s*$",
-    "achievements": r"^\s*(achievements|awards|accomplishments|honors|extracurricular activities|extra-curricular|co-curricular|awards & achievements|co-curricular & honors|extracurricular & honors|honors & awards|achievements & awards)\s*$",
-    "languages": r"^\s*(languages|known languages|languages known)\s*$",
+    "summary": r"^\s*(summary|career summary|professional summary|executive summary|summary of qualifications|objective|career objective|profile|personal profile|about me|professional profile|background|overview)\s*$",
+    "skills": r"^\s*(skills|technical skills|key skills|core skills|core competencies|skills & expertise|skills & technologies|tech stack|technical stack|technical proficiencies|areas of expertise|technologies|tools & technologies|programming languages|technological skills|tech expertise|technical competencies|tools|frameworks & tools|languages & frameworks)\s*$",
+    "experience": r"^\s*(experience|work experience|professional experience|employment history|work history|career history|experience & employment|relevant experience|employment|professional background|career background|work background|industry experience|highlighted work|past experience)\s*$",
+    "projects": r"^\s*(projects|academic projects|key projects|personal projects|technical projects|notable projects|portfolio projects|selected projects|project work|notable contributions|key initiatives|software projects|recent projects|things i worked on|stuff i built|what i built|portfolio)\s*$",
+    "internships": r"^\s*(internships?|internship experience|industrial training|industry training|internship history)\s*$",
+    "education": r"^\s*(education|educational background|academic background|academic qualifications|academics|qualifications|educational qualifications|academic profile|education & qualifications|degrees|degrees & education|academic history|scholastic record)\s*$",
+    "certifications": r"^\s*(certifications?|certificates|licenses|courses & certifications|professional certifications|credentials|accreditations|courses & training|trainings? & certifications?)\s*$",
+    "achievements": r"^\s*(achievements|awards|accomplishments|honors|awards & achievements|co-curricular & honors|extracurricular & honors|honors & awards|achievements & awards|key achievements|notable achievements|honours)\s*$",
+    "publications": r"^\s*(publications|papers|conference proceedings|journal articles|selected publications|peer[- ]reviewed publications|scholarly works)\s*$",
+    "research": r"^\s*(research|research experience|research & development|scientific experience|scientific research|academic research|research projects)\s*$",
+    "leadership": r"^\s*(leadership|leadership experience|extracurricular & leadership|community leadership|leadership & activities|initiatives)\s*$",
+    "volunteer": r"^\s*(volunteer work|volunteering|community service|volunteer experience|social service)\s*$",
+    "side_quests": r"^\s*(side quests?|open source|open source contributions?|community contributions?|extracurriculars?|extracurricular activities|extra-curricular|co-curricular|activities)\s*$",
+    "languages": r"^\s*(languages|known languages|languages known|spoken languages|language proficiencies|language skills)\s*$",
 }
 
-# Strict bullet prefix regex: matches standard bullet glyphs and numbered lists (e.g. '1. ', '• ')
+HEADER_PREFIX_IGNORE_WORDS = (
+    "programming", "technical", "key", "core", "tools", "work",
+    "academic", "personal", "professional", "soft", "known", "spoken",
+    "areas of", "skills &", "tools &",
+)
+
+GLUED_SECTION_PATTERNS = [
+    ("languages", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>languages|known\s+languages|languages\s+known|spoken\s+languages|language\s+skills)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("side_quests", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>side\s+quests?|open\s+source\s+contributions?|open\s+source|community\s+contributions?|extracurriculars?|extracurricular\s+activities|extra-curricular|co-curricular)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("certifications", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>professional\s+certifications|courses\s+&\s+certifications|certifications?|certificates|licenses|credentials|accreditations)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("achievements", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>awards\s+&\s+achievements|achievements\s+&\s+awards|co-curricular\s+&\s+honors|extracurricular\s+&\s+honors|honors\s+&\s+awards|accomplishments|achievements|honors|awards|honours)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("education", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>educational\s+background|educational\s+qualifications|education\s+&\s+qualifications|academic\s+background|academic\s+qualifications|academic\s+profile|qualifications|academics|degrees\s+&\s+education|education|degrees)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("projects", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>academic\s+projects|technical\s+projects|portfolio\s+projects|selected\s+projects|personal\s+projects|notable\s+projects|key\s+projects|projects|software\s+projects|things\s+i\s+worked\s+on|stuff\s+i\s+built|what\s+i\s+built|portfolio)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("internships", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>internship\s+experience|industrial\s+training|industry\s+training|internships?)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("experience", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>professional\s+experience|experience\s+&\s+employment|employment\s+history|relevant\s+experience|work\s+experience|career\s+history|work\s+history|professional\s+background|experience\s*:|employment\s*:)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("skills", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>technical\s+proficiencies|tools\s+&\s+technologies|skills\s+&\s+technologies|skills\s+&\s+expertise|areas\s+of\s+expertise|core\s+competencies|technical\s+skills|core\s+skills|key\s+skills|tech\s+stack|technologies\s*:|skills\s*:|skills)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("summary", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>career\s+summary|professional\s+summary|career\s+objective|personal\s+profile|executive\s+summary|about\s+me|summary\s*:|objective\s*:|profile\s*:)\b(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+]
+
+# Strict bullet prefix regex: matches standard bullet glyphs, replacement glyphs, and numbered lists
 # NEVER matches degree abbreviations like 'B.E', 'B.Tech', 'M.Tech', 'B.Sc', 'M.S.'
 _BULLET_PREFIX_RE = re.compile(
-    r"^(?:[•\-\*\u2013\u2014\u2022\u2023\u25E6\u2043\u2219\u25AA\u25AB\u27A4\u2714\u2713\u279C\u2192\u25BA\u25B6\u25C6\u25C7\u25CF\u25CB\u2718\u2717\u2705\u27A2\u2794\u2714\ufffd]|\d{1,2}[\.\)]|\([a-zA-Z0-9]+\)|[a-zA-Z]\))\s+",
+    r"^(?:[•\-\*\u2013\u2014\u2022\u2023\u25E6\u2043\u2219\u25AA\u25AB\u27A4\u2714\u2713\u279C\u2192\u25BA\u25B6\u25C6\u25C7\u25CF\u25CB\u2718\u2717\u2705\u27A2\u2794\u2714\ufffd▪▫◦‣⁃■□★☆+>~]|(?:\b[oO]\b\s+)|\d{1,2}[\.\)]|\([a-zA-Z0-9]+\)|[a-zA-Z]\))\s+",
     re.UNICODE,
 )
 
+def _clean_raw_text_artifacts(raw_text: str) -> str:
+    """
+    Cleans extraction artifacts (form-feeds, page numbers, trailing whitespace, replacement characters)
+    without corrupting content.
+    """
+    if not raw_text:
+        return ""
+    text = raw_text.replace("\r\n", "\n").replace("\r", "\n").replace("\x0c", "\n\n")
+    # Clean standalone page number lines
+    text = re.sub(r"(?m)^\s*(?:page\s+\d+(?:\s+(?:of|/)\s*\d+)?|[-–—]\s*\d+\s*[-–—]|\d+\s*/\s*\d+)\s*$", "", text, flags=re.IGNORECASE)
+    # Clean standalone bullet markers on their own line followed by text
+    text = re.sub(r"(?m)^\s*([•\-\*\u2013\u2014\u2022\u25CF\u25AA\ufffd▪▫◦‣⁃■□★☆+>~])\s*\n\s*([a-zA-Z0-9])", r"\1 \2", text)
+    # Clean ASCII box/table border lines (e.g. +-------------------+, |-------------------|)
+    text = re.sub(r"(?m)^\s*[+\-|=_]{4,}\s*$", "", text)
+    
+    # Strip all leading/trailing table column pipes/plus signs on each line
+    lines = []
+    for line in text.split("\n"):
+        l_clean = re.sub(r"^[|\s+]+|[|\s+]+$", "", line)
+        lines.append(l_clean)
+    text = "\n".join(lines)
+
+    # Separate glued inline section headers (e.g. 'background.Technical Skills:Python' -> 'background.\nTechnical Skills:Python')
+    text = re.sub(
+        r"(?<=[a-zA-Z0-9.\)])\s*(?=(?:Professional\s+Summary|Summary|Technical\s+Skills|Work\s+Experience|Professional\s+Experience|Experience|Technical\s+Projects|Personal\s+Projects|Projects|Education|Certifications|Achievements|Side\s+Quests)\s*:)",
+        "\n",
+        text,
+        flags=re.IGNORECASE,
+    )
+    # Split section headers with inline content onto new lines (e.g. 'Projects:• SmartCache' -> 'Projects\n• SmartCache')
+    text = re.sub(
+        r"(?m)^\s*(Professional\s+Summary|Summary|Work\s+Experience|Professional\s+Experience|Experience|Projects|Technical\s+Projects|Personal\s+Projects|Education|Certifications|Achievements|Side\s+Quests)\s*:\s*(?=\S)",
+        r"\1\n",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return text
+
 _CATEGORY_PREFIX_RE = re.compile(
-    r"^(?:languages|programming languages|frameworks|libraries|tools|databases|cloud|devops|backend|frontend|methodologies|web technologies|platforms|technologies|os|operating systems|core competencies)\s*:\s*",
+    r"^(?:languages|programming languages|frameworks\s*&\s*tools|frameworks\s+and\s+tools|tools\s*&\s*technologies|tools\s+and\s+technologies|languages\s*&\s*frameworks|languages\s+and\s+frameworks|frameworks|libraries|tools|databases|cloud|devops|backend|frontend|methodologies|web technologies|platforms|technologies|os|operating systems|core competencies)\s*:\s*",
     re.IGNORECASE,
 )
 
@@ -37,9 +101,10 @@ _INSTITUTION_RE = re.compile(
 )
 
 
-def _split_into_sections(lines: list[str]) -> dict[str, list[str]]:
-    sections: dict[str, list[str]] = {key: [] for key in SECTION_PATTERNS}
+def _split_into_sections(lines: list[str]) -> dict[str, Any]:
+    sections: dict[str, Any] = {key: [] for key in SECTION_PATTERNS}
     sections["_preamble"] = []
+    sections["_custom"] = []  # list of tuples: (heading, custom_sec_key)
 
     current = "_preamble"
     for index, line in enumerate(lines):
@@ -57,7 +122,8 @@ def _split_into_sections(lines: list[str]) -> dict[str, list[str]]:
                 sections[current].append("")  # preserve blank line as paragraph separator
             continue
         # Normalize punctuation and symbols ("Skills:", "## Skills", "-- SKILLS --")
-        normalized = re.sub(r"^[#\-=*~\s]+|[#\-=*~\s:]+$", "", stripped)
+        clean_heading = _BULLET_PREFIX_RE.sub("", stripped).strip()
+        normalized = re.sub(r"^[#\-=*~\s]+|[#\-=*~\s:]+$", "", clean_heading)
         matched = None
         for key, pattern in SECTION_PATTERNS.items():
             if re.match(pattern, normalized, re.IGNORECASE):
@@ -66,6 +132,52 @@ def _split_into_sections(lines: list[str]) -> dict[str, list[str]]:
         if matched:
             current = matched
             continue
+
+        # Check for unknown / custom top-level section header (e.g. "## Patents" or "PATENTS & INVENTIONS" or "SPEAKING ENGAGEMENTS:")
+        is_explicit_markdown = stripped.startswith(("#", "==", "--")) and len(stripped.split()) <= 7
+        cand_upper = stripped.rstrip(":").strip()
+        is_all_caps_section = (
+            cand_upper.isupper()
+            and 1 <= len(cand_upper.split()) <= 5
+            and not any(w in cand_upper for w in ["ENGINEER", "DEVELOPER", "MANAGER", "ARCHITECT", "LEAD", "INTERN", "ANALYST", "CONSULTANT", "FOUNDER", "DIRECTOR", "VP", "HEAD"])
+            and not any(w in cand_upper for w in ["INC", "LLC", "LTD", "PVT", "CORP", "CORPORATION", "SOLUTIONS", "TECHNOLOGIES", "SYSTEMS", "LABS", "NETWORKS"])
+            and not bool(re.search(r"\b(?:PRESENT|20\d\d|19\d\d)\b", cand_upper))
+        )
+        is_custom_heading = (
+            (is_explicit_markdown or is_all_caps_section)
+            and not bool(_BULLET_PREFIX_RE.match(stripped))
+            and not any(stripped.lower().startswith(v) for v in ["led", "built", "developed", "managed", "spearheaded", "engineered", "designed", "optimized", "architected"])
+            and current != "_preamble"
+        )
+        if is_custom_heading:
+            custom_key = f"_custom_{len(sections['_custom'])}"
+            sections[custom_key] = []
+            heading_title = normalized or clean_heading.rstrip(":")
+            sections["_custom"].append((heading_title, custom_key))
+            current = custom_key
+            continue
+
+        # Check for glued section header appearing as suffix or boundary on the same line
+        # (e.g. "...Course - ScalerLanguages" or "...2024PROJECTS")
+        glued_found = False
+        for sec_key, pattern in GLUED_SECTION_PATTERNS:
+            m = pattern.match(stripped)
+            if m:
+                content_before = m.group("content").strip()
+                content_lower = content_before.lower()
+                after = m.group("after").strip() if m.group("after") else ""
+                # Validate: content_before must not end with header prefixes like "Programming", "Technical", etc.
+                if len(content_before) >= 3 and not content_lower.endswith(HEADER_PREFIX_IGNORE_WORDS):
+                    if content_before:
+                        sections[current].append(content_before)
+                    current = sec_key
+                    if after:
+                        sections[current].append(after)
+                    glued_found = True
+                    break
+        if glued_found:
+            continue
+
         sections[current].append(stripped)
 
     return sections
@@ -77,7 +189,7 @@ KNOWN_LOCATIONS = {
     "kerala", "delhi", "uttar pradesh", "gujarat", "rajasthan", "west bengal",
     "punjab", "haryana", "bihar", "odisha", "madhya pradesh", "goa", "assam",
     "jharkhand", "uttarakhand", "himachal pradesh", "chandigarh", "puducherry",
-    # Cities & Locations
+    # Cities & Tech Hubs
     "davanagere", "davangere", "bangalore", "bengaluru", "mysore", "mysuru",
     "hubli", "dharwad", "mangalore", "mangaluru", "belgaum", "belagavi",
     "mumbai", "pune", "hyderabad", "chennai", "coimbatore", "kochi",
@@ -85,8 +197,14 @@ KNOWN_LOCATIONS = {
     "indore", "bhopal", "nagpur", "lucknow", "patna", "thiruvananthapuram",
     "visakhapatnam", "vijayawada", "surat", "vadodara", "shimoga", "shivamogga",
     "tumkur", "tumakuru", "bellary", "ballari", "gulbarga", "kalaburagi",
+    "san francisco", "mountain view", "menlo park", "palo alto", "san jose",
+    "sunnyvale", "cupertino", "redmond", "santa clara", "seattle", "austin",
+    "new york", "boston", "chicago", "los angeles", "toronto", "vancouver",
+    "london", "berlin", "dubai", "tokyo", "sydney", "singapore",
+    # Countries & Regions & States
     "remote", "india", "usa", "uk", "united states", "canada", "germany",
-    "singapore", "australia", "london", "dubai",
+    "australia", "california", "washington", "texas", "massachusetts", "new york state",
+    "ca", "ny", "wa", "tx", "ma", "il", "fl", "nc", "va", "ga", "co", "pa",
 }
 
 NON_SKILL_WORDS = {
@@ -138,9 +256,27 @@ def _extract_personal(preamble_lines: list[str], full_text: str) -> dict:
 
     name = None
     for line in preamble_lines[:6]:
-        cleaned = re.sub(r"^(?:name|candidate|profile)\s*:\s*", "", line, flags=re.IGNORECASE).strip()
-        if not cleaned or EMAIL_RE.search(cleaned) or PHONE_RE.search(cleaned) or URL_RE.search(cleaned):
+        raw_stripped = line.strip(" *#=_~|•-–—\t\r\n")
+        cleaned = re.sub(r"^(?:name|candidate|profile)\s*:\s*", "", raw_stripped, flags=re.IGNORECASE).strip(" *#=_~|•-–—\t\r\n")
+        if not cleaned:
             continue
+        
+        # Check if line contains contact info or delimiters on a single line
+        if EMAIL_RE.search(cleaned) or PHONE_RE.search(cleaned) or URL_RE.search(cleaned) or any(sep in cleaned for sep in ["|", "~", "•", " – ", " — ", " - "]):
+            # Try extracting the leading name segment before the first contact delimiter
+            for sep in [" | ", " ~ ", " • ", " – ", " — ", " - ", "|", "~", "•"]:
+                if sep in cleaned:
+                    seg = cleaned.split(sep)[0].strip(" *#=_~|•-–—\t\r\n")
+                    seg_cleaned = re.sub(r"^(?:name|candidate|profile)\s*:\s*", "", seg, flags=re.IGNORECASE).strip(" *#=_~|•-–—\t\r\n")
+                    if seg_cleaned and not EMAIL_RE.search(seg_cleaned) and not PHONE_RE.search(seg_cleaned) and not URL_RE.search(seg_cleaned):
+                        if len(seg_cleaned) >= 2 and len(seg_cleaned) < 50 and sum(c.isalpha() or c.isspace() for c in seg_cleaned) > len(seg_cleaned) * 0.65:
+                            if seg_cleaned.upper() not in {"RESUME", "CURRICULUM VITAE", "CV", "BIO-DATA", "BIODATA"}:
+                                name = seg_cleaned
+                                break
+            if name:
+                break
+            continue
+
         if len(cleaned) < 50 and sum(c.isalpha() or c.isspace() for c in cleaned) > len(cleaned) * 0.6:
             if cleaned.upper() not in {"RESUME", "CURRICULUM VITAE", "CV", "BIO-DATA", "BIODATA"}:
                 name = cleaned
@@ -184,10 +320,16 @@ def _is_tech_stack_or_meta(line: str) -> bool:
     s = line.strip()
     if not s:
         return True
-    if s.count("|") >= 2 and len(s.split()) <= 25:
-        return True
     lower = s.lower()
     if lower.startswith("tech stack:") or lower.startswith("technologies:") or lower.startswith("tools & tech:") or lower.startswith("stack:"):
+        return True
+    if any(w in lower.split() for w in ["system", "project", "analyzer", "app", "engine", "tracker", "platform", "service", "classifier", "screener", "to", "from", "detect", "predict", "achieving", "dataset", "model", "built", "developed", "pipeline", "store", "matcher", "bot", "tool", "manager", "dashboard", "portal"]):
+        return False
+    if re.search(r"^[^\(]+\([^)]+\)\s*$", s):
+        return False
+    if s.count("|") >= 2 and len(s.split()) <= 25:
+        return True
+    if "," in s and len(s.split()) <= 14 and not s.endswith((".", ";", "!")) and not re.search(r"\([^)]+\)", s):
         return True
     if _DATE_ONLY_RE.match(s):
         return True
@@ -218,12 +360,370 @@ def _recover_unheaded_evidence(preamble_lines: list[str]) -> list[str]:
     """
     recovered: list[str] = []
     for line in preamble_lines:
-        if _is_location_or_contact_line(line) or _NON_EXPERIENCE_EVIDENCE_RE.search(line):
+        if _is_location_or_contact_line(line):
             continue
         for sentence in _split_unstructured_evidence(line):
+            if _NON_EXPERIENCE_EVIDENCE_RE.search(sentence):
+                continue
             if _EVIDENCE_VERB_RE.search(sentence):
                 recovered.append(sentence)
     return recovered
+
+
+_DATE_RANGE_RE = re.compile(
+    r"\b(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4}|present|current)\b",
+    re.IGNORECASE,
+)
+
+_DATE_ONLY_RE = re.compile(
+    r"^\s*(?:\(?\s*(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4}|present|current)\s*\)?)\s*$",
+    re.IGNORECASE,
+)
+
+ROLE_KEYWORDS = {
+    "engineer", "developer", "architect", "lead", "manager", "intern", "consultant",
+    "analyst", "specialist", "designer", "administrator", "scientist", "associate",
+    "officer", "director", "vp", "coordinator", "technician", "programmer", "co-op",
+    "fellow", "founder", "co-founder", "instructor", "researcher", "trainee", "apprentice"
+}
+
+LOCATION_KEYWORDS = {
+    "bengaluru", "bangalore", "hyderabad", "pune", "mumbai", "delhi", "noida",
+    "chennai", "gurgaon", "gurugram", "san francisco", "remote", "india", "usa",
+    "california", "seattle", "austin", "new york", "london", "singapore", "boston",
+    "chicago", "toronto", "vancouver", "berlin", "dubai", "tokyo", "sydney"
+}
+
+
+def _is_location_text(text: str) -> bool:
+    if not text:
+        return False
+    t_lower = text.lower().strip()
+    words = [w.lower().rstrip(":,()").strip("–-—|") for w in t_lower.split()]
+    if not words:
+        return False
+    for w in words:
+        if w in LOCATION_KEYWORDS or w in KNOWN_LOCATIONS:
+            return True
+    for loc in KNOWN_LOCATIONS:
+        if len(loc) > 3 and loc in t_lower:
+            return True
+    return False
+
+
+def parse_experience_section(lines: list[str]) -> list[Any]:
+    from app.modules.resume.models import (
+        WorkExperienceEntity,
+        RoleProgression,
+        ResponsibilityGroup,
+    )
+    entities: list[WorkExperienceEntity] = []
+    current_company = ""
+    current_role = ""
+    current_dates = ""
+    current_location = ""
+    current_progression: list[RoleProgression] = []
+    current_groups: list[ResponsibilityGroup] = []
+    current_group: ResponsibilityGroup | None = None
+    current_bullets: list[str] = []
+
+    def flush_entity():
+        nonlocal current_company, current_role, current_dates, current_location, current_progression, current_groups, current_group, current_bullets
+        if current_bullets or current_company or current_role or current_groups or current_progression:
+            if current_group and current_group.bullets:
+                current_groups.append(current_group)
+                current_group = None
+            ent_id = f"exp_{len(entities)}"
+            primary_role = current_role or (current_progression[0].title if current_progression else "")
+            primary_dates = current_dates or (current_progression[0].dates if current_progression else None)
+            comp_name = current_company or "Work Experience"
+            entities.append(WorkExperienceEntity(
+                id=ent_id,
+                company=comp_name,
+                role=primary_role,
+                dates=primary_dates,
+                location=current_location or None,
+                progression=list(current_progression),
+                responsibility_groups=list(current_groups),
+                bullets=list(current_bullets),
+            ))
+            current_company = ""
+            current_role = ""
+            current_dates = ""
+            current_location = ""
+            current_progression = []
+            current_groups = []
+            current_group = None
+            current_bullets = []
+
+    # Flatten lines in case lines contain embedded newlines
+    expanded_lines: list[str] = []
+    for l in lines:
+        for sub in str(l).split("\n"):
+            expanded_lines.append(sub)
+
+    for line in expanded_lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        standalone_bullet = stripped in {"•", "-", "*", "–", "—", "▪", "▫", "►", "▶", "◆", "◇", "●", "○", "✓", "✔", "➔", "→", "➢", "·", "∙", "–"}
+        if standalone_bullet:
+            continue
+        has_bullet = bool(_BULLET_PREFIX_RE.match(stripped)) or stripped.startswith(("•", "-", "*", "–", "—"))
+        clean = _BULLET_PREFIX_RE.sub("", stripped).strip()
+        if not clean or clean in {"•", "-", "*", "–", "—", "▪", "▫", "►", "▶", "◆", "◇", "●", "○", "✓", "✔", "➔", "→", "➢", "·", "∙"}:
+            continue
+
+        clean_lower = clean.lower()
+        if clean_lower in ("work experience", "professional experience", "experience", "employment history", "career history", "experience & employment", "relevant experience"):
+            continue
+
+        words = [w.lower().rstrip(":,()") for w in clean.split()]
+        first_w = words[0] if words else ""
+        has_date = bool(_DATE_RANGE_RE.search(clean))
+        date_m = _DATE_RANGE_RE.search(clean)
+        dates_val = date_m.group(0).strip() if date_m else None
+
+        # 1. Explicit Responsibility / Category Heading with Colon (e.g. 'Marvis Client - MacOS/iOS Development:' or 'Developer Experience:')
+        if not has_bullet and ":" in clean:
+            h_part, _, b_part = clean.partition(":")
+            h_words = [w.lower().rstrip(":,()") for w in h_part.split()]
+            h_clean = h_part.strip()
+            h_lower = h_clean.lower()
+            if len(h_words) <= 8 and not bool(_DATE_RANGE_RE.search(h_part)):
+                is_cat_keyword = any(w in h_words for w in ["development", "infrastructure", "packaging", "sdk", "platform", "automation", "microservices", "responsibilities", "contributions", "client", "engineering", "systems", "cloud", "core", "backend", "frontend", "pipeline"]) or any(kw in h_lower for kw in ["indoor location", "release automation", "full-stack", "payment platform", "developer experience", "user experience"])
+                if is_cat_keyword or not b_part.strip() or not any(w in ROLE_KEYWORDS for w in h_words if w != "experience"):
+                    if current_group and current_group.bullets:
+                        current_groups.append(current_group)
+                    current_group = ResponsibilityGroup(id=f"grp_{len(current_groups)}", heading=h_clean + ":", bullets=[])
+                    if b_part.strip():
+                        # Inline bullet attached to heading
+                        b_clean = _BULLET_PREFIX_RE.sub("", b_part.strip()).strip()
+                        if b_clean:
+                            current_bullets.append(b_clean)
+                            current_group.bullets.append(b_clean)
+                    continue
+
+        # 2. Location line (pure location) vs Company + Location
+        has_loc_keyword = _is_location_text(clean)
+        if not has_bullet and has_loc_keyword and not any(w in ROLE_KEYWORDS for w in words):
+            # Check if entire line is pure location
+            is_pure_location = all(
+                w in LOCATION_KEYWORDS or w in KNOWN_LOCATIONS or w in {",", "-", "|", "/", "in", "and", "&", "state", "city"}
+                for w in words
+            )
+            if is_pure_location and len(words) <= 5:
+                current_location = clean
+                continue
+            
+            # Check if line is 'Company, Location'
+            company_loc_found = False
+            for sep in [",", " - ", " — ", " | ", " – "]:
+                if sep in clean:
+                    c_cand, _, l_cand = clean.partition(sep)
+                    c_words = [w.lower().rstrip(":,()") for w in c_cand.split()]
+                    l_words = [w.lower().rstrip(":,()") for w in l_cand.split()]
+                    if (
+                        _is_location_text(l_cand)
+                        and len(l_words) <= 5
+                        and len(c_words) <= 6
+                        and c_words
+                        and c_words[0] not in STRONG_ACTION_VERBS
+                        and not _EVIDENCE_VERB_RE.match(c_words[0])
+                        and not any(w in ROLE_KEYWORDS for w in c_words)
+                    ):
+                        if current_bullets or (current_company and current_company.lower() != c_cand.strip().lower() and current_progression):
+                            flush_entity()
+                        current_company = c_cand.strip()
+                        current_location = l_cand.strip()
+                        company_loc_found = True
+                        break
+            if company_loc_found:
+                continue
+
+        # 3. Standalone heading without colon (e.g. 'Indoor Location SDK')
+        if (
+            not has_bullet
+            and len(words) <= 7
+            and not has_date
+            and not clean.endswith((".", ";", "!"))
+            and (
+                clean.endswith(":")
+                or any(w in words for w in ["development", "infrastructure", "packaging", "sdk", "automation", "microservices", "core", "platform"])
+                or any(kw in clean_lower for kw in ["indoor location", "release automation", "developer experience"])
+            )
+        ):
+            if current_group and current_group.bullets:
+                current_groups.append(current_group)
+            current_group = ResponsibilityGroup(id=f"grp_{len(current_groups)}", heading=clean + ("" if clean.endswith(":") else ":"), bullets=[])
+            continue
+
+        # 4. Combined 'Role at Company' or 'Company — Role' line
+        if not has_bullet and (" at " in clean_lower or " — " in clean or " | " in clean) and (any(w in ROLE_KEYWORDS for w in words) or has_date):
+            if current_bullets or (current_company and current_progression):
+                flush_entity()
+            if " at " in clean_lower:
+                r_part, _, c_part = clean.partition(" at ")
+            elif " — " in clean:
+                c_part, _, r_part = clean.partition(" — ")
+            elif " | " in clean:
+                r_part, _, c_part = clean.partition(" | ")
+            else:
+                r_part, c_part = clean, "Company"
+            
+            c_clean = _DATE_RANGE_RE.sub("", c_part).strip(" ()–-—|")
+            r_clean = _DATE_RANGE_RE.sub("", r_part).strip(" ()–-—|")
+
+            # Extract attached location from company part if present
+            c_final = c_clean
+            l_final = ""
+            for sep in [" - ", " — ", " – ", " | ", ", "]:
+                if sep in c_clean:
+                    c_sub, _, l_sub = c_clean.partition(sep)
+                    if _is_location_text(l_sub) and len(l_sub.split()) <= 5:
+                        c_final = c_sub.strip(" ()–-—|")
+                        l_final = l_sub.strip(" ()–-—|")
+                        break
+
+            current_company = c_final or "Company"
+            current_location = l_final or current_location
+            current_role = r_clean or "Software Engineer"
+            current_dates = dates_val
+            current_progression.append(RoleProgression(title=current_role, dates=dates_val))
+            continue
+
+        # 5. Role / Promotion line (e.g. 'Staff Software Engineer (2022 - Present)')
+        if not has_bullet and not clean.endswith(":") and any(w in ROLE_KEYWORDS for w in words if w != "experience" or has_date) and (has_date or len(words) <= 7):
+            title_only = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|")
+            current_progression.append(RoleProgression(title=title_only, dates=dates_val))
+            if not current_role:
+                current_role = title_only
+                current_dates = dates_val
+            continue
+
+        # 6. Company Header line (e.g. 'Juniper Networks')
+        if (
+            not has_bullet
+            and not has_date
+            and len(words) <= 6
+            and not any(w in ROLE_KEYWORDS for w in words)
+            and not clean.endswith((".", ";", "!"))
+            and first_w not in STRONG_ACTION_VERBS
+            and not _EVIDENCE_VERB_RE.match(first_w)
+            and not any(w in clean_lower for w in ["reduced", "increased", "achieved", "improved", "handling", "processing", "delivering", "supporting", "environments", "commands", "enrollment"])
+        ):
+            if current_bullets or (current_company and current_company.lower() != clean_lower and current_progression):
+                flush_entity()
+            current_company = clean
+            continue
+
+        # 7. Bullet continuation check:
+        # If no bullet marker, and (starts with lowercase OR previous bullet did not end with punctuation and line doesn't start with action verb)
+        if current_bullets and not has_bullet and not has_date:
+            prev_ended = current_bullets[-1].strip().endswith((".", ";", "!"))
+            starts_lower = clean[0].islower() if clean else False
+            is_action_verb = first_w in STRONG_ACTION_VERBS or bool(_EVIDENCE_VERB_RE.match(first_w))
+            
+            if starts_lower or (not prev_ended and not is_action_verb):
+                current_bullets[-1] = current_bullets[-1].rstrip() + " " + clean
+                if current_group and current_group.bullets:
+                    current_group.bullets[-1] = current_bullets[-1]
+                if current_progression and current_progression[-1].bullets:
+                    current_progression[-1].bullets[-1] = current_bullets[-1]
+                continue
+
+        # 8. New Bullet point or unstructured prose sentence
+        if has_bullet:
+            current_bullets.append(clean)
+            if current_group is not None:
+                current_group.bullets.append(clean)
+            if current_progression:
+                current_progression[-1].bullets.append(clean)
+            continue
+
+        # Paragraph or unstructured line
+        if len(clean.split()) > 10 or (not clean.endswith(":") and any(w.lower() in STRONG_ACTION_VERBS for w in clean.split()[:2])):
+            split_sentences = _split_unstructured_evidence(clean)
+            current_bullets.extend(split_sentences)
+            if current_group is not None:
+                current_group.bullets.extend(split_sentences)
+            if current_progression:
+                current_progression[-1].bullets.extend(split_sentences)
+            continue
+        else:
+            current_bullets.append(clean)
+            if current_group is not None:
+                current_group.bullets.append(clean)
+            if current_progression:
+                current_progression[-1].bullets.append(clean)
+            continue
+
+    flush_entity()
+    return entities
+
+
+def _structure_experience(lines: list[str]) -> list[str]:
+    """
+    Converts raw experience lines into structured experience entries preserving companies,
+    role progression, locations, responsibility headings, and individual bullets.
+    """
+    entities = parse_experience_section(lines)
+    if not entities:
+        return _bulletize(lines)
+
+    result_lines: list[str] = []
+    for exp in entities:
+        if exp.progression and len(exp.progression) > 1:
+            result_lines.append(exp.company)
+            if exp.location:
+                result_lines.append(exp.location)
+            for p in exp.progression:
+                p_str = f"{p.title} ({p.dates})" if p.dates else p.title
+                result_lines.append(p_str)
+                for b in p.bullets:
+                    b_clean = b.strip()
+                    if b_clean:
+                        result_lines.append(b_clean)
+            if exp.responsibility_groups:
+                for grp in exp.responsibility_groups:
+                    if grp.heading:
+                        result_lines.append(grp.heading)
+                    for b in grp.bullets:
+                        b_clean = b.strip()
+                        if b_clean:
+                            result_lines.append(b_clean)
+        else:
+            header_parts = []
+            is_dummy_company = not exp.company or exp.company.lower() in ("work experience", "company")
+            if not is_dummy_company and exp.role:
+                header_parts.append(f"{exp.role} at {exp.company}")
+            elif not is_dummy_company:
+                header_parts.append(exp.company)
+            elif exp.role and (exp.dates or exp.location):
+                header_parts.append(exp.role)
+
+            if exp.dates:
+                header_parts.append(f"({exp.dates})")
+            if exp.location:
+                header_parts.append(f"- {exp.location}")
+            if header_parts:
+                result_lines.append(" ".join(header_parts))
+
+            if exp.responsibility_groups:
+                for grp in exp.responsibility_groups:
+                    if grp.heading:
+                        result_lines.append(grp.heading)
+                    for b in grp.bullets:
+                        b_clean = b.strip()
+                        if b_clean:
+                            result_lines.append(b_clean)
+            else:
+                for b in exp.bullets:
+                    b_clean = b.strip()
+                    if b_clean:
+                        result_lines.append(b_clean)
+
+    return result_lines
 
 
 def _bulletize(lines: list[str]) -> list[str]:
@@ -237,7 +737,7 @@ def _bulletize(lines: list[str]) -> list[str]:
         if _is_tech_stack_or_meta(stripped):
             continue
 
-        standalone_bullet = stripped in {"•", "-", "*", "–", "—", "�"}
+        standalone_bullet = stripped in {"•", "-", "*", "–", "—", ""}
         has_bullet_prefix = standalone_bullet or bool(_BULLET_PREFIX_RE.match(stripped))
         cleaned = "" if standalone_bullet else _BULLET_PREFIX_RE.sub("", stripped).strip()
         if not cleaned:
@@ -270,17 +770,116 @@ def _bulletize(lines: list[str]) -> list[str]:
     return final_bullets
 
 
+PREPOSITIONS_CONJUNCTIONS = {
+    "using", "with", "from", "to", "for", "in", "on", "by", "and", "or", "of",
+    "into", "across", "through", "detecting", "achieving", "handling", "predicting",
+    "including", "alongside", "optimizing", "deploying"
+}
+
+
+def parse_projects_section(lines: list[str]) -> list[Any]:
+    from app.modules.resume.models import ProjectEntity
+    projects: list[ProjectEntity] = []
+    current_title = ""
+    current_tech = ""
+    current_dates = None
+    current_bullets = []
+
+    def flush_proj():
+        nonlocal current_title, current_tech, current_dates, current_bullets
+        if current_title or current_bullets:
+            proj_id = f"proj_{len(projects)}"
+            projects.append(ProjectEntity(
+                id=proj_id,
+                title=current_title or f"Project {len(projects)+1}",
+                tech_stack=current_tech or None,
+                dates=current_dates,
+                bullets=list(current_bullets),
+            ))
+            current_title = ""
+            current_tech = ""
+            current_dates = None
+            current_bullets = []
+
+    expanded_lines: list[str] = []
+    for l in lines:
+        for sub in str(l).split("\n"):
+            expanded_lines.append(sub)
+
+    for line in expanded_lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        has_bullet = bool(_BULLET_PREFIX_RE.match(stripped)) or stripped.startswith(("•", "-", "*", "–", "—"))
+        clean = _BULLET_PREFIX_RE.sub("", stripped).strip()
+        if not clean:
+            continue
+
+        # Tech stack metadata line
+        if _is_tech_stack_or_meta(clean) or (not has_bullet and re.match(r"^(?:Python|Java|C\+\+|React|TensorFlow|Go|Node|Swift|JavaScript|HTML|SQL|OpenCV|Keras|Streamlit)\b", clean) and len(clean.split()) <= 10 and "," in clean):
+            tech_val = re.sub(r"^(?:technologies|tech stack|tools & technologies|tools|frameworks & tools|stack|languages & frameworks)\s*:\s*", "", clean, flags=re.IGNORECASE).strip()
+            current_tech = (current_tech + ", " + tech_val).strip(", ") if current_tech else tech_val
+            continue
+
+        # Inline Title: Bullet
+        if not has_bullet and ":" in clean and not _is_tech_stack_or_meta(clean):
+            t_cand, sep, b_cand = clean.partition(":")
+            t_cand = t_cand.strip()
+            b_cand = b_cand.strip()
+            if 1 <= len(t_cand.split()) <= 10 and len(b_cand.split()) >= 3 and t_cand.split()[0].lower() not in STRONG_ACTION_VERBS:
+                flush_proj()
+                current_title = t_cand
+                if b_cand:
+                    current_bullets.append(b_cand)
+                continue
+
+        # Standalone Project Title
+        if not has_bullet and _looks_like_project_title(clean):
+            if current_bullets or current_title:
+                flush_proj()
+            current_title = clean
+            continue
+
+        # Bullet point
+        if has_bullet:
+            current_bullets.append(clean)
+            continue
+
+        # Continuation of previous bullet
+        if current_bullets and not current_bullets[-1].endswith((".", ";", "!")):
+            current_bullets[-1] = current_bullets[-1].rstrip() + " " + clean
+        else:
+            current_bullets.append(clean)
+
+    flush_proj()
+    return projects
+
+
+_EVIDENCE_VERB_RE = re.compile(
+    r"^(?:developed|engineered|implemented|built|architected|designed|created|led|managed|optimized|automated|maintained|integrated|spearheaded|deployed|trained|fine-tuned|constructed|authored|delivered|launched)\b",
+    re.IGNORECASE,
+)
+
+
 def _looks_like_project_title(line: str) -> bool:
-    """Identify a compact project heading without mistaking it for a bullet."""
+    """Identify a compact project heading without mistaking it for a bullet or inline project."""
     cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
-    if not cleaned or _BULLET_PREFIX_RE.match(line) or _is_tech_stack_or_meta(cleaned):
+    if not cleaned or _is_tech_stack_or_meta(cleaned) or ":" in cleaned:
         return False
-    first_word = cleaned.split()[0].lower().rstrip(":,")
-    return (
-        1 <= len(cleaned.split()) <= 18
-        and not cleaned.endswith((".", ";", "!"))
-        and not _EVIDENCE_VERB_RE.match(first_word)
-    )
+    words = cleaned.split()
+    if len(words) > 8 or len(words) < 1:
+        return False
+    if cleaned.endswith((".", ";", "!")):
+        return False
+    last_word = words[-1].lower().rstrip(":,")
+    if last_word in PREPOSITIONS_CONJUNCTIONS:
+        return False
+    first_word = words[0].lower().rstrip(":,")
+    if _EVIDENCE_VERB_RE.match(first_word) or first_word in STRONG_ACTION_VERBS:
+        return False
+    if any(w in [x.lower() for x in words] for w in ["to", "from", "achieving", "reducing", "improving", "handling", "detect", "predict"]):
+        return False
+    return True
 
 
 def _bulletize_projects(lines: list[str]) -> list[str]:
@@ -299,7 +898,7 @@ def _bulletize_projects(lines: list[str]) -> list[str]:
         stripped = line.strip()
         if not stripped or _DATE_ONLY_RE.match(stripped):
             continue
-        standalone_bullet = stripped in {"•", "-", "*", "–", "—", ""}
+        standalone_bullet = stripped in {"•", "-", "*", "–", "—", "", ""}
         has_bullet_prefix = standalone_bullet or bool(_BULLET_PREFIX_RE.match(stripped))
         cleaned = "" if standalone_bullet else _BULLET_PREFIX_RE.sub("", stripped).strip()
         if not cleaned:
@@ -309,12 +908,37 @@ def _bulletize_projects(lines: list[str]) -> list[str]:
             has_bullet_prefix = True
             pending_bullet = False
 
+        # Extract inline "Title: Bullet" format e.g. "AI-Based Ad Analyzer: Built Flask..."
+        if ":" in cleaned and not _is_tech_stack_or_meta(cleaned):
+            t_cand, sep, b_cand = cleaned.partition(":")
+            t_cand = t_cand.strip()
+            b_cand = b_cand.strip()
+            first_w = t_cand.split()[0].lower() if t_cand.split() else ""
+            if 1 <= len(t_cand.split()) <= 12 and len(b_cand.split()) >= 3 and first_w not in STRONG_ACTION_VERBS:
+                if first_bullet_for_project and current_title:
+                    ctx = [current_title]
+                    if current_tech:
+                        ctx.append(f"Technologies: {current_tech}")
+                    bullets.append("\n".join(ctx))
+                    current_title = ""
+                    current_tech = ""
+                    first_bullet_for_project = False
+
+                paren_t = re.search(r"^(.*?)\s*\(([^)]+)\)$", t_cand)
+                if paren_t:
+                    p_title = paren_t.group(1).strip()
+                    p_tech = paren_t.group(2).strip()
+                    bullets.append(f"{p_title}\nTechnologies: {p_tech}\n{b_cand}")
+                else:
+                    bullets.append(f"{t_cand}\n{b_cand}")
+                continue
+
         # Extract title and inline tech stack in parentheses e.g. "AI Screener (Python, FastAPI)"
         paren_stack = re.search(r"^(.*?)\s*\(([^)]+)\)\s*$", cleaned)
-        if not has_bullet_prefix and paren_stack:
+        if paren_stack and not _is_tech_stack_or_meta(cleaned):
             t_cand = paren_stack.group(1).strip()
             s_cand = paren_stack.group(2).strip()
-            if 1 <= len(t_cand.split()) <= 14 and ("," in s_cand or any(k in s_cand.lower() for k in ["python", "java", "react", "node", "fastapi", "sql", "aws", "docker", "c++", "ml", "ai", "js", "ts", "html", "css"])):
+            if 1 <= len(t_cand.split()) <= 14 and ("," in s_cand or len(s_cand.split()) <= 6 or any(k in s_cand.lower() for k in ["python", "java", "react", "node", "fastapi", "sql", "aws", "docker", "c++", "ml", "ai", "js", "ts", "html", "css", "raft", "grpc", "sqlite", "rust"])):
                 if first_bullet_for_project and current_title:
                     ctx = [current_title]
                     if current_tech:
@@ -325,35 +949,37 @@ def _bulletize_projects(lines: list[str]) -> list[str]:
                 first_bullet_for_project = True
                 continue
 
-        # Some PDF extractors place the right-aligned technology stack on the
-        # same line as a project title. Split only when a known language/tool
-        # visibly begins that comma-separated stack.
+        # Split right-aligned tech stack on same line as project title
         inline_stack = re.search(
-            r"\b(Python|Java|JavaScript|TypeScript|C\+\+|C|TensorFlow|Keras|React|Node\.js|Flask|FastAPI|PostgreSQL|MongoDB|Docker)\s*,",
+            r"\b(Python|Java|JavaScript|TypeScript|C\+\+|C|TensorFlow|Keras|React|Node\.js|Flask|FastAPI|PostgreSQL|MongoDB|Docker|Rust|Go)\s*,",
             cleaned,
             re.IGNORECASE,
         )
-        if not has_bullet_prefix and inline_stack and inline_stack.start() > 0:
-            if first_bullet_for_project and current_title:
-                ctx = [current_title]
-                if current_tech:
-                    ctx.append(f"Technologies: {current_tech}")
-                bullets.append("\n".join(ctx))
-            current_title = cleaned[:inline_stack.start()].strip(" |-–—(")
-            current_tech = cleaned[inline_stack.start():].strip(" )")
-            first_bullet_for_project = True
-            continue
+        if inline_stack and inline_stack.start() > 0 and not _is_tech_stack_or_meta(cleaned) and not cleaned.endswith((".", ";", "!")):
+            t_cand = cleaned[:inline_stack.start()].strip(" |-–—(")
+            s_cand = cleaned[inline_stack.start():].strip(" )")
+            if _looks_like_project_title(t_cand):
+                if first_bullet_for_project and current_title:
+                    ctx = [current_title]
+                    if current_tech:
+                        ctx.append(f"Technologies: {current_tech}")
+                    bullets.append("\n".join(ctx))
+                current_title = t_cand
+                current_tech = s_cand
+                first_bullet_for_project = True
+                continue
 
-        if first_bullet_for_project and not has_bullet_prefix and _is_tech_stack_or_meta(cleaned):
-            tech_val = re.sub(r"^(?:tech stack|technologies|tools & tech|stack)\s*:\s*", "", cleaned, flags=re.IGNORECASE).strip()
+        if _is_tech_stack_or_meta(cleaned):
+            tech_val = re.sub(
+                r"^(?:tech stack|technologies|tools & tech|stack|frameworks & tools)\s*:\s*",
+                "",
+                cleaned,
+                flags=re.IGNORECASE,
+            ).strip()
             current_tech = tech_val or cleaned
             continue
 
-        if first_bullet_for_project and not has_bullet_prefix and re.search(r"[,|]", cleaned) and len(cleaned.split()) <= 16 and not cleaned.endswith((".", ";", "!")):
-            current_tech = cleaned
-            continue
-
-        if not has_bullet_prefix and _looks_like_project_title(cleaned):
+        if _looks_like_project_title(cleaned):
             if first_bullet_for_project and current_title:
                 ctx = [current_title]
                 if current_tech:
@@ -371,6 +997,8 @@ def _bulletize_projects(lines: list[str]) -> list[str]:
                 context.append(f"Technologies: {current_tech}")
             context.append(cleaned)
             bullets.append("\n".join(context))
+            current_title = ""
+            current_tech = ""
             first_bullet_for_project = False
             continue
 
@@ -382,8 +1010,6 @@ def _bulletize_projects(lines: list[str]) -> list[str]:
             bullets[-1] = bullets[-1].rstrip() + " " + cleaned
             continue
 
-        # Keep wrapped unbulleted prose as evidence when no project title was
-        # detected. This matches the forgiving behaviour of _bulletize.
         bullets.extend(_split_unstructured_evidence(cleaned))
 
     if first_bullet_for_project and current_title:
@@ -455,35 +1081,65 @@ def _extract_list_items(lines: list[str]) -> list[str]:
     return items
 
 
+PROGRAMMING_LANGUAGE_NAMES = {
+    "python", "java", "c", "c++", "c#", "javascript", "typescript", "golang", "go",
+    "rust", "ruby", "php", "swift", "kotlin", "scala", "r", "dart", "html", "css",
+    "sql", "nosql", "bash", "shell", "powershell", "perl", "matlab", "assembly",
+    "react", "node", "nodejs", "express", "flask", "fastapi", "django", "spring",
+    "docker", "kubernetes", "aws", "azure", "gcp", "git", "linux", "mongodb", "postgresql",
+}
+
+
 def _extract_languages(lines: list[str], full_text: str) -> list[str]:
     """
-    Extracts languages from the languages section or full text.
-    Handles 'Telugu, English, Kannada, Hindi' and category lines.
+    Extracts candidate's spoken/human languages from the languages section or preamble.
+    Guarantees that programming languages (Java, Python, C, etc.) from Skills are never
+    mistaken for spoken languages.
     """
     langs: list[str] = []
     raw_lines = [l for l in lines if l.strip()]
 
+    # Fallback to full_text ONLY if no languages section was found AND
+    # there is an explicit spoken languages indicator anchored at line start.
     if not raw_lines:
-        lang_match = re.search(r"(?:languages|languages\s+known|known\s+languages)\s*:\s*([^\n\r]+)", full_text, re.IGNORECASE)
+        lang_match = re.search(
+            r"(?mi)^\s*(?:known\s+languages|languages\s+known|spoken\s+languages)\s*:\s*([^\n\r]+)",
+            full_text,
+        )
         if lang_match:
             raw_lines = [lang_match.group(1)]
 
     for line in raw_lines:
         cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
-        cleaned = re.sub(r"^(?:languages|known languages|languages known)\s*:\s*", "", cleaned, flags=re.IGNORECASE).strip()
+        cleaned = re.sub(
+            r"^(?:known\s+languages|languages\s+known|spoken\s+languages|languages)\s*:\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        ).strip()
         if not cleaned:
             continue
         parts = [p.strip() for p in re.split(r"[,|•;/]", cleaned) if p.strip()]
         for p in parts:
-            if len(p) <= 25 and p not in langs:
-                langs.append(p)
+            p_clean = re.sub(r"\s*\([^)]*\)", "", p).strip()
+            if not p_clean or len(p_clean) > 25:
+                continue
+            # NEVER add technical programming languages to spoken languages
+            if p_clean.lower() in PROGRAMMING_LANGUAGE_NAMES:
+                continue
+            if p_clean not in langs:
+                langs.append(p_clean)
 
     return langs
 
 
 def _is_location_or_contact_line(text: str) -> bool:
     s = text.strip()
-    if not s or len(s) < 2:
+    if not s:
+        return True
+    if s.upper() in {"C", "R"}:
+        return False
+    if len(s) < 2:
         return True
     lower = s.lower().strip()
     if EMAIL_RE.search(s) or PHONE_RE.search(s) or URL_RE.search(s):
@@ -555,18 +1211,108 @@ def _split_skills(lines: list[str], full_text: str) -> list[str]:
     return found_skills
 
 
+def _recover_unheaded_evidence(lines: list[str]) -> list[str]:
+    """Recovers evidence from unheaded preamble or prose paragraphs."""
+    evidence: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        cleaned = _BULLET_PREFIX_RE.sub("", stripped).strip()
+        if not cleaned:
+            continue
+        if _is_location_or_contact_line(cleaned):
+            continue
+        sentences = _split_unstructured_evidence(cleaned)
+        for s in sentences:
+            s_lower = s.lower()
+            if any(w in s_lower for w in ["passionate software engineer", "seeking an entry", "seeking a role", "looking for an opportunity"]):
+                continue
+            if any(s_lower.startswith(w) for w in ["graduated with", "graduated from", "awarded 1st", "awarded 2nd", "bachelor of", "master of"]):
+                continue
+            words = s_lower.split()
+            first_few = words[:4]
+            if any(w in STRONG_ACTION_VERBS for w in first_few) or any(k in words for k in ["built", "developed", "led", "engineered", "created", "architected", "implemented", "managed", "optimized", "designed", "working"]):
+                evidence.append(s)
+            elif len(words) >= 8 and not any(w in s_lower for w in ["bachelor", "master", "cgpa"]):
+                evidence.append(s)
+    return evidence
+
+
+def _extract_summary_from_preamble(preamble_lines: list[str]) -> str | None:
+    """
+    Detects an unheaded introductory summary / professional profile paragraph from the top preamble.
+    """
+    for line in preamble_lines:
+        s = line.strip()
+        if not s or len(s.split()) < 12:
+            continue
+        if _is_location_or_contact_line(s) or EMAIL_RE.search(s) or PHONE_RE.search(s):
+            continue
+        if _INSTITUTION_RE.search(s) or any(w in s.lower() for w in ["bachelor", "master", "cgpa", "b.tech", "b.e."]):
+            continue
+        if s.startswith(("•", "-", "*")):
+            continue
+        if any(w in s.lower() for w in ["engineer", "developer", "professional", "experience", "building", "passionate", "specialized", "architect", "leading", "proficient", "skilled"]):
+            return s
+    return None
+
+
+def validate_candidate_profile(profile: "CandidateProfile") -> list[str]:
+    """
+    Deterministic structural validation on CandidateProfile to identify:
+    - Orphan roles / unassigned companies
+    - Empty projects
+    - Duplicate evidence IDs
+    - Malformed hierarchies
+    """
+    issues: list[str] = []
+    seen_evidence_ids: set[str] = set()
+
+    # 1. Experience hierarchy checks
+    for exp in profile.experience:
+        if not exp.company or exp.company.strip().lower() in ("company", ""):
+            if exp.role:
+                exp.company = "Independent / Professional Work"
+        for ev in exp.evidence_units:
+            if ev.id in seen_evidence_ids:
+                issues.append(f"Duplicate Evidence ID detected: {ev.id}")
+            seen_evidence_ids.add(ev.id)
+            if not ev.text.strip():
+                issues.append(f"Empty evidence unit in {exp.company}")
+
+    # 2. Project validation
+    for proj in profile.projects:
+        if not proj.title:
+            proj.title = "Technical Project"
+        for ev in proj.evidence_units:
+            if ev.id in seen_evidence_ids:
+                issues.append(f"Duplicate Evidence ID detected: {ev.id}")
+            seen_evidence_ids.add(ev.id)
+
+    # 3. Additional sections validation
+    for sec in profile.additional_sections:
+        for ev in sec.evidence_units:
+            if ev.id in seen_evidence_ids:
+                issues.append(f"Duplicate Evidence ID detected: {ev.id}")
+            seen_evidence_ids.add(ev.id)
+
+    return issues
+
+
 def structure_resume_text(full_text: str) -> dict:
     """
     Standardized, robust resume structurer for real-world messy resumes.
     Guarantees 100% preservation of all sections, contact info, education, certifications, and languages.
     """
-    lines = full_text.split("\n")
+    cleaned_full_text = _clean_raw_text_artifacts(full_text)
+    lines = cleaned_full_text.split("\n")
     sections = _split_into_sections(lines)
 
-    personal = _extract_personal(sections["_preamble"], full_text)
-    skills = _split_skills(sections["skills"], full_text)
+    personal = _extract_personal(sections["_preamble"], cleaned_full_text)
+    skills = _split_skills(sections["skills"], cleaned_full_text)
     skills_categorized = _extract_categorized_skills(sections["skills"])
-    experience_bullets = _bulletize(sections["experience"])
+    experience_bullets = _structure_experience(sections["experience"])
     project_bullets = _bulletize_projects(sections["projects"])
 
     # Truly unstructured resumes may put all evidence under the header block.
@@ -575,17 +1321,62 @@ def structure_resume_text(full_text: str) -> dict:
     if not experience_bullets and not project_bullets:
         experience_bullets = _recover_unheaded_evidence(sections["_preamble"])
 
+    summary_text = " ".join(sections["summary"]).strip() if sections["summary"] else _extract_summary_from_preamble(sections["_preamble"])
+
+    # Extract custom / additional sections
+    add_sections = []
+    for heading, sec_key in sections.get("_custom", []):
+        sec_lines = sections.get(sec_key, [])
+        items = _extract_list_items(sec_lines)
+        add_sections.append({
+            "id": f"add_{len(add_sections)}",
+            "heading": heading,
+            "semantic_type": "UNKNOWN",
+            "items": items,
+            "text": "\n".join(sec_lines),
+        })
+
     return {
         "personal": personal,
-        "summary": " ".join(sections["summary"]) if sections["summary"] else None,
+        "summary": summary_text,
         "skills": skills,
         "skills_categorized": skills_categorized,
         "experience_raw": experience_bullets,
         "projects_raw": project_bullets,
-        "internships_raw": _bulletize(sections["internships"]),
-        "education_raw": _structure_education(sections["education"]),
-        "certifications": _extract_list_items(sections["certifications"]),
-        "achievements": _extract_list_items(sections["achievements"]),
-        "languages": _extract_languages(sections["languages"], full_text),
+        "internships_raw": _structure_experience(sections.get("internships", [])),
+        "education_raw": _structure_education(sections.get("education", [])),
+        "certifications": _extract_list_items(sections.get("certifications", [])),
+        "achievements": _extract_list_items(sections.get("achievements", [])),
+        "publications": _extract_list_items(sections.get("publications", [])),
+        "research": _extract_list_items(sections.get("research", [])),
+        "leadership": _extract_list_items(sections.get("leadership", [])),
+        "volunteer": _extract_list_items(sections.get("volunteer", [])),
+        "side_quests": _extract_list_items(sections.get("side_quests", [])),
+        "languages": _extract_languages(sections.get("languages", []), cleaned_full_text),
         "links": [u for u in [personal.get("github"), personal.get("linkedin"), personal.get("portfolio")] if u],
+        "additional_sections": add_sections,
     }
+
+
+def extract_candidate_profile(document_or_text: Any) -> "CandidateProfile":
+    """
+    Parses arbitrary resume text or NormalizedDocument into a rich canonical CandidateProfile with full
+    provenance-tracked EvidenceUnit objects and deterministic structural validation.
+    """
+    from app.modules.resume.models import CandidateProfile
+
+    if hasattr(document_or_text, "normalized_text") and document_or_text.normalized_text:
+        raw_text = document_or_text.normalized_text
+    elif hasattr(document_or_text, "full_text") and document_or_text.full_text:
+        raw_text = document_or_text.full_text
+    else:
+        raw_text = str(document_or_text)
+
+    cleaned_full_text = _clean_raw_text_artifacts(raw_text)
+    structured = structure_resume_text(cleaned_full_text)
+    profile = CandidateProfile.from_parsed_dict(structured, cleaned_full_text)
+
+    # Run deterministic structural validation
+    validate_candidate_profile(profile)
+
+    return profile

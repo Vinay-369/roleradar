@@ -21,7 +21,7 @@ STANDARD_SECTION_HEADERS = [
 ]
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
-PHONE_RE = re.compile(r"(\+?\d{1,3}[\s-]?)?\d{10}\b")
+PHONE_RE = re.compile(r"(?:\+?\d{1,3}[\s-]?)?(?:\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|\d{10}\b)")
 # Matches full URLs (http/www) as well as bare professional-profile
 # domains without a scheme, since resumes very commonly write
 # "github.com/user" or "linkedin.com/in/user" with no http:// prefix.

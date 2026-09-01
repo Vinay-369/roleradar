@@ -67,8 +67,8 @@ async def test_wholesale_structured_tailoring_pipeline_e2e(db, settings):
         "Built async batch processor reducing background job queue time by 40%",
     ]
     master_proj = [
-        "RoleRadar AI Job Search Platform using Python, FastAPI, and MongoDB",
-        "Implemented real-time ATS match scoring with spaCy and vector embeddings",
+        "• Engineered RoleRadar AI Job Search Platform using Python, FastAPI, and MongoDB.",
+        "• Implemented real-time ATS match scoring with spaCy and vector embeddings.",
     ]
 
     master_parsed = {

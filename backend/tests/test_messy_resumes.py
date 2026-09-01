@@ -280,3 +280,48 @@ def test_messy_resume_5_fresher_dense_extraction():
     )
     assert parseability.score >= 70
     assert parseability.contact_info_found["email"] is True
+
+
+MESSY_RESUME_6_GLUED_SECTION_HEADER = """
+VIKAS K
+Davangere, Karnataka | vikas@example.com | +91 9876543210 | github.com/vikas-dev
+
+TECHNICAL SKILLS
+Programming Languages: Java, Python, C
+Frameworks & Tools: React, Node.js, Express, Flask, FastAPI, MongoDB, PostgreSQL, Git, Docker, AWS
+
+EDUCATION
+Bapuji Institute of Engineering and Technology, Davangere
+B.E in Computer Science and Engineering (2023 - 2027) | CGPA: 9.1 / 10.0
+
+CERTIFICATIONS
+• Smart India Hackathon (SIH) 2024
+• Gen AI Workshop
+• Completed Python Programming Course - ScalerLanguages
+Telugu, English, Kannada, Hindi
+"""
+
+
+def test_messy_resume_6_glued_languages_header():
+    structured = structure_resume_text(MESSY_RESUME_6_GLUED_SECTION_HEADER)
+    
+    # Certifications must have exactly 3 entries
+    assert len(structured["certifications"]) == 3
+    assert "Smart India Hackathon (SIH) 2024" in structured["certifications"]
+    assert "Gen AI Workshop" in structured["certifications"]
+    assert "Completed Python Programming Course - Scaler" in structured["certifications"]
+    
+    # Languages must have exactly 4 spoken languages, NOT programming languages
+    assert len(structured["languages"]) == 4
+    assert set(structured["languages"]) == {"Telugu", "English", "Kannada", "Hindi"}
+    assert "Java" not in structured["languages"]
+    assert "Python" not in structured["languages"]
+    assert "C" not in structured["languages"]
+    
+    # Programming languages remain in skills
+    assert "Programming Languages: Java, Python, C" in structured["skills_categorized"]
+    skills_lower = {s.lower() for s in structured["skills"]}
+    assert "java" in skills_lower
+    assert "python" in skills_lower
+    assert "c" in skills_lower
+

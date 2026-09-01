@@ -5,20 +5,29 @@ import type { TailoredResume, Change } from "../../lib/tailoring";
 interface ResumeDiffModalProps {
   version: TailoredResume;
   triggerButton?: React.ReactNode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function ResumeDiffModal({ version, triggerButton }: ResumeDiffModalProps) {
-  const [open, setOpen] = useState(false);
+export function ResumeDiffModal({ version, triggerButton, isOpen, onClose }: ResumeDiffModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"side-by-side" | "unified">("side-by-side");
 
-  const changes = version.changes || [];
+  const open = isOpen !== undefined ? isOpen : internalOpen;
+  const setOpen = (val: boolean) => {
+    setInternalOpen(val);
+    if (!val && onClose) onClose();
+  };
+
+  const changes = version?.changes || [];
   const approvedCount = changes.filter((c: Change) => c.status === "APPROVED").length;
 
   return (
     <>
-      {triggerButton ? (
+      {triggerButton && (
         <div onClick={() => setOpen(true)}>{triggerButton}</div>
-      ) : (
+      )}
+      {!triggerButton && isOpen === undefined && (
         <button
           type="button"
           onClick={() => setOpen(true)}
