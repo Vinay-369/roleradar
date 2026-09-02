@@ -303,6 +303,8 @@ class CandidateProfile(BaseModel):
     projects: list[ProjectEntity] = Field(default_factory=list)
     education: list[EducationEntity] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
+    skills_explicit: list[str] = Field(default_factory=list)
+    skills_inferred: list[str] = Field(default_factory=list)
     skills_categorized: list[str] = Field(default_factory=list)
     certifications: list[str] = Field(default_factory=list)
     achievements: list[str] = Field(default_factory=list)
@@ -437,6 +439,8 @@ class CandidateProfile(BaseModel):
             "personal": dict(self.personal),
             "summary": self.summary,
             "skills": list(self.skills),
+            "skills_explicit": list(self.skills_explicit),
+            "skills_inferred": list(self.skills_inferred),
             "skills_categorized": list(self.skills_categorized),
             "experience": [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in self.experience],
             "experience_raw": exp_raw if exp_raw else [b for exp in self.experience for b in exp.bullets],
@@ -473,13 +477,25 @@ class CandidateProfile(BaseModel):
         from app.modules.resume.metrics import extract_quantified_metrics
 
         evidence_units: list[EvidenceUnit] = []
+        seen_evidence_ids: set[str] = set()
+
+        def make_unique_id(base_id: str) -> str:
+            if base_id not in seen_evidence_ids:
+                seen_evidence_ids.add(base_id)
+                return base_id
+            counter = 2
+            while f"{base_id}_{counter}" in seen_evidence_ids:
+                counter += 1
+            unique_id = f"{base_id}_{counter}"
+            seen_evidence_ids.add(unique_id)
+            return unique_id
 
         # 0. Summary Evidence Unit
         if data.get("summary"):
             s_text = str(data["summary"]).strip()
             if s_text:
                 sum_ev = EvidenceUnit(
-                    id="SUM_001",
+                    id=make_unique_id("SUM_001"),
                     section="SUMMARY",
                     entity_id="summary",
                     original_text=s_text,
@@ -491,10 +507,19 @@ class CandidateProfile(BaseModel):
                 )
                 evidence_units.append(sum_ev)
 
-        # 1. Parse Experience
-        from app.modules.resume.parsing.structurer import parse_experience_section
-        raw_exp_list = data.get("experience_raw") or []
-        exp_entities: list[WorkExperienceEntity] = parse_experience_section(raw_exp_list)
+        # 1. Ingest Experience Entities
+        raw_exp = data.get("experience_entities") or data.get("experience") or []
+        exp_entities: list[WorkExperienceEntity] = []
+        if raw_exp:
+            for item in raw_exp:
+                if isinstance(item, WorkExperienceEntity):
+                    exp_entities.append(item)
+                elif isinstance(item, dict):
+                    exp_entities.append(WorkExperienceEntity.model_validate(item))
+        elif data.get("experience_raw"):
+            from app.modules.resume.parsing.structurer import parse_experience_section
+            exp_entities = parse_experience_section(data["experience_raw"])
+
         for exp in exp_entities:
             all_exp_bullets = []
             exp.evidence_units = []
@@ -509,7 +534,7 @@ class CandidateProfile(BaseModel):
                         b_stripped = bullet.strip()
                         if not b_stripped or b_stripped in seen_exp_bullets:
                             continue
-                        ev_id = generate_stable_evidence_id("EXPERIENCE", exp.company, grp.heading, b_idx + 1)
+                        ev_id = make_unique_id(generate_stable_evidence_id("EXPERIENCE", exp.company, grp.heading, b_idx + 1))
                         metrics = extract_quantified_metrics(bullet)
                         techs = list(extract_skills_from_text(bullet))
                         claim_type = ClaimType.METRIC if metrics else (ClaimType.LEADERSHIP if any(w in bullet.lower().split() for w in ["led", "managed", "spearheaded", "directed"]) else ClaimType.DELIVERY)
@@ -541,7 +566,7 @@ class CandidateProfile(BaseModel):
                         b_stripped = bullet.strip()
                         if not b_stripped or b_stripped in seen_exp_bullets:
                             continue
-                        ev_id = generate_stable_evidence_id("EXPERIENCE", exp.company, prog.title or exp.role, b_idx + 1)
+                        ev_id = make_unique_id(generate_stable_evidence_id("EXPERIENCE", exp.company, prog.title or exp.role, b_idx + 1))
                         metrics = extract_quantified_metrics(bullet)
                         techs = list(extract_skills_from_text(bullet))
                         claim_type = ClaimType.METRIC if metrics else (ClaimType.LEADERSHIP if any(w in bullet.lower().split() for w in ["led", "managed", "spearheaded", "directed"]) else ClaimType.DELIVERY)
@@ -569,7 +594,7 @@ class CandidateProfile(BaseModel):
                 b_stripped = bullet.strip()
                 if not b_stripped or b_stripped in seen_exp_bullets:
                     continue
-                ev_id = generate_stable_evidence_id("EXPERIENCE", exp.company, exp.role, b_idx + 1)
+                ev_id = make_unique_id(generate_stable_evidence_id("EXPERIENCE", exp.company, exp.role, b_idx + 1))
                 metrics = extract_quantified_metrics(bullet)
                 techs = list(extract_skills_from_text(bullet))
                 claim_type = ClaimType.METRIC if metrics else (ClaimType.LEADERSHIP if any(w in bullet.lower().split() for w in ["led", "managed", "spearheaded", "directed"]) else ClaimType.DELIVERY)
@@ -592,27 +617,62 @@ class CandidateProfile(BaseModel):
             exp.bullets = list(all_exp_bullets) if all_exp_bullets else exp.bullets
             exp.technologies = list(extract_skills_from_text(" ".join(exp.bullets)))
 
-        # 2. Parse Projects
-        proj_entities: list[ProjectEntity] = []
-        for p_idx, p in enumerate(data.get("projects_raw") or []):
-            if isinstance(p, dict):
-                p_title = p.get("title") or f"Project {len(proj_entities)+1}"
-                p_tech = p.get("tech_stack") or p.get("technologies")
-                p_tech_str = ", ".join(p_tech) if isinstance(p_tech, list) else (str(p_tech) if p_tech else "")
-                p_bullets = [str(b).strip() for b in p.get("bullets", []) if str(b).strip()]
-                p_dates = p.get("dates")
+        # 1b. Ingest Internship Entities
+        raw_intern = data.get("internships_entities") or data.get("internships") or []
+        intern_entities: list[WorkExperienceEntity] = []
+        if raw_intern:
+            for item in raw_intern:
+                if isinstance(item, WorkExperienceEntity):
+                    intern_entities.append(item)
+                elif isinstance(item, dict):
+                    intern_entities.append(WorkExperienceEntity.model_validate(item))
+        elif data.get("internships_raw"):
+            from app.modules.resume.parsing.structurer import parse_experience_section
+            intern_entities = parse_experience_section(data["internships_raw"])
 
-                proj_id = f"proj_{len(proj_entities)}"
-                p_techs = list(set(list(extract_skills_from_text(p_tech_str + " " + " ".join(p_bullets)))))
-                ev_list = []
-                for b_idx, bullet in enumerate(p_bullets):
-                    ev_id = generate_stable_evidence_id("PROJECTS", p_title, "", b_idx + 1)
+        for intern in intern_entities:
+            intern.evidence_units = []
+            for b_idx, bullet in enumerate(intern.bullets):
+                b_clean = bullet.strip()
+                if not b_clean:
+                    continue
+                ev_id = make_unique_id(generate_stable_evidence_id("INTERNSHIP", intern.company, intern.role, b_idx + 1))
+                metrics = extract_quantified_metrics(b_clean)
+                techs = list(extract_skills_from_text(b_clean))
+                ev = EvidenceUnit(
+                    id=ev_id,
+                    section="INTERNSHIPS",
+                    entity_id=intern.id,
+                    original_text=b_clean,
+                    normalized_text=b_clean,
+                    claim_type=ClaimType.METRIC if metrics else ClaimType.DELIVERY,
+                    technologies=techs,
+                    metrics=metrics,
+                    source_reference=b_clean,
+                )
+                evidence_units.append(ev)
+                intern.evidence_units.append(ev)
+            intern.technologies = list(extract_skills_from_text(" ".join(intern.bullets)))
+
+        # 2. Ingest Project Entities
+        raw_proj = data.get("projects_entities") or data.get("projects") or []
+        proj_entities: list[ProjectEntity] = []
+        if raw_proj and isinstance(raw_proj[0], (ProjectEntity, dict)) and not (isinstance(raw_proj[0], dict) and "bullets" in raw_proj[0] and "title" not in raw_proj[0]):
+            for item in raw_proj:
+                if isinstance(item, ProjectEntity):
+                    proj_entities.append(item)
+                elif isinstance(item, dict):
+                    proj_entities.append(ProjectEntity.model_validate(item))
+            for pe in proj_entities:
+                pe.evidence_units = []
+                for b_idx, bullet in enumerate(pe.bullets):
+                    ev_id = make_unique_id(generate_stable_evidence_id("PROJECTS", pe.title, "", b_idx + 1))
                     metrics = extract_quantified_metrics(bullet)
                     b_techs = list(extract_skills_from_text(bullet))
                     ev = EvidenceUnit(
                         id=ev_id,
                         section="PROJECTS",
-                        entity_id=proj_id,
+                        entity_id=pe.id,
                         original_text=bullet,
                         normalized_text=bullet,
                         claim_type=ClaimType.METRIC if metrics else ClaimType.DELIVERY,
@@ -621,38 +681,23 @@ class CandidateProfile(BaseModel):
                         source_reference=bullet,
                     )
                     evidence_units.append(ev)
-                    ev_list.append(ev)
-
-                proj_entities.append(ProjectEntity(
-                    id=proj_id,
-                    title=p_title,
-                    tech_stack=p_tech_str or None,
-                    technologies=p_techs,
-                    dates=p_dates,
-                    bullets=p_bullets,
-                    evidence_units=ev_list,
-                ))
-            else:
-                p_str = str(p).strip()
-                p_lines = [l.strip() for l in p_str.split("\n") if l.strip()]
-                has_title = len(p_lines) > 1 and (
-                    p_lines[1].lower().startswith(("technologies:", "tech stack:"))
-                    or (len(p_lines[0].split()) <= 12 and not p_lines[0].endswith((".", ";", "!")))
-                )
-                if has_title or not proj_entities:
-                    p_title = p_lines[0] if p_lines else f"Project {len(proj_entities)+1}"
-                    p_tech_str = ""
-                    bullet_start_idx = 1
-                    if len(p_lines) > 1 and p_lines[1].lower().startswith(("technologies:", "tech stack:")):
-                        p_tech_str = re.sub(r"^(?:technologies|tech stack):\s*", "", p_lines[1], flags=re.IGNORECASE).strip()
-                        bullet_start_idx = 2
-                    p_bullets = [re.sub(r"^[•\-\*]+\s*", "", l).strip() for l in p_lines[bullet_start_idx:]] if len(p_lines) > bullet_start_idx else ([re.sub(r"^[•\-\*]+\s*", "", p_lines[1]).strip()] if len(p_lines) > 1 else [p_str])
-
+                    pe.evidence_units.append(ev)
+                pe.technologies = list(extract_skills_from_text((pe.tech_stack or "") + " " + " ".join(pe.bullets)))
+        else:
+            from app.modules.resume.parsing.structurer import parse_projects_section
+            proj_raw_list = data.get("projects_raw") or []
+            if proj_raw_list and isinstance(proj_raw_list[0], dict):
+                for p_idx, p in enumerate(proj_raw_list):
+                    p_title = p.get("title") or f"Project {len(proj_entities)+1}"
+                    p_tech = p.get("tech_stack") or p.get("technologies")
+                    p_tech_str = ", ".join(p_tech) if isinstance(p_tech, list) else (str(p_tech) if p_tech else "")
+                    p_bullets = [str(b).strip() for b in p.get("bullets", []) if str(b).strip()]
+                    p_dates = p.get("dates")
                     proj_id = f"proj_{len(proj_entities)}"
                     p_techs = list(set(list(extract_skills_from_text(p_tech_str + " " + " ".join(p_bullets)))))
                     ev_list = []
                     for b_idx, bullet in enumerate(p_bullets):
-                        ev_id = generate_stable_evidence_id("PROJECTS", p_title, "", b_idx + 1)
+                        ev_id = make_unique_id(generate_stable_evidence_id("PROJECTS", p_title, "", b_idx + 1))
                         metrics = extract_quantified_metrics(bullet)
                         b_techs = list(extract_skills_from_text(bullet))
                         ev = EvidenceUnit(
@@ -668,103 +713,63 @@ class CandidateProfile(BaseModel):
                         )
                         evidence_units.append(ev)
                         ev_list.append(ev)
-
                     proj_entities.append(ProjectEntity(
                         id=proj_id,
                         title=p_title,
                         tech_stack=p_tech_str or None,
                         technologies=p_techs,
-                        dates=None,
+                        dates=p_dates,
                         bullets=p_bullets,
                         evidence_units=ev_list,
                     ))
-                else:
-                    clean_b = re.sub(r"^[•\-\*]+\s*", "", p_str).strip()
-                    if clean_b:
-                        curr_pe = proj_entities[-1]
-                        curr_pe.bullets.append(clean_b)
-                        ev_id = generate_stable_evidence_id("PROJECTS", curr_pe.title, "", len(curr_pe.bullets))
-                        metrics = extract_quantified_metrics(clean_b)
-                        b_techs = list(extract_skills_from_text(clean_b))
+            else:
+                proj_entities = parse_projects_section(proj_raw_list)
+                for pe in proj_entities:
+                    pe.evidence_units = []
+                    for b_idx, bullet in enumerate(pe.bullets):
+                        ev_id = make_unique_id(generate_stable_evidence_id("PROJECTS", pe.title, "", b_idx + 1))
+                        metrics = extract_quantified_metrics(bullet)
+                        b_techs = list(extract_skills_from_text(bullet))
                         ev = EvidenceUnit(
                             id=ev_id,
                             section="PROJECTS",
-                            entity_id=curr_pe.id,
-                            original_text=clean_b,
-                            normalized_text=clean_b,
+                            entity_id=pe.id,
+                            original_text=bullet,
+                            normalized_text=bullet,
                             claim_type=ClaimType.METRIC if metrics else ClaimType.DELIVERY,
                             technologies=b_techs,
                             metrics=metrics,
-                            source_reference=clean_b,
+                            source_reference=bullet,
                         )
                         evidence_units.append(ev)
-                        curr_pe.evidence_units.append(ev)
-                        for t in b_techs:
-                            if t not in curr_pe.technologies:
-                                curr_pe.technologies.append(t)
+                        pe.evidence_units.append(ev)
 
-        # 3. Parse Education
+        # 3. Ingest Education Entities
+        raw_edu = data.get("education_entities") or data.get("education") or []
         edu_entities: list[EducationEntity] = []
-        for e_idx, e in enumerate(data.get("education_raw", [])):
-            if isinstance(e, dict):
-                edu_entities.append(EducationEntity(
-                    id=f"edu_{e_idx}",
-                    institution=e.get("institution") or "Institution",
-                    degree=e.get("degree") or "Degree",
-                    dates=e.get("dates") or e.get("year"),
-                    location=e.get("location"),
-                    gpa=e.get("cgpa") or e.get("gpa") or e.get("percentage"),
-                ))
+        if raw_edu:
+            for item in raw_edu:
+                if isinstance(item, EducationEntity):
+                    edu_entities.append(item)
+                elif isinstance(item, dict):
+                    edu_entities.append(EducationEntity.model_validate(item))
+        elif data.get("education_raw"):
+            from app.modules.resume.parsing.structurer import parse_education_section
+            raw_edu_list = data.get("education_raw", [])
+            if raw_edu_list and isinstance(raw_edu_list[0], dict):
+                for e_idx, e in enumerate(raw_edu_list):
+                    edu_entities.append(EducationEntity(
+                        id=f"edu_{e_idx}",
+                        institution=e.get("institution") or "Institution",
+                        degree=e.get("degree") or "Degree",
+                        dates=e.get("dates") or e.get("year"),
+                        location=e.get("location"),
+                        gpa=e.get("cgpa") or e.get("gpa") or e.get("percentage"),
+                    ))
             else:
-                e_str = str(e).strip()
-                e_lines = [l.strip() for l in e_str.split("\n") if l.strip()]
-                inst = e_lines[0] if e_lines else e_str
-                degree = "Degree / Studies"
-                dates = None
-                gpa = None
-                if len(e_lines) > 1:
-                    deg_line = e_lines[1]
-                    date_m = re.search(r"\((\d{4}\s*[-–—]\s*(?:\d{4}|present))\)", deg_line, re.IGNORECASE)
-                    if date_m:
-                        dates = date_m.group(1).strip()
-                    score_m = re.search(r"(?:cgpa|percentage|score|gpa)\s*[:|-]?\s*([0-9\.]+\s*%?(?:\s*(?:\/|\%)\s*[0-9\.]+)?)", deg_line, re.IGNORECASE)
-                    if score_m:
-                        gpa = score_m.group(0).strip()
-                    deg_clean = re.sub(r"\|\s*(?:cgpa|percentage|score|gpa).*$", "", deg_line, flags=re.IGNORECASE)
-                    deg_clean = re.sub(r"\(\d{4}\s*[-–—]\s*(?:\d{4}|present)\)", "", deg_clean).strip(" |-,")
-                    if deg_clean:
-                        degree = deg_clean
-                elif len(e_lines) == 1:
-                    line = e_lines[0]
-                    date_m = re.search(r"\b(\d{4}\s*[-–—]\s*(?:\d{4}|present)|\d{4})\b", line, re.IGNORECASE)
-                    if date_m:
-                        dates = date_m.group(1).strip()
-                    score_m = re.search(r"(?:cgpa|percentage|score|gpa)\s*[:|-]?\s*([0-9\.]+\s*%?(?:\s*(?:\/|\%)\s*[0-9\.]+)?)", line, re.IGNORECASE)
-                    if score_m:
-                        gpa = score_m.group(0).strip()
-                    cleaned_line = re.sub(r"\b(?:\d{4}\s*[-–—]\s*(?:\d{4}|present)|\d{4})\b", "", line, flags=re.IGNORECASE)
-                    cleaned_line = re.sub(r"[\(\)]", "", cleaned_line).strip(" |-,")
-                    parts = [p.strip() for p in re.split(r"[,|–—-]", cleaned_line) if p.strip()]
-                    if len(parts) >= 2:
-                        p0, p1 = parts[0], parts[1]
-                        deg_keywords = ["bachelor", "master", "b.s", "m.s", "b.tech", "b.e", "m.tech", "ph.d", "doctorate", "degree", "diploma", "b.sc", "m.sc"]
-                        if any(k in p0.lower() for k in deg_keywords) or not any(k in p1.lower() for k in deg_keywords):
-                            degree = p0
-                            inst = p1
-                        else:
-                            degree = p1
-                            inst = p0
-                    else:
-                        inst = line
-                edu_entities.append(EducationEntity(
-                    id=f"edu_{e_idx}",
-                    institution=inst,
-                    degree=degree,
-                    dates=dates,
-                    gpa=gpa,
-                ))
+                edu_entities = parse_education_section(raw_edu_list)
 
-        # 4. Parse Additional Sections
+        # 4. Ingest Additional Sections
         add_sections: list[AdditionalSectionEntity] = []
         for a_idx, a in enumerate(data.get("additional_sections", [])):
             if isinstance(a, AdditionalSectionEntity):
@@ -776,7 +781,7 @@ class CandidateProfile(BaseModel):
                 sec_id = a.get("id") or f"add_sec_{a_idx}"
                 ev_list = []
                 for it_idx, item in enumerate(items):
-                    ev_id = generate_stable_evidence_id("ADDITIONAL", heading, "", it_idx + 1)
+                    ev_id = make_unique_id(generate_stable_evidence_id("ADDITIONAL", heading, "", it_idx + 1))
                     ev = EvidenceUnit(
                         id=ev_id,
                         section="ADDITIONAL",
@@ -800,14 +805,20 @@ class CandidateProfile(BaseModel):
                     evidence_units=ev_list,
                 ))
 
+        skills_explicit = list(data.get("skills_explicit") or data.get("skills") or [])
+        skills_inferred = list(data.get("skills_inferred") or [])
+        skills_all = list(data.get("skills") or skills_explicit)
+
         return cls(
             personal=data.get("personal", {}),
             summary=data.get("summary"),
             experience=exp_entities,
-            internships=[],
+            internships=intern_entities,
             projects=proj_entities,
             education=edu_entities,
-            skills=data.get("skills", []),
+            skills=skills_all,
+            skills_explicit=skills_explicit,
+            skills_inferred=skills_inferred,
             skills_categorized=data.get("skills_categorized", []),
             certifications=data.get("certifications", []),
             achievements=data.get("achievements", []),

@@ -360,10 +360,9 @@ async def generate_tailoring(
     if master_raw_text:
         cached_prof = get_cached_candidate_profile(master_raw_text)
         master_parsed = structure_resume_text(master_raw_text)
-        if resume.get("parsed", {}).get("personal"):
-            master_parsed["personal"] = copy.deepcopy(resume["parsed"]["personal"])
-        if resume.get("parsed", {}).get("certifications") and not master_parsed.get("certifications"):
-            master_parsed["certifications"] = copy.deepcopy(resume["parsed"]["certifications"])
+        for k, v in (resume.get("parsed") or {}).items():
+            if v:
+                master_parsed[k] = copy.deepcopy(v)
         if cached_prof:
             candidate_profile = cached_prof
         else:

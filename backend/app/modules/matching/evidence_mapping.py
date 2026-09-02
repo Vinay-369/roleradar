@@ -199,6 +199,16 @@ def map_resume_to_jd_evidence(
     total_weights = 0.0
 
     for req in job_reqs.requirements:
+        # Skip non-requirement context categories (e.g. company overview, benefits, legal)
+        if req.category in (
+            RequirementCategory.COMPANY_OVERVIEW,
+            RequirementCategory.ROLE_OVERVIEW,
+            RequirementCategory.BENEFITS,
+            RequirementCategory.EEO_LEGAL,
+            RequirementCategory.UNKNOWN,
+        ):
+            continue
+
         matched_evs: list[EvidenceUnit] = []
         matched_skills: list[str] = []
         matched_entities: list[str] = []

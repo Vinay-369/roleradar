@@ -38,7 +38,7 @@ def db():
 
 @pytest.fixture
 def settings():
-    return Settings(JWT_SECRET="test-secret", EMBEDDING_PROVIDER="mock")
+    return Settings(JWT_SECRET="test-secret", EMBEDDING_PROVIDER="mock", AI_PROVIDER="mock")
 
 
 @pytest.mark.asyncio
@@ -55,7 +55,7 @@ async def test_wholesale_structured_tailoring_pipeline_e2e(db, settings):
         "portfolio": "https://vinay.dev",
     }
     master_education = [
-        "B.E. in Computer Science and Engineering — NIE Mysore (2020 - 2024) | CGPA: 9.1 / 10.0"
+        "B.E. in Computer Science and Engineering - NIE Mysore (2020 - 2024) | CGPA: 9.1 / 10.0"
     ]
     master_certifications = [
         "AWS Certified Cloud Practitioner (2023)",
@@ -67,8 +67,8 @@ async def test_wholesale_structured_tailoring_pipeline_e2e(db, settings):
         "Built async batch processor reducing background job queue time by 40%",
     ]
     master_proj = [
-        "• Engineered RoleRadar AI Job Search Platform using Python, FastAPI, and MongoDB.",
-        "• Implemented real-time ATS match scoring with spaCy and vector embeddings.",
+        "- Engineered RoleRadar AI Job Search Platform using Python, FastAPI, and MongoDB.",
+        "- Implemented real-time ATS match scoring with spaCy and vector embeddings.",
     ]
 
     master_parsed = {
@@ -133,9 +133,10 @@ async def test_wholesale_structured_tailoring_pipeline_e2e(db, settings):
 
     # 4. Approve all high confidence changes
     for change in version["changes"]:
-        await tailoring_services.set_change_status(
-            db, user_id, version_id, change["change_id"], ChangeStatus.APPROVED
-        )
+        if change.get("status") != ChangeStatus.NEEDS_USER_INPUT.value:
+            await tailoring_services.set_change_status(
+                db, user_id, version_id, change["change_id"], ChangeStatus.APPROVED
+            )
 
     # 5. Finalize Tailoring (Criterion 5 & 6)
     finalized = await tailoring_services.finalize_tailoring(db, user_id, version_id, settings=settings)

@@ -136,9 +136,13 @@ def _split_into_sections(lines: list[str]) -> dict[str, Any]:
         # Check for unknown / custom top-level section header (e.g. "## Patents" or "PATENTS & INVENTIONS" or "SPEAKING ENGAGEMENTS:")
         is_explicit_markdown = stripped.startswith(("#", "==", "--")) and len(stripped.split()) <= 7
         cand_upper = stripped.rstrip(":").strip()
+        alpha_only = re.sub(r"[^A-Za-z]", "", cand_upper)
         is_all_caps_section = (
-            cand_upper.isupper()
+            bool(alpha_only)
+            and alpha_only.isupper()
             and 1 <= len(cand_upper.split()) <= 5
+            and not bool(re.search(r"\d", cand_upper))
+            and not bool(re.search(r"\b(?:gpa|cgpa|score|percentage|grade|graduation|minor|major|concentration|expected|dates?)\b", cand_upper, re.IGNORECASE))
             and not any(w in cand_upper for w in ["ENGINEER", "DEVELOPER", "MANAGER", "ARCHITECT", "LEAD", "INTERN", "ANALYST", "CONSULTANT", "FOUNDER", "DIRECTOR", "VP", "HEAD"])
             and not any(w in cand_upper for w in ["INC", "LLC", "LTD", "PVT", "CORP", "CORPORATION", "SOLUTIONS", "TECHNOLOGIES", "SYSTEMS", "LABS", "NETWORKS"])
             and not bool(re.search(r"\b(?:PRESENT|20\d\d|19\d\d)\b", cand_upper))
@@ -371,7 +375,7 @@ def _recover_unheaded_evidence(preamble_lines: list[str]) -> list[str]:
 
 
 _DATE_RANGE_RE = re.compile(
-    r"\b(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{4}|present|current)\b",
+    r"\b(?:(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{1,2}[\/\.-]\d{4}|\d{4})\s*[-–—to]+\s*(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{4}|\d{1,2}[\/\.-]\d{4}|\d{4}|present|current))\b",
     re.IGNORECASE,
 )
 
@@ -434,7 +438,7 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
                 current_groups.append(current_group)
                 current_group = None
             ent_id = f"exp_{len(entities)}"
-            primary_role = current_role or (current_progression[0].title if current_progression else "")
+            primary_role = current_role or (current_progression[0].title if current_progression else "Software Engineer")
             primary_dates = current_dates or (current_progression[0].dates if current_progression else None)
             comp_name = current_company or "Work Experience"
             entities.append(WorkExperienceEntity(
@@ -484,7 +488,7 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
         date_m = _DATE_RANGE_RE.search(clean)
         dates_val = date_m.group(0).strip() if date_m else None
 
-        # 1. Explicit Responsibility / Category Heading with Colon (e.g. 'Marvis Client - MacOS/iOS Development:' or 'Developer Experience:')
+        # 1. Responsibility Group Header with Colon (e.g. 'Core Infrastructure:' or 'Developer Experience:')
         if not has_bullet and ":" in clean:
             h_part, _, b_part = clean.partition(":")
             h_words = [w.lower().rstrip(":,()") for w in h_part.split()]
@@ -497,7 +501,6 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
                         current_groups.append(current_group)
                     current_group = ResponsibilityGroup(id=f"grp_{len(current_groups)}", heading=h_clean + ":", bullets=[])
                     if b_part.strip():
-                        # Inline bullet attached to heading
                         b_clean = _BULLET_PREFIX_RE.sub("", b_part.strip()).strip()
                         if b_clean:
                             current_bullets.append(b_clean)
@@ -506,8 +509,7 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
 
         # 2. Location line (pure location) vs Company + Location
         has_loc_keyword = _is_location_text(clean)
-        if not has_bullet and has_loc_keyword and not any(w in ROLE_KEYWORDS for w in words):
-            # Check if entire line is pure location
+        if not has_bullet and has_loc_keyword and not any(w in ROLE_KEYWORDS for w in words) and not has_date:
             is_pure_location = all(
                 w in LOCATION_KEYWORDS or w in KNOWN_LOCATIONS or w in {",", "-", "|", "/", "in", "and", "&", "state", "city"}
                 for w in words
@@ -515,109 +517,117 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
             if is_pure_location and len(words) <= 5:
                 current_location = clean
                 continue
+
+        # 3. Delimited line with Role, Company, Date, Location
+        # E.g. 'Senior Java Developer | Jan 2021 - Present', 'Senior Backend Engineer at CloudScale Technologies (2022 - Present) - Bangalore', 'TechCorp — Lead AI Engineer (2022 - Present)'
+        has_delimiter = any(d in clean for d in [" at ", " — ", " – ", " | ", "|", " —", " –"]) or ("," in clean and (has_date or any(w in ROLE_KEYWORDS for w in words)))
+        if not has_bullet and has_delimiter and (any(w in ROLE_KEYWORDS for w in words) or has_date):
+            clean_nodate = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|")
             
-            # Check if line is 'Company, Location'
-            company_loc_found = False
-            for sep in [",", " - ", " — ", " | ", " – "]:
-                if sep in clean:
-                    c_cand, _, l_cand = clean.partition(sep)
-                    c_words = [w.lower().rstrip(":,()") for w in c_cand.split()]
-                    l_words = [w.lower().rstrip(":,()") for w in l_cand.split()]
-                    if (
-                        _is_location_text(l_cand)
-                        and len(l_words) <= 5
-                        and len(c_words) <= 6
-                        and c_words
-                        and c_words[0] not in STRONG_ACTION_VERBS
-                        and not _EVIDENCE_VERB_RE.match(c_words[0])
-                        and not any(w in ROLE_KEYWORDS for w in c_words)
-                    ):
-                        if current_bullets or (current_company and current_company.lower() != c_cand.strip().lower() and current_progression):
-                            flush_entity()
-                        current_company = c_cand.strip()
-                        current_location = l_cand.strip()
-                        company_loc_found = True
-                        break
-            if company_loc_found:
-                continue
-
-        # 3. Standalone heading without colon (e.g. 'Indoor Location SDK')
-        if (
-            not has_bullet
-            and len(words) <= 7
-            and not has_date
-            and not clean.endswith((".", ";", "!"))
-            and (
-                clean.endswith(":")
-                or any(w in words for w in ["development", "infrastructure", "packaging", "sdk", "automation", "microservices", "core", "platform"])
-                or any(kw in clean_lower for kw in ["indoor location", "release automation", "developer experience"])
-            )
-        ):
-            if current_group and current_group.bullets:
-                current_groups.append(current_group)
-            current_group = ResponsibilityGroup(id=f"grp_{len(current_groups)}", heading=clean + ("" if clean.endswith(":") else ":"), bullets=[])
-            continue
-
-        # 4. Combined 'Role at Company' or 'Company — Role' line
-        if not has_bullet and (" at " in clean_lower or " — " in clean or " | " in clean) and (any(w in ROLE_KEYWORDS for w in words) or has_date):
-            if current_bullets or (current_company and current_progression):
-                flush_entity()
+            role_cand = ""
+            comp_cand = ""
+            loc_cand = ""
+            
             if " at " in clean_lower:
-                r_part, _, c_part = clean.partition(" at ")
-            elif " — " in clean:
-                c_part, _, r_part = clean.partition(" — ")
-            elif " | " in clean:
-                r_part, _, c_part = clean.partition(" | ")
+                r_sub, _, c_sub = clean_nodate.partition(" at ")
+                role_cand = r_sub.strip(" ()–-—|")
+                comp_cand = c_sub.strip(" ()–-—|")
             else:
-                r_part, c_part = clean, "Company"
-            
-            c_clean = _DATE_RANGE_RE.sub("", c_part).strip(" ()–-—|")
-            r_clean = _DATE_RANGE_RE.sub("", r_part).strip(" ()–-—|")
+                seps = [" — ", " – ", " | ", "|", " —", " –"]
+                used_sep = next((s for s in seps if s in clean_nodate), None)
+                if used_sep:
+                    parts = [p.strip(" ()–-—|") for p in clean_nodate.split(used_sep) if p.strip(" ()–-—|")]
+                else:
+                    parts = [p.strip(" ()–-—|") for p in clean_nodate.split(",") if p.strip(" ()–-—|")]
+                    
+                for p in parts:
+                    p_words = [w.lower().rstrip(":,()") for w in p.split()]
+                    if _is_location_text(p) and len(p_words) <= 5:
+                        loc_cand = p
+                    elif any(w in ROLE_KEYWORDS for w in p_words):
+                        role_cand = p
+                    elif len(p_words) <= 6 and p_words and p_words[0] not in STRONG_ACTION_VERBS and not _EVIDENCE_VERB_RE.match(p_words[0]):
+                        comp_cand = p
 
-            # Extract attached location from company part if present
-            c_final = c_clean
-            l_final = ""
-            for sep in [" - ", " — ", " – ", " | ", ", "]:
-                if sep in c_clean:
-                    c_sub, _, l_sub = c_clean.partition(sep)
-                    if _is_location_text(l_sub) and len(l_sub.split()) <= 5:
-                        c_final = c_sub.strip(" ()–-—|")
-                        l_final = l_sub.strip(" ()–-—|")
-                        break
+            if comp_cand:
+                for s in [" - ", " — ", " – ", ", "]:
+                    if s in comp_cand:
+                        c_only, _, l_only = comp_cand.partition(s)
+                        if _is_location_text(l_only):
+                            comp_cand = c_only.strip(" ()–-—|")
+                            loc_cand = l_only.strip(" ()–-—|")
+                            break
 
-            current_company = c_final or "Company"
-            current_location = l_final or current_location
-            current_role = r_clean or "Software Engineer"
-            current_dates = dates_val
-            current_progression.append(RoleProgression(title=current_role, dates=dates_val))
+            if comp_cand:
+                if current_bullets or (current_company and current_company.lower() != comp_cand.lower() and current_progression):
+                    flush_entity()
+                current_company = comp_cand
+
+            if role_cand:
+                current_role = role_cand
+            if dates_val:
+                current_dates = dates_val
+            if loc_cand:
+                current_location = loc_cand
+
+            current_progression.append(RoleProgression(title=current_role or "Software Engineer", dates=current_dates, location=current_location or None))
             continue
 
-        # 5. Role / Promotion line (e.g. 'Staff Software Engineer (2022 - Present)')
+        # 4. Standalone Role / Promotion line (e.g. 'Staff Software Engineer (2022 - Present)' or 'Senior Software Engineer')
         if not has_bullet and not clean.endswith(":") and any(w in ROLE_KEYWORDS for w in words if w != "experience" or has_date) and (has_date or len(words) <= 7):
             title_only = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|")
             current_progression.append(RoleProgression(title=title_only, dates=dates_val))
-            if not current_role:
+            if not current_role or current_bullets:
                 current_role = title_only
                 current_dates = dates_val
             continue
 
-        # 6. Company Header line (e.g. 'Juniper Networks')
+        # 4b. Company Header with Dates (e.g. 'Arrow Systems (2020 - Present)')
+        if (
+            not has_bullet
+            and has_date
+            and not clean.endswith(":")
+            and not any(w in ROLE_KEYWORDS for w in words)
+            and first_w not in STRONG_ACTION_VERBS
+            and not _EVIDENCE_VERB_RE.match(first_w)
+        ):
+            c_cand = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|")
+            if 1 <= len(c_cand.split()) <= 6:
+                if current_bullets or (current_company and current_company.lower() != c_cand.lower() and current_progression):
+                    flush_entity()
+                current_company = c_cand
+                current_dates = dates_val
+                continue
+
+        # 5. Standalone Company Header line (e.g. 'Google LLC, Mountain View, CA' or 'Capco')
         if (
             not has_bullet
             and not has_date
-            and len(words) <= 6
+            and len(words) <= 8
             and not any(w in ROLE_KEYWORDS for w in words)
             and not clean.endswith((".", ";", "!"))
             and first_w not in STRONG_ACTION_VERBS
             and not _EVIDENCE_VERB_RE.match(first_w)
             and not any(w in clean_lower for w in ["reduced", "increased", "achieved", "improved", "handling", "processing", "delivering", "supporting", "environments", "commands", "enrollment"])
         ):
-            if current_bullets or (current_company and current_company.lower() != clean_lower and current_progression):
+            c_cand = clean
+            l_cand = ""
+            for s in [" - ", " — ", " – ", " | ", ", "]:
+                if s in clean:
+                    c_sub, _, l_sub = clean.partition(s)
+                    if _is_location_text(l_sub) and len(l_sub.split()) <= 5:
+                        c_cand = c_sub.strip(" ()–-—|")
+                        l_cand = l_sub.strip(" ()–-—|")
+                        break
+
+            if current_bullets or (current_company and current_company.lower() != c_cand.lower() and current_progression):
                 flush_entity()
-            current_company = clean
+            current_company = c_cand
+            if l_cand:
+                current_location = l_cand
             continue
 
-        # 7. Bullet continuation check:
+        # 6. Bullet continuation check:
         # If no bullet marker, and (starts with lowercase OR previous bullet did not end with punctuation and line doesn't start with action verb)
         if current_bullets and not has_bullet and not has_date:
             prev_ended = current_bullets[-1].strip().endswith((".", ";", "!"))
@@ -632,7 +642,7 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
                     current_progression[-1].bullets[-1] = current_bullets[-1]
                 continue
 
-        # 8. New Bullet point or unstructured prose sentence
+        # 7. New Bullet point or unstructured prose sentence
         if has_bullet:
             current_bullets.append(clean)
             if current_group is not None:
@@ -821,23 +831,33 @@ def parse_projects_section(lines: list[str]) -> list[Any]:
             current_tech = (current_tech + ", " + tech_val).strip(", ") if current_tech else tech_val
             continue
 
-        # Inline Title: Bullet
-        if not has_bullet and ":" in clean and not _is_tech_stack_or_meta(clean):
+        # Inline Title: Bullet (with or without bullet marker, e.g. "• AI Document Classifier: Built..." or "ShopEase (Docker, React): Engineered...")
+        if ":" in clean and not _is_tech_stack_or_meta(clean):
             t_cand, sep, b_cand = clean.partition(":")
             t_cand = t_cand.strip()
             b_cand = b_cand.strip()
             if 1 <= len(t_cand.split()) <= 10 and len(b_cand.split()) >= 3 and t_cand.split()[0].lower() not in STRONG_ACTION_VERBS:
                 flush_proj()
-                current_title = t_cand
+                paren_m = re.search(r"^(.*?)\s*\(([^)]+)\)$", t_cand)
+                if paren_m:
+                    current_title = paren_m.group(1).strip()
+                    current_tech = paren_m.group(2).strip()
+                else:
+                    current_title = t_cand
                 if b_cand:
                     current_bullets.append(b_cand)
                 continue
 
-        # Standalone Project Title
-        if not has_bullet and _looks_like_project_title(clean):
+        # Standalone Project Title (with or without bullet marker)
+        if _looks_like_project_title(clean):
             if current_bullets or current_title:
                 flush_proj()
-            current_title = clean
+            paren_m = re.search(r"^(.*?)\s*\(([^)]+)\)$", clean)
+            if paren_m:
+                current_title = paren_m.group(1).strip()
+                current_tech = paren_m.group(2).strip()
+            else:
+                current_title = clean
             continue
 
         # Bullet point
@@ -1040,6 +1060,40 @@ def _structure_education(lines: list[str]) -> list[str]:
                 current_entry_lines = []
             continue
 
+DEGREE_PATTERNS = [
+    re.compile(
+        r"\b(?:master\s+of\s+science|bachelor\s+of\s+science|master\s+of\s+arts|bachelor\s+of\s+arts|master\s+of\s+engineering|bachelor\s+of\s+engineering|master\s+of\s+technology|bachelor\s+of\s+technology|master\s+of\s+business|bachelor\s+of\s+business|doctor\s+of\s+philosophy|master\s+of\s+commerce|bachelor\s+of\s+commerce|master(?:\'s)?|bachelor(?:\'s)?|ph\.?d\.?|doctorate|m\.?s\.?|b\.?s\.?|b\.?tech\.?|m\.?tech\.?|b\.?e\.?|m\.?e\.?|b\.?sc\.?|m\.?sc\.?|b\.?a\.?|m\.?a\.?|b\.?com\.?|m\.?com\.?|b\.?eng\.?|m\.?eng\.?|diploma|associate(?:\s+of|\s+degree)?|certificate(?:\s+in)?|degree)\b",
+        re.IGNORECASE,
+    ),
+]
+
+_DATE_SINGLE_RE = re.compile(
+    r"\b(?:(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+)?\d{4}\b",
+    re.IGNORECASE,
+)
+
+_GPA_RE = re.compile(
+    r"(?:(?:cgpa|percentage|score|gpa)\s*[:|-]?\s*([0-9\.]+\s*%?(?:\s*(?:\/|\%)\s*[0-9\.]+)?)|([0-4]\.[0-9]{1,2}\s*\/\s*[0-4]\.[0-9]{1,2})|([0-9]{1,2}\.[0-9]{1,2}\s*\/\s*10(?:\.0)?))",
+    re.IGNORECASE,
+)
+
+_MINOR_RE = re.compile(r"\b(?:minor|specialization|concentration|focus)\s*:\s*([^|\n,]+)", re.IGNORECASE)
+
+
+def parse_education_section(lines: list[str]) -> list[Any]:
+    from app.modules.resume.models import EducationEntity
+
+    raw_entries: list[list[str]] = []
+    current_entry_lines: list[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            if current_entry_lines:
+                raw_entries.append(current_entry_lines)
+                current_entry_lines = []
+            continue
+
         clean_line = _BULLET_PREFIX_RE.sub("", stripped).strip()
         if not clean_line:
             continue
@@ -1048,20 +1102,96 @@ def _structure_education(lines: list[str]) -> list[str]:
             prev_text = " ".join(current_entry_lines)
             has_date_or_grade = bool(re.search(r"\b(?:\d{4}|cgpa|percentage|\bgrades?\b)\b", prev_text, re.IGNORECASE))
             is_new_inst = bool(_INSTITUTION_RE.search(clean_line)) and not bool(re.search(r"\b(?:\d{4}|cgpa|percentage|\bgrades?\b)\b", clean_line, re.IGNORECASE))
+            is_new_degree = bool(any(p.search(clean_line) for p in DEGREE_PATTERNS)) and not bool(re.search(r"\b(?:\d{4}|cgpa|percentage|\bgrades?\b)\b", clean_line, re.IGNORECASE))
 
-            if has_date_or_grade and is_new_inst:
-                entries.append("\n".join(current_entry_lines))
+            if (has_date_or_grade and (is_new_inst or is_new_degree)) or (len(current_entry_lines) >= 3 and (is_new_inst or is_new_degree)):
+                raw_entries.append(current_entry_lines)
                 current_entry_lines = [clean_line]
                 continue
 
         current_entry_lines.append(clean_line)
 
     if current_entry_lines:
-        entries.append("\n".join(current_entry_lines))
+        raw_entries.append(current_entry_lines)
 
-    if not entries:
-        entries = [l.strip() for l in lines if l.strip()]
+    edu_entities: list[EducationEntity] = []
+    for e_idx, entry_lines in enumerate(raw_entries):
+        degree_cand = ""
+        inst_cand = ""
+        dates_cand = None
+        gpa_cand = None
+        loc_cand = None
 
+        for s in entry_lines:
+            # Extract GPA
+            gpa_m = _GPA_RE.search(s)
+            if gpa_m and not gpa_cand:
+                gpa_cand = gpa_m.group(0).strip()
+
+            # Extract Date
+            date_m = _DATE_RANGE_RE.search(s) or _DATE_SINGLE_RE.search(s)
+            if date_m and not dates_cand:
+                dates_cand = date_m.group(0).strip()
+
+            # Clean line of dates, gpa, and minor
+            clean_text = _GPA_RE.sub("", s)
+            clean_text = _DATE_RANGE_RE.sub("", clean_text)
+            clean_text = _MINOR_RE.sub("", clean_text)
+            clean_text = re.sub(r"\b(?:graduation|expected|dates?)\s*:\s*", "", clean_text, flags=re.IGNORECASE)
+            clean_text = clean_text.strip(" *#=_~|•-–—\t\r\n,()")
+
+            if not clean_text:
+                continue
+
+            if any(p.search(clean_text) for p in DEGREE_PATTERNS):
+                segments = [p.strip(" *#=_~|•-–—\t\r\n,()") for p in re.split(r"[,|–—]", clean_text) if p.strip(" *#=_~|•-–—\t\r\n,()")]
+                if len(segments) >= 2:
+                    for seg in segments:
+                        if any(p.search(seg) for p in DEGREE_PATTERNS) and not degree_cand:
+                            degree_cand = seg
+                        elif _INSTITUTION_RE.search(seg) and not inst_cand:
+                            inst_cand = seg
+                        elif _is_location_text(seg) and not loc_cand:
+                            loc_cand = seg
+                        elif not inst_cand and not any(p.search(seg) for p in DEGREE_PATTERNS):
+                            inst_cand = seg
+                    continue
+                elif not degree_cand:
+                    degree_cand = clean_text
+            elif _INSTITUTION_RE.search(clean_text) or not inst_cand:
+                if not inst_cand:
+                    inst_cand = clean_text
+            elif not degree_cand:
+                degree_cand = clean_text
+
+        edu_entities.append(EducationEntity(
+            id=f"edu_{e_idx}",
+            institution=inst_cand or "Institution",
+            degree=degree_cand or "Degree / Studies",
+            dates=dates_cand,
+            location=loc_cand,
+            gpa=gpa_cand,
+        ))
+
+    return edu_entities
+
+
+def _structure_education(lines: list[str]) -> list[str]:
+    edu_entities = parse_education_section(lines)
+    if not edu_entities:
+        return [l.strip() for l in lines if l.strip()]
+
+    entries: list[str] = []
+    for e in edu_entities:
+        parts = [e.degree, e.institution]
+        extra = []
+        if e.gpa:
+            extra.append(e.gpa)
+        if e.dates:
+            extra.append(e.dates)
+        if extra:
+            parts.append(" | ".join(extra))
+        entries.append("\n".join(parts))
     return entries
 
 
@@ -1170,12 +1300,12 @@ def _extract_categorized_skills(lines: list[str]) -> list[str]:
     return cat_lines
 
 
-def _split_skills(lines: list[str], full_text: str) -> list[str]:
+def _split_skills_explicit(lines: list[str]) -> list[str]:
     """
-    Extracts skills with high recall and robust location/contact filtering.
+    Extracts skills explicitly declared in the skills section or categorized skills lines.
+    Does NOT infer skills from full text.
     """
     found_skills: list[str] = []
-
     for line in lines:
         cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
         if not cleaned or _is_location_or_contact_line(cleaned):
@@ -1200,6 +1330,15 @@ def _split_skills(lines: list[str], full_text: str) -> list[str]:
                 and cleaned not in found_skills
             ):
                 found_skills.append(cleaned)
+    return found_skills
+
+
+def _split_skills(lines: list[str], full_text: str) -> list[str]:
+    """
+    Extracts skills with high recall (explicit + inferred).
+    """
+    explicit = _split_skills_explicit(lines)
+    found_skills = list(explicit)
 
     spacy_extracted = extract_skills_from_text(full_text)
     existing_lower = {s.lower() for s in found_skills}
@@ -1242,19 +1381,39 @@ def _recover_unheaded_evidence(lines: list[str]) -> list[str]:
 def _extract_summary_from_preamble(preamble_lines: list[str]) -> str | None:
     """
     Detects an unheaded introductory summary / professional profile paragraph from the top preamble.
+    Unwraps and aggregates contiguous multi-line prose paragraphs.
     """
-    for line in preamble_lines:
+    paragraphs: list[list[str]] = []
+    current_p: list[str] = []
+
+    for idx, line in enumerate(preamble_lines):
         s = line.strip()
-        if not s or len(s.split()) < 12:
+        if not s:
+            if current_p:
+                paragraphs.append(current_p)
+                current_p = []
             continue
-        if _is_location_or_contact_line(s) or EMAIL_RE.search(s) or PHONE_RE.search(s):
+
+        if idx <= 1 and len(s.split()) <= 4 and not any(w in s.lower() for w in ["engineer", "developer", "experience", "years"]):
+            continue
+        if _is_location_or_contact_line(s) or EMAIL_RE.search(s) or PHONE_RE.search(s) or URL_RE.search(s):
             continue
         if _INSTITUTION_RE.search(s) or any(w in s.lower() for w in ["bachelor", "master", "cgpa", "b.tech", "b.e."]):
             continue
-        if s.startswith(("•", "-", "*")):
+        if s.startswith(("•", "-", "*", "–")):
             continue
-        if any(w in s.lower() for w in ["engineer", "developer", "professional", "experience", "building", "passionate", "specialized", "architect", "leading", "proficient", "skilled"]):
-            return s
+
+        current_p.append(s)
+
+    if current_p:
+        paragraphs.append(current_p)
+
+    for p_lines in paragraphs:
+        joined = " ".join(p_lines).strip()
+        if len(joined.split()) >= 6:
+            if any(w in joined.lower() for w in ["engineer", "developer", "professional", "experience", "building", "passionate", "specialized", "architect", "leading", "proficient", "skilled", "years", "focused", "seeking", "enthusiastic"]):
+                return joined
+
     return None
 
 
@@ -1304,22 +1463,41 @@ def structure_resume_text(full_text: str) -> dict:
     """
     Standardized, robust resume structurer for real-world messy resumes.
     Guarantees 100% preservation of all sections, contact info, education, certifications, and languages.
+    Returns rich canonical structured entities alongside backward-compatible *_raw views.
     """
     cleaned_full_text = _clean_raw_text_artifacts(full_text)
     lines = cleaned_full_text.split("\n")
     sections = _split_into_sections(lines)
 
     personal = _extract_personal(sections["_preamble"], cleaned_full_text)
-    skills = _split_skills(sections["skills"], cleaned_full_text)
+    skills_explicit = _split_skills_explicit(sections["skills"])
+    spacy_extracted = extract_skills_from_text(cleaned_full_text)
+    skills_inferred = [s for s in spacy_extracted if s.lower() not in {x.lower() for x in skills_explicit} and not _is_location_or_contact_line(s)]
+    skills_all = list(skills_explicit) + [s for s in skills_inferred if s.lower() not in {x.lower() for x in skills_explicit}]
     skills_categorized = _extract_categorized_skills(sections["skills"])
+
+    exp_entities = parse_experience_section(sections["experience"])
+    intern_entities = parse_experience_section(sections.get("internships", []))
+    proj_entities = parse_projects_section(sections["projects"])
+    edu_entities = parse_education_section(sections.get("education", []))
+
     experience_bullets = _structure_experience(sections["experience"])
     project_bullets = _bulletize_projects(sections["projects"])
 
     # Truly unstructured resumes may put all evidence under the header block.
     # Treat those statements as experience only when neither editable section
     # was found; otherwise explicit section structure always wins.
-    if not experience_bullets and not project_bullets:
-        experience_bullets = _recover_unheaded_evidence(sections["_preamble"])
+    if not exp_entities and not proj_entities:
+        recovered_exp = _recover_unheaded_evidence(sections["_preamble"])
+        if recovered_exp:
+            from app.modules.resume.models import WorkExperienceEntity
+            exp_entities = [WorkExperienceEntity(
+                id="exp_0",
+                company="Independent / Professional Work",
+                role="Software Engineer",
+                bullets=recovered_exp,
+            )]
+            experience_bullets = recovered_exp
 
     summary_text = " ".join(sections["summary"]).strip() if sections["summary"] else _extract_summary_from_preamble(sections["_preamble"])
 
@@ -1339,11 +1517,21 @@ def structure_resume_text(full_text: str) -> dict:
     return {
         "personal": personal,
         "summary": summary_text,
-        "skills": skills,
+        "skills": skills_all,
+        "skills_explicit": skills_explicit,
+        "skills_inferred": skills_inferred,
         "skills_categorized": skills_categorized,
+        "experience": [e.model_dump() for e in exp_entities],
+        "experience_entities": [e.model_dump() for e in exp_entities],
         "experience_raw": experience_bullets,
-        "projects_raw": project_bullets,
+        "internships": [e.model_dump() for e in intern_entities],
+        "internships_entities": [e.model_dump() for e in intern_entities],
         "internships_raw": _structure_experience(sections.get("internships", [])),
+        "projects": [p.model_dump() for p in proj_entities],
+        "projects_entities": [p.model_dump() for p in proj_entities],
+        "projects_raw": project_bullets,
+        "education": [e.model_dump() for e in edu_entities],
+        "education_entities": [e.model_dump() for e in edu_entities],
         "education_raw": _structure_education(sections.get("education", [])),
         "certifications": _extract_list_items(sections.get("certifications", [])),
         "achievements": _extract_list_items(sections.get("achievements", [])),
