@@ -35,6 +35,8 @@ async def _generate_prep(db, ai_service, user_id, job_id: str | None = None, rol
     if job_id:
         job = await jobs_repo.get_job_by_id(db, job_id)
         if job is not None:
+            if job.get("source") == "custom" and job.get("user_id") and job.get("user_id") != user_id:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found.")
             target_role = job["title"]
             target_company = job["company"]
             jd_text = job.get("jd_text", "")

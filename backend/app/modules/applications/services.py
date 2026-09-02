@@ -41,6 +41,8 @@ async def save_application(
     job = await jobs_repo.get_job_by_id(db, job_id)
     if job is None:
         raise JobNotFoundError(f"Job {job_id} not found.")
+    if job.get("source") == "custom" and job.get("user_id") and job.get("user_id") != user_id:
+        raise JobNotFoundError(f"Job {job_id} not found.")
 
     existing = await repo.find_active_application(db, user_id, job_id)
     if existing is not None:

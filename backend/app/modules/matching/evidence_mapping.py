@@ -148,6 +148,37 @@ class EvidenceJDMap(BaseModel):
 EvidenceMappingMatrix = EvidenceJDMap
 
 
+NEGATION_ASPIRATIONAL_PATTERNS = [
+    r"\bno\s+(?:prior\s+|hands-on\s+|commercial\s+|professional\s+)?experience\s+(?:in|with|using)\b",
+    r"\bnot\s+(?:familiar\s+with|experienced\s+in|proficient\s+in)\b",
+    r"\bnever\s+(?:used|worked\s+with|developed\s+in)\b",
+    r"\bwithout\s+(?:any\s+)?experience\s+in\b",
+    r"\binterested\s+in\s+(?:learning|exploring|working\s+with)\b",
+    r"\baspiring\s+to\s+(?:learn|work\s+with)\b",
+    r"\blooking\s+to\s+(?:learn|gain\s+experience\s+in)\b",
+    r"\bwant(?:s)?\s+to\s+learn\b",
+    r"\bhope(?:s)?\s+to\s+gain\s+experience\b",
+    r"\bheard\s+about\b",
+    r"\bread\s+about\b",
+    r"\btheory\s+only\b",
+]
+
+
+def _is_negative_or_aspirational(text: str, skill: str) -> bool:
+    text_lower = text.lower()
+    skill_lower = skill.lower()
+    if skill_lower not in text_lower:
+        return False
+    for pat in NEGATION_ASPIRATIONAL_PATTERNS:
+        match = re.search(pat, text_lower)
+        if match:
+            start, end = match.span()
+            idx = text_lower.find(skill_lower)
+            if abs(idx - start) < 60 or abs(idx - end) < 60:
+                return True
+    return False
+
+
 def _find_related_skills(skill: str) -> set[str]:
     skill_lower = skill.lower()
     related: set[str] = set()
@@ -166,6 +197,26 @@ def _check_synonym_match(target_skill: str, candidate_skills: set[str]) -> str |
     return None
 
 
+def _compute_candidate_experience_years(profile: CandidateProfile) -> int:
+    """Estimates or extracts candidate total experience years from profile attributes, summary, or experience entries."""
+    if hasattr(profile, "experience_years") and isinstance(profile.experience_years, (int, float)):
+        return int(profile.experience_years)
+    if isinstance(profile.personal, dict) and profile.personal.get("experience_years"):
+        try:
+            return int(profile.personal["experience_years"])
+        except (ValueError, TypeError):
+            pass
+
+    text_corpus = (profile.summary or "") + " " + " ".join(ev.normalized_text for ev in profile.evidence_units)
+    year_match = re.search(r"\b(\d+)\+?\s*(?:years?|yrs?)\b", text_corpus, re.IGNORECASE)
+    if year_match:
+        return int(year_match.group(1))
+
+    if profile.experience:
+        return max(len(profile.experience), 1)
+    return 0
+
+
 def map_resume_to_jd_evidence(
     profile: CandidateProfile,
     job_reqs: StructuredJobRequirements,
@@ -175,10 +226,22 @@ def map_resume_to_jd_evidence(
     Never inflates semantic similarity. Strictly distinguishes EXACT, STRONG, SUPPORTED,
     RELATED, PARTIAL, WEAK, MISSING, and CONFLICTING match levels.
     """
-    candidate_skills_lower = {s.lower() for s in profile.skills}
+    # Build candidate skills set excluding negative/aspirational mentions
+    candidate_skills_lower: set[str] = set()
+    for s in profile.skills:
+        s_low = s.lower()
+        matching_evs = [
+            ev for ev in profile.evidence_units
+            if s_low in ev.normalized_text.lower() or s_low in {t.lower() for t in ev.technologies}
+        ]
+        if matching_evs and all(_is_negative_or_aspirational(ev.normalized_text, s) for ev in matching_evs):
+            continue  # Exclude negated/aspirational mention
+        candidate_skills_lower.add(s_low)
+
     for ev in profile.evidence_units:
         for t in ev.technologies:
-            candidate_skills_lower.add(t.lower())
+            if not _is_negative_or_aspirational(ev.normalized_text, t):
+                candidate_skills_lower.add(t.lower())
 
     mappings: list[RequirementEvidenceMapping] = []
     exact_count = 0
@@ -244,49 +307,120 @@ def map_resume_to_jd_evidence(
         if is_conflicting:
             pass
         else:
-            # 2. Exact and Synonym Skill Matching
-            exact_found = [s for s in req.skills_detected if s.lower() in candidate_skills_lower]
+            # 2. Exact, Synonym, and Compound Skill Matching
+            detected_skills = req.skills_detected or []
+            exact_found = [s for s in detected_skills if s.lower() in candidate_skills_lower]
             synonym_found: list[str] = []
-            if not exact_found:
-                for s in req.skills_detected:
+            for s in detected_skills:
+                if s not in exact_found:
                     syn = _check_synonym_match(s, candidate_skills_lower)
                     if syn:
                         synonym_found.append(syn)
 
-            if exact_found or synonym_found:
-                target_skills = exact_found or synonym_found
-                matched_skills.extend(target_skills)
-                all_matched_skills.update(target_skills)
+            total_detected = len(detected_skills)
+            total_matched = len(exact_found) + len(synonym_found)
 
-                # Locate supporting EvidenceUnits
+            # Check if requirement contains alternatives (e.g. "AWS or Azure", "Rust / C++")
+            is_alternative_req = bool(re.search(r"\b(?:or|either)\b", req_lower) or "/" in req_lower)
+
+            # Check if this requirement is primarily an experience tenure requirement without specific tools
+            is_pure_tenure_req = bool(
+                re.search(r"\b(\d+)\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs?)\b", req_lower)
+                and any(w in req_lower for w in ["experience", "background", "tenure", "software development", "engineering"])
+                and not detected_skills
+            )
+
+            if total_matched > 0 and not is_pure_tenure_req:
+                matched_target_skills = exact_found + synonym_found
+                matched_skills.extend(matched_target_skills)
+                all_matched_skills.update(matched_target_skills)
+
+                # Locate supporting EvidenceUnits (excluding negative mentions)
                 for ev in profile.evidence_units:
                     ev_techs_lower = {t.lower() for t in ev.technologies}
-                    if any(s.lower() in ev_techs_lower or s.lower() in ev.normalized_text.lower() for s in target_skills):
-                        if ev not in matched_evs:
-                            matched_evs.append(ev)
-                            if ev.entity_id and ev.entity_id not in matched_entities:
-                                matched_entities.append(ev.entity_id)
+                    for s in matched_target_skills:
+                        s_low = s.lower()
+                        if (s_low in ev_techs_lower or s_low in ev.normalized_text.lower()) and not _is_negative_or_aspirational(ev.normalized_text, s):
+                            if ev not in matched_evs:
+                                matched_evs.append(ev)
+                                if ev.entity_id and ev.entity_id not in matched_entities:
+                                    matched_entities.append(ev.entity_id)
 
-                if exact_found:
-                    if matched_evs:
+                # Check if evidence contains demonstrated experience/project delivery vs academic/listing
+                has_delivery_evidence = any(
+                    ev.section in ("EXPERIENCE", "PROJECTS")
+                    or (hasattr(ev.claim_type, "value") and ev.claim_type.value in ("CORE_EXPERIENCE", "PROJECT_CONTRIBUTION"))
+                    for ev in matched_evs
+                )
+                has_education_only = bool(matched_evs) and all(
+                    ev.section == "EDUCATION" or (hasattr(ev.claim_type, "value") and ev.claim_type.value == "ACADEMIC_CREDENTIAL")
+                    for ev in matched_evs
+                )
+
+                if total_detected > 1 and total_matched < total_detected and not is_alternative_req:
+                    # Compound 'AND' Requirement with Partial Coverage
+                    status = EvidenceMatchStatus.PARTIAL
+                    score = round(0.40 + 0.45 * (total_matched / total_detected), 2)
+                    partial_count += 1
+                    missing_sub = [s for s in detected_skills if s not in exact_found and s not in synonym_found]
+                    reason = f"Partial compound match: {total_matched}/{total_detected} skills supported ({', '.join(matched_target_skills)}); missing ({', '.join(missing_sub)})."
+                    unmatched_gaps.append(f"{req.text} (Missing: {', '.join(missing_sub)})")
+                    if req.category == RequirementCategory.MUST_HAVE:
+                        missing_must_haves.update(missing_sub)
+                    elif req.category == RequirementCategory.PREFERRED:
+                        missing_preferred.update(missing_sub)
+                elif exact_found and (len(exact_found) == total_detected or is_alternative_req):
+                    # Complete Exact Match (or Alternative Satisfied)
+                    if has_delivery_evidence:
                         status = EvidenceMatchStatus.EXACT_MATCH
                         score = 1.0
                         exact_count += 1
-                        reason = f"Exact skill match verified with {len(matched_evs)} evidence units ({', '.join(matched_entities)})."
+                        reason = f"Exact skill match verified with {len(matched_evs)} delivery evidence units ({', '.join(matched_entities)})."
+                    elif has_education_only:
+                        status = EvidenceMatchStatus.SUPPORTED
+                        score = 0.80
+                        supported_count += 1
+                        reason = f"Supported by academic coursework/education credentials ({', '.join(matched_skills)})."
                     else:
                         status = EvidenceMatchStatus.SUPPORTED
                         score = 0.85
                         supported_count += 1
-                        reason = "Skill listed in profile, supported by general qualifications."
+                        reason = f"Skill listed in profile qualifications ({', '.join(matched_skills)})."
                 else:
-                    # Synonym match -> STRONG_MATCH
+                    # Synonym or Full Mixed Match -> STRONG_MATCH
                     status = EvidenceMatchStatus.STRONG_MATCH
                     score = 0.95
                     strong_count += 1
-                    reason = f"Strong synonym match ({', '.join(synonym_found)}) supported by candidate evidence."
+                    reason = f"Strong match supported by candidate qualifications ({', '.join(matched_target_skills)})."
+
+            elif is_pure_tenure_req:
+                # 3. Experience Duration Requirement Check
+                exp_match = re.search(r"\b(\d+)\s*\+?\s*(?:-\s*\d+\s*)?(?:years?|yrs?)\b", req_lower)
+                req_years = int(exp_match.group(1)) if exp_match else 1
+                candidate_years = _compute_candidate_experience_years(profile)
+
+                if candidate_years >= req_years:
+                    status = EvidenceMatchStatus.EXACT_MATCH
+                    score = 1.0
+                    exact_count += 1
+                    reason = f"Experience requirement satisfied: candidate has {candidate_years}+ years experience (required: {req_years}+ years)."
+                elif candidate_years >= req_years * 0.5:
+                    status = EvidenceMatchStatus.PARTIAL
+                    score = 0.60
+                    partial_count += 1
+                    reason = f"Partial experience: candidate has {candidate_years} years (required: {req_years}+ years)."
+                else:
+                    status = EvidenceMatchStatus.WEAK if candidate_years > 0 else EvidenceMatchStatus.MISSING
+                    score = 0.30 if candidate_years > 0 else 0.0
+                    if candidate_years > 0:
+                        weak_count += 1
+                    else:
+                        missing_count += 1
+                        unmatched_gaps.append(req.text)
+                    reason = f"Insufficient experience tenure: candidate has {candidate_years} years (required: {req_years}+ years)."
 
             elif req.category == RequirementCategory.RESPONSIBILITY:
-                # 3. Responsibility Support Check
+                # 4. Responsibility Support Check
                 req_words = [w for w in req_lower.split() if len(w) > 3 and w not in {"with", "that", "from", "your", "their", "will", "have", "experience", "proven"}]
                 resp_matched_evs = [
                     ev for ev in profile.evidence_units
@@ -309,9 +443,9 @@ def map_resume_to_jd_evidence(
                     unmatched_gaps.append(req.text)
 
             else:
-                # 4. Related (Adjacent) Skills Check -> RELATED / PARTIAL
+                # 5. Related (Adjacent) Skills Check -> RELATED
                 related_candidates: set[str] = set()
-                for s in req.skills_detected:
+                for s in (req.skills_detected or []):
                     related_candidates.update(_find_related_skills(s))
 
                 related_found = [s for s in related_candidates if s in candidate_skills_lower]
@@ -330,7 +464,7 @@ def map_resume_to_jd_evidence(
                     related_count += 1
                     reason = f"Related adjacent technology ({', '.join(related_found)}) provides transferable foundation (not exact match)."
                 else:
-                    # 5. Semantic / Partial Keyword Overlap -> PARTIAL / WEAK
+                    # 6. Semantic / Partial Keyword Overlap -> PARTIAL / WEAK / MISSING
                     req_words = [w for w in re.findall(r"\b[a-zA-Z]{4,}\b", req_lower) if w not in {"with", "that", "from", "your", "their", "will", "have", "experience", "proven", "background", "years"}]
                     text_matched_evs = [
                         ev for ev in profile.evidence_units

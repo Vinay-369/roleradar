@@ -50,6 +50,11 @@ def _to_out(doc: dict) -> TailoredResumeOut:
         missing_skills=doc.get("missing_skills"),
         partial_skills=doc.get("partial_skills"),
         ats_readability_findings=doc.get("ats_readability_findings"),
+        master_resume_id=doc.get("master_resume_id"),
+        master_resume_version=doc.get("master_resume_version"),
+        opportunity_type=doc.get("opportunity_type"),
+        opportunity_id=doc.get("opportunity_id"),
+        jd_analysis_summary=doc.get("jd_analysis_summary"),
         created_at=doc["created_at"].isoformat() if hasattr(doc["created_at"], "isoformat") else str(doc["created_at"]),
     )
 

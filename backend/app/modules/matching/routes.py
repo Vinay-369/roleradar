@@ -42,7 +42,7 @@ async def recommended_matches(
     if live_only:
         search_filters["source"] = "live"
 
-    jobs = await jobs_services.search_jobs(db, search_filters)
+    jobs = await jobs_services.search_jobs(db, search_filters, user_id=user_id)
     if live_only:
         jobs = [j for j in jobs if j.get("source") == "live" or (j.get("apply_url") and "example.com" not in j.get("apply_url", ""))]
 

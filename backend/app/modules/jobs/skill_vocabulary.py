@@ -98,7 +98,7 @@ KNOWN_SKILLS: list[str] = [
     "Supabase", "Firebase Realtime Database", "Firestore", "DuckDB", "ClickHouse", "CockroachDB", "NoSQL",
 
     # Data Engineering & Streaming
-    "Apache Kafka", "RabbitMQ", "Apache Spark", "Apache Flink", "Apache Airflow", "dbt", "Apache Beam",
+    "Kafka", "Apache Kafka", "RabbitMQ", "Spark", "Apache Spark", "Flink", "Apache Flink", "Airflow", "Apache Airflow", "dbt", "Apache Beam",
     "Hadoop", "Hive", "Databricks", "Snowflake", "Google BigQuery", "AWS Redshift", "ETL Pipelines",
     "Data Warehousing", "Data Modeling", "Data Lakes", "Data Governance", "Stream Processing", "Batch Processing",
 

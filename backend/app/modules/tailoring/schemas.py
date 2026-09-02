@@ -53,6 +53,14 @@ class TailoredResumeOut(BaseModel):
     missing_skills: list[str] | None = None
     partial_skills: list[str] | None = None
     ats_readability_findings: dict | None = None
+    master_resume_id: str | None = None
+    master_resume_version: int | None = None
+    opportunity_type: str | None = None
+    opportunity_id: str | None = None
+    jd_analysis_summary: dict | None = None
+    user_modified: bool | None = None
+    truth_guard_audit: dict | None = None
+    verification_status: str | None = None
     created_at: str
 
 

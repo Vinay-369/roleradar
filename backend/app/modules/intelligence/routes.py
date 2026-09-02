@@ -21,7 +21,7 @@ from app.modules.intelligence.schemas import (
     ActionPlanItemOut,
 )
 from app.modules.applications import repositories as applications_repo
-from app.modules.jobs import repositories as jobs_repo
+from app.modules.jobs import services as jobs_services
 from app.modules.matching import services as matching_services
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
@@ -43,7 +43,7 @@ async def get_ats_score(
     if resume is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Upload a resume first.")
 
-    job = await jobs_repo.get_job_by_id(db, job_id)
+    job = await jobs_services.get_job(db, job_id, user_id=user_id)
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
 
@@ -175,7 +175,7 @@ async def get_dashboard(
 
     top_matches: list[dict] = []
     if profile is not None and resume is not None:
-        jobs = await jobs_repo.find_jobs(db, {}, limit=100)
+        jobs = await jobs_services.search_jobs(db, {"limit": 100}, user_id=user_id)
         matches = await matching_services.get_or_compute_matches(db, user_id, resume, profile, jobs, settings)
         top_matches = [
             {

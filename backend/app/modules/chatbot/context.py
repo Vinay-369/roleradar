@@ -48,7 +48,7 @@ async def build_copilot_context(
         )
 
     from app.modules.applications import repositories as applications_repo
-    from app.modules.jobs import repositories as jobs_repo
+    from app.modules.jobs import services as jobs_services
     from app.modules.matching.engine import compute_match
     from app.modules.profile import repositories as profile_repo
     from app.modules.resume import repositories as resume_repo
@@ -95,7 +95,7 @@ async def build_copilot_context(
             "min_lpa": profile.get("min_lpa"),
             "industries": profile.get("industries", []),
         }
-        jobs = await jobs_repo.find_jobs(db, {}, limit=100)
+        jobs = await jobs_services.search_jobs(db, {"limit": 100}, user_id=user_id)
         scored = []
         for job in jobs:
             match = compute_match(candidate, job, embedder, category=profile.get("category", "FRESHER"))

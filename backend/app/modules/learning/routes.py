@@ -1,3 +1,5 @@
+from collections import Counter
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -6,16 +8,13 @@ from app.core.embeddings.factory import build_embedding_provider
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import repositories as jobs_repo
+from app.modules.jobs.services import get_canonical_job_requirements
 from app.modules.learning.engine import build_roadmap, compute_skill_gaps
 from app.modules.learning.schemas import RoadmapOut, SkillGapOut
-from app.modules.matching import services as matching_services
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
 
 router = APIRouter()
-
-
-from collections import Counter
 
 
 async def _aggregate_role_requirements(db: AsyncIOMotorDatabase, target_role: str) -> dict:
@@ -37,10 +36,20 @@ async def _aggregate_role_requirements(db: AsyncIOMotorDatabase, target_role: st
     nice_counter: Counter = Counter()
 
     for j in matching_jobs:
-        for s in j.get("skills_required", []):
-            req_counter[s] += 1
-        for s in j.get("skills_nice_to_have", []):
-            nice_counter[s] += 1
+        # Prefer canonical structured requirements if present
+        if j.get("must_have_skills"):
+            for s in j["must_have_skills"]:
+                req_counter[s] += 1
+        else:
+            for s in j.get("skills_required", []):
+                req_counter[s] += 1
+
+        if j.get("preferred_skills"):
+            for s in j["preferred_skills"]:
+                nice_counter[s] += 1
+        else:
+            for s in j.get("skills_nice_to_have", []):
+                nice_counter[s] += 1
 
     # Standard industry benchmarks for common tech roles
     default_role_skills = {
@@ -69,6 +78,8 @@ async def _aggregate_role_requirements(db: AsyncIOMotorDatabase, target_role: st
         "id": f"role_{target_lower.replace(' ', '_')}",
         "title": target_role,
         "company": "Market Standard",
+        "must_have_skills": top_required,
+        "preferred_skills": top_nice,
         "skills_required": top_required,
         "skills_nice_to_have": top_nice,
         "description": f"Aggregated requirements across matching market postings for {target_role}.",
@@ -85,6 +96,8 @@ async def _resolve_job_for_context(db: AsyncIOMotorDatabase, user_id: str, job_i
     if job_id:
         job = await jobs_repo.get_job_by_id(db, job_id)
         if job is not None:
+            if job.get("source") == "custom" and job.get("user_id") and job.get("user_id") != user_id:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
             return job
 
     profile = await profile_repo.get_profile(db, user_id)
@@ -99,6 +112,9 @@ async def _compute_gaps(db, settings, user_id, job_id: str | None = None, role: 
     resume = await resume_repo.get_active_master_resume(db, user_id)
     profile = await profile_repo.get_profile(db, user_id)
     job = await _resolve_job_for_context(db, user_id, job_id=job_id, role=role)
+
+    # 1. Resolve Canonical Phase 3 StructuredJobRequirements
+    reqs = await get_canonical_job_requirements(db, job)
 
     if resume is None:
         # Graceful fallback: synthesize baseline candidate skills from achievements/profile
@@ -117,20 +133,51 @@ async def _compute_gaps(db, settings, user_id, job_id: str | None = None, role: 
             },
         }
 
-    matches = await matching_services.get_or_compute_matches(db, user_id, resume, profile or {}, [job], settings)
-    match_data = matches[0] if matches else {}
+    candidate_skills = list(resume["parsed"].get("skills", []))
+    for s in resume["parsed"].get("inferred_skills", []):
+        if s not in candidate_skills:
+            candidate_skills.append(s)
+    for e in resume["parsed"].get("experience_entries", []):
+        for t in e.get("technologies", []):
+            if t not in candidate_skills:
+                candidate_skills.append(t)
+    for p in resume["parsed"].get("project_entries", []):
+        for t in p.get("technologies", []):
+            if t not in candidate_skills:
+                candidate_skills.append(t)
+    candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
 
-    candidate_skills = resume["parsed"].get("skills", [])
-    candidate_skills_lower = {s.lower() for s in candidate_skills}
-    missing_nice_to_have = [
-        s for s in job.get("skills_nice_to_have", []) if s.lower() not in candidate_skills_lower
-    ]
+    embedder = build_embedding_provider(settings)
+
+    # 2. Extract authoritative must-have and preferred requirements
+    must_haves = reqs.must_have_skills if reqs.must_have_skills else job.get("skills_required", [])
+    preferreds = reqs.preferred_skills if reqs.preferred_skills else job.get("skills_nice_to_have", [])
+
+    missing_required = []
+    partial_required = []
+
+    for req_skill in must_haves:
+        r_low = req_skill.lower().strip()
+        if r_low in candidate_skills_lower:
+            continue
+        best_sim = max((embedder.similarity(r_low, c) for c in candidate_skills_lower), default=0.0)
+        if best_sim >= 0.55:
+            partial_required.append(req_skill)
+        else:
+            missing_required.append(req_skill)
+
+    missing_preferred = []
+    for pref_skill in preferreds:
+        p_low = pref_skill.lower().strip()
+        if p_low in candidate_skills_lower:
+            continue
+        missing_preferred.append(pref_skill)
 
     gaps = compute_skill_gaps(
-        missing_required=match_data.get("missing_skills", []),
-        partial_required=match_data.get("partial_skills", []),
-        missing_nice_to_have=missing_nice_to_have,
-        job_title=job["title"],
+        missing_required=missing_required,
+        partial_required=partial_required,
+        missing_nice_to_have=missing_preferred,
+        job_title=job.get("title", reqs.target_role or "Target Role"),
     )
     return gaps, job
 

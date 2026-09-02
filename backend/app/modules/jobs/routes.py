@@ -74,7 +74,7 @@ async def list_jobs(
     # the request if the live source is unavailable or unconfigured.
     await services.refresh_live_jobs(db, settings, live_filters)
 
-    jobs = await services.search_jobs(db, filters)
+    jobs = await services.search_jobs(db, filters, user_id=str(current_user["_id"]))
     return [JobOut(**_strip_for_list(j)) for j in jobs]
 
 
@@ -84,7 +84,7 @@ async def get_job(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    job = await services.get_job(db, job_id)
+    job = await services.get_job(db, job_id, user_id=str(current_user["_id"]))
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
     return JobOut(**_strip_for_detail(job))

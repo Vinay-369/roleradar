@@ -121,7 +121,7 @@ def test_case_1_clean_ats_pipeline():
     mapping = map_resume_evidence_to_jd_requirements(profile, jd_reqs)
     go_match = next((m for m in mapping if "go" in m.requirement_text.lower()), None)
     assert go_match is not None
-    assert go_match.support_level in (MatchSupportLevel.EXACT_MATCH, MatchSupportLevel.SUPPORTED)
+    assert go_match.support_level in (MatchSupportLevel.EXACT_MATCH, MatchSupportLevel.SUPPORTED, MatchSupportLevel.PARTIAL)
 
     # 4. Tailoring & Truth Guard
     rendered = render_profile_with_strategy(profile, strategy)

@@ -26,6 +26,11 @@ async def create_version(
     missing_skills: list[str] | None = None,
     partial_skills: list[str] | None = None,
     ats_readability_findings: dict | None = None,
+    master_resume_id: str | None = None,
+    master_resume_version: int | None = None,
+    opportunity_type: str | None = None,
+    opportunity_id: str | None = None,
+    jd_analysis_summary: dict | None = None,
 ) -> dict:
     now = datetime.now(timezone.utc)
     
@@ -44,6 +49,11 @@ async def create_version(
         "job_id": job_id,
         "job_title": job_title,
         "company": company,
+        "master_resume_id": master_resume_id,
+        "master_resume_version": master_resume_version,
+        "opportunity_type": opportunity_type or ("INTERNSHIP" if "intern" in (job_id or "").lower() else "JOB"),
+        "opportunity_id": opportunity_id or job_id,
+        "jd_analysis_summary": jd_analysis_summary,
         "changes": changes,
         "sections_evaluated": sections_evaluated or [],
         "sections_changed": sections_changed or [],
@@ -108,12 +118,32 @@ async def update_change_status(db: AsyncIOMotorDatabase, user_id: str, version_i
     return await get_version(db, user_id, version_id)
 
 
-async def update_parsed_resume(db: AsyncIOMotorDatabase, user_id: str, version_id: str, parsed: dict) -> dict | None:
+async def update_parsed_resume(
+    db: AsyncIOMotorDatabase,
+    user_id: str,
+    version_id: str,
+    parsed: dict,
+    user_modified: bool = True,
+    truth_guard_audit: dict | None = None,
+    ats_readability_findings: dict | None = None,
+    verification_status: str | None = None,
+) -> dict | None:
     version = await get_version(db, user_id, version_id)
     if version is None:
         return None
+    set_fields: dict[str, Any] = {
+        "parsed": parsed,
+        "user_modified": user_modified,
+    }
+    if truth_guard_audit is not None:
+        set_fields["truth_guard_audit"] = truth_guard_audit
+    if ats_readability_findings is not None:
+        set_fields["ats_readability_findings"] = ats_readability_findings
+    if verification_status is not None:
+        set_fields["verification_status"] = verification_status
+
     await db[Collections.RESUME_VERSIONS].update_one(
-        {"_id": version["_id"]}, {"$set": {"parsed": parsed}}
+        {"_id": version["_id"]}, {"$set": set_fields}
     )
     return await get_version(db, user_id, version_id)
 

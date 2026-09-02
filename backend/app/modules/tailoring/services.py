@@ -336,12 +336,15 @@ async def generate_tailoring(
         job = await jobs_repo.get_job_by_id(db, job_id)
         if job is None:
             raise JobNotFoundError(f"Job {job_id} not found.")
+        if job.get("source") == "custom" and job.get("user_id") and job.get("user_id") != user_id:
+            raise JobNotFoundError(f"Job {job_id} not found.")
     elif custom_jd_text:
         job = await jobs_services.create_custom_job(
             db,
             company=custom_company or "Custom Application",
             title=custom_role_title or "Target Role",
             jd_text=custom_jd_text,
+            user_id=user_id,
         )
     else:
         raise MissingJobOrJDError("Provide either job_id or a pasted custom_jd_text.")
@@ -349,11 +352,8 @@ async def generate_tailoring(
     from app.core.caching import (
         get_cached_candidate_profile,
         set_cached_candidate_profile,
-        get_cached_jd_requirements,
-        set_cached_jd_requirements,
     )
     from app.modules.resume.models import CandidateProfile
-    from app.modules.jobs.taxonomy import analyze_job_description
 
     master_raw_text = resume.get("raw_text", "")
     candidate_profile = None
@@ -374,15 +374,12 @@ async def generate_tailoring(
 
     master_skills = master_parsed.get("skills", [])
 
-    # JD Analysis (Cached & Reused)
-    jd_reqs = get_cached_jd_requirements(job["jd_text"], job.get("title", ""))
-    if jd_reqs is None:
-        jd_reqs = analyze_job_description(job["jd_text"], job.get("title", ""))
-        set_cached_jd_requirements(job["jd_text"], job.get("title", ""), jd_reqs)
+    # Canonical Phase 3 JD Analysis
+    jd_reqs = await jobs_services.get_canonical_job_requirements(db, job)
 
     # 1. Deterministic Skill Reordering & Gap Analysis
     reordered_skills, matched_skills, unmatched_jd_skills, was_reordered = compute_deterministic_skill_reorder(
-        master_skills, job["jd_text"]
+        master_skills, job.get("jd_text") or job.get("description") or ""
     )
 
     # 2. Extract editable sub-object (EXCLUDES Education, Certifications, Contact)
@@ -643,6 +640,17 @@ async def generate_tailoring(
         missing_skills=missing_skills_list,
         partial_skills=partial_skills_list,
         ats_readability_findings=ats_findings_dict,
+        master_resume_id=str(resume.get("_id")) if resume.get("_id") else None,
+        master_resume_version=resume.get("version", 1),
+        opportunity_type="INTERNSHIP" if job.get("job_type") == "internship" else ("CUSTOM" if job.get("source") == "custom" else "JOB"),
+        opportunity_id=job.get("id"),
+        jd_analysis_summary={
+            "seniority": jd_reqs.seniority,
+            "domain": jd_reqs.domain,
+            "min_years_experience": jd_reqs.min_years_experience,
+            "must_haves_count": len(jd_reqs.must_have_skills),
+            "preferred_count": len(jd_reqs.preferred_skills),
+        },
     )
     return version
 
@@ -775,7 +783,7 @@ async def finalize_tailoring(
                         final_parsed.setdefault("projects_raw", []).append(prop)
 
     # Apply approved text replacements to final_text if master_raw_text exists
-    if final_text:
+    if final_text and changes_list:
         for change in changes_list:
             if change.get("status") == ChangeStatus.APPROVED.value and change.get("applied_safely", True):
                 orig = change.get("original", "")
@@ -786,24 +794,41 @@ async def finalize_tailoring(
                     clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
                     if clean_orig and clean_orig in final_text:
                         final_text = final_text.replace(clean_orig, prop, 1)
-                    else:
-                        final_text = render_text_from_structured(final_parsed)
-    else:
+    if not final_text:
         final_text = render_text_from_structured(final_parsed)
 
-    # 2. Deterministic 1-Page PDF Fit Measurement & Trimming on the Real Structured PDF
+    # 2. Deterministic PDF Fit Measurement & Trimming on the Real Structured PDF using Strategy Page Budget
+    strategy_info = version.get("resume_strategy", {}) if isinstance(version.get("resume_strategy"), dict) else {}
+    page_budget = strategy_info.get("page_budget", 1)
+    template_variant = strategy_info.get("template_variant", "modern")
+
     candidate_name = final_parsed.get("personal", {}).get("name") or "Candidate"
     job = await jobs_repo.get_job_by_id(db, version.get("job_id", ""))
     job_jd = job.get("jd_text", "") if job else ""
     required_tech = list(extract_technical_terms(job_jd))
 
-    final_parsed, fits_one_page, page_count = measure_and_enforce_one_page_fit(
-        final_parsed, candidate_name=candidate_name, template="modern", required_skills=required_tech
+    final_parsed, fits_budget, page_count = measure_and_enforce_one_page_fit(
+        final_parsed,
+        candidate_name=candidate_name,
+        template=template_variant,
+        max_pages=page_budget,
+        required_skills=required_tech,
     )
 
     # 3. 4-Pillar Quality Audit
     parseability = analyze_parseability(final_text, blocks=[], file_type="docx", has_tables=False)
-    combined_bullets = final_parsed.get("experience_raw", []) + final_parsed.get("projects_raw", [])
+    combined_bullets: list[str] = []
+    for item in (final_parsed.get("experience_raw", []) or []):
+        if isinstance(item, str):
+            combined_bullets.append(item)
+        elif isinstance(item, dict):
+            combined_bullets.extend(item.get("bullets", []))
+    for item in (final_parsed.get("projects_raw", []) or []):
+        if isinstance(item, str):
+            combined_bullets.append(item)
+        elif isinstance(item, dict):
+            combined_bullets.extend(item.get("bullets", []))
+
     recruiter_impact = analyze_recruiter_impact(combined_bullets)
     action_verbs = analyze_action_verbs(combined_bullets)
     skills_depth = analyze_skills_depth(final_parsed.get("skills", []))
@@ -909,13 +934,14 @@ async def finalize_tailoring(
         c.get("fabrication_warning") for c in changes_list if c.get("status") == ChangeStatus.APPROVED.value
     )
     score_improved = (tailored_ats.overall >= master_ats.overall) if master_ats else True
-    all_passed = prot_ok and fits_one_page and (not has_unconfirmed_fabrication) and (score_warning is None)
+    all_passed = prot_ok and fits_budget and (not has_unconfirmed_fabrication) and (score_warning is None)
 
     validation_summary = {
         "protected_sections_intact": prot_ok,
         "anti_fabrication_passed": not has_unconfirmed_fabrication,
-        "one_page_fit": fits_one_page,
+        "one_page_fit": fits_budget,
         "page_count": page_count,
+        "page_budget": page_budget,
         "score_improvement": score_improved,
         "all_checks_passed": all_passed,
         "errors": prot_errors,
@@ -935,9 +961,110 @@ async def finalize_tailoring(
         changes=changes_list,
         tailored_scores=tailored_scores,
         validation_summary=validation_summary,
-        one_page_fit=fits_one_page,
+        one_page_fit=fits_budget,
         ats_readability_findings=final_ats_findings,
     ) or version
+
+
+def _audit_user_edits(
+    master_parsed: dict,
+    edited_parsed: dict,
+    master_profile: Any,
+) -> tuple[bool, list[str], list[str], list[str], list[str]]:
+    """
+    Audits user-submitted parsed edits against canonical master resume evidence.
+    Returns: (is_valid, violations, unsupported_tech, unsupported_metrics, scope_escalations)
+    """
+    violations: list[str] = []
+    unsupported_tech: list[str] = []
+    unsupported_metrics: list[str] = []
+    scope_escalations: list[str] = []
+
+    # 1. Master candidate verified technologies
+    master_skills = master_parsed.get("skills", []) or []
+    master_skills_set = {str(s).lower().strip() for s in master_skills if s}
+    if master_profile:
+        for ev in getattr(master_profile, "evidence_units", []):
+            for t in getattr(ev, "technologies", []):
+                master_skills_set.add(str(t).lower().strip())
+
+    # Check skills additions
+    for skill in (edited_parsed.get("skills", []) or []):
+        s_clean = str(skill).strip()
+        if s_clean and s_clean.lower() not in master_skills_set:
+            if master_profile and any(s_clean.lower() in getattr(ev, "normalized_text", "").lower() for ev in getattr(master_profile, "evidence_units", [])):
+                continue
+            if s_clean not in unsupported_tech:
+                unsupported_tech.append(s_clean)
+                violations.append(f"User added skill '{s_clean}' without master resume evidence.")
+
+    # Check summary
+    orig_sum = str(master_parsed.get("summary", "") or "")
+    prop_sum = str(edited_parsed.get("summary", "") or "")
+    if prop_sum and prop_sum.strip() != orig_sum.strip():
+        fab = detect_fabricated_claims(orig_sum, prop_sum, "", master_skills)
+        for term in fab:
+            if term.lower() not in master_skills_set and term not in unsupported_tech:
+                unsupported_tech.append(term)
+                violations.append(f"User added unsupported technology '{term}' in summary.")
+
+    # Check experience bullets
+    orig_exps = master_parsed.get("experience_raw", []) or []
+    prop_exps = edited_parsed.get("experience_raw", []) or []
+
+    def _to_str(item: Any) -> str:
+        if isinstance(item, str):
+            return item
+        if isinstance(item, dict):
+            return " ".join(item.get("bullets", []))
+        return str(item)
+
+    orig_exp_texts = [_to_str(e) for e in orig_exps]
+    prop_exp_texts = [_to_str(e) for e in prop_exps]
+
+    for p_idx, p_text in enumerate(prop_exp_texts):
+        matched_orig = orig_exp_texts[p_idx] if p_idx < len(orig_exp_texts) else ""
+        if not matched_orig:
+            for o in orig_exp_texts:
+                if any(w in o.lower() for w in p_text.lower().split() if len(w) > 4):
+                    matched_orig = o
+                    break
+
+        if matched_orig and p_text.strip() != matched_orig.strip():
+            fab = detect_fabricated_claims(matched_orig, p_text, "", master_skills)
+            for term in fab:
+                if term.lower() not in master_skills_set and term not in unsupported_tech:
+                    unsupported_tech.append(term)
+                    violations.append(f"User added unsupported technology '{term}' in experience.")
+
+            m_err = detect_unsupported_metrics(matched_orig, p_text)
+            if m_err:
+                unsupported_metrics.append(m_err)
+                violations.append(m_err)
+
+            s_err = detect_unsupported_action_verbs_and_scope(matched_orig, p_text)
+            if s_err:
+                scope_escalations.append(s_err)
+                violations.append(s_err)
+        elif not matched_orig and p_text.strip():
+            fab = detect_fabricated_claims("", p_text, "", master_skills)
+            for term in fab:
+                if term.lower() not in master_skills_set and term not in unsupported_tech:
+                    unsupported_tech.append(term)
+                    violations.append(f"User added unsupported technology '{term}' in new experience bullet.")
+            m_extracted = _extract_quantified_metrics(p_text)
+            if m_extracted:
+                m_msg = f"User added unverified metrics ({', '.join(m_extracted)}) in new bullet."
+                unsupported_metrics.append(m_msg)
+                violations.append(m_msg)
+
+    is_valid = (
+        len(violations) == 0
+        and len(unsupported_tech) == 0
+        and len(unsupported_metrics) == 0
+        and len(scope_escalations) == 0
+    )
+    return is_valid, violations, unsupported_tech, unsupported_metrics, scope_escalations
 
 
 async def update_parsed_resume(
@@ -946,7 +1073,47 @@ async def update_parsed_resume(
     version = await repo.get_version(db, user_id, version_id)
     if version is None:
         raise VersionNotFoundError(f"Version {version_id} not found.")
-    updated = await repo.update_parsed_resume(db, user_id, version_id, parsed)
+
+    resume = await resume_repo.get_active_master_resume(db, user_id)
+    master_parsed = (resume.get("parsed") or {}) if resume else {}
+    master_raw_text = (resume.get("raw_text") or "") if resume else ""
+
+    from app.modules.resume.models import CandidateProfile
+    from app.modules.intelligence.ats_readability_validator import evaluate_ats_and_readability
+
+    master_profile = None
+    if master_parsed or master_raw_text:
+        master_profile = CandidateProfile.from_parsed_dict(master_parsed, master_raw_text)
+
+    is_verified, violations, unsupported_tech, unsupported_metrics, scope_escalations = _audit_user_edits(
+        master_parsed, parsed, master_profile
+    )
+
+    verification_status = "VERIFIED" if is_verified else "USER_MODIFIED"
+
+    truth_guard_audit_dict = {
+        "is_valid": is_verified,
+        "violations": violations,
+        "unsupported_technologies": unsupported_tech,
+        "unsupported_metrics": unsupported_metrics,
+        "scope_escalations": scope_escalations,
+        "verification_status": verification_status,
+        "user_modified": True,
+    }
+
+    ats_audit = evaluate_ats_and_readability(parsed, master_data=master_parsed)
+    ats_findings_dict = ats_audit.model_dump(mode="json")
+
+    updated = await repo.update_parsed_resume(
+        db,
+        user_id,
+        version_id,
+        parsed,
+        user_modified=True,
+        truth_guard_audit=truth_guard_audit_dict,
+        ats_readability_findings=ats_findings_dict,
+        verification_status=verification_status,
+    )
     if updated is None:
         raise VersionNotFoundError(f"Version {version_id} not found.")
     return updated
