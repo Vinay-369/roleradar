@@ -23,6 +23,13 @@ export type JobDetail = {
   posted_days_ago: number;
   apply_url: string;
   responsibilities: string[];
+  verification_status?: string;
+  verified_at?: string | null;
+  last_verified_at?: string | null;
+  verification_reason?: string | null;
+  url_type?: string;
+  is_direct_apply?: boolean;
+  posted_at?: string | null;
 };
 
 export async function getJobDetail(jobId: string): Promise<JobDetail> {

@@ -12,10 +12,24 @@ from app.modules.resume.parsing.parseability import EMAIL_RE, PHONE_RE, URL_RE
 SECTION_PATTERNS = {
     "summary": r"^\s*(summary|career summary|professional summary|executive summary|summary of qualifications|objective|career objective|profile|personal profile|about me|professional profile|background|overview)\s*$",
     "skills": r"^\s*(skills|technical skills|key skills|core skills|core competencies|skills & expertise|skills & technologies|tech stack|technical stack|technical proficiencies|areas of expertise|technologies|tools & technologies|programming languages|technological skills|tech expertise|technical competencies|tools|frameworks & tools|languages & frameworks)\s*$",
-    "experience": r"^\s*(experience|work experience|professional experience|employment history|work history|career history|experience & employment|relevant experience|employment|professional background|career background|work background|industry experience|highlighted work|past experience)\s*$",
+    "experience": (
+        r"^\s*(?:"
+        r"(?:(?:professional|work|career|employment|industry|relevant|highlighted|past|technical)\s+)?"
+        r"(?:experience|background|history|trajectory|chronology|path|pathways?|journey|progression|employment|work)"
+        r"(?:\s*(?:&|and)\s*(?:(?:professional|work|career|employment|industry|relevant|highlighted|past|technical)\s+)?"
+        r"(?:experience|background|history|trajectory|chronology|path|pathways?|journey|progression|employment|work))?"
+        r")\s*$"
+    ),
     "projects": r"^\s*(projects|academic projects|key projects|personal projects|technical projects|notable projects|portfolio projects|selected projects|project work|notable contributions|key initiatives|software projects|recent projects|things i worked on|stuff i built|what i built|portfolio)\s*$",
     "internships": r"^\s*(internships?|internship experience|industrial training|industry training|internship history)\s*$",
-    "education": r"^\s*(education|educational background|academic background|academic qualifications|academics|qualifications|educational qualifications|academic profile|education & qualifications|degrees|degrees & education|academic history|scholastic record)\s*$",
+    "education": (
+        r"^\s*(?:"
+        r"(?:(?:academic|educational|scholastic|formal|university|higher)\s+)?"
+        r"(?:education|background|credentials|qualifications|history|profile|record|attainment|preparation|studies|academics|degrees)"
+        r"(?:\s*(?:&|and)\s*(?:(?:academic|educational|scholastic|formal|university|higher)\s+)?"
+        r"(?:education|background|credentials|qualifications|history|profile|record|attainment|preparation|studies|academics|degrees))?"
+        r")\s*$"
+    ),
     "certifications": r"^\s*(certifications?|certificates|licenses|courses & certifications|professional certifications|credentials|accreditations|courses & training|trainings? & certifications?)\s*$",
     "achievements": r"^\s*(achievements|awards|accomplishments|honors|awards & achievements|co-curricular & honors|extracurricular & honors|honors & awards|achievements & awards|key achievements|notable achievements|honours)\s*$",
     "publications": r"^\s*(publications|papers|conference proceedings|journal articles|selected publications|peer[- ]reviewed publications|scholarly works)\s*$",
@@ -37,10 +51,10 @@ GLUED_SECTION_PATTERNS = [
     ("side_quests", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>side\s+quests?|open\s+source\s+contributions?|open\s+source|community\s+contributions?|extracurriculars?|extracurricular\s+activities|extra-curricular|co-curricular)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("certifications", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>professional\s+certifications|courses\s+&\s+certifications|certifications?|certificates|licenses|credentials|accreditations)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("achievements", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>awards\s+&\s+achievements|achievements\s+&\s+awards|co-curricular\s+&\s+honors|extracurricular\s+&\s+honors|honors\s+&\s+awards|accomplishments|achievements|honors|awards|honours)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
-    ("education", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>educational\s+background|educational\s+qualifications|education\s+&\s+qualifications|academic\s+background|academic\s+qualifications|academic\s+profile|qualifications|academics|degrees\s+&\s+education|education|degrees)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("education", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>academic\s+credentials|educational\s+background|educational\s+qualifications|education\s+&\s+qualifications|academic\s+background|academic\s+qualifications|academic\s+profile|academic\s+history|qualifications|academics|degrees\s+&\s+education|education|degrees)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("projects", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>academic\s+projects|technical\s+projects|portfolio\s+projects|selected\s+projects|personal\s+projects|notable\s+projects|key\s+projects|projects|software\s+projects|things\s+i\s+worked\s+on|stuff\s+i\s+built|what\s+i\s+built|portfolio)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("internships", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>internship\s+experience|industrial\s+training|industry\s+training|internships?)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
-    ("experience", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>professional\s+experience|experience\s+&\s+employment|employment\s+history|relevant\s+experience|work\s+experience|career\s+history|work\s+history|professional\s+background|experience\s*:|employment\s*:)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
+    ("experience", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>career\s+trajectory\s*(?:&|and)\s*chronology|career\s+trajectory|career\s+chronology|career\s+path|professional\s+journey|professional\s+experience|experience\s+&\s+employment|employment\s+history|relevant\s+experience|work\s+experience|career\s+history|work\s+history|professional\s+background|experience\s*:|employment\s*:)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("skills", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>technical\s+proficiencies|tools\s+&\s+technologies|skills\s+&\s+technologies|skills\s+&\s+expertise|areas\s+of\s+expertise|core\s+competencies|technical\s+skills|core\s+skills|key\s+skills|tech\s+stack|technologies\s*:|skills\s*:|skills)(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
     ("summary", re.compile(r"^(?P<content>.+?)(?:[\s#\-=*~|]+|(?<=[a-zA-Z0-9\)]))(?P<header>career\s+summary|professional\s+summary|career\s+objective|personal\s+profile|executive\s+summary|about\s+me|summary\s*:|objective\s*:|profile\s*:)\b(?::[\s#\-=*~]*(?P<after>.+)|[:\s#\-=*~]*$)", re.IGNORECASE)),
 ]
@@ -147,11 +161,23 @@ def _split_into_sections(lines: list[str]) -> dict[str, Any]:
             and not any(w in cand_upper for w in ["INC", "LLC", "LTD", "PVT", "CORP", "CORPORATION", "SOLUTIONS", "TECHNOLOGIES", "SYSTEMS", "LABS", "NETWORKS"])
             and not bool(re.search(r"\b(?:PRESENT|20\d\d|19\d\d)\b", cand_upper))
         )
+        is_preamble_boundary_heading = False
+        if current == "_preamble":
+            if is_explicit_markdown:
+                is_preamble_boundary_heading = True
+            elif is_all_caps_section and len(sections["_preamble"]) >= 1:
+                has_contact_in_preamble = any(
+                    EMAIL_RE.search(l) or PHONE_RE.search(l) or URL_RE.search(l)
+                    for l in sections["_preamble"]
+                )
+                if cand_upper.endswith(":") or has_contact_in_preamble or len(sections["_preamble"]) >= 2:
+                    is_preamble_boundary_heading = True
+
         is_custom_heading = (
             (is_explicit_markdown or is_all_caps_section)
             and not bool(_BULLET_PREFIX_RE.match(stripped))
             and not any(stripped.lower().startswith(v) for v in ["led", "built", "developed", "managed", "spearheaded", "engineered", "designed", "optimized", "architected"])
-            and current != "_preamble"
+            and (current != "_preamble" or is_preamble_boundary_heading)
         )
         if is_custom_heading:
             custom_key = f"_custom_{len(sections['_custom'])}"

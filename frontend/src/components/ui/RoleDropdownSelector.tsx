@@ -52,6 +52,15 @@ export function RoleDropdownSelector({
     }
   }, [selectedRole, roles, includeAllOption]);
 
+  // Debounce custom-role input to avoid sending API queries on every keystroke
+  useEffect(() => {
+    if (dropdownSelection !== "OTHER") return;
+    const timer = setTimeout(() => {
+      onRoleChange(customRoleText);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [customRoleText, dropdownSelection]);
+
   const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newVal = e.target.value;
     setDropdownSelection(newVal);
@@ -60,7 +69,6 @@ export function RoleDropdownSelector({
       setCustomRoleText("");
       onRoleChange("ALL");
     } else if (newVal === "OTHER") {
-      // Trigger with existing custom text or fallback
       onRoleChange(customRoleText || "");
     } else {
       setCustomRoleText("");
@@ -69,9 +77,7 @@ export function RoleDropdownSelector({
   };
 
   const handleCustomTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    setCustomRoleText(text);
-    onRoleChange(text);
+    setCustomRoleText(e.target.value);
   };
 
   const isOtherActive = dropdownSelection === "OTHER";

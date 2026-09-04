@@ -31,3 +31,15 @@ async def get_my_profile(
         return None
     profile.pop("_id", None)
     return ProfileResponse(**profile)
+
+
+@router.delete("/me")
+async def delete_my_account(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Deletes the authenticated user's account and cascades through all user-owned data (SEC-07).
+    """
+    user_id = str(current_user["_id"])
+    return await services.purge_user_account_data(db, user_id)

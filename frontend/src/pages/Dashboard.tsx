@@ -109,7 +109,9 @@ export function Dashboard() {
               Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
             </h1>
             <p className="text-ink-300 text-xs sm:text-sm mt-1 max-w-xl">
-              Track your enterprise ATS screening fit, discover verified live job openings, and tailor Harvard-format resumes in seconds.
+              {data.resume_uploaded
+                ? "Track your enterprise ATS screening fit, discover verified live job openings, and tailor resumes in seconds."
+                : "Upload your resume to begin ATS analysis, discover live job openings, and tailor your resume in seconds."}
             </p>
           </div>
 
@@ -176,7 +178,7 @@ export function Dashboard() {
                 <CheckCircle2 size={14} className="text-signal-600" />
               </div>
               <ScoreRing value={data.ats_compatibility} label="ATS Screening Compatibility" size={84} strokeWidth={7} />
-              <p className="text-[11px] text-ink-500 mt-2">Workday, Greenhouse & Taleo algorithm benchmark</p>
+              <p className="text-[11px] text-ink-500 mt-2">ATS format compatibility: section structure, keyword density, and parse-ability</p>
             </div>
 
             <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover">

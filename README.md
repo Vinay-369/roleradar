@@ -235,3 +235,9 @@ roleradar/
    - Master resumes remain immutable. Tailoring operations create isolated versions with strict hallucination checks against the candidate's verified evidence ledger.
 4. **Offline-Safe Architecture**:
    - Deterministic rule engines ensure that all parsing, matching, ATS auditing, and template rendering functions operate fully offline without external cloud dependencies.
+
+---
+
+## 🚀 Operations & Deployment Runbook
+
+For production backup procedures (`mongodump`/`mongorestore`), Single Page Application (SPA) reverse proxy routing (Nginx / Cloudflare), and production configuration checklists, refer to the [Operations Runbook](file:///c:/VINAY/roleradar/docs/operations.md).

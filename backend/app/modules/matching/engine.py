@@ -53,6 +53,8 @@ class MatchResult:
     industry_score: int
     skill_match: SkillMatchDetail
     apply_readiness: str  # "ready" | "fix_gaps" | "learn_first"
+    factor_weights: dict[str, float] = field(default_factory=dict)
+    score_explanation: str = ""
 
 
 def _skill_match(
@@ -86,13 +88,17 @@ def _role_match(candidate_target_roles: list[str], job_title: str, embedder: Emb
     return round(best * 100)
 
 
-def _experience_match(candidate_years: float, job_min: int, job_max: int) -> int:
-    if job_min <= candidate_years <= job_max:
+def _experience_match(candidate_years: float, job_min: int | None, job_max: int | None) -> int:
+    if job_min is None and job_max is None:
+        return 50  # neutral, not penalized — undisclosed experience requirement
+    effective_min = 0 if job_min is None else job_min
+    effective_max = 99 if job_max is None else job_max
+    if effective_min <= candidate_years <= effective_max:
         return 100
-    if candidate_years < job_min:
-        gap = job_min - candidate_years
+    if candidate_years < effective_min:
+        gap = effective_min - candidate_years
         return max(0, round(100 - gap * 25))
-    over = candidate_years - job_max
+    over = candidate_years - effective_max
     return max(40, round(100 - over * 10))
 
 
@@ -114,6 +120,31 @@ def _salary_match(candidate_min_lpa: float | None, job_salary_max: float | None,
     if not salary_disclosed or job_salary_max is None:
         return 50  # neutral, not penalized — undisclosed salary shouldn't hide good jobs
     return 100 if job_salary_max >= candidate_min_lpa else max(0, round(100 - (candidate_min_lpa - job_salary_max) * 15))
+
+
+def _stipend_match(
+    candidate_min_stipend: float | None,
+    job_stipend_min: float | None,
+    job_stipend_max: float | None,
+) -> int:
+    """
+    Evaluates internship compensation against candidate minimum stipend preference.
+    Preserves existing scoring philosophy:
+    - No candidate preference -> neutral 70 (same as full-time)
+    - Undisclosed stipend -> neutral 50 (same as full-time)
+    - Offered stipend >= preferred -> 100
+    - Offered stipend < preferred -> proportional shortfall penalty
+    """
+    if candidate_min_stipend is None:
+        return 70
+    offered = job_stipend_max if job_stipend_max is not None else job_stipend_min
+    if offered is None:
+        return 50  # neutral, not penalized — undisclosed stipend shouldn't hide good internships
+    if offered >= candidate_min_stipend:
+        return 100
+    shortfall = candidate_min_stipend - offered
+    penalty = (shortfall / candidate_min_stipend) * 60
+    return max(0, round(100 - penalty))
 
 
 def _industry_match(candidate_industries: list[str], job_industry: str) -> int:
@@ -139,17 +170,19 @@ def compute_match(
     """
     candidate expects: skills (list[str]), target_roles (list[str]),
     experience_years (float), preferred_locations (list[str]),
-    remote_preference (str), min_lpa (float | None), industries (list[str])
+    remote_preference (str), min_lpa (float | None), min_stipend (float | None),
+    industries (list[str])
 
     job expects: skills_required, title, experience_min, experience_max,
-    location, is_remote, salary_max, salary_disclosed, industry
+    location, is_remote, salary_max, salary_disclosed, stipend_min, stipend_max,
+    job_type, industry
     """
     weights = CATEGORY_WEIGHTS.get(category, DEFAULT_WEIGHTS)
 
     skill_score, skill_detail = _skill_match(candidate.get("skills", []), job.get("skills_required", []), embedder)
     role_score = _role_match(candidate.get("target_roles", []), job.get("title", ""), embedder)
     experience_score = _experience_match(
-        candidate.get("experience_years", 0), job.get("experience_min", 0), job.get("experience_max", 99)
+        candidate.get("experience_years", 0), job.get("experience_min"), job.get("experience_max")
     )
     location_score = _location_match(
         candidate.get("preferred_locations", []),
@@ -157,7 +190,20 @@ def compute_match(
         job.get("location", ""),
         job.get("is_remote", False),
     )
-    salary_score = _salary_match(candidate.get("min_lpa"), job.get("salary_max"), job.get("salary_disclosed", False))
+
+    if job.get("job_type") == "internship":
+        salary_score = _stipend_match(
+            candidate.get("min_stipend"),
+            job.get("stipend_min"),
+            job.get("stipend_max"),
+        )
+    else:
+        salary_score = _salary_match(
+            candidate.get("min_lpa"),
+            job.get("salary_max"),
+            job.get("salary_disclosed", False),
+        )
+
     industry_score = _industry_match(candidate.get("industries", []), job.get("industry", ""))
 
     overall = round(
@@ -167,6 +213,13 @@ def compute_match(
         + location_score * weights["location"]
         + salary_score * weights["salary"]
         + industry_score * weights["industry"]
+    )
+
+    explanation = (
+        f"Deterministic score calculated from {round(weights['skill'] * 100)}% skills, "
+        f"{round(weights['role'] * 100)}% role title, {round(weights['experience'] * 100)}% experience, "
+        f"{round(weights['location'] * 100)}% location, {round(weights['salary'] * 100)}% compensation, "
+        f"and {round(weights['industry'] * 100)}% industry alignment."
     )
 
     return MatchResult(
@@ -179,4 +232,6 @@ def compute_match(
         industry_score=industry_score,
         skill_match=skill_detail,
         apply_readiness=_apply_readiness(overall),
+        factor_weights=dict(weights),
+        score_explanation=explanation,
     )

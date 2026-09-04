@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { getJobDetail } from "../../lib/jobDetail";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 
 export function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -19,15 +20,70 @@ export function JobDetail() {
       ? `₹${job.stipend_min}/month stipend`
       : "Not disclosed";
 
+  const isVerifiedActive = job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply;
+  const isBenchmark = job.verification_status === "MARKET_BENCHMARK";
+  const isClosed = job.verification_status === "CLOSED" || job.verification_status === "EXPIRED";
+
+  const experienceText = (() => {
+    const hasMin = job.experience_min !== null && job.experience_min !== undefined;
+    const hasMax = job.experience_max !== null && job.experience_max !== undefined;
+    if (hasMin && hasMax) {
+      if (job.experience_min === job.experience_max) {
+        return `${job.experience_min} year${job.experience_min === 1 ? "" : "s"}`;
+      }
+      return `${job.experience_min}–${job.experience_max} years`;
+    }
+    if (hasMin) {
+      return `${job.experience_min}+ years`;
+    }
+    if (hasMax) {
+      return `Up to ${job.experience_max} years`;
+    }
+    return "Experience not specified";
+  })();
+
+  const hasDirectApply = Boolean(isVerifiedActive && job.apply_url && !job.apply_url.includes("example.com"));
+
   return (
-    <div className="max-w-2xl">
-      <div className="flex items-center gap-2 mb-1">
-        <h1 className="font-display text-2xl text-ink-900">{job.title}</h1>
-        <span className="rounded bg-signal-500/10 text-signal-700 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">
-          Verified Opening
+    <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
+      <Link to="/opportunities/jobs" className="text-xs text-ink-500 hover:text-ink-800 mb-4 inline-block">
+        ← Back to jobs
+      </Link>
+
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h1 className="font-display text-2xl text-ink-900">{job.title}</h1>
+          <p className="text-ink-500">{job.company} · {job.industry}</p>
+        </div>
+        <span className="rounded-full bg-ink-100 text-ink-700 px-3 py-1 text-xs font-medium shrink-0">
+          {job.job_type === "internship" ? "Internship" : "Full-time"}
         </span>
       </div>
-      <p className="text-ink-500 mb-6">{job.company} · {job.industry}</p>
+
+      {/* Verification Status Banner */}
+      {isVerifiedActive ? (
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 mb-4 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-emerald-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-semibold">Verified Live Opportunity</span>
+            <span className="text-emerald-700">• Official employer job board</span>
+          </div>
+          <span className="text-emerald-700 font-mono text-[11px]">
+            Direct ATS Requisition
+          </span>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 mb-4 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2 text-amber-800">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="font-semibold">{isBenchmark ? "Market Skill Benchmark" : "Curated Opportunity"}</span>
+            {isClosed && <span className="text-rose-600 font-semibold">• Position Closed</span>}
+          </div>
+          <span className="text-amber-700 font-mono text-[11px]">
+            {isBenchmark ? "Reference Role" : "Verification Pending"}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
         <div className="rounded-lg border border-ink-100 bg-white p-3">
@@ -40,7 +96,7 @@ export function JobDetail() {
         </div>
         <div className="rounded-lg border border-ink-100 bg-white p-3">
           <p className="text-xs text-ink-500">Experience</p>
-          <p className="text-ink-900">{job.experience_min}–{job.experience_max} years{job.fresher_friendly ? " · Fresher-friendly" : ""}</p>
+          <p className="text-ink-900">{experienceText}{job.fresher_friendly ? " · Fresher-friendly" : ""}</p>
         </div>
         <div className="rounded-lg border border-ink-100 bg-white p-3">
           <p className="text-xs text-ink-500">Posted</p>
@@ -102,21 +158,25 @@ export function JobDetail() {
         >
           🤖 Ask Copilot
         </Link>
-        {(() => {
-          const directApplyUrl = (job.apply_url && !job.apply_url.includes("example.com"))
-            ? job.apply_url
-            : `https://www.google.com/search?q=${encodeURIComponent(job.company + " " + job.title + " careers apply")}`;
-          return (
-            <a
-              href={directApplyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md bg-signal-500 hover:bg-signal-600 text-white px-4 py-2 text-sm font-semibold transition-transform active:scale-95 shadow-xs flex items-center gap-1.5"
-            >
-              Apply Directly on Official Portal ↗
-            </a>
-          );
-        })()}
+        {hasDirectApply ? (
+          <a
+            href={job.apply_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md bg-signal-500 hover:bg-signal-600 text-white px-4 py-2 text-sm font-semibold transition-transform active:scale-95 shadow-xs flex items-center gap-1.5"
+          >
+            <span>Apply Directly on Official Portal</span>
+            <ExternalLink size={14} />
+          </a>
+        ) : (
+          <span
+            className="rounded-md bg-amber-50 text-amber-800 border border-amber-200 px-4 py-2 text-sm font-medium flex items-center gap-1.5"
+            title="RoleRadar cannot verify a direct application link for this posting"
+          >
+            <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+            <span>Application link unavailable</span>
+          </span>
+        )}
       </div>
     </div>
   );

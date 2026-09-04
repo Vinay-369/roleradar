@@ -11,11 +11,44 @@ import {
   Bot,
   MessageCircleQuestion,
   Search,
+  AlertTriangle,
+  ClipboardList,
 } from "lucide-react";
-import { listApplications, deleteApplication } from "../../lib/applications";
+import {
+  listApplications,
+  deleteApplication,
+  updateApplication,
+  type ApplicationStatus,
+} from "../../lib/applications";
 import { useToast } from "../../context/ToastContext";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
+
+const ALL_STATUSES: { value: ApplicationStatus; label: string; color: string }[] = [
+  { value: "SAVED", label: "Saved", color: "bg-ink-100 text-ink-700 border-ink-200" },
+  { value: "TAILORED", label: "Tailored", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  { value: "QUEUED", label: "Queued", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  { value: "APPLIED", label: "Applied", color: "bg-signal-50 text-signal-700 border-signal-200" },
+  { value: "SHORTLISTED", label: "Shortlisted", color: "bg-sky-50 text-sky-700 border-sky-200" },
+  { value: "INTERVIEW", label: "Interview", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  { value: "OFFER", label: "Offer", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "REJECTED", label: "Rejected", color: "bg-rose-50 text-rose-700 border-rose-200" },
+  { value: "WITHDRAWN", label: "Withdrawn", color: "bg-zinc-100 text-zinc-600 border-zinc-200" },
+];
+
+function getStatusBadge(status: ApplicationStatus) {
+  const match = ALL_STATUSES.find((s) => s.value === status) || {
+    label: status,
+    color: "bg-ink-100 text-ink-700 border-ink-200",
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${match.color}`}
+    >
+      {match.label}
+    </span>
+  );
+}
 
 export function Saved() {
   const queryClient = useQueryClient();
@@ -33,6 +66,17 @@ export function Saved() {
     onError: () => toast.error("Failed to remove bookmark."),
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ApplicationStatus }) =>
+      updateApplication(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Application stage updated.");
+    },
+    onError: () => toast.error("Failed to update status."),
+  });
+
   const savedList = (data ?? []).filter((a) => a.status === "SAVED" || a.status === "TAILORED" || a.status === "QUEUED" || a.status === "APPLIED");
 
   const filteredSaved = savedList.filter((app) => {
@@ -42,30 +86,37 @@ export function Saved() {
   });
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fade-in-up">
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1 rounded-md bg-signal-500/10 text-signal-700">
-              <Bookmark size={16} />
+              <Bookmark size={18} />
             </span>
             <h1 className="font-display text-xl sm:text-2xl font-bold text-ink-950">
-              Saved
+              Saved Roles
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-ink-500">
-            Jobs and internships you&apos;ve bookmarked. Tailor your resume, prepare interview questions, or apply directly on the employer&apos;s portal.
+            Jobs and internships you&apos;ve bookmarked. Advance their status as you tailor and apply.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Link
+            to="/applications"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-ink-200 bg-white hover:bg-ink-50 text-ink-900 text-xs font-semibold shadow-2xs transition-colors"
+          >
+            <ClipboardList size={14} className="text-signal-600" />
+            <span>Open Application Tracker</span>
+          </Link>
           <Link
             to="/opportunities/jobs"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-signal-500 hover:bg-signal-600 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-signal-600 hover:bg-signal-700 text-white text-xs font-semibold shadow-xs transition-colors"
           >
             <Sparkles size={13} />
-            <span>Discover More Jobs</span>
+            <span>Discover Jobs</span>
           </Link>
         </div>
       </div>
@@ -108,9 +159,10 @@ export function Saved() {
       ) : (
         <div className="space-y-3">
           {filteredSaved.map((app) => {
-            const directApplyUrl = (app.apply_url && !app.apply_url.includes("example.com"))
-              ? app.apply_url
-              : `https://www.google.com/search?q=${encodeURIComponent(`${app.company} ${app.job_title} careers apply`)}`;
+            const hasDirectApply =
+              Boolean(app.apply_url) &&
+              !app.apply_url.includes("example.com") &&
+              !app.apply_url.includes("google.com");
 
             return (
               <div
@@ -127,19 +179,42 @@ export function Saved() {
                       >
                         {app.job_title}
                       </Link>
-                      <span className="rounded-full bg-signal-500/10 text-signal-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                        Saved
-                      </span>
+                      {/* P1-02 Display actual persisted application status, not static Saved */}
+                      {getStatusBadge(app.status)}
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-ink-500 font-medium">
                       <Building2 size={13} className="text-ink-400 shrink-0" />
                       <span className="truncate">{app.company}</span>
+                      {app.notes && (
+                        <span className="text-ink-400 truncate max-w-xs italic">
+                          • &quot;{app.notes}&quot;
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {/* Stage Selector */}
+                    <select
+                      value={app.status}
+                      onChange={(e) =>
+                        updateStatusMutation.mutate({
+                          id: app.id,
+                          status: e.target.value as ApplicationStatus,
+                        })
+                      }
+                      aria-label={`Update stage for ${app.job_title}`}
+                      className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-ink-900 shadow-2xs outline-none cursor-pointer"
+                    >
+                      {ALL_STATUSES.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+
                     {/* Tailor Resume Quick Link */}
                     {app.job_id && (
                       <Link
@@ -148,7 +223,7 @@ export function Saved() {
                         title="Tailor resume for this role"
                       >
                         <ShieldCheck size={13} />
-                        <span>Tailor Resume</span>
+                        <span>Tailor</span>
                       </Link>
                     )}
 
@@ -156,34 +231,43 @@ export function Saved() {
                     {app.job_id && (
                       <Link
                         to={`/growth/interview/${app.job_id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-ink-50 hover:bg-ink-100 text-ink-700 text-xs font-medium transition-colors"
-                        title="Prepare role-specific interview questions"
+                        className="p-1.5 rounded-lg bg-ink-50 hover:bg-ink-100 text-indigo-600 transition-colors"
+                        title="Prepare interview questions"
                       >
-                        <MessageCircleQuestion size={13} className="text-indigo-600" />
-                        <span>Interview Prep</span>
+                        <MessageCircleQuestion size={14} />
                       </Link>
                     )}
 
                     {/* Ask Copilot */}
                     <Link
-                      to={`/copilot?job_id=${encodeURIComponent(app.job_id)}&company=${encodeURIComponent(app.company)}&role=${encodeURIComponent(app.job_title)}&prompt=${encodeURIComponent(`I am preparing to apply for ${app.job_title} at ${app.company}. What are the key skills and interview strategies I should highlight?`)}`}
-                      className="p-2 rounded-lg bg-ink-50 hover:bg-ink-100 text-ink-600 hover:text-ink-900 transition-colors"
-                      title={`Ask AI Copilot about ${app.job_title} at ${app.company}`}
+                      to={`/copilot?job_id=${encodeURIComponent(app.job_id)}&company=${encodeURIComponent(app.company)}&role=${encodeURIComponent(app.job_title)}`}
+                      className="p-1.5 rounded-lg bg-ink-50 hover:bg-ink-100 text-ink-600 hover:text-ink-900 transition-colors"
+                      title="Ask Copilot"
                     >
                       <Bot size={14} className="text-signal-500" />
                     </Link>
 
-                    {/* Direct Apply External Link */}
-                    <a
-                      href={directApplyUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-signal-500 hover:bg-signal-600 text-white text-xs font-bold shadow-2xs transition-colors"
-                      title="Open official employer application page"
-                    >
-                      <span>Apply Directly</span>
-                      <ExternalLink size={12} />
-                    </a>
+                    {/* P2-01 Direct Apply External Link or Application link unavailable (NO Google Search fallback) */}
+                    {hasDirectApply ? (
+                      <a
+                        href={app.apply_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-signal-600 hover:bg-signal-700 text-white text-xs font-bold shadow-2xs transition-colors"
+                        title="Open official employer application page"
+                      >
+                        <span>Apply</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-medium"
+                        title="RoleRadar cannot verify a direct application link for this posting"
+                      >
+                        <AlertTriangle size={12} className="text-amber-600 shrink-0" />
+                        <span>Application link unavailable</span>
+                      </span>
+                    )}
 
                     {/* Remove Bookmark */}
                     <button

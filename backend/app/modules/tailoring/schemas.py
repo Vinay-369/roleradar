@@ -1,15 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.ai_service.schemas import ChangeStatus
 
 
 class GenerateTailoringRequest(BaseModel):
-    job_id: str | None = None
+    job_id: str | None = Field(default=None, max_length=100)
     # For a user-pasted JD not in the curated job set. If provided (and
     # job_id is not), a lightweight custom job entry is created first.
-    custom_company: str | None = None
-    custom_role_title: str | None = None
-    custom_jd_text: str | None = None
+    custom_company: str | None = Field(default=None, max_length=200)
+    custom_role_title: str | None = Field(default=None, max_length=200)
+    custom_jd_text: str | None = Field(default=None, max_length=50_000)
 
 
 class ChangeOut(BaseModel):

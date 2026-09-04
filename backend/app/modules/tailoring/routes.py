@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.ai_service.service import AIService, get_ai_service
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import rate_limit
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.tailoring import repositories as repo
@@ -59,7 +60,12 @@ def _to_out(doc: dict) -> TailoredResumeOut:
     )
 
 
-@router.post("/generate", response_model=TailoredResumeOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/generate", 
+    response_model=TailoredResumeOut, 
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60, key_prefix="tailor_generate"))],
+)
 async def generate(
     body: GenerateTailoringRequest,
     current_user: dict = Depends(get_current_user),

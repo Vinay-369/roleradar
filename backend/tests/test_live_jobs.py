@@ -133,7 +133,7 @@ async def test_search_returns_empty_list_on_http_failure(configured_settings, mo
 async def test_refresh_live_jobs_is_a_safe_noop_in_curated_only_mode(db):
     """Default mode (JOB_SOURCE_MODE="curated") must never attempt an
     external call at all -- zero-config-required demo path."""
-    settings = Settings(JWT_SECRET="test")  # JOB_SOURCE_MODE defaults to "curated"
+    settings = Settings(JWT_SECRET="test", GREENHOUSE_ENABLED=False)  # JOB_SOURCE_MODE defaults to "curated"
     count = await jobs_services.refresh_live_jobs(db, settings, {})
     assert count == 0
 
@@ -142,7 +142,7 @@ async def test_refresh_live_jobs_is_a_safe_noop_in_curated_only_mode(db):
 async def test_refresh_live_jobs_is_a_safe_noop_when_hybrid_but_unconfigured(db):
     """hybrid mode without real credentials must degrade gracefully,
     not throw and break the jobs page."""
-    settings = Settings(JWT_SECRET="test", JOB_SOURCE_MODE="hybrid")  # no keys set
+    settings = Settings(JWT_SECRET="test", JOB_SOURCE_MODE="hybrid", GREENHOUSE_ENABLED=False)  # no keys set
     count = await jobs_services.refresh_live_jobs(db, settings, {})
     assert count == 0
 

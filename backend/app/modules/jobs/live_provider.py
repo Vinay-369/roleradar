@@ -134,6 +134,18 @@ class AdzunaJobProvider:
             except ValueError:
                 pass
 
+        apply_url = result.get("redirect_url", "")
+
+        from app.modules.jobs.verification import verify_opportunity_sync
+        draft = {
+            "title": title,
+            "company": company,
+            "apply_url": apply_url,
+            "posted_days_ago": posted_days_ago,
+            "description": description,
+        }
+        vres = verify_opportunity_sync(draft)
+
         return {
             "id": f"adzuna_{result.get('id', '')}",
             "source": "adzuna",
@@ -157,7 +169,17 @@ class AdzunaJobProvider:
             "internship_duration_months": None,
             "fresher_friendly": fresher_friendly,
             "posted_days_ago": posted_days_ago,
-            # Real apply link — this is the actual redirect Adzuna gives
-            # for this specific listing, unlike curated demo entries.
-            "apply_url": result.get("redirect_url", ""),
+            "posted_at": created if created else None,
+            "first_seen_at": datetime.now(timezone.utc).isoformat(),
+            "last_seen_at": datetime.now(timezone.utc).isoformat(),
+            "source_job_id": str(result.get("id", "")),
+            "source_url": apply_url,
+            "apply_url": apply_url,
+            "verification_status": vres.status.value,
+            "verified_at": vres.verified_at,
+            "last_verified_at": vres.verified_at,
+            "verification_reason": vres.reason,
+            "verification_method": "live_provider_adapter",
+            "url_type": vres.url_type.value,
+            "is_direct_apply": (vres.url_type.value == "DIRECT_REQUISITION"),
         }

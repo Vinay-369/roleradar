@@ -46,6 +46,14 @@ export async function updateApplicationStatus(id: string, status: ApplicationSta
   return res.data;
 }
 
+export async function updateApplication(
+  id: string,
+  updates: { status?: ApplicationStatus; notes?: string }
+): Promise<Application> {
+  const res = await apiClient.put<Application>(`/applications/${id}`, updates);
+  return res.data;
+}
+
 export async function getApplicationPackage(id: string): Promise<ApplicationPackage> {
   const res = await apiClient.get<ApplicationPackage>(`/applications/${id}/package`);
   return res.data;
@@ -53,4 +61,16 @@ export async function getApplicationPackage(id: string): Promise<ApplicationPack
 
 export async function deleteApplication(id: string): Promise<void> {
   await apiClient.delete(`/applications/${id}`);
+}
+
+export async function recordApplicationSubmission(jobId: string, tailoredResumeId?: string): Promise<Application> {
+  const apps = await listApplications();
+  const existing = apps.find((a) => a.job_id === jobId);
+  if (existing) {
+    return await updateApplication(existing.id, {
+      status: "APPLIED",
+    });
+  }
+  const created = await saveApplication(jobId, tailoredResumeId);
+  return await updateApplication(created.id, { status: "APPLIED" });
 }

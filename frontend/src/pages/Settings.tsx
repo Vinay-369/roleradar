@@ -7,6 +7,8 @@ type Profile = {
   category: string;
   target_roles: string[];
   min_lpa: number | null;
+  min_stipend: number | null;
+  internship_duration_months: number | null;
   preferred_locations: string[];
   remote_preference: string;
   internship_interested: boolean;
@@ -42,9 +44,25 @@ export function Settings() {
             <Link to="/onboarding" className="text-xs text-signal-600 hover:underline">Edit →</Link>
           </div>
           <dl className="grid grid-cols-3 gap-y-2 text-sm">
-            <dt className="text-ink-500">Category</dt><dd className="col-span-2">{profile.category}</dd>
+            <dt className="text-ink-500">Category</dt><dd className="col-span-2">{profile.category.replace("_", " ")}</dd>
             <dt className="text-ink-500">Target roles</dt><dd className="col-span-2">{profile.target_roles.join(", ") || "—"}</dd>
-            <dt className="text-ink-500">Min LPA</dt><dd className="col-span-2">{profile.min_lpa ?? "—"}</dd>
+            {profile.category === "INTERNSHIP_SEEKER" ? (
+              <>
+                <dt className="text-ink-500">Min Stipend</dt>
+                <dd className="col-span-2">{profile.min_stipend ? `₹${profile.min_stipend.toLocaleString()}/month` : "—"}</dd>
+                {profile.internship_duration_months && (
+                  <>
+                    <dt className="text-ink-500">Duration</dt>
+                    <dd className="col-span-2">{profile.internship_duration_months} months</dd>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <dt className="text-ink-500">Min LPA</dt>
+                <dd className="col-span-2">{profile.min_lpa ? `${profile.min_lpa} LPA` : "—"}</dd>
+              </>
+            )}
             <dt className="text-ink-500">Locations</dt><dd className="col-span-2">{profile.preferred_locations.join(", ") || "—"}</dd>
             <dt className="text-ink-500">Remote pref.</dt><dd className="col-span-2">{profile.remote_preference}</dd>
           </dl>

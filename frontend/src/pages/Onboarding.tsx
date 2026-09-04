@@ -33,6 +33,8 @@ export function Onboarding() {
   const [targetRoles, setTargetRoles] = useState<string[]>(["Full Stack Developer"]);
   const [roleInput, setRoleInput] = useState("");
   const [minLpa, setMinLpa] = useState("");
+  const [minStipend, setMinStipend] = useState("");
+  const [internshipDuration, setInternshipDuration] = useState("");
   const [locations, setLocations] = useState("");
   const [remotePreference, setRemotePreference] = useState("any");
   const [internshipInterested, setInternshipInterested] = useState(false);
@@ -74,14 +76,17 @@ export function Onboarding() {
     setError(null);
     setSubmitting(true);
     try {
+      const isIntern = category === "INTERNSHIP_SEEKER";
       await apiClient.post("/profile/onboarding/complete", {
         category,
         experience_years: category === "EXPERIENCED" ? Number(experienceYears) || 0 : 0,
         target_roles: targetRoles,
-        min_lpa: minLpa ? Number(minLpa) : null,
+        min_lpa: isIntern ? null : (minLpa ? Number(minLpa) : null),
+        min_stipend: isIntern ? (minStipend ? Number(minStipend) : null) : null,
+        internship_duration_months: isIntern ? (internshipDuration ? Number(internshipDuration) : null) : null,
         preferred_locations: remotePreference === "remote" ? ["Remote"] : locations.split(",").map((s) => s.trim()).filter(Boolean),
         remote_preference: remotePreference,
-        internship_interested: internshipInterested,
+        internship_interested: isIntern ? true : internshipInterested,
         career_brief: careerBrief || null,
         consent_text: consentText,
       });
@@ -190,35 +195,85 @@ export function Onboarding() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
-              Minimum LPA
-            </label>
-            <input
-              type="number"
-              value={minLpa}
-              onChange={(e) => setMinLpa(e.target.value)}
-              placeholder="e.g. 6"
-              className="w-full rounded-md border border-ink-100 px-3 py-2 text-sm outline-none focus:border-signal-500"
-            />
+        {category === "INTERNSHIP_SEEKER" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                Expected Monthly Stipend (₹/mo)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                value={minStipend}
+                onChange={(e) => setMinStipend(e.target.value)}
+                placeholder="e.g. 25000"
+                className="w-full rounded-md border border-ink-100 px-3 py-2 text-sm outline-none focus:border-signal-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                Duration (Months)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="24"
+                value={internshipDuration}
+                onChange={(e) => setInternshipDuration(e.target.value)}
+                placeholder="e.g. 3 or 6"
+                className="w-full rounded-md border border-ink-100 px-3 py-2 text-sm outline-none focus:border-signal-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                Remote Preference
+              </label>
+              <select
+                value={remotePreference}
+                onChange={(e) => setRemotePreference(e.target.value)}
+                className="w-full rounded-md border border-ink-100 bg-white px-3 py-2 text-sm outline-none focus:border-signal-500"
+              >
+                <option value="any">Any</option>
+                <option value="remote">Remote Only</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
-              Remote Preference
-            </label>
-            <select
-              value={remotePreference}
-              onChange={(e) => setRemotePreference(e.target.value)}
-              className="w-full rounded-md border border-ink-100 bg-white px-3 py-2 text-sm outline-none focus:border-signal-500"
-            >
-              <option value="any">Any</option>
-              <option value="remote">Remote Only</option>
-              <option value="hybrid">Hybrid</option>
-              <option value="onsite">Onsite</option>
-            </select>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                Minimum LPA
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={minLpa}
+                onChange={(e) => setMinLpa(e.target.value)}
+                placeholder="e.g. 6"
+                className="w-full rounded-md border border-ink-100 px-3 py-2 text-sm outline-none focus:border-signal-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
+                Remote Preference
+              </label>
+              <select
+                value={remotePreference}
+                onChange={(e) => setRemotePreference(e.target.value)}
+                className="w-full rounded-md border border-ink-100 bg-white px-3 py-2 text-sm outline-none focus:border-signal-500"
+              >
+                <option value="any">Any</option>
+                <option value="remote">Remote Only</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {remotePreference !== "remote" && (
           <div className="mb-4">
@@ -234,15 +289,17 @@ export function Onboarding() {
           </div>
         )}
 
-        <label className="flex items-center gap-2 mb-4 text-xs text-ink-700 font-medium">
-          <input
-            type="checkbox"
-            checked={internshipInterested}
-            onChange={(e) => setInternshipInterested(e.target.checked)}
-            className="rounded border-ink-300"
-          />
-          I'm also interested in internship opportunities
-        </label>
+        {category !== "INTERNSHIP_SEEKER" && (
+          <label className="flex items-center gap-2 mb-4 text-xs text-ink-700 font-medium">
+            <input
+              type="checkbox"
+              checked={internshipInterested}
+              onChange={(e) => setInternshipInterested(e.target.checked)}
+              className="rounded border-ink-300"
+            />
+            I'm also interested in internship opportunities
+          </label>
+        )}
 
         <label className="block text-xs font-semibold uppercase tracking-wider text-ink-700 mb-1.5">
           Career Brief (optional)

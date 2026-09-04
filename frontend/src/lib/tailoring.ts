@@ -75,7 +75,7 @@ export type RequirementEvidenceMapping = {
   requirement_id: string;
   requirement_text: string;
   category: string;
-  status: "EXACT_MATCH" | "SUPPORTED" | "RELATED" | "PARTIAL" | "MISSING" | "CONFLICTING";
+  status: "EXACT_MATCH" | "STRONG_MATCH" | "SUPPORTED" | "RELATED" | "PARTIAL" | "WEAK" | "MISSING" | "CONFLICTING";
   matched_skills: string[];
   matched_entity_ids: string[];
   relevance_score: number;
@@ -130,8 +130,146 @@ export type TailoredResume = {
   missing_skills?: string[] | null;
   partial_skills?: string[] | null;
   ats_readability_findings?: ATSReadabilityFindings | null;
+  user_modified?: boolean | null;
   created_at: string;
 };
+
+export type EvidenceBadgeInfo = {
+  label: string;
+  style: string;
+  iconType: "alert" | "edit" | "check" | "info";
+};
+
+export function getEvidenceBadge(version?: {
+  changes?: Array<{ status?: string }> | null;
+  evidence_mapping?: Array<{ status?: string }> | null;
+  user_modified?: boolean | null;
+} | null): EvidenceBadgeInfo {
+  if (!version) {
+    return {
+      label: "No Verified JD Evidence",
+      style: "bg-ink-100 text-ink-600 border-ink-200",
+      iconType: "info",
+    };
+  }
+
+  const needsConfirmationCount = (version.changes || []).filter(
+    (c) => c.status === "NEEDS_USER_INPUT"
+  ).length;
+
+  // 1. Any NEEDS_USER_INPUT change takes precedence over all other states (including user_modified)
+  if (needsConfirmationCount > 0) {
+    return {
+      label: `Confirmation Needed (${needsConfirmationCount})`,
+      style: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+      iconType: "alert",
+    };
+  }
+
+  // 2. User-modified content with no unresolved confirmation warnings
+  if (version.user_modified) {
+    return {
+      label: "User Modified • Baseline Evidence Preserved",
+      style: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+      iconType: "edit",
+    };
+  }
+
+  const mappings = version.evidence_mapping || [];
+
+  // 3. Empty evidence_mapping must NOT fall through to the fully-grounded state
+  if (mappings.length === 0) {
+    return {
+      label: "No Verified JD Evidence",
+      style: "bg-ink-100 text-ink-600 border-ink-200",
+      iconType: "info",
+    };
+  }
+
+  const verifiedCount = mappings.filter(
+    (m) => m.status === "EXACT_MATCH" || m.status === "SUPPORTED"
+  ).length;
+
+  // 4. Evidence mapping exists but has zero EXACT_MATCH/SUPPORTED evidence
+  if (verifiedCount === 0) {
+    return {
+      label: "No Verified JD Evidence",
+      style: "bg-ink-100 text-ink-600 border-ink-200",
+      iconType: "info",
+    };
+  }
+
+  // 5. Mixed evidence (some verified/supported, some missing/partial/related)
+  if (verifiedCount < mappings.length) {
+    return {
+      label: "Partially Evidence-Grounded",
+      style: "bg-teal-500/10 text-teal-700 border-teal-500/20",
+      iconType: "check",
+    };
+  }
+
+  // 6. Fully supported / high evidence alignment with no unresolved confirmation
+  return {
+    label: "Evidence Grounded",
+    style: "bg-signal-500/10 text-signal-700 border-signal-500/20",
+    iconType: "check",
+  };
+}
+
+export type RequirementStatusInfo = {
+  label: string;
+  style: string;
+};
+
+export function getRequirementStatusInfo(status?: string): RequirementStatusInfo {
+  switch (status) {
+    case "EXACT_MATCH":
+      return {
+        label: "Direct Match",
+        style: "bg-signal-500/10 text-signal-700 border-signal-500/20",
+      };
+    case "STRONG_MATCH":
+      return {
+        label: "Strong Match",
+        style: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+      };
+    case "SUPPORTED":
+      return {
+        label: "Supported",
+        style: "bg-teal-500/10 text-teal-700 border-teal-500/20",
+      };
+    case "PARTIAL":
+      return {
+        label: "Partial",
+        style: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+      };
+    case "RELATED":
+      return {
+        label: "Related",
+        style: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+      };
+    case "WEAK":
+      return {
+        label: "Weak Match",
+        style: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+      };
+    case "MISSING":
+      return {
+        label: "Missing",
+        style: "bg-alert-500/10 text-alert-700 border-alert-500/20",
+      };
+    case "CONFLICTING":
+      return {
+        label: "Conflict",
+        style: "bg-rose-500/10 text-rose-700 border-rose-500/20",
+      };
+    default:
+      return {
+        label: status ? status.replace(/_/g, " ") : "Unknown",
+        style: "bg-ink-100 text-ink-700 border-ink-200",
+      };
+  }
+}
 
 export async function generateTailoring(jobId: string): Promise<TailoredResume> {
   const res = await apiClient.post<TailoredResume>("/tailoring/generate", { job_id: jobId });

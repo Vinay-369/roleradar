@@ -4,6 +4,7 @@ All environment-dependent values live here — never hardcode secrets,
 model names, or provider choices elsewhere in the codebase.
 """
 from functools import lru_cache
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-env"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h, fine for an FYP demo
+
+    # --- Rate Limiting ---
+    RATE_LIMITING_ENABLED: bool = True
 
     # --- Database ---
     MONGO_URI: str = "mongodb://localhost:27017"
@@ -67,6 +71,40 @@ class Settings(BaseSettings):
     ADZUNA_RESULTS_PER_QUERY: int = 30
     EMBEDDING_PROVIDER: str = "sentence_transformer"  # "sentence_transformer" | "tfidf"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+
+    # --- Direct ATS: Greenhouse Configuration ---
+    GREENHOUSE_ENABLED: bool = True
+    GREENHOUSE_COMPANIES: str = "postman,inmobi,groww,figma,airbnb,stripe"
+    GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
+    MAX_VERIFICATION_AGE_HOURS: int = 48
+
+    # --- Direct ATS: Lever Configuration ---
+    LEVER_ENABLED: bool = False
+    LEVER_COMPANIES: str = "paytm,meesho,cred,fi"
+    LEVER_REQUEST_TIMEOUT_SECONDS: int = 15
+
+    # --- Direct ATS: SmartRecruiters Configuration ---
+    SMARTRECRUITERS_ENABLED: bool = False
+    SMARTRECRUITERS_COMPANIES: str = "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2"
+    SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        if self.ENV.lower() == "production":
+            insecure_defaults = {
+                "change-me-in-env",
+                "replace-with-a-long-random-string",
+                "secret",
+                "test",
+                "",
+            }
+            raw_secret = (self.JWT_SECRET or "").strip()
+            if not raw_secret or raw_secret in insecure_defaults or len(raw_secret) < 16:
+                raise ValueError(
+                    "Production configuration error: A strong, non-default JWT_SECRET "
+                    "environment variable must be configured when ENV=production."
+                )
+        return self
 
 
 @lru_cache

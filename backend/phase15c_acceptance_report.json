@@ -1,0 +1,149 @@
+{
+  "test_1_discovery": {
+    "status": "PASS",
+    "selected_opportunity_id": "smartrecruiters_boschgroup_744000147147508",
+    "title": "Data Engineer - Splunk and Azure",
+    "company": "Bosch Group",
+    "source": "smartrecruiters",
+    "apply_url": "https://jobs.smartrecruiters.com/BoschGroup/744000147147508/apply",
+    "lifecycle_status": "VERIFIED_ACTIVE",
+    "india_classification": "India (Bengaluru, KA, India)",
+    "experience_specified": false,
+    "experience_ui_text": "Experience not specified"
+  },
+  "test_2_eligibility": {
+    "status": "PASS",
+    "target_role_status": "LIKELY_ELIGIBLE",
+    "target_role_exp_check": "UNKNOWN",
+    "senior_role_title": "Staff Engineer \u2013 Observability Platform",
+    "senior_role_status": "EXPERIENCE_MISMATCH",
+    "senior_role_exp_check": "FAIL",
+    "senior_role_reasons": [
+      "Opportunity indicates senior/experienced scope (incompatible with student/intern profile)",
+      "Degree qualifications match (B.E.)",
+      "Location aligns with preferences (Bengaluru, Karnataka, India)",
+      "Full-time experienced role incompatible with student internship search"
+    ]
+  },
+  "test_3_transparency": {
+    "status": "PASS",
+    "overall_score": 31,
+    "skills_score": 0,
+    "experience_score": 50,
+    "factor_weights": {
+      "skill": 0.35,
+      "role": 0.2,
+      "experience": 0.15,
+      "location": 0.15,
+      "salary": 0.1,
+      "industry": 0.05
+    },
+    "score_explanation": "Deterministic score calculated from 35% skills, 20% role title, 15% experience, 15% location, 10% compensation, and 5% industry alignment."
+  },
+  "test_4_skill_gap": {
+    "status": "PASS",
+    "target_context": {
+      "role": "Data Engineer - Splunk and Azure",
+      "company": "Bosch Group",
+      "id": "smartrecruiters_boschgroup_744000147147508"
+    },
+    "gaps_count": 2,
+    "gap_skills": [
+      "Microsoft Azure",
+      "Splunk"
+    ],
+    "derived_from_jd": true
+  },
+  "test_5_roadmap": {
+    "status": "PASS",
+    "target_role": "Data Engineer - Splunk and Azure",
+    "stages": {
+      "immediate": [
+        "Microsoft Azure"
+      ],
+      "week_1": [
+        "Splunk"
+      ],
+      "week_2": [],
+      "month_1": []
+    },
+    "total_skills": 2
+  },
+  "test_6_target_preservation": {
+    "status": "PASS",
+    "initial_target_job_id": "smartrecruiters_boschgroup_744000147147508",
+    "redirect_target_job_id": "smartrecruiters_boschgroup_744000147147508",
+    "resume_id": "6a9a866f24c65ae143d29b3d"
+  },
+  "test_7_8_tailoring_truth_guard": {
+    "status": "PASS",
+    "tailored_id": "6a9a866f24c65ae143d29b3e",
+    "target_company": "Bosch Group",
+    "target_role": "Data Engineer - Splunk and Azure",
+    "truth_guard_verdict": "Evidence Grounded",
+    "fabricated_claims": 0
+  },
+  "test_9_ats": {
+    "status": "PASS",
+    "ats_parseability_score": 100,
+    "ats_issues_count": 0,
+    "recruiter_impact_score": 76
+  },
+  "test_10_export": {
+    "status": "PASS",
+    "pdf_size_bytes": 2940,
+    "docx_size_bytes": 37532
+  },
+  "test_11_12_13_applications": {
+    "status": "PASS",
+    "application_id": "6a9a867e24c65ae143d29b3f",
+    "persisted_status": "APPLIED",
+    "direct_url": "https://jobs.smartrecruiters.com/BoschGroup/744000147147508/apply",
+    "notes_persisted": "Updated: Interview prep initiated for Java/Spring Boot topics.",
+    "applied_at": "2026-09-04 08:51:10.499000"
+  },
+  "test_14_lifecycle": {
+    "status": "PASS",
+    "transitions_validated": [
+      "SAVED",
+      "TAILORED",
+      "QUEUED",
+      "APPLIED",
+      "INTERVIEW",
+      "OFFER",
+      "REJECTED"
+    ]
+  },
+  "test_15_security": {
+    "status": "PASS",
+    "user_isolation_application": "SECURE",
+    "user_isolation_tailoring": "SECURE",
+    "public_opportunity_accessible": true
+  },
+  "test_16_empty_states": {
+    "status": "PASS",
+    "no_resume_handled": true,
+    "no_applications_handled": true,
+    "unavailable_url_handled": true
+  },
+  "test_17_visual_validation": {
+    "status": "BLOCKED_BY_ENVIRONMENT",
+    "playwright_driver_installed": false,
+    "root_cause": "Upstream Microsoft Azure CDN 404 for Chromium binary bundle (playwright-1.57.0-win32_x64.zip)",
+    "visual_validation_claimed": false,
+    "notes": "Static and programmatic contract validation completed; no false visual validation claimed."
+  },
+  "test_18_contract_consistency": {
+    "status": "PASS",
+    "checks": {
+      "job_id": true,
+      "company": true,
+      "title": true,
+      "apply_url": true,
+      "is_direct_apply": true,
+      "factor_weights_exposed": true,
+      "score_explanation_exposed": true,
+      "app_persisted_status": true
+    }
+  }
+}

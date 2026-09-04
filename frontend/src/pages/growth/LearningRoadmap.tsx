@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2 } from "lucide-react";
+import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2, Info, ArrowRight } from "lucide-react";
 import { getProfile } from "../../lib/profile";
 import { getRoadmap, getSkillGaps, type SkillGap } from "../../lib/learning";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
@@ -197,14 +197,93 @@ export function LearningRoadmap() {
         </div>
       )}
 
+      {roadmap && (
+        <>
+          {roadmap.personalization_status === "NONE" || (!roadmap.is_personalized && roadmap.personalization_status !== "LIMITED_EVIDENCE") ? (
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 mb-6 shadow-2xs flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-700 shrink-0 mt-0.5">
+                  <Info size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 px-2 py-0.5 rounded-full border border-blue-500/20">
+                      Market Benchmark
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-700 mt-1 leading-relaxed">
+                    This is a market-standard skill roadmap for <strong className="text-ink-900">{activeRole}</strong>. Upload your resume to see your personal skill gaps.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/resume/master"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 px-3 py-1.5 rounded-lg shrink-0 transition-colors shadow-2xs"
+              >
+                <span>Upload Resume</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          ) : roadmap.personalization_status === "LIMITED_EVIDENCE" ? (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 mb-6 shadow-2xs flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-700 shrink-0 mt-0.5">
+                  <Info size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      Market / Limited Evidence
+                    </span>
+                  </div>
+                  <p className="text-xs text-ink-700 mt-1 leading-relaxed">
+                    Your uploaded resume contains limited skill evidence for a reliable personal gap analysis. This roadmap reflects market requirements for <strong className="text-ink-900">{activeRole}</strong> — consider updating your resume with more technical project & skill details.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/resume/master"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800 bg-amber-500/15 hover:bg-amber-500/25 px-3 py-1.5 rounded-lg shrink-0 transition-colors border border-amber-500/30"
+              >
+                <span>Update Resume</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between px-1 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider bg-signal-500/10 text-signal-700 px-2.5 py-0.5 rounded-full border border-signal-500/20 flex items-center gap-1">
+                  <Sparkles size={11} /> {roadmap.roadmap_type === "JOB" ? "Job-Specific Personalization" : "Candidate vs Market Analysis"}
+                </span>
+                {roadmap.role_context && (
+                  <span className="text-xs text-ink-500 font-medium">
+                    • {roadmap.role_context}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {roadmap && totalScheduled === 0 && (
-        <div className="rounded-xl border border-signal-500/20 bg-signal-500/5 p-8 text-center mb-6">
-          <Sparkles className="mx-auto text-signal-600 mb-2" size={28} />
-          <h3 className="text-base font-bold text-signal-800">All Key Competencies Covered!</h3>
-          <p className="text-xs text-ink-600 mt-1 max-w-md mx-auto leading-relaxed">
-            Your resume already demonstrates coverage for the essential technical skills required for {activeRole}. You can practice interview questions or start applying now.
-          </p>
-        </div>
+        roadmap.role_confidence === "LOW" ? (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-8 text-center mb-6">
+            <Info className="mx-auto text-amber-600 mb-2" size={28} />
+            <h3 className="text-base font-bold text-amber-900">Limited Market Evidence For This Role</h3>
+            <p className="text-xs text-ink-600 mt-1 max-w-md mx-auto leading-relaxed">
+              {roadmap.message || `We couldn't confidently determine role-specific skill requirements for "${activeRole}". Add a job description for a more precise analysis.`}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-signal-500/20 bg-signal-500/5 p-8 text-center mb-6">
+            <Sparkles className="mx-auto text-signal-600 mb-2" size={28} />
+            <h3 className="text-base font-bold text-signal-800">All Key Competencies Covered!</h3>
+            <p className="text-xs text-ink-600 mt-1 max-w-md mx-auto leading-relaxed">
+              Your resume already demonstrates coverage for the essential technical skills required for {activeRole}. You can practice interview questions or start applying now.
+            </p>
+          </div>
+        )
       )}
 
       {roadmap && totalScheduled > 0 && (
@@ -222,8 +301,8 @@ export function LearningRoadmap() {
             gapsBySkill={gapsBySkill}
           />
           <Bucket
-            title="Sprint 3: Week 2 Mastery"
-            subtitle="Practical implementation & frameworks (Week 2)"
+            title="Sprint 3: Practical Implementation"
+            subtitle="Hands-on practice & frameworks (~Week 2)"
             skills={roadmap.week_2}
             gapsBySkill={gapsBySkill}
           />

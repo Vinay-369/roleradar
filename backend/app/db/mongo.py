@@ -55,13 +55,25 @@ class Collections:
     AUDIT_LOGS = "audit_logs"
 
 
-async def ensure_indexes() -> None:
+async def ensure_indexes(db: AsyncIOMotorDatabase | None = None) -> None:
     """Create indexes needed from day one. Called once at startup."""
-    db = get_db()
+    if db is None:
+        db = get_db()
     await db[Collections.USERS].create_index("email", unique=True)
+    await db[Collections.PROFILES].create_index("user_id", unique=True)
     await db[Collections.MASTER_RESUMES].create_index("user_id")
     await db[Collections.RESUME_VERSIONS].create_index([("user_id", 1), ("job_id", 1)])
     await db[Collections.JOBS].create_index([("skills", 1), ("job_type", 1), ("location", 1)])
+    await db[Collections.JOBS].create_index([("verification_status", 1), ("url_type", 1)])
+    await db[Collections.JOBS].create_index([("source", 1), ("source_job_id", 1)])
+    await db[Collections.JOBS].create_index("posted_at")
+    await db[Collections.JOBS].create_index("last_verified_at")
+    await db[Collections.JOBS].create_index([("company", 1), ("title", 1)])
     await db[Collections.JOB_MATCHES].create_index([("user_id", 1), ("job_id", 1)], unique=True)
     await db[Collections.APPLICATIONS].create_index([("user_id", 1), ("job_id", 1)])
+    await db[Collections.ACHIEVEMENTS].create_index("user_id")
+    await db[Collections.INTERVIEW_SESSIONS].create_index("user_id")
+    await db[Collections.CHAT_CONVERSATIONS].create_index("user_id")
+    await db[Collections.SKILL_GAPS].create_index("user_id")
+    await db[Collections.LEARNING_PATHS].create_index("user_id")
     await db[Collections.AUDIT_LOGS].create_index("user_id")

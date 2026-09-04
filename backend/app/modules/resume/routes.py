@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import rate_limit
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.resume import repositories as repo
@@ -64,7 +65,12 @@ def _to_out(doc: dict) -> MasterResumeOut:
     )
 
 
-@router.post("/upload", response_model=MasterResumeOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/upload",
+    response_model=MasterResumeOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60, key_prefix="resume_upload"))],
+)
 async def upload_resume(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),

@@ -21,7 +21,7 @@ class AttachmentUploadOut(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=4000)
     conversation_id: str | None = None
     attachment: AttachmentPayload | None = None
 

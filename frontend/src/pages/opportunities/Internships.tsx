@@ -10,18 +10,26 @@ import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_INTERNSHIP_ROLES } from "../../lib/roleConstants";
 
 export function Internships() {
+  const [regionScope, setRegionScope] = useState<"india" | "global">("india");
+
   const { data: matches, isLoading } = useQuery({
-    queryKey: ["matches", "internship"],
-    queryFn: () => getRecommendedMatches("internship"),
+    queryKey: ["matches", "internship", regionScope],
+    queryFn: () => getRecommendedMatches("internship", false, { region: regionScope }),
   });
 
   const [selectedRole, setSelectedRole] = useState<string>("ALL");
   const [minStipend, setMinStipend] = useState<string>("ALL");
   const [remoteFilter, setRemoteFilter] = useState<string>("ALL");
   const [experienceFilter, setExperienceFilter] = useState<string>("ALL");
+  const [locationPreset, setLocationPreset] = useState<string>("ALL");
+  const [onlyEligible, setOnlyEligible] = useState<boolean>(false);
   const [dateFilter, setDateFilter] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"recent" | "match" | "stipend">("recent");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const hasResume = useMemo(() => {
+    return matches?.some((m) => m.has_match) ?? false;
+  }, [matches]);
 
   const filteredInternships = useMemo(() => {
     if (!matches) return [];
@@ -39,7 +47,8 @@ export function Internships() {
       // 2. Min Stipend filter
       if (minStipend !== "ALL") {
         const minVal = Number(minStipend);
-        if (job.stipend_min !== undefined && job.stipend_min !== null && job.stipend_min < minVal) {
+        const stVal = job.stipend || job.stipend_min;
+        if (stVal !== undefined && stVal !== null && stVal < minVal) {
           return false;
         }
       }
@@ -67,7 +76,32 @@ export function Internships() {
         }
       }
 
-      // 5. Date Posted Recency Filter
+      // 5. India Location Preset Filter
+      if (locationPreset !== "ALL") {
+        const locNorm = (job.normalized_location || "").toLowerCase();
+        const locRaw = (job.location || "").toLowerCase();
+        const presetLower = locationPreset.toLowerCase();
+        if (!locNorm.includes(presetLower) && !locRaw.includes(presetLower)) {
+          if (presetLower === "delhi ncr") {
+            const isNcr = ["delhi", "noida", "gurugram", "gurgaon"].some((c) => locNorm.includes(c) || locRaw.includes(c));
+            if (!isNcr) return false;
+          } else {
+            return false;
+          }
+        }
+      }
+
+      // 6. Explicit "Only Eligible" Filter
+      if (onlyEligible) {
+        if (hasResume) {
+          const isEligible = job.eligibility?.status === "ELIGIBLE" || job.eligibility?.status === "LIKELY_ELIGIBLE";
+          if (!isEligible) return false;
+        } else {
+          if (!job.student_eligible && !job.fresher_eligible) return false;
+        }
+      }
+
+      // 7. Date Posted Recency Filter
       if (dateFilter !== "ALL") {
         const maxDays = Number(dateFilter);
         if (job.posted_days_ago !== undefined && job.posted_days_ago > maxDays) {
@@ -75,12 +109,13 @@ export function Internships() {
         }
       }
 
-      // 6. Keyword query
+      // 8. Keyword query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchTitle = job.job_title.toLowerCase().includes(q);
         const matchCompany = job.company.toLowerCase().includes(q);
-        const matchSkills = job.matched_skills.some((s) => s.toLowerCase().includes(q));
+        const skillsToCheck = job.skills_required && job.skills_required.length > 0 ? job.skills_required : job.matched_skills;
+        const matchSkills = skillsToCheck.some((s) => s.toLowerCase().includes(q));
         if (!matchTitle && !matchCompany && !matchSkills) {
           return false;
         }
@@ -89,36 +124,103 @@ export function Internships() {
       return true;
     });
 
-    // Default: Sort by most recent posting date first
+    const isIndia = (j: (typeof list)[0]) => j.country === "India" || (j.normalized_location && j.normalized_location !== "Other");
+
+    // Default: India-first sorting, then user selected criterion
     if (sortBy === "recent") {
-      return list.sort((a, b) => (a.posted_days_ago ?? 0) - (b.posted_days_ago ?? 0));
+      return list.sort((a, b) => {
+        const aInd = isIndia(a) ? 0 : 1;
+        const bInd = isIndia(b) ? 0 : 1;
+        if (aInd !== bInd) return aInd - bInd;
+        return (a.posted_days_ago ?? 0) - (b.posted_days_ago ?? 0);
+      });
     } else if (sortBy === "match") {
-      return list.sort((a, b) => b.overall_score - a.overall_score);
+      return list.sort((a, b) => {
+        const aInd = isIndia(a) ? 0 : 1;
+        const bInd = isIndia(b) ? 0 : 1;
+        if (aInd !== bInd) return aInd - bInd;
+        return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+      });
     } else if (sortBy === "stipend") {
-      return list.sort((a, b) => (b.stipend_min ?? 0) - (a.stipend_min ?? 0));
+      return list.sort((a, b) => {
+        const aInd = isIndia(a) ? 0 : 1;
+        const bInd = isIndia(b) ? 0 : 1;
+        if (aInd !== bInd) return aInd - bInd;
+        return ((b.stipend || b.stipend_min) ?? 0) - ((a.stipend || a.stipend_min) ?? 0);
+      });
     }
 
     return list;
-  }, [matches, selectedRole, minStipend, remoteFilter, experienceFilter, dateFilter, sortBy, searchQuery]);
+  }, [matches, selectedRole, minStipend, remoteFilter, experienceFilter, locationPreset, onlyEligible, dateFilter, sortBy, searchQuery, hasResume]);
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-2">
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
         <div className="flex items-center gap-2">
           <GraduationCap size={24} className="text-signal-600" />
           <h1 className="font-display text-2xl text-ink-900">Internships</h1>
         </div>
-        <Link
-          to="/resume/tailor-custom"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-signal-600 hover:text-signal-700 bg-signal-500/10 hover:bg-signal-500/15 px-3 py-1.5 rounded-md transition-colors"
-        >
-          <Sparkles size={13} /> Tailor for external internship <ArrowRight size={13} />
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* P1-01 India-First vs Global Scope Explorer */}
+          <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
+            <button
+              type="button"
+              onClick={() => setRegionScope("india")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                regionScope === "india"
+                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
+                  : "text-ink-600 hover:text-ink-950"
+              }`}
+            >
+              🇮🇳 India
+            </button>
+            <button
+              type="button"
+              onClick={() => setRegionScope("global")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                regionScope === "global"
+                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
+                  : "text-ink-600 hover:text-ink-950"
+              }`}
+            >
+              🌐 Global / All Locations
+            </button>
+          </div>
+          <Link
+            to="/resume/tailor-custom"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-signal-600 hover:text-signal-700 bg-signal-500/10 hover:bg-signal-500/15 px-3 py-1.5 rounded-md transition-colors"
+          >
+            <Sparkles size={13} /> Tailor for external internship <ArrowRight size={13} />
+          </Link>
+        </div>
       </div>
 
       <p className="text-ink-500 mb-5 text-sm">
         Real-time verified internship openings sorted by most recent posting date.
       </p>
+
+      {/* Pre-Resume Discovery Banner */}
+      {!hasResume && !isLoading && matches && matches.length > 0 && (
+        <div className="mb-5 rounded-xl border border-signal-500/20 bg-signal-500/5 p-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-signal-500/10 flex items-center justify-center text-signal-600 shrink-0">
+              <Sparkles size={15} />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-ink-900">Browsing live opportunities</p>
+              <p className="text-[11px] text-ink-500">
+                You can search, filter, view details, save, and apply to internships right away. Upload your resume to see personalized match scores.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/resume/master"
+            className="shrink-0 text-xs font-semibold text-white bg-signal-600 hover:bg-signal-700 px-3 py-1.5 rounded-lg transition-colors shadow-2xs"
+          >
+            Upload Resume
+          </Link>
+        </div>
+      )}
 
       {/* Target Role & Advanced Filters Card */}
       <div className="bg-white rounded-xl border border-ink-100 p-4 mb-6 shadow-xs space-y-4">
@@ -181,6 +283,40 @@ export function Internships() {
               <option value="student">Current Student / Pre-Final</option>
               <option value="graduate">Recent Graduate / Fresher</option>
             </select>
+          </div>
+        </div>
+
+        {/* India Metros & Eligibility Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-ink-50">
+          <div>
+            <select
+              value={locationPreset}
+              onChange={(e) => setLocationPreset(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+            >
+              <option value="ALL">City / Metro: All India</option>
+              <option value="Bengaluru">Bengaluru / Bangalore</option>
+              <option value="Delhi NCR">Delhi NCR (Noida/Gurugram)</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Pune">Pune</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Noida">Noida</option>
+              <option value="Gurugram">Gurugram / Gurgaon</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 px-2 py-1 bg-ink-50/60 rounded-lg border border-ink-100">
+            <input
+              type="checkbox"
+              id="onlyEligibleInternships"
+              checked={onlyEligible}
+              onChange={(e) => setOnlyEligible(e.target.checked)}
+              className="rounded text-signal-600 focus:ring-signal-500 cursor-pointer"
+            />
+            <label htmlFor="onlyEligibleInternships" className="text-xs font-semibold text-ink-800 cursor-pointer select-none">
+              Only eligible for my profile
+            </label>
           </div>
         </div>
 

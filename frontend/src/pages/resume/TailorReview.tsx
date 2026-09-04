@@ -17,7 +17,10 @@ import {
   Check,
   RefreshCw,
   Info,
+  ExternalLink,
 } from "lucide-react";
+import { apiClient } from "../../lib/apiClient";
+import { recordApplicationSubmission } from "../../lib/applications";
 import {
   generateTailoring,
   getTailoredVersion,
@@ -26,6 +29,8 @@ import {
   deleteTailoredVersion,
   updateChangeStatus,
   updateParsedResume,
+  getEvidenceBadge,
+  getRequirementStatusInfo,
 } from "../../lib/tailoring";
 import { ResumeDiffModal } from "../../components/resume/ResumeDiffModal";
 import { ResumePreviewModal } from "../../components/resume/ResumePreviewModal";
@@ -45,13 +50,13 @@ export function TailorReview() {
   const queryClient = useQueryClient();
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
 
+  const [activeTab, setActiveTab] = useState<"alignment" | "changes" | "editor" | "ats">("alignment");
+  const [reqFilter, setReqFilter] = useState<"ALL" | "DIRECT_STRONG" | "SUPPORTED" | "PARTIAL_RELATED" | "MISSING">("ALL");
   const versionQuery = searchParams.get("version") || searchParams.get("versionId");
   const effectiveVersionId = routeVersionId || versionQuery || null;
   const effectiveJobId = jobId || searchParams.get("jobId") || null;
 
   const [selectedTemplate, setSelectedTemplate] = useState<string>("modern");
-  const [activeTab, setActiveTab] = useState<"analysis" | "alignment" | "changes" | "editor" | "ats">("alignment");
-  const [reqFilter, setReqFilter] = useState<"ALL" | "VERIFIED" | "SUPPORTED" | "PARTIAL" | "MISSING" | "NEEDS_CONFIRMATION">("ALL");
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(effectiveVersionId);
@@ -117,6 +122,38 @@ export function TailorReview() {
       setEditableSkillsRaw(skills.join(", "));
     }
   }, [version?.parsed]);
+
+  const [showApplyModal, setShowApplyModal] = useState(false);
+
+  const effectiveTargetJobId = version?.job_id || effectiveJobId || existingJobVersion?.job_id;
+  const { data: jobData } = useQuery({
+    queryKey: ["job-detail", effectiveTargetJobId],
+    queryFn: () => apiClient.get(`/jobs/${effectiveTargetJobId}`).then((r) => r.data),
+    enabled: !!effectiveTargetJobId && !effectiveTargetJobId.startsWith("custom-"),
+  });
+
+  const directApplyUrl = (jobData?.is_direct_apply && jobData?.apply_url && !jobData.apply_url.includes("example.com"))
+    ? jobData.apply_url
+    : null;
+
+  const recordAppliedMutation = useMutation({
+    mutationFn: () => recordApplicationSubmission(effectiveTargetJobId!, activeVersionId || undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setShowApplyModal(false);
+      toastSuccess("Application persisted as APPLIED in your Application Tracker.", "Application Submitted");
+    },
+    onError: () => {
+      toastError("Could not record application status.", "Update Error");
+    },
+  });
+
+  const handleApplyDirectly = () => {
+    if (!directApplyUrl) return;
+    window.open(directApplyUrl, "_blank", "noopener,noreferrer");
+    setShowApplyModal(true);
+  };
 
   // 3. Status Mutation
   const changeStatusMutation = useMutation({
@@ -227,9 +264,9 @@ export function TailorReview() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <RefreshCw className="w-8 h-8 text-signal-500 animate-spin" />
         <div className="text-center">
-          <h2 className="text-lg font-bold text-ink-900">Evaluating Grounded Candidate Evidence</h2>
+          <h2 className="text-lg font-bold text-ink-900">Tailoring Your Resume for This Role</h2>
           <p className="text-xs text-ink-500 max-w-sm mt-1">
-            Running multi-signal classification, explicit JD requirement mapping, and anti-fabrication truth validation...
+            Analyzing job requirements, aligning your verified experience, and checking that proposed content stays grounded in your experience…
           </p>
         </div>
       </div>
@@ -259,12 +296,14 @@ export function TailorReview() {
 
   const filteredMappings = mappings.filter((m) => {
     if (reqFilter === "ALL") return true;
-    if (reqFilter === "VERIFIED") return m.status === "EXACT_MATCH";
+    if (reqFilter === "DIRECT_STRONG") return m.status === "EXACT_MATCH" || m.status === "STRONG_MATCH";
     if (reqFilter === "SUPPORTED") return m.status === "SUPPORTED";
-    if (reqFilter === "PARTIAL") return m.status === "PARTIAL" || m.status === "RELATED";
-    if (reqFilter === "MISSING") return m.status === "MISSING";
+    if (reqFilter === "PARTIAL_RELATED") return m.status === "PARTIAL" || m.status === "RELATED" || m.status === "WEAK";
+    if (reqFilter === "MISSING") return m.status === "MISSING" || m.status === "CONFLICTING";
     return true;
   });
+
+  const evidenceBadge = getEvidenceBadge(version);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
@@ -273,8 +312,12 @@ export function TailorReview() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-signal-500/10 text-signal-700 border border-signal-500/20">
-                Verified Evidence Grounded
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${evidenceBadge.style}`}>
+                {evidenceBadge.iconType === "alert" && <AlertTriangle size={12} className="shrink-0" />}
+                {evidenceBadge.iconType === "edit" && <Edit3 size={12} className="shrink-0" />}
+                {evidenceBadge.iconType === "check" && <CheckCircle2 size={12} className="shrink-0" />}
+                {evidenceBadge.iconType === "info" && <Info size={12} className="shrink-0" />}
+                <span>{evidenceBadge.label}</span>
               </span>
               {version.is_finalized && (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-ink-900 text-white flex items-center gap-1">
@@ -315,10 +358,14 @@ export function TailorReview() {
             <button
               onClick={() => finalizeMutation.mutate()}
               disabled={finalizeMutation.isPending}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 shadow-xs disabled:opacity-50"
             >
               <FileCheck2 className="w-3.5 h-3.5 text-signal-400" />
-              {version.is_finalized ? "Re-Finalize" : "Finalize Resume"}
+              {finalizeMutation.isPending
+                ? "Finalizing Resume…"
+                : version.is_finalized
+                ? "Re-Finalize"
+                : "Finalize Resume"}
             </button>
             <button
               onClick={() => {
@@ -486,15 +533,68 @@ export function TailorReview() {
       {/* ========================================================================= */}
       {activeTab === "alignment" && (
         <div className="space-y-4">
+          {/* Explanatory Header & Legend */}
+          <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-xs space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-ink-900 font-display">Job Requirement Alignment</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
+                See how your experience and skills align with each job requirement.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2 border-t border-ink-100 text-[11px]">
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-signal-500/10 text-signal-700 border border-signal-500/20 shrink-0">Direct Match</span>
+                <span className="text-ink-500">Backed by direct work experience or project evidence.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 shrink-0">Strong Match</span>
+                <span className="text-ink-500">Matches a closely related or equivalent technology.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-teal-500/10 text-teal-700 border border-teal-500/20 shrink-0">Supported</span>
+                <span className="text-ink-500">Backed by listed skills or academic coursework.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">Partial</span>
+                <span className="text-ink-500">Only part of the requirement is supported.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">Related</span>
+                <span className="text-ink-500">Your background includes adjacent or related skills.</span>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-alert-500/10 text-alert-700 border border-alert-500/20 shrink-0">Missing</span>
+                <span className="text-ink-500">No supporting evidence found in your source resume.</span>
+              </div>
+            </div>
+          </div>
+
           {/* Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap text-xs">
             <span className="font-semibold text-ink-500 mr-1">Filter Support Level:</span>
             {[
               { id: "ALL", label: `All (${mappings.length})` },
-              { id: "VERIFIED", label: `Verified Match (${mappings.filter((m) => m.status === "EXACT_MATCH").length})`, color: "bg-signal-500/10 text-signal-700" },
-              { id: "SUPPORTED", label: `Supported (${mappings.filter((m) => m.status === "SUPPORTED").length})`, color: "bg-teal-500/10 text-teal-700" },
-              { id: "PARTIAL", label: `Partial/Related (${mappings.filter((m) => m.status === "PARTIAL" || m.status === "RELATED").length})`, color: "bg-amber-500/10 text-amber-700" },
-              { id: "MISSING", label: `Missing (${mappings.filter((m) => m.status === "MISSING").length})`, color: "bg-alert-500/10 text-alert-700" },
+              {
+                id: "DIRECT_STRONG",
+                label: `Direct & Strong (${mappings.filter((m) => m.status === "EXACT_MATCH" || m.status === "STRONG_MATCH").length})`,
+                color: "bg-signal-500/10 text-signal-700",
+              },
+              {
+                id: "SUPPORTED",
+                label: `Supported (${mappings.filter((m) => m.status === "SUPPORTED").length})`,
+                color: "bg-teal-500/10 text-teal-700",
+              },
+              {
+                id: "PARTIAL_RELATED",
+                label: `Partial / Related (${mappings.filter((m) => m.status === "PARTIAL" || m.status === "RELATED" || m.status === "WEAK").length})`,
+                color: "bg-amber-500/10 text-amber-700",
+              },
+              {
+                id: "MISSING",
+                label: `Missing (${mappings.filter((m) => m.status === "MISSING" || m.status === "CONFLICTING").length})`,
+                color: "bg-alert-500/10 text-alert-700",
+              },
             ].map((f) => (
               <button
                 key={f.id}
@@ -513,35 +613,30 @@ export function TailorReview() {
             {filteredMappings.length === 0 ? (
               <div className="p-8 text-center text-xs text-ink-400">No requirements match the selected filter.</div>
             ) : (
-              filteredMappings.map((m, idx) => (
-                <div key={idx} className="p-4 hover:bg-ink-50/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="space-y-1 max-w-3xl">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-ink-100 text-ink-600 font-bold">
-                        {m.category || "REQUIREMENT"}
-                      </span>
-                      <p className="text-xs font-semibold text-ink-900">{m.requirement_text}</p>
+              filteredMappings.map((m, idx) => {
+                const statusInfo = getRequirementStatusInfo(m.status);
+                return (
+                  <div key={idx} className="p-4 hover:bg-ink-50/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="space-y-1 max-w-3xl">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-ink-100 text-ink-600 font-bold">
+                          {m.category || "REQUIREMENT"}
+                        </span>
+                        <p className="text-xs font-semibold text-ink-900">{m.requirement_text}</p>
+                      </div>
+                      {m.notes && <p className="text-[11px] text-ink-500 italic pl-2 border-l-2 border-ink-200">{m.notes}</p>}
                     </div>
-                    {m.notes && <p className="text-[11px] text-ink-500 italic pl-2 border-l-2 border-ink-200">{m.notes}</p>}
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        m.status === "EXACT_MATCH"
-                          ? "bg-signal-500/10 text-signal-700 border border-signal-500/20"
-                          : m.status === "SUPPORTED"
-                          ? "bg-teal-500/10 text-teal-700 border border-teal-500/20"
-                          : m.status === "PARTIAL" || m.status === "RELATED"
-                          ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                          : "bg-alert-500/10 text-alert-700 border border-alert-500/20"
-                      }`}
-                    >
-                      {m.status === "EXACT_MATCH" ? "VERIFIED" : m.status}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${statusInfo.style}`}
+                      >
+                        {statusInfo.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -702,9 +797,10 @@ export function TailorReview() {
                 <button
                   onClick={handleSaveEditor}
                   disabled={saveResumeMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-600 text-white text-xs font-semibold hover:bg-signal-700 shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-600 text-white text-xs font-semibold hover:bg-signal-700 shadow-xs disabled:opacity-50"
                 >
-                  <Save className="w-3.5 h-3.5" /> Save Changes
+                  <Save className="w-3.5 h-3.5" />
+                  {saveResumeMutation.isPending ? "Saving Edits…" : "Save Changes"}
                 </button>
               )}
             </div>
@@ -795,7 +891,7 @@ export function TailorReview() {
             <div>
               <h3 className="text-base font-bold text-ink-900 font-display">11. ATS & Readability Validation Report</h3>
               <p className="text-xs text-ink-500">
-                Deterministic compliance evaluation across standard section headings, bullet quality, date consistency, and parseability.
+                Automated compliance checks across standard section headings, bullet formatting, date consistency, and ATS readability.
               </p>
             </div>
             <div className="text-right">
@@ -890,6 +986,88 @@ export function TailorReview() {
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 13. DIRECT APPLY & APPLICATION CONTINUITY (P1-03)                        */}
+      {/* ========================================================================= */}
+      <div className="rounded-xl border border-signal-500/30 bg-gradient-to-br from-signal-500/5 via-white to-white p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="p-1 rounded-md bg-signal-500/20 text-signal-800">
+                <CheckCircle2 size={16} />
+              </span>
+              <h3 className="text-base font-bold text-ink-950 font-display">13. Next Step: Direct Application</h3>
+            </div>
+            <p className="text-xs text-ink-600">
+              Your resume is finalized for <strong className="text-ink-900">{version.job_title} at {version.company}</strong>.
+              Apply directly without needing to search for the job again.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {directApplyUrl ? (
+              <button
+                type="button"
+                onClick={handleApplyDirectly}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-signal-600 hover:bg-signal-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
+              >
+                <span>Apply Directly on {version.company} Portal</span>
+                <ExternalLink size={14} />
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-medium">
+                <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                <span>Application link unavailable: RoleRadar cannot verify a direct application link.</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Direct Apply Confirmation Modal (P1-03) */}
+      {showApplyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-ink-100 shadow-2xl p-6 space-y-4 animate-fade-in-up">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-signal-500/10 flex items-center justify-center text-signal-600 shrink-0">
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold font-display text-ink-950">
+                  Mark as Submitted?
+                </h3>
+                <p className="text-xs text-ink-500">
+                  {version.job_title} at {version.company}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-ink-600 leading-relaxed">
+              We opened the official application portal in a new tab. Once you complete and submit your application with this tailored resume, confirm below to mark it as <strong>APPLIED</strong> in your Application Tracker.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-ink-100">
+              <button
+                type="button"
+                onClick={() => setShowApplyModal(false)}
+                className="px-3.5 py-2 rounded-lg border border-ink-200 text-ink-700 text-xs font-medium hover:bg-ink-50"
+              >
+                I&apos;ll Mark Later
+              </button>
+              <button
+                type="button"
+                onClick={() => recordAppliedMutation.mutate()}
+                disabled={recordAppliedMutation.isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-signal-600 hover:bg-signal-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+              >
+                <Check size={14} />
+                <span>{recordAppliedMutation.isPending ? "Persisting…" : "Yes, Mark as APPLIED"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {isPreviewOpen && activeVersionId && (

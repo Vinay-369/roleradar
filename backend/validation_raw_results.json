@@ -1,0 +1,4789 @@
+{
+  "summary": {
+    "total_roles_tested": 158,
+    "total_domains_tested": 23,
+    "total_niche_roles_tested": 20,
+    "total_defects_found": 0,
+    "executive_verdict": "PASS",
+    "unresolved_roles_count": 0,
+    "unresolved_roles_list": []
+  },
+  "role_resolver_results": [
+    {
+      "input_role": "Software Engineer",
+      "canonical_role": "Software Engineer",
+      "domain": "Software Engineering",
+      "subdomain": "General & Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 13,
+      "core_skills": [
+        "Data Structures & Algorithms",
+        "System Design",
+        "Object-Oriented Programming"
+      ],
+      "common_skills": [
+        "Unit Testing",
+        "Microservices Architecture"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Backend Developer",
+      "canonical_role": "Backend Developer",
+      "domain": "Software Engineering",
+      "subdomain": "Backend Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 13,
+      "core_skills": [
+        "RESTful API Design",
+        "Database Modeling & Querying",
+        "Server Architecture"
+      ],
+      "common_skills": [
+        "Microservices Architecture",
+        "Caching Strategies"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Frontend Developer",
+      "canonical_role": "Frontend Developer",
+      "domain": "Software Engineering",
+      "subdomain": "Web & Client Interfaces",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 14,
+      "core_skills": [
+        "Component-Based UI Architecture",
+        "Responsive Web Design",
+        "DOM Manipulation & Events"
+      ],
+      "common_skills": [
+        "CSS Frameworks & Flexbox/Grid",
+        "Client-Side Routing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Full Stack Developer",
+      "canonical_role": "Full Stack Developer",
+      "domain": "Software Engineering",
+      "subdomain": "End-to-End Applications",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Frontend UI Development",
+        "Backend API Construction",
+        "Database Schema Design"
+      ],
+      "common_skills": [
+        "Authentication & Sessions",
+        "Responsive Design"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Mobile Developer",
+      "canonical_role": "Mobile Developer",
+      "domain": "Software Engineering",
+      "subdomain": "Mobile Platforms",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Mobile UI Design Patterns",
+        "Mobile State & Lifecycle Management",
+        "Offline Storage & Sync"
+      ],
+      "common_skills": [
+        "App Store / Play Store Deployment",
+        "Native Performance Profiling"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Embedded Software Engineer",
+      "canonical_role": "Embedded Software Engineer",
+      "domain": "Software Engineering",
+      "subdomain": "Hardware & Firmware",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "C/C++ Programming",
+        "Microcontroller Architecture",
+        "Hardware Protocols (I2C, SPI, UART)"
+      ],
+      "common_skills": [
+        "Device Drivers Development",
+        "Oscilloscopes & Logic Analyzers"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "QA Engineer",
+      "canonical_role": "QA / Test Engineer",
+      "domain": "Software Engineering",
+      "subdomain": "Quality & Automation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Test Case Design & Planning",
+        "Automated Functional Testing",
+        "API Testing & Validation"
+      ],
+      "common_skills": [
+        "End-to-End Automation",
+        "Performance & Load Testing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Test Automation Engineer",
+      "canonical_role": "QA / Test Engineer",
+      "domain": "Software Engineering",
+      "subdomain": "Quality & Automation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Test Case Design & Planning",
+        "Automated Functional Testing",
+        "API Testing & Validation"
+      ],
+      "common_skills": [
+        "End-to-End Automation",
+        "Performance & Load Testing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Systems Engineer",
+      "canonical_role": "Systems Engineer",
+      "domain": "Software Engineering",
+      "subdomain": "Systems & OS",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Low-Level Programming (C/C++/Rust)",
+        "Operating Systems Internals",
+        "Kernel & Device Interfaces"
+      ],
+      "common_skills": [
+        "Socket Programming",
+        "File Systems"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Solutions Architect",
+      "canonical_role": "Solutions Architect",
+      "domain": "Software Engineering",
+      "subdomain": "Architecture & Integration",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Enterprise Architecture Design",
+        "System Integration Architecture",
+        "Cloud Migration Planning"
+      ],
+      "common_skills": [
+        "API Gateway Architecture",
+        "Security Architecture Alignment"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Data Analyst",
+      "canonical_role": "Data Analyst",
+      "domain": "Data & Analytics",
+      "subdomain": "Business & Exploratory Analytics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "SQL Querying & Data Extraction",
+        "Exploratory Data Analysis",
+        "Data Cleaning & Transformation"
+      ],
+      "common_skills": [
+        "KPI Definition & Tracking",
+        "Data Storytelling & Reporting"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Data Scientist",
+      "canonical_role": "Data Scientist",
+      "domain": "Data & Analytics",
+      "subdomain": "Predictive Analytics & Statistics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Statistical Modeling & Hypothesis Testing",
+        "Predictive Machine Learning",
+        "Feature Engineering"
+      ],
+      "common_skills": [
+        "Model Evaluation Metrics",
+        "Data Visualization"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Data Engineer",
+      "canonical_role": "Data Engineer",
+      "domain": "Data & Analytics",
+      "subdomain": "Data Pipelines & Infrastructure",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "ETL/ELT Pipeline Development",
+        "Data Warehouse Modeling",
+        "Distributed Data Processing"
+      ],
+      "common_skills": [
+        "Batch & Stream Processing",
+        "Data Quality & Validation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "BI Analyst",
+      "canonical_role": "BI Analyst",
+      "domain": "Data & Analytics",
+      "subdomain": "Business Intelligence",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Data Modeling for BI",
+        "Dashboard & Visual Scorecard Design",
+        "Complex SQL Aggregations"
+      ],
+      "common_skills": [
+        "ETL Data Preparation",
+        "Report Automation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Analytics Engineer",
+      "canonical_role": "Analytics Engineer",
+      "domain": "Data & Analytics",
+      "subdomain": "Analytics Modeling",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Data Transformation Modeling (dbt)",
+        "Data Warehouse Architecture",
+        "SQL Mastery"
+      ],
+      "common_skills": [
+        "CI/CD for Data Pipelines",
+        "Data Cataloging & Documentation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Quantitative Analyst",
+      "canonical_role": "Quantitative Analyst",
+      "domain": "Data & Analytics",
+      "subdomain": "Quantitative Finance & Math",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Mathematical Modeling",
+        "Time-Series Econometrics",
+        "Stochastic Calculus"
+      ],
+      "common_skills": [
+        "Backtesting Strategies",
+        "Algorithmic Pricing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Business Intelligence Developer",
+      "canonical_role": "BI Analyst",
+      "domain": "Data & Analytics",
+      "subdomain": "Business Intelligence",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=0.95)",
+      "total_skills": 12,
+      "core_skills": [
+        "Data Modeling for BI",
+        "Dashboard & Visual Scorecard Design",
+        "Complex SQL Aggregations"
+      ],
+      "common_skills": [
+        "ETL Data Preparation",
+        "Report Automation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Machine Learning Engineer",
+      "canonical_role": "Machine Learning Engineer",
+      "domain": "AI / Machine Learning",
+      "subdomain": "Applied Machine Learning",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "ML Pipeline Engineering",
+        "Supervised & Unsupervised Modeling",
+        "Feature Store Integration"
+      ],
+      "common_skills": [
+        "Hyperparameter Optimization",
+        "Data Preprocessing Pipelines"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "AI Engineer",
+      "canonical_role": "AI Engineer",
+      "domain": "AI / Machine Learning",
+      "subdomain": "GenAI & LLMs",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "LLM Orchestration & Prompt Architecture",
+        "Retrieval-Augmented Generation (RAG)",
+        "Vector Database Indexing & Search"
+      ],
+      "common_skills": [
+        "Embedding Generation",
+        "Agentic Workflows"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "NLP Engineer",
+      "canonical_role": "NLP Engineer",
+      "domain": "AI / Machine Learning",
+      "subdomain": "Natural Language Processing",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Text Tokenization & Preprocessing",
+        "Transformer Architecture",
+        "Named Entity Recognition (NER)"
+      ],
+      "common_skills": [
+        "Word Embeddings & Vectors",
+        "Language Model Evaluation (BLEU/ROUGE)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Computer Vision Engineer",
+      "canonical_role": "Computer Vision Engineer",
+      "domain": "AI / Machine Learning",
+      "subdomain": "Visual Computing",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Convolutional Neural Networks (CNN)",
+        "Image Segmentation & Object Detection",
+        "Image Preprocessing & Augmentation"
+      ],
+      "common_skills": [
+        "Model Pruning & Quantization",
+        "Bounding Box Algorithms (YOLO)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "ML Researcher",
+      "canonical_role": "AI Researcher",
+      "domain": "AI / Machine Learning",
+      "subdomain": "Research & Innovation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Novel Algorithmic Design",
+        "Mathematical Formulation",
+        "Peer-Reviewed Literature Review"
+      ],
+      "common_skills": [
+        "Academic Paper Writing",
+        "Ablation Studies"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "AI Research Scientist",
+      "canonical_role": "AI Researcher",
+      "domain": "AI / Machine Learning",
+      "subdomain": "Research & Innovation",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=0.95)",
+      "total_skills": 12,
+      "core_skills": [
+        "Novel Algorithmic Design",
+        "Mathematical Formulation",
+        "Peer-Reviewed Literature Review"
+      ],
+      "common_skills": [
+        "Academic Paper Writing",
+        "Ablation Studies"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "DevOps Engineer",
+      "canonical_role": "DevOps Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Continuous Delivery & Automation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "CI/CD Pipeline Automation",
+        "Containerization & Orchestration",
+        "Infrastructure as Code (IaC)"
+      ],
+      "common_skills": [
+        "Monitoring & Observability",
+        "Secrets Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Cloud Engineer",
+      "canonical_role": "Cloud Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Cloud Architecture & Hosting",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Cloud Architecture Design",
+        "Virtual Networking (VPC/Subnets)",
+        "Cloud Identity & Access Management (IAM)"
+      ],
+      "common_skills": [
+        "Cloud Security Best Practices",
+        "High Availability & Disaster Recovery"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Site Reliability Engineer",
+      "canonical_role": "Site Reliability Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Reliability & Scalability",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "SLO/SLI Definition & Monitoring",
+        "Incident Response & Post-Mortem Analysis",
+        "Automated Remediation"
+      ],
+      "common_skills": [
+        "Chaos Engineering",
+        "Observability (Tracing, Metrics, Logs)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Platform Engineer",
+      "canonical_role": "Platform Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Internal Developer Platforms",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Internal Developer Platform (IDP) Design",
+        "Developer Tooling & SDKs",
+        "Kubernetes Platform Management"
+      ],
+      "common_skills": [
+        "Golden Path Templates",
+        "Developer Experience (DevEx) Metrics"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Infrastructure Engineer",
+      "canonical_role": "Infrastructure Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Core Infrastructure",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Server Hardware & OS Provisioning",
+        "Network Configuration & Routing",
+        "Storage Systems Management"
+      ],
+      "common_skills": [
+        "Backup & Recovery",
+        "DNS/DHCP Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Cloud Architect",
+      "canonical_role": "Cloud Architect",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "subdomain": "Cloud Architecture & Governance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Multi-Region Cloud Architecture",
+        "Cloud Governance & Landing Zones",
+        "Cloud Security & Compliance"
+      ],
+      "common_skills": [
+        "Hybrid Cloud Networking",
+        "Disaster Recovery Planning"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Cybersecurity Analyst",
+      "canonical_role": "Cybersecurity Analyst",
+      "domain": "Cybersecurity",
+      "subdomain": "Security Operations & Defense",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Threat Monitoring & Detection",
+        "Security Incident Investigation",
+        "Log Analysis (SIEM)"
+      ],
+      "common_skills": [
+        "Incident Triage & Containment",
+        "Security Awareness Procedures"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "SOC Analyst",
+      "canonical_role": "SOC Analyst",
+      "domain": "Cybersecurity",
+      "subdomain": "Security Operations Center",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Real-Time Alert Triage",
+        "SIEM Dashboards & Monitoring",
+        "Phishing Investigation"
+      ],
+      "common_skills": [
+        "Log Correlation",
+        "Threat Intelligence Consumption"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Security Engineer",
+      "canonical_role": "Security Engineer",
+      "domain": "Cybersecurity",
+      "subdomain": "Security Architecture & Engineering",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Security Architecture Design",
+        "Identity & Access Governance",
+        "Vulnerability Remediation"
+      ],
+      "common_skills": [
+        "Automated Security Scanners",
+        "Firewall & WAF Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Penetration Tester",
+      "canonical_role": "Penetration Tester",
+      "domain": "Cybersecurity",
+      "subdomain": "Offensive Security",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Web Application Penetration Testing",
+        "Network Vulnerability Exploitation",
+        "Reconnaissance & Footprinting"
+      ],
+      "common_skills": [
+        "Social Engineering Assessment",
+        "Wireless Security Testing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Security Consultant",
+      "canonical_role": "Security Consultant",
+      "domain": "Cybersecurity",
+      "subdomain": "Advisory & Strategy",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Security Risk Assessment",
+        "Compliance & Gap Analysis",
+        "Security Policy Formulation"
+      ],
+      "common_skills": [
+        "Vendor Risk Assessment",
+        "Business Continuity Planning"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "GRC Analyst",
+      "canonical_role": "GRC Analyst",
+      "domain": "Cybersecurity",
+      "subdomain": "Governance, Risk & Compliance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Regulatory Compliance Auditing",
+        "Risk Register Maintenance",
+        "Security Policy Review"
+      ],
+      "common_skills": [
+        "Internal Control Testing",
+        "Security Awareness Program Tracking"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Cloud Security Engineer",
+      "canonical_role": "Cloud Security Engineer",
+      "domain": "Cybersecurity",
+      "subdomain": "Cloud Defense",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Cloud IAM Policy Least Privilege",
+        "Cloud Security Posture Management (CSPM)",
+        "Container & Kubernetes Security"
+      ],
+      "common_skills": [
+        "Cloud Trail Log Auditing",
+        "Secrets Encryption & KMS"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Application Security Engineer",
+      "canonical_role": "Application Security Engineer",
+      "domain": "Cybersecurity",
+      "subdomain": "Application Security & Secure SDLC",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (application_security)",
+      "total_skills": 12,
+      "core_skills": [
+        "OWASP Top 10 Vulnerability Remediation",
+        "Static & Dynamic Code Analysis (SAST/DAST)",
+        "Secure Code Review & Developer Security Advocacy"
+      ],
+      "common_skills": [
+        "Software Composition Analysis (SCA)",
+        "Threat Modeling for Web & API Services"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Product Manager",
+      "canonical_role": "Product Manager",
+      "domain": "Product",
+      "subdomain": "Product Strategy & Lifecycle",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Product Strategy & Vision",
+        "User Problem Discovery",
+        "Roadmap Prioritization (RICE/MoSCoW)"
+      ],
+      "common_skills": [
+        "Competitive Market Analysis",
+        "Cross-Functional Team Leadership"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Product Owner",
+      "canonical_role": "Product Owner",
+      "domain": "Product",
+      "subdomain": "Agile Execution",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Backlog Refinement & Management",
+        "Sprint Planning & Acceptance Criteria",
+        "User Story Authoring"
+      ],
+      "common_skills": [
+        "Velocity Tracking",
+        "Feature Demonstration"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Technical Product Manager",
+      "canonical_role": "Technical Product Manager",
+      "domain": "Product",
+      "subdomain": "Technical & Platform Products",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "API & Platform Strategy",
+        "Technical Requirement Specifications",
+        "Developer Persona Understanding"
+      ],
+      "common_skills": [
+        "Data Flow Diagramming",
+        "Technical Debt Prioritization"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Program Manager",
+      "canonical_role": "Program Manager",
+      "domain": "Product",
+      "subdomain": "Multi-Project Orchestration",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Cross-Functional Program Execution",
+        "Dependency & Risk Management",
+        "Milestone Tracking"
+      ],
+      "common_skills": [
+        "Process Optimization",
+        "Change Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Product Operations Manager",
+      "canonical_role": "Product Operations Manager",
+      "domain": "Product",
+      "subdomain": "Product Operations & Analytics",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (product_operations)",
+      "total_skills": 12,
+      "core_skills": [
+        "Product Experimentation Infrastructure & Analysis",
+        "User Feedback Loop Systematization",
+        "Product Release Operations & Launch Readiness"
+      ],
+      "common_skills": [
+        "Product Stack Tooling Administration",
+        "Cross-Functional Voice-of-Customer Synthesis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Graphic Designer",
+      "canonical_role": "Graphic Designer",
+      "domain": "Design",
+      "subdomain": "Visual Design & Branding",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Visual Composition & Layout",
+        "Typography & Font Pairing",
+        "Color Theory & Palettes"
+      ],
+      "common_skills": [
+        "Print & Digital Production",
+        "Image Retouching & Manipulation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "UI Designer",
+      "canonical_role": "UI Designer",
+      "domain": "Design",
+      "subdomain": "User Interface Design",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Design System Maintenance",
+        "High-Fidelity Wireframing",
+        "Component States & Micro-Interactions"
+      ],
+      "common_skills": [
+        "Interactive Prototyping",
+        "Design-to-Code Handoff"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "UX Designer",
+      "canonical_role": "UX Designer",
+      "domain": "Design",
+      "subdomain": "User Experience & Interaction",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "User Journey Mapping",
+        "Information Architecture",
+        "Low & Mid-Fidelity Wireframing"
+      ],
+      "common_skills": [
+        "User Persona Development",
+        "Rapid Prototyping"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Product Designer",
+      "canonical_role": "Product Designer",
+      "domain": "Design",
+      "subdomain": "End-to-End Product Design",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "End-to-End UX/UI Design",
+        "User Problem Discovery",
+        "Design Systems Governance"
+      ],
+      "common_skills": [
+        "Usability Testing",
+        "Data-Informed Design Iteration"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "UX Researcher",
+      "canonical_role": "UX Researcher",
+      "domain": "Design",
+      "subdomain": "User Research & Insights",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Generative & Evaluative User Interviews",
+        "Usability Study Design & Moderation",
+        "Qualitative Coding & Synthesis"
+      ],
+      "common_skills": [
+        "Card Sorting & Tree Testing",
+        "Diary Studies"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Motion Designer",
+      "canonical_role": "Motion Designer",
+      "domain": "Design",
+      "subdomain": "Motion Design & Animation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "2D/3D Motion Graphics Animation",
+        "Keyframe Animation & Graph Editor Curve Smoothing",
+        "Kinetic Typography & Title Design"
+      ],
+      "common_skills": [
+        "Video Compositing & Alpha Channel Masking",
+        "Logo Animation & Brand Identity Motion"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Visual Designer",
+      "canonical_role": "Graphic Designer",
+      "domain": "Design",
+      "subdomain": "Visual Design & Branding",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Visual Composition & Layout",
+        "Typography & Font Pairing",
+        "Color Theory & Palettes"
+      ],
+      "common_skills": [
+        "Print & Digital Production",
+        "Image Retouching & Manipulation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Marketing Specialist",
+      "canonical_role": "Digital Marketing Specialist",
+      "domain": "Marketing",
+      "subdomain": "Digital & Growth",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Multi-Channel Campaign Management",
+        "Paid Search & Social Advertising (PPC)",
+        "Conversion Rate Optimization (CRO)"
+      ],
+      "common_skills": [
+        "A/B Ad Creative Testing",
+        "Audience Segmentation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Digital Marketing Specialist",
+      "canonical_role": "Digital Marketing Specialist",
+      "domain": "Marketing",
+      "subdomain": "Digital & Growth",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Multi-Channel Campaign Management",
+        "Paid Search & Social Advertising (PPC)",
+        "Conversion Rate Optimization (CRO)"
+      ],
+      "common_skills": [
+        "A/B Ad Creative Testing",
+        "Audience Segmentation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "SEO Specialist",
+      "canonical_role": "SEO Specialist",
+      "domain": "Marketing",
+      "subdomain": "Search Engine Optimization",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Keyword Research & Intent Mapping",
+        "On-Page SEO Optimization",
+        "Technical SEO Auditing"
+      ],
+      "common_skills": [
+        "Content Gap Analysis",
+        "Site Architecture & Crawlability"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Content Marketing Specialist",
+      "canonical_role": "Content Marketing Specialist",
+      "domain": "Marketing",
+      "subdomain": "Content Strategy",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Long-Form Content Writing & Editing",
+        "Content Calendar Management",
+        "Editorial Planning"
+      ],
+      "common_skills": [
+        "Whitepaper & Case Study Production",
+        "Distribution & Repurposing Strategy"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Social Media Manager",
+      "canonical_role": "Social Media Manager",
+      "domain": "Marketing",
+      "subdomain": "Social Media & Community",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Social Media Strategy",
+        "Community Engagement & Moderation",
+        "Social Copywriting & Visual Curation"
+      ],
+      "common_skills": [
+        "Influencer Collaboration",
+        "Social Ad Campaign Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Brand Manager",
+      "canonical_role": "Graphic Designer",
+      "domain": "Design",
+      "subdomain": "Visual Design & Branding",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=0.95)",
+      "total_skills": 12,
+      "core_skills": [
+        "Visual Composition & Layout",
+        "Typography & Font Pairing",
+        "Color Theory & Palettes"
+      ],
+      "common_skills": [
+        "Print & Digital Production",
+        "Image Retouching & Manipulation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Growth Marketing Manager",
+      "canonical_role": "Growth Marketing Manager",
+      "domain": "Marketing",
+      "subdomain": "Growth & User Acquisition",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (growth_marketing)",
+      "total_skills": 11,
+      "core_skills": [
+        "Funnel A/B Testing & Optimization",
+        "Viral Loops & Referral Architecture",
+        "Customer Acquisition Cost (CAC) vs LTV Optimization"
+      ],
+      "common_skills": [
+        "Lifecycle Marketing Automation",
+        "Growth Hypothesis Prioritization (ICE/PIE)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Sales Executive",
+      "canonical_role": "Sales Executive",
+      "domain": "Sales / Business Development",
+      "subdomain": "Direct Sales",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Prospect Qualification & Discovery",
+        "Value Proposition Pitching",
+        "Objection Handling & Negotiation"
+      ],
+      "common_skills": [
+        "CRM Hygiene & Activity Tracking",
+        "Product Demonstrations"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Account Executive",
+      "canonical_role": "Sales Executive",
+      "domain": "Sales / Business Development",
+      "subdomain": "Direct Sales",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Prospect Qualification & Discovery",
+        "Value Proposition Pitching",
+        "Objection Handling & Negotiation"
+      ],
+      "common_skills": [
+        "CRM Hygiene & Activity Tracking",
+        "Product Demonstrations"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Account Manager",
+      "canonical_role": "Account Manager",
+      "domain": "Sales / Business Development",
+      "subdomain": "Client Retention & Upsell",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Client Relationship Nurturing",
+        "Account Renewal & Retention",
+        "Upselling & Cross-Selling"
+      ],
+      "common_skills": [
+        "Internal Advocate for Client",
+        "Escalation Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Business Development Executive",
+      "canonical_role": "Business Development Executive",
+      "domain": "Sales / Business Development",
+      "subdomain": "Outbound & Partnerships",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Cold Outreach & Prospecting",
+        "Lead Qualification",
+        "Email & Phone Cadences"
+      ],
+      "common_skills": [
+        "Multi-Touch Sequences",
+        "Objection Overcoming"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Business Development Manager",
+      "canonical_role": "Business Development Executive",
+      "domain": "Sales / Business Development",
+      "subdomain": "Outbound & Partnerships",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Cold Outreach & Prospecting",
+        "Lead Qualification",
+        "Email & Phone Cadences"
+      ],
+      "common_skills": [
+        "Multi-Touch Sequences",
+        "Objection Overcoming"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Sales Operations Analyst",
+      "canonical_role": "Sales Operations Analyst",
+      "domain": "Sales / Business",
+      "subdomain": "Sales Operations & Enablement",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (sales_operations)",
+      "total_skills": 11,
+      "core_skills": [
+        "CRM Pipeline & Quota Modeling (Salesforce)",
+        "Sales Commission & Incentive Structuring",
+        "Sales Velocity & Conversion Funnel Analytics"
+      ],
+      "common_skills": [
+        "Territory Planning & Account Allocation",
+        "Sales Tech Stack Administration"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Customer Success Manager",
+      "canonical_role": "Customer Success Manager",
+      "domain": "Sales / Business",
+      "subdomain": "Customer Success & Retention",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Customer Onboarding & Time-to-Value Acceleration",
+        "Net Revenue Retention (NRR) & Churn Mitigation",
+        "Quarterly Business Review (QBR) Presentation"
+      ],
+      "common_skills": [
+        "Product Feature Adoption Coaching",
+        "Customer Advocacy & Case Study Generation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Accountant",
+      "canonical_role": "Accountant",
+      "domain": "Finance / Accounting",
+      "subdomain": "General Accounting",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "General Ledger Maintenance",
+        "Month-End & Year-End Closing",
+        "Bank & Account Reconciliation"
+      ],
+      "common_skills": [
+        "Tax Filing Preparation",
+        "Audit Schedule Preparation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Financial Analyst",
+      "canonical_role": "Financial Analyst",
+      "domain": "Finance / Accounting",
+      "subdomain": "FP&A & Corporate Finance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Financial Modeling (DCF/LBO/3-Statement)",
+        "Budgeting & Forecasting (FP&A)",
+        "Variance & Trend Analysis"
+      ],
+      "common_skills": [
+        "KPI Dashboards for Leadership",
+        "Scenario Planning & Sensitivity Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Investment Analyst",
+      "canonical_role": "Investment Analyst",
+      "domain": "Finance / Accounting",
+      "subdomain": "Investment & Asset Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Company & Industry Due Diligence",
+        "Financial Valuation Models",
+        "Investment Thesis Authoring"
+      ],
+      "common_skills": [
+        "Management Interviews",
+        "Earnings Call Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Financial Controller",
+      "canonical_role": "Financial Controller",
+      "domain": "Finance / Accounting",
+      "subdomain": "Financial Controllership & Reporting",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Statutory Financial Statement Preparation (GAAP/IFRS)",
+        "Internal Financial Controls Architecture (SOX)",
+        "Month-End & Year-End Close Acceleration"
+      ],
+      "common_skills": [
+        "Corporate Tax Planning & Regulatory Compliance",
+        "Accounting Policy Drafting & Technical Research"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "FP&A Analyst",
+      "canonical_role": "Financial Analyst",
+      "domain": "Finance / Accounting",
+      "subdomain": "FP&A & Corporate Finance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Financial Modeling (DCF/LBO/3-Statement)",
+        "Budgeting & Forecasting (FP&A)",
+        "Variance & Trend Analysis"
+      ],
+      "common_skills": [
+        "KPI Dashboards for Leadership",
+        "Scenario Planning & Sensitivity Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Tax Analyst",
+      "canonical_role": "Accountant",
+      "domain": "Finance / Accounting",
+      "subdomain": "General Accounting",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "General Ledger Maintenance",
+        "Month-End & Year-End Closing",
+        "Bank & Account Reconciliation"
+      ],
+      "common_skills": [
+        "Tax Filing Preparation",
+        "Audit Schedule Preparation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Audit Associate",
+      "canonical_role": "Audit Associate",
+      "domain": "Finance / Accounting",
+      "subdomain": "External & Internal Audit",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Financial Statement Substantive Testing",
+        "Internal Controls Testing (Design & Operating Effectiveness)",
+        "Audit Workpaper Preparation & Cross-Referencing"
+      ],
+      "common_skills": [
+        "Audit Sampling Methodology",
+        "Walkthrough Documentation Creation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Risk Analyst",
+      "canonical_role": "Risk Analyst",
+      "domain": "Finance / Accounting",
+      "subdomain": "Financial & Enterprise Risk",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Value at Risk (VaR) & Scenario Stress Testing",
+        "Credit & Counterparty Risk Assessment",
+        "Market Risk & Volatility Modeling"
+      ],
+      "common_skills": [
+        "Monte Carlo Simulation",
+        "Liquidity Risk Monitoring"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "HR Specialist",
+      "canonical_role": "HR Generalist",
+      "domain": "HR / People",
+      "subdomain": "People Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Employee Relations & Conflict Resolution",
+        "Onboarding & Offboarding Orchestration",
+        "HR Policy Implementation & Compliance"
+      ],
+      "common_skills": [
+        "HRIS Database Management",
+        "Exit Interviews & Retention Insights"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "HR Generalist",
+      "canonical_role": "HR Generalist",
+      "domain": "HR / People",
+      "subdomain": "People Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Employee Relations & Conflict Resolution",
+        "Onboarding & Offboarding Orchestration",
+        "HR Policy Implementation & Compliance"
+      ],
+      "common_skills": [
+        "HRIS Database Management",
+        "Exit Interviews & Retention Insights"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Recruiter",
+      "canonical_role": "Recruiter",
+      "domain": "HR / People",
+      "subdomain": "Talent Acquisition",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Candidate Sourcing & Outbound Outreach",
+        "Resume Screening & Structured Phone Screens",
+        "Hiring Manager Stakeholder Alignment"
+      ],
+      "common_skills": [
+        "Applicant Tracking System (ATS) Management",
+        "Employer Branding Initiatives"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Technical Recruiter",
+      "canonical_role": "Recruiter",
+      "domain": "HR / People",
+      "subdomain": "Talent Acquisition",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Candidate Sourcing & Outbound Outreach",
+        "Resume Screening & Structured Phone Screens",
+        "Hiring Manager Stakeholder Alignment"
+      ],
+      "common_skills": [
+        "Applicant Tracking System (ATS) Management",
+        "Employer Branding Initiatives"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Talent Acquisition Specialist",
+      "canonical_role": "Recruiter",
+      "domain": "HR / People",
+      "subdomain": "Talent Acquisition",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Candidate Sourcing & Outbound Outreach",
+        "Resume Screening & Structured Phone Screens",
+        "Hiring Manager Stakeholder Alignment"
+      ],
+      "common_skills": [
+        "Applicant Tracking System (ATS) Management",
+        "Employer Branding Initiatives"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "HR Business Partner",
+      "canonical_role": "HR Business Partner",
+      "domain": "HR / People",
+      "subdomain": "Strategic HR & Business Partnership",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Strategic Workforce Planning & Talent Strategy",
+        "Organizational Design & Team Restructuring",
+        "Executive Leadership Coaching & Advising"
+      ],
+      "common_skills": [
+        "Employee Retention & Engagement Action Plans",
+        "Performance Management Calibration"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Learning and Development Specialist",
+      "canonical_role": "Learning and Development Specialist",
+      "domain": "HR / People",
+      "subdomain": "Talent Development & Organizational Learning",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Training Needs Analysis (TNA)",
+        "Employee Workshop & Training Facilitation",
+        "Leadership & Career Development Program Design"
+      ],
+      "common_skills": [
+        "Onboarding Learning Path Curation",
+        "Mentorship Program Orchestration"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Operations Analyst",
+      "canonical_role": "Operations Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Business & Process Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Process Mapping & Bottleneck Identification",
+        "Operational KPI Tracking & Reporting",
+        "Workflow Automation & Optimization"
+      ],
+      "common_skills": [
+        "Standard Operating Procedure (SOP) Authoring",
+        "Root-Cause Problem Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Operations Manager",
+      "canonical_role": "Operations Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Business & Process Operations",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Process Mapping & Bottleneck Identification",
+        "Operational KPI Tracking & Reporting",
+        "Workflow Automation & Optimization"
+      ],
+      "common_skills": [
+        "Standard Operating Procedure (SOP) Authoring",
+        "Root-Cause Problem Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Supply Chain Analyst",
+      "canonical_role": "Supply Chain Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Logistics & Supply Planning",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Demand Forecasting & Inventory Optimization",
+        "Supplier Performance Tracking",
+        "Logistics & Freight Route Analysis"
+      ],
+      "common_skills": [
+        "ERP Supply Chain Transactions",
+        "Purchase Order Tracking"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Supply Chain Manager",
+      "canonical_role": "Supply Chain Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Logistics & Supply Planning",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Demand Forecasting & Inventory Optimization",
+        "Supplier Performance Tracking",
+        "Logistics & Freight Route Analysis"
+      ],
+      "common_skills": [
+        "ERP Supply Chain Transactions",
+        "Purchase Order Tracking"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Procurement Specialist",
+      "canonical_role": "Procurement Specialist",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Procurement & Sourcing",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Strategic Sourcing & Vendor Evaluation",
+        "RFP / RFQ / RFI Process Management",
+        "Commercial Contract Negotiation & Price Term Execution"
+      ],
+      "common_skills": [
+        "Purchase Order (PO) Lifecycle Management",
+        "Procure-to-Pay (P2P) Compliance"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Logistics Coordinator",
+      "canonical_role": "Supply Chain Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Logistics & Supply Planning",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=0.95)",
+      "total_skills": 10,
+      "core_skills": [
+        "Demand Forecasting & Inventory Optimization",
+        "Supplier Performance Tracking",
+        "Logistics & Freight Route Analysis"
+      ],
+      "common_skills": [
+        "ERP Supply Chain Transactions",
+        "Purchase Order Tracking"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Inventory Analyst",
+      "canonical_role": "Inventory Analyst",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Inventory Optimization & Control",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Safety Stock & Reorder Point Optimization",
+        "Economic Order Quantity (EOQ) Modeling",
+        "Inventory Shrinkage & Obsolete Stock Control"
+      ],
+      "common_skills": [
+        "ABC Inventory Stratification",
+        "Warehouse Slotting Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Demand Planner",
+      "canonical_role": "Demand Planner",
+      "domain": "Operations / Supply Chain",
+      "subdomain": "Demand Planning & S&OP",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Statistical Demand Forecasting & Seasonality Modeling",
+        "Sales & Operations Planning (S&OP) Facilitation",
+        "Forecast Accuracy & Bias Tracking (MAPE/WAPE)"
+      ],
+      "common_skills": [
+        "Supply and Production Constraint Balancing",
+        "Downstream Retail POS Data Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Management Consultant",
+      "canonical_role": "Management Consultant",
+      "domain": "Consulting",
+      "subdomain": "Strategy & Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structured Problem Solving (MECE Frameworks)",
+        "Market Sizing & Commercial Due Diligence",
+        "Client Executive Interviewing"
+      ],
+      "common_skills": [
+        "Stakeholder Workshop Facilitation",
+        "Operating Model Design"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Business Consultant",
+      "canonical_role": "Management Consultant",
+      "domain": "Consulting",
+      "subdomain": "Strategy & Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structured Problem Solving (MECE Frameworks)",
+        "Market Sizing & Commercial Due Diligence",
+        "Client Executive Interviewing"
+      ],
+      "common_skills": [
+        "Stakeholder Workshop Facilitation",
+        "Operating Model Design"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Technology Consultant",
+      "canonical_role": "Technology Consultant",
+      "domain": "Consulting",
+      "subdomain": "Technology Strategy & Advisory",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "IT Strategy & Technology Roadmap Definition",
+        "Digital Transformation Gap Assessment",
+        "Technology Vendor Evaluation & Selection"
+      ],
+      "common_skills": [
+        "Cloud Transformation Advisory",
+        "System Implementation Quality Assurance"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Strategy Consultant",
+      "canonical_role": "Management Consultant",
+      "domain": "Consulting",
+      "subdomain": "Strategy & Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structured Problem Solving (MECE Frameworks)",
+        "Market Sizing & Commercial Due Diligence",
+        "Client Executive Interviewing"
+      ],
+      "common_skills": [
+        "Stakeholder Workshop Facilitation",
+        "Operating Model Design"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Risk Consultant",
+      "canonical_role": "Risk Consultant",
+      "domain": "Consulting",
+      "subdomain": "Governance & Risk Advisory",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Enterprise Risk Management (ERM) Framework Assessment",
+        "Operational Resilience & Business Continuity Planning",
+        "Regulatory Compliance Gap Analysis"
+      ],
+      "common_skills": [
+        "Crisis Management Simulation Exercises",
+        "Fraud Risk Assessment"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Healthcare Analyst",
+      "canonical_role": "Healthcare Analyst",
+      "domain": "Healthcare",
+      "subdomain": "Clinical & Health Data",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Electronic Health Record (EHR) Data Querying",
+        "Clinical Quality Metric Tracking (HEDIS/CMS)",
+        "Healthcare Utilization & Cost Modeling"
+      ],
+      "common_skills": [
+        "Medical Coding Cross-Walks (ICD-10, CPT)",
+        "Provider Scorecard Generation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Clinical Research Associate",
+      "canonical_role": "Clinical Research Associate",
+      "domain": "Healthcare",
+      "subdomain": "Clinical Trials",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Clinical Trial Protocol Adherence",
+        "Trial Site Monitoring & Auditing",
+        "Adverse Event Documentation & Reporting"
+      ],
+      "common_skills": [
+        "Electronic Data Capture (EDC) Verification",
+        "Investigator Site File Maintenance"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Healthcare Data Analyst",
+      "canonical_role": "Healthcare Data Analyst",
+      "domain": "Healthcare",
+      "subdomain": "Healthcare & Clinical Analytics",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (healthcare_data)",
+      "total_skills": 12,
+      "core_skills": [
+        "Electronic Health Record (EHR) Data Querying",
+        "Clinical Quality Metric Tracking (HEDIS/CMS)",
+        "HIPAA Patient Data Compliance"
+      ],
+      "common_skills": [
+        "Healthcare Utilization & Cost Modeling",
+        "Clinical Workflow Data Analysis"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Hospital Operations Manager",
+      "canonical_role": "Hospital Operations Manager",
+      "domain": "Healthcare",
+      "subdomain": "Hospital Operations & Patient Flow",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (hospital_operations)",
+      "total_skills": 11,
+      "core_skills": [
+        "Emergency Department Patient Flow Optimization",
+        "Inpatient Bed Utilization & Capacity Modeling",
+        "Clinical Staffing & Nurse-to-Patient Ratio Analytics"
+      ],
+      "common_skills": [
+        "Operating Room Schedule Balancing",
+        "Healthcare Operational Accreditation (Joint Commission)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Medical Coder",
+      "canonical_role": "Medical Coder",
+      "domain": "Healthcare",
+      "subdomain": "Health Information & Medical Coding",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "ICD-10-CM / ICD-10-PCS Diagnosis & Procedure Coding",
+        "CPT & HCPCS Level II Medical Coding",
+        "Medical Record Clinical Documentation Review"
+      ],
+      "common_skills": [
+        "Claim Denial Management & Coding Appeals",
+        "EHR Clinical Documentation Improvement (CDI)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Health Informatics Specialist",
+      "canonical_role": "Healthcare Analyst",
+      "domain": "Healthcare",
+      "subdomain": "Clinical & Health Data",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=0.95)",
+      "total_skills": 10,
+      "core_skills": [
+        "Electronic Health Record (EHR) Data Querying",
+        "Clinical Quality Metric Tracking (HEDIS/CMS)",
+        "Healthcare Utilization & Cost Modeling"
+      ],
+      "common_skills": [
+        "Medical Coding Cross-Walks (ICD-10, CPT)",
+        "Provider Scorecard Generation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Registered Nurse",
+      "canonical_role": "Registered Nurse",
+      "domain": "Healthcare",
+      "subdomain": "Clinical Nursing & Patient Care",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 12,
+      "core_skills": [
+        "Patient Assessment & Triage",
+        "Medication Administration & Safety Protocols",
+        "Care Plan Formulation & Clinical Execution"
+      ],
+      "common_skills": [
+        "Infection Prevention & Sterile Techniques",
+        "Patient & Family Discharge Education"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Pharmaceutical Analyst",
+      "canonical_role": "Pharmaceutical Analyst",
+      "domain": "Pharmaceutical / Life Sciences",
+      "subdomain": "Quality Control & Analysis",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Analytical Chemistry Instrumentation (HPLC, GC)",
+        "Pharmacopoeia Compliance (USP/EP)",
+        "Dissolution & Assay Testing"
+      ],
+      "common_skills": [
+        "Out-of-Specification (OOS) Investigations",
+        "Stability Chamber Testing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Clinical Data Analyst",
+      "canonical_role": "Healthcare Analyst",
+      "domain": "Healthcare",
+      "subdomain": "Clinical & Health Data",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Electronic Health Record (EHR) Data Querying",
+        "Clinical Quality Metric Tracking (HEDIS/CMS)",
+        "Healthcare Utilization & Cost Modeling"
+      ],
+      "common_skills": [
+        "Medical Coding Cross-Walks (ICD-10, CPT)",
+        "Provider Scorecard Generation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Pharmacovigilance Specialist",
+      "canonical_role": "Pharmacovigilance Specialist",
+      "domain": "Pharmaceutical / Life Sciences",
+      "subdomain": "Drug Safety & Surveillance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Individual Case Safety Report (ICSR) Processing",
+        "Adverse Event (AE) Triage & MedDRA Coding",
+        "Aggregate Safety Reporting (PSUR/PBRER)"
+      ],
+      "common_skills": [
+        "Safety Database Entry (Argus/ARISg)",
+        "Scientific Literature Surveillance for Safety Signals"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Regulatory Affairs Associate",
+      "canonical_role": "Regulatory Affairs Associate",
+      "domain": "Pharmaceutical / Life Sciences",
+      "subdomain": "Regulatory Compliance & Submissions",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Regulatory Submission Preparation (IND/NDA/BLA)",
+        "eCTD Dossier Compilation & Publishing",
+        "Health Authority Interaction & Query Response"
+      ],
+      "common_skills": [
+        "Change Control Regulatory Assessments",
+        "Chemistry, Manufacturing & Controls (CMC) Documentation Review"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Biostatistician",
+      "canonical_role": "Biostatistician",
+      "domain": "Pharmaceutical / Life Sciences",
+      "subdomain": "Clinical Biostatistics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Clinical Trial Study Design & Sample Size Calculation",
+        "Statistical Analysis Plan (SAP) Authoring",
+        "Survival Analysis & Longitudinal Modeling"
+      ],
+      "common_skills": [
+        "Interim Analysis & Data Safety Monitoring",
+        "Randomization Schedule Generation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Research Associate",
+      "canonical_role": "Research Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Scientific Research",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Experimental Design & Methodology",
+        "Peer-Reviewed Scientific Writing",
+        "Statistical Data Analysis"
+      ],
+      "common_skills": [
+        "Lab Equipment Operation",
+        "Scientific Presentation at Conferences"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Mechanical Engineer",
+      "canonical_role": "Mechanical Engineer",
+      "domain": "Engineering",
+      "subdomain": "Mechanical Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "3D CAD Modeling (SolidWorks/Creo)",
+        "Finite Element Analysis (FEA)",
+        "Geometric Dimensioning & Tolerancing (GD&T)"
+      ],
+      "common_skills": [
+        "Design for Manufacturing (DFM/DFA)",
+        "Prototyping & CNC/3D Printing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Civil Engineer",
+      "canonical_role": "Civil Engineer",
+      "domain": "Engineering",
+      "subdomain": "Infrastructure & Structural",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structural Analysis & Calculations",
+        "Civil Infrastructure Drafting & Plan Sets",
+        "Site Grading & Drainage Design"
+      ],
+      "common_skills": [
+        "Soil Mechanics & Geotechnical Review",
+        "Construction Site Inspections"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Electrical Engineer",
+      "canonical_role": "Electrical Engineer",
+      "domain": "Engineering",
+      "subdomain": "Electrical Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Circuit Design & Schematic Capture",
+        "Power Distribution & Load Calculations",
+        "PCB Layout & Routing"
+      ],
+      "common_skills": [
+        "Oscilloscope & Test Bench Verification",
+        "Component Sourcing & Selection"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Electronics Engineer",
+      "canonical_role": "Electronics Engineer",
+      "domain": "Engineering",
+      "subdomain": "Electronics & Hardware",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Analog & Digital Circuit Design",
+        "PCB Schematic & Layout Design",
+        "Microcontroller & Embedded Hardware Interfacing"
+      ],
+      "common_skills": [
+        "Component Selection & Sourcing",
+        "EMC/EMI Compliance Testing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Chemical Engineer",
+      "canonical_role": "Chemical Engineer",
+      "domain": "Engineering",
+      "subdomain": "Process & Chemical Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Mass & Energy Balance Calculations",
+        "Process Flow Diagram (PFD) & P&ID Development",
+        "Chemical Reaction Engineering"
+      ],
+      "common_skills": [
+        "Equipment Sizing (Pumps, Heat Exchangers)",
+        "Pilot Plant Scale-Up"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Industrial Engineer",
+      "canonical_role": "Industrial Engineer",
+      "domain": "Engineering",
+      "subdomain": "Operations & Industrial Systems",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Time & Motion Studies (MOST/MTM)",
+        "Plant & Facility Layout Optimization",
+        "Ergonomics & Workstation Design"
+      ],
+      "common_skills": [
+        "Capacity Planning & Throughput Modeling",
+        "Standard Operating Procedure (SOP) Development"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Biomedical Engineer",
+      "canonical_role": "Biomedical Engineer",
+      "domain": "Engineering",
+      "subdomain": "Biomedical Devices & Instrumentation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Medical Device Product Development",
+        "Biocompatibility & Materials Selection",
+        "Design Controls (FDA 21 CFR 820.30)"
+      ],
+      "common_skills": [
+        "Benchtop & In-Vitro Verification Testing",
+        "Medical Device Usability Engineering (IEC 62366)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Robotics Engineer",
+      "canonical_role": "Robotics Engineer",
+      "domain": "Engineering",
+      "subdomain": "Robotics & Mechatronics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Kinematics & Dynamics Modeling",
+        "Robot Operating System (ROS/ROS2)",
+        "Sensor Integration (LiDAR, IMU, Encoders)"
+      ],
+      "common_skills": [
+        "Actuator & Motor Control",
+        "Embedded Controller Programming (C++/Python)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Automotive Engineer",
+      "canonical_role": "Automotive Engineer",
+      "domain": "Engineering",
+      "subdomain": "Automotive Systems & Powertrain",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Vehicle Powertrain & Drivetrain Engineering",
+        "Chassis & Suspension Geometry Design",
+        "Automotive Functional Safety (ISO 26262)"
+      ],
+      "common_skills": [
+        "Thermal Management for Vehicles",
+        "Crashworthiness & Safety Simulation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Aerospace Engineer",
+      "canonical_role": "Aerospace Engineer",
+      "domain": "Engineering",
+      "subdomain": "Aeronautics & Astronautics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Aerodynamics & Airfoil Flow Modeling",
+        "Aerospace Structural Analysis & Stress (FEA)",
+        "Flight Dynamics, Stability & Control"
+      ],
+      "common_skills": [
+        "Weight & Balance Management",
+        "Aviation Airworthiness Standards (FAA/EASA)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Mechatronics Engineer",
+      "canonical_role": "Robotics Engineer",
+      "domain": "Engineering",
+      "subdomain": "Robotics & Mechatronics",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 11,
+      "core_skills": [
+        "Kinematics & Dynamics Modeling",
+        "Robot Operating System (ROS/ROS2)",
+        "Sensor Integration (LiDAR, IMU, Encoders)"
+      ],
+      "common_skills": [
+        "Actuator & Motor Control",
+        "Embedded Controller Programming (C++/Python)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Architect",
+      "canonical_role": "Architect",
+      "domain": "Architecture / Construction",
+      "subdomain": "Architectural Design",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Architectural Concept Design & Space Planning",
+        "Building Information Modeling (BIM)",
+        "Construction Document Preparation"
+      ],
+      "common_skills": [
+        "3D Architectural Rendering & Visualization",
+        "Client Design Presentations"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Interior Designer",
+      "canonical_role": "Interior Designer",
+      "domain": "Architecture / Construction",
+      "subdomain": "Interior Architecture & Spatial Design",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Spatial Planning & Layout Optimization",
+        "FF&E (Furniture, Fixtures & Equipment) Specification",
+        "Material, Finishes & Color Schemes Selection"
+      ],
+      "common_skills": [
+        "Building Code Egress Compliance",
+        "3D Interior Photorealistic Rendering"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Structural Engineer",
+      "canonical_role": "Civil Engineer",
+      "domain": "Engineering",
+      "subdomain": "Infrastructure & Structural",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structural Analysis & Calculations",
+        "Civil Infrastructure Drafting & Plan Sets",
+        "Site Grading & Drainage Design"
+      ],
+      "common_skills": [
+        "Soil Mechanics & Geotechnical Review",
+        "Construction Site Inspections"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Construction Manager",
+      "canonical_role": "Construction Manager",
+      "domain": "Architecture / Construction",
+      "subdomain": "Construction Execution & Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Construction Project Scheduling (Critical Path Method)",
+        "Subcontractor & Trade Coordination",
+        "Construction Site Safety & OSHA Compliance"
+      ],
+      "common_skills": [
+        "RFI & Submittal Processing",
+        "Change Order Negotiation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Site Engineer",
+      "canonical_role": "Civil Engineer",
+      "domain": "Engineering",
+      "subdomain": "Infrastructure & Structural",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Structural Analysis & Calculations",
+        "Civil Infrastructure Drafting & Plan Sets",
+        "Site Grading & Drainage Design"
+      ],
+      "common_skills": [
+        "Soil Mechanics & Geotechnical Review",
+        "Construction Site Inspections"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "BIM Engineer",
+      "canonical_role": "BIM Engineer",
+      "domain": "Architecture / Construction",
+      "subdomain": "Building Information Modeling",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "3D/4D/5D Building Information Modeling (BIM)",
+        "Clash Detection & Multi-Trade Resolution",
+        "BIM Execution Plan (BEP) Authoring"
+      ],
+      "common_skills": [
+        "Revit Family Creation & Parametric Design",
+        "Laser Scan to BIM Point Cloud Modeling"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Quantity Surveyor",
+      "canonical_role": "Quantity Surveyor",
+      "domain": "Architecture / Construction",
+      "subdomain": "Cost Engineering & Quantity Surveying",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Bill of Quantities (BOQ) Preparation",
+        "Construction Cost Estimation & Tendering",
+        "Valuation of Variations & Interim Payments"
+      ],
+      "common_skills": [
+        "Cost Feasibility Studies",
+        "Contract Administration (FIDIC/JCT)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Legal Associate",
+      "canonical_role": "Legal Associate",
+      "domain": "Legal / Compliance",
+      "subdomain": "Corporate & Legal Practice",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Contract Drafting, Review & Redlining",
+        "Legal Research & Precedent Analysis",
+        "Due Diligence Auditing"
+      ],
+      "common_skills": [
+        "Risk Identification & Mitigation Clauses",
+        "Dispute Resolution Support"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Corporate Lawyer",
+      "canonical_role": "Legal Associate",
+      "domain": "Legal / Compliance",
+      "subdomain": "Corporate & Legal Practice",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Contract Drafting, Review & Redlining",
+        "Legal Research & Precedent Analysis",
+        "Due Diligence Auditing"
+      ],
+      "common_skills": [
+        "Risk Identification & Mitigation Clauses",
+        "Dispute Resolution Support"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Compliance Analyst",
+      "canonical_role": "Compliance Analyst",
+      "domain": "Legal / Compliance",
+      "subdomain": "Regulatory Compliance & Risk",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Regulatory Risk Assessment & Monitoring",
+        "Compliance Policy Authoring & Review",
+        "Internal Compliance Audits & Testing"
+      ],
+      "common_skills": [
+        "Ethics & Whistleblower Investigation Support",
+        "Employee Compliance Training Delivery"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Legal Operations Specialist",
+      "canonical_role": "Legal Operations Specialist",
+      "domain": "Legal / Compliance",
+      "subdomain": "Legal Operations & Technology",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (legal_operations)",
+      "total_skills": 11,
+      "core_skills": [
+        "Legal Tech & CLM System Administration",
+        "Outside Counsel Spend Analytics & Billing Guidelines",
+        "Legal Workflow & Knowledge Management Systematization"
+      ],
+      "common_skills": [
+        "Legal Vendor Due Diligence",
+        "Contract SLA & Turnaround Tracking"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Contract Specialist",
+      "canonical_role": "Contract Specialist",
+      "domain": "Legal / Compliance",
+      "subdomain": "Contract Management",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Commercial Contract Drafting & Redlining",
+        "Contract Negotiation (Terms & Conditions)",
+        "Contract Lifecycle Management (CLM)"
+      ],
+      "common_skills": [
+        "Non-Disclosure Agreement (NDA) Execution",
+        "Service Level Agreement (SLA) Monitoring"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Teacher",
+      "canonical_role": "Teacher",
+      "domain": "Education",
+      "subdomain": "Classroom & Pedagogy",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Curriculum & Lesson Planning",
+        "Classroom Facilitation & Engagement",
+        "Differentiated Instruction"
+      ],
+      "common_skills": [
+        "Educational Technology Integration",
+        "Classroom Behavior Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "School Teacher",
+      "canonical_role": "Teacher",
+      "domain": "Education",
+      "subdomain": "Classroom & Pedagogy",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Curriculum & Lesson Planning",
+        "Classroom Facilitation & Engagement",
+        "Differentiated Instruction"
+      ],
+      "common_skills": [
+        "Educational Technology Integration",
+        "Classroom Behavior Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Instructional Designer",
+      "canonical_role": "Instructional Designer",
+      "domain": "Education",
+      "subdomain": "Instructional Design & Learning Tech",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Instructional Systems Design (ADDIE/SAM)",
+        "Adult Learning Pedagogy (Andragogy)",
+        "E-Learning Authoring (Storyline/Rise)"
+      ],
+      "common_skills": [
+        "Microlearning & Video Module Scripting",
+        "User Experience (UX) for Learners"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Curriculum Developer",
+      "canonical_role": "Curriculum Developer",
+      "domain": "Education",
+      "subdomain": "Curriculum & Academic Standards",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Scope & Sequence Curriculum Mapping",
+        "Educational Standards Alignment",
+        "Pedagogical Material & Textbook Authoring"
+      ],
+      "common_skills": [
+        "Curriculum Review & Continuous Improvement",
+        "Differentiated Learning Frameworks"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Academic Coordinator",
+      "canonical_role": "Academic Coordinator",
+      "domain": "Education",
+      "subdomain": "Academic Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Academic Program Scheduling & Timetabling",
+        "Student Academic Advising & Progression Tracking",
+        "Faculty Workload Coordination"
+      ],
+      "common_skills": [
+        "Student Orientation Planning",
+        "Academic Policy Communication"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Lecturer",
+      "canonical_role": "Professor",
+      "domain": "Education",
+      "subdomain": "Higher Education & Faculty",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Undergraduate & Graduate Course Instruction",
+        "Academic Research & Peer-Reviewed Publishing",
+        "Grant Writing & Research Funding Acquisition"
+      ],
+      "common_skills": [
+        "Syllabus Design & Academic Rigor",
+        "Scholarly Conference Presentations"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Professor",
+      "canonical_role": "Professor",
+      "domain": "Education",
+      "subdomain": "Higher Education & Faculty",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Undergraduate & Graduate Course Instruction",
+        "Academic Research & Peer-Reviewed Publishing",
+        "Grant Writing & Research Funding Acquisition"
+      ],
+      "common_skills": [
+        "Syllabus Design & Academic Rigor",
+        "Scholarly Conference Presentations"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Research Scientist",
+      "canonical_role": "Research Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Scientific Research",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Experimental Design & Methodology",
+        "Peer-Reviewed Scientific Writing",
+        "Statistical Data Analysis"
+      ],
+      "common_skills": [
+        "Lab Equipment Operation",
+        "Scientific Presentation at Conferences"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Research Associate",
+      "canonical_role": "Research Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Scientific Research",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Experimental Design & Methodology",
+        "Peer-Reviewed Scientific Writing",
+        "Statistical Data Analysis"
+      ],
+      "common_skills": [
+        "Lab Equipment Operation",
+        "Scientific Presentation at Conferences"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Research Analyst",
+      "canonical_role": "Research Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Scientific Research",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Experimental Design & Methodology",
+        "Peer-Reviewed Scientific Writing",
+        "Statistical Data Analysis"
+      ],
+      "common_skills": [
+        "Lab Equipment Operation",
+        "Scientific Presentation at Conferences"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Laboratory Scientist",
+      "canonical_role": "Laboratory Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Laboratory Research & Experimentation",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Wet-Lab Experimental Protocol Execution",
+        "Sample Preparation & Analytical Assay Setup",
+        "Laboratory Instrumentation (Spectrophotometry, Centrifugation)"
+      ],
+      "common_skills": [
+        "Chemical & Biological Inventory Management",
+        "Lab Safety & Hazardous Waste Disposal"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Research Engineer",
+      "canonical_role": "Research Scientist",
+      "domain": "Research / Academia",
+      "subdomain": "Scientific Research",
+      "confidence": "HIGH",
+      "provenance": "DISCRIMINATIVE_MATCH (ratio=1.00)",
+      "total_skills": 10,
+      "core_skills": [
+        "Experimental Design & Methodology",
+        "Peer-Reviewed Scientific Writing",
+        "Statistical Data Analysis"
+      ],
+      "common_skills": [
+        "Lab Equipment Operation",
+        "Scientific Presentation at Conferences"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Video Editor",
+      "canonical_role": "Video Editor",
+      "domain": "Media / Creative",
+      "subdomain": "Post-Production",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Non-Linear Video Editing (NLE)",
+        "Pacing & Story Rhythm",
+        "Audio Mixing & Sound Design"
+      ],
+      "common_skills": [
+        "Motion Graphics & Titles",
+        "Multi-Camera Editing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Film Editor",
+      "canonical_role": "Video Editor",
+      "domain": "Media / Creative",
+      "subdomain": "Post-Production",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Non-Linear Video Editing (NLE)",
+        "Pacing & Story Rhythm",
+        "Audio Mixing & Sound Design"
+      ],
+      "common_skills": [
+        "Motion Graphics & Titles",
+        "Multi-Camera Editing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Content Creator",
+      "canonical_role": "Content Creator",
+      "domain": "Media / Creative",
+      "subdomain": "Digital Content & Social Media",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Short-Form Video Production (Reels/TikTok/Shorts)",
+        "Scriptwriting & Visual Storyboarding",
+        "Audience Engagement & Community Building"
+      ],
+      "common_skills": [
+        "Content Performance Analytics Interpretation",
+        "Thumbnail & Cover Art Design"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Copywriter",
+      "canonical_role": "Copywriter",
+      "domain": "Media / Creative",
+      "subdomain": "Copywriting & Creative Writing",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Persuasive Advertising Headline & Body Copy",
+        "Brand Voice & Tone Guidelines Conception",
+        "Direct-Response & Landing Page Copywriting"
+      ],
+      "common_skills": [
+        "A/B Copy Testing & Message Refinement",
+        "Collaboration with Art Directors & Designers"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Creative Director",
+      "canonical_role": "Creative Director",
+      "domain": "Media / Creative",
+      "subdomain": "Creative Leadership & Art Direction",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Creative Campaign Vision & Strategic Direction",
+        "Creative Team Leadership & Mentorship",
+        "Client Creative Pitching & Stakeholder Alignment"
+      ],
+      "common_skills": [
+        "Production Budget Oversight",
+        "Creative Agency Roster Management"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Photographer",
+      "canonical_role": "Photographer",
+      "domain": "Media / Creative",
+      "subdomain": "Commercial & Editorial Photography",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Camera Operation & Exposure Mastery (Manual Mode)",
+        "Studio & Natural Lighting Direction",
+        "Subject Posing & Art Direction"
+      ],
+      "common_skills": [
+        "Location Scouting & Shoot Logistics",
+        "Equipment Maintenance & Lens Selection"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "3D Artist",
+      "canonical_role": "3D Artist",
+      "domain": "Media / Creative",
+      "subdomain": "3D Modeling & Visualization",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Hard-Surface & Organic 3D Modeling",
+        "UV Unwrapping & Texture Mapping",
+        "PBR Material Creation (Substance/Blender)"
+      ],
+      "common_skills": [
+        "Topology Optimization for Games & Real-Time",
+        "Basic 3D Rigging & Keyframe Animation"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Hotel Manager",
+      "canonical_role": "Hotel Manager",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Hotel Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Guest Experience & Service Excellence",
+        "Front Desk & Housekeeping Operations",
+        "Revenue Management & Room Pricing"
+      ],
+      "common_skills": [
+        "Vendor & Supplier Contract Management",
+        "Guest Complaint Escalation Resolution"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Front Office Manager",
+      "canonical_role": "Front Office Manager",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Front Desk & Guest Services",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Front Desk Daily Operations Oversight",
+        "Room Inventory Allocation & Upgrades",
+        "Guest Service Recovery & VIP Treatment"
+      ],
+      "common_skills": [
+        "Front Desk Staff Scheduling & Training",
+        "Check-in / Check-out Queue Optimization"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Hospitality Operations Manager",
+      "canonical_role": "Hotel Manager",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Hotel Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Guest Experience & Service Excellence",
+        "Front Desk & Housekeeping Operations",
+        "Revenue Management & Room Pricing"
+      ],
+      "common_skills": [
+        "Vendor & Supplier Contract Management",
+        "Guest Complaint Escalation Resolution"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Travel Consultant",
+      "canonical_role": "Travel Consultant",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Travel Advisory & Booking",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Tailored Itinerary Planning & Route Designing",
+        "Global Distribution System (GDS) Flight & Hotel Booking",
+        "Travel Documentation & Visa Advisory"
+      ],
+      "common_skills": [
+        "Travel Insurance Recommendations",
+        "Supplier Relationship Management (Hotels/Airlines)"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Event Manager",
+      "canonical_role": "Event Manager",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Event Planning & Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "End-to-End Event Planning & Timeline Execution",
+        "Venue Sourcing & Space Layout Design",
+        "Vendor & Supplier Contract Negotiation (Catering/AV)"
+      ],
+      "common_skills": [
+        "Event Registration & Attendee Badge Logistics",
+        "Risk Assessment & Crowd Safety Protocols"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Restaurant Manager",
+      "canonical_role": "Restaurant Manager",
+      "domain": "Hospitality / Travel",
+      "subdomain": "Food & Beverage Operations",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Front-of-House Dining Room Floor Leadership",
+        "Food & Beverage Cost Control & Waste Minimization",
+        "Food Safety (HACCP/ServSafe) & Hygiene Compliance"
+      ],
+      "common_skills": [
+        "POS System Management & Daily Cash Out",
+        "Staff Hospitality & Wine Service Training"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Manufacturing Engineer",
+      "canonical_role": "Manufacturing Engineer",
+      "domain": "Manufacturing",
+      "subdomain": "Production & Assembly",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Assembly Line Layout & Cycle Time Optimization",
+        "Standard Work Instructions (SWI) Creation",
+        "Tooling & Fixture Design"
+      ],
+      "common_skills": [
+        "Lean Manufacturing & 5S Implementation",
+        "Equipment Commissioning & Qualification"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Production Engineer",
+      "canonical_role": "Manufacturing Engineer",
+      "domain": "Manufacturing",
+      "subdomain": "Production & Assembly",
+      "confidence": "HIGH",
+      "provenance": "EXACT_ALIAS_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Assembly Line Layout & Cycle Time Optimization",
+        "Standard Work Instructions (SWI) Creation",
+        "Tooling & Fixture Design"
+      ],
+      "common_skills": [
+        "Lean Manufacturing & 5S Implementation",
+        "Equipment Commissioning & Qualification"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Process Engineer",
+      "canonical_role": "Process Engineer",
+      "domain": "Manufacturing",
+      "subdomain": "Process Optimization & Scaling",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Statistical Process Control (SPC) Charting",
+        "Process Capability (Cp/Cpk) Analysis",
+        "Process Yield & Cycle Time Optimization"
+      ],
+      "common_skills": [
+        "Design of Experiments (DOE)",
+        "Process Flow Mapping"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Quality Engineer",
+      "canonical_role": "Quality Engineer",
+      "domain": "Manufacturing",
+      "subdomain": "Quality Assurance & Reliability",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Failure Mode & Effects Analysis (DFMEA/PFMEA)",
+        "Advanced Product Quality Planning (APQP/PPAP)",
+        "Quality Management System Audits (ISO 9001/IATF 16949)"
+      ],
+      "common_skills": [
+        "Gauge R&R (Repeatability & Reproducibility) Studies",
+        "Supplier Quality Auditing"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Maintenance Engineer",
+      "canonical_role": "Maintenance Engineer",
+      "domain": "Manufacturing",
+      "subdomain": "Plant Reliability & Maintenance",
+      "confidence": "HIGH",
+      "provenance": "EXACT_CANONICAL_MATCH",
+      "total_skills": 10,
+      "core_skills": [
+        "Total Productive Maintenance (TPM) Program Execution",
+        "Preventive & Predictive Maintenance Scheduling (CMMS)",
+        "Mean Time Between Failures (MTBF) & MTTR Analysis"
+      ],
+      "common_skills": [
+        "Spare Parts Criticality & Inventory Planning",
+        "Vibration Analysis & Thermal Imaging"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    },
+    {
+      "input_role": "Manufacturing Operations Manager",
+      "canonical_role": "Manufacturing Operations Manager",
+      "domain": "Manufacturing",
+      "subdomain": "Plant & Production Operations",
+      "confidence": "HIGH",
+      "provenance": "CONTROLLED_SPECIALIZATION (manufacturing_operations)",
+      "total_skills": 11,
+      "core_skills": [
+        "Plant Production Scheduling & Shift Balancing",
+        "Overall Equipment Effectiveness (OEE) Optimization",
+        "Shop Floor Labor & Material Utilization Tracking"
+      ],
+      "common_skills": [
+        "Daily Stand-Up Tier Management",
+        "Continuous Flow Kaizen Coordination"
+      ],
+      "contaminated_skills": [],
+      "relevance_score": 1.0,
+      "status": "PASS"
+    }
+  ],
+  "niche_role_results": [
+    {
+      "role": "Marine Robotics Engineer",
+      "canonical": "Marine Robotics Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Underwater Robotics Engineer",
+      "canonical": "Underwater Robotics Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Subsea Pipeline Inspection Engineer",
+      "canonical": "Subsea Pipeline Inspection Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Spacecraft Thermal Engineer",
+      "canonical": "Spacecraft Thermal Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Autonomous Vehicle Perception Engineer",
+      "canonical": "Autonomous Vehicle Perception Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Agricultural Drone Engineer",
+      "canonical": "Agricultural Drone Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Sports Data Scientist",
+      "canonical": "Sports Data Scientist",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Climate Risk Analyst",
+      "canonical": "Climate Risk Analyst",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Bioinformatics Engineer",
+      "canonical": "Bioinformatics Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Computational Biologist",
+      "canonical": "Computational Biologist",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Renewable Energy Analyst",
+      "canonical": "Renewable Energy Analyst",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Battery Systems Engineer",
+      "canonical": "Battery Systems Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Semiconductor Process Engineer",
+      "canonical": "Semiconductor Process Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Nuclear Safety Engineer",
+      "canonical": "Nuclear Safety Engineer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Archaeological Data Specialist",
+      "canonical": "Archaeological Data Specialist",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Museum Collections Manager",
+      "canonical": "Museum Collections Manager",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Sustainable Fashion Designer",
+      "canonical": "Sustainable Fashion Designer",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Aviation Safety Analyst",
+      "canonical": "Aviation Safety Analyst",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Maritime Logistics Specialist",
+      "canonical": "Maritime Logistics Specialist",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    },
+    {
+      "role": "Food Safety Scientist",
+      "canonical": "Food Safety Scientist",
+      "confidence": "LOW",
+      "skills_count": 0,
+      "fallback_used": false,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "status": "PASS"
+    }
+  ],
+  "generic_token_results": [
+    {
+      "token": "Engineer",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Analyst",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Manager",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Developer",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Specialist",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Consultant",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "token": "Coordinator",
+      "resolved_profile": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    }
+  ],
+  "negative_pair_results": [
+    {
+      "pair": "Data Analyst vs Cybersecurity Analyst",
+      "canonical_a": "Data Analyst",
+      "canonical_b": "Cybersecurity Analyst",
+      "domain_a": "Data & Analytics",
+      "domain_b": "Cybersecurity",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Financial Analyst vs Data Analyst",
+      "canonical_a": "Financial Analyst",
+      "canonical_b": "Data Analyst",
+      "domain_a": "Finance / Accounting",
+      "domain_b": "Data & Analytics",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Healthcare Analyst vs Data Analyst",
+      "canonical_a": "Healthcare Analyst",
+      "canonical_b": "Data Analyst",
+      "domain_a": "Healthcare",
+      "domain_b": "Data & Analytics",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Software Engineer",
+      "canonical_a": "Mechanical Engineer",
+      "canonical_b": "Software Engineer",
+      "domain_a": "Engineering",
+      "domain_b": "Software Engineering",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Electrical Engineer vs Software Engineer",
+      "canonical_a": "Electrical Engineer",
+      "canonical_b": "Software Engineer",
+      "domain_a": "Engineering",
+      "domain_b": "Software Engineering",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Chemical Engineer vs Software Engineer",
+      "canonical_a": "Chemical Engineer",
+      "canonical_b": "Software Engineer",
+      "domain_a": "Engineering",
+      "domain_b": "Software Engineering",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs UX Designer",
+      "canonical_a": "Graphic Designer",
+      "canonical_b": "UX Designer",
+      "domain_a": "Design",
+      "domain_b": "Design",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "UX Designer vs Product Manager",
+      "canonical_a": "UX Designer",
+      "canonical_b": "Product Manager",
+      "domain_a": "Design",
+      "domain_b": "Product",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Marketing Specialist vs HR Specialist",
+      "canonical_a": "Digital Marketing Specialist",
+      "canonical_b": "HR Generalist",
+      "domain_a": "Marketing",
+      "domain_b": "HR / People",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Supply Chain Analyst vs Financial Analyst",
+      "canonical_a": "Supply Chain Analyst",
+      "canonical_b": "Financial Analyst",
+      "domain_a": "Operations / Supply Chain",
+      "domain_b": "Finance / Accounting",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Teacher vs Instructional Designer",
+      "canonical_a": "Teacher",
+      "canonical_b": "Instructional Designer",
+      "domain_a": "Education",
+      "domain_b": "Education",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Architect vs Solutions Architect",
+      "canonical_a": "Architect",
+      "canonical_b": "Solutions Architect",
+      "domain_a": "Architecture / Construction",
+      "domain_b": "Software Engineering",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Robotics Engineer vs Software Engineer",
+      "canonical_a": "Robotics Engineer",
+      "canonical_b": "Software Engineer",
+      "domain_a": "Engineering",
+      "domain_b": "Software Engineering",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Clinical Research Associate vs Research Scientist",
+      "canonical_a": "Clinical Research Associate",
+      "canonical_b": "Research Scientist",
+      "domain_a": "Healthcare",
+      "domain_b": "Research / Academia",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Financial Analyst",
+      "canonical_a": "Accountant",
+      "canonical_b": "Financial Analyst",
+      "domain_a": "Finance / Accounting",
+      "domain_b": "Finance / Accounting",
+      "jaccard_similarity": 0.0,
+      "overlapping_skills": [],
+      "status": "PASS"
+    }
+  ],
+  "synonym_alias_results": [
+    {
+      "role_1": "Software Developer",
+      "role_2": "Software Engineer",
+      "canonical_1": "Software Engineer",
+      "canonical_2": "Software Engineer",
+      "should_be_same": true,
+      "actually_same": true,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Machine Learning Engineer",
+      "role_2": "AI / Machine Learning Engineer",
+      "canonical_1": "Machine Learning Engineer",
+      "canonical_2": "Machine Learning Engineer",
+      "should_be_same": true,
+      "actually_same": true,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Human Resources Specialist",
+      "role_2": "HR Generalist",
+      "canonical_1": "HR Generalist",
+      "canonical_2": "HR Generalist",
+      "should_be_same": true,
+      "actually_same": true,
+      "status": "PASS"
+    },
+    {
+      "role_1": "User Experience Designer",
+      "role_2": "UX Designer",
+      "canonical_1": "UX Designer",
+      "canonical_2": "UX Designer",
+      "should_be_same": true,
+      "actually_same": true,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Business Intelligence Analyst",
+      "role_2": "BI Analyst",
+      "canonical_1": "BI Analyst",
+      "canonical_2": "BI Analyst",
+      "should_be_same": true,
+      "actually_same": true,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Financial Analyst",
+      "role_2": "Accountant",
+      "canonical_1": "Financial Analyst",
+      "canonical_2": "Accountant",
+      "should_be_same": false,
+      "actually_same": false,
+      "status": "PASS"
+    },
+    {
+      "role_1": "UX Designer",
+      "role_2": "Graphic Designer",
+      "canonical_1": "UX Designer",
+      "canonical_2": "Graphic Designer",
+      "should_be_same": false,
+      "actually_same": false,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Data Scientist",
+      "role_2": "Data Analyst",
+      "canonical_1": "Data Scientist",
+      "canonical_2": "Data Analyst",
+      "should_be_same": false,
+      "actually_same": false,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Product Manager",
+      "role_2": "Project Manager",
+      "canonical_1": "Product Manager",
+      "canonical_2": "Project Manager",
+      "should_be_same": false,
+      "actually_same": false,
+      "status": "PASS"
+    },
+    {
+      "role_1": "Mechanical Engineer",
+      "role_2": "Civil Engineer",
+      "canonical_1": "Mechanical Engineer",
+      "canonical_2": "Civil Engineer",
+      "should_be_same": false,
+      "actually_same": false,
+      "status": "PASS"
+    }
+  ],
+  "market_data_filtering": {
+    "cybersecurity_did_not_match_data_analyst": true,
+    "marine_did_not_match_software_engineer": true,
+    "status": "PASS"
+  },
+  "no_resume_mode_results": [
+    {
+      "role": "Software Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Backend Developer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Frontend Developer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Mobile Developer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "BI Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Machine Learning Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "AI Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Computer Vision Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Cloud Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Site Reliability Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Security Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "SOC Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Manager",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Owner",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Technical Product Manager",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "UI Designer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "UX Designer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Designer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Digital Marketing Specialist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "SEO Specialist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Social Media Manager",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Sales Executive",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Account Executive",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Business Development Manager",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Accountant",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Investment Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Controller",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "HR Generalist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Recruiter",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "HR Business Partner",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Operations Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Procurement Specialist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Management Consultant",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Business Consultant",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Healthcare Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Clinical Research Associate",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Pharmaceutical Analyst",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Biostatistician",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Civil Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Electrical Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Robotics Engineer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Architect",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Teacher",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Instructional Designer",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Research Scientist",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Video Editor",
+      "gaps_count": 11,
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "all_non_punitive": true,
+      "status": "PASS"
+    }
+  ],
+  "resume_mode_results": [
+    {
+      "role": "Data Scientist",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "status": "PASS"
+    },
+    {
+      "role": "Software Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Manager",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Digital Marketing Specialist",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "status": "PASS"
+    }
+  ],
+  "specific_jd_results": [
+    {
+      "role": "Software Engineer",
+      "job_title": "Senior Software Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Golang",
+        "gRPC",
+        "CockroachDB",
+        "Kafka"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "job_title": "Senior Data Scientist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "PyTorch",
+        "HuggingFace Transformers",
+        "MLflow",
+        "CUDA"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "job_title": "Senior DevOps Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "ArgoCD",
+        "Istio Service Mesh",
+        "Helm",
+        "Ansible"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "job_title": "Senior Cybersecurity Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Sentinel SIEM",
+        "Kusto Query Language",
+        "MITRE ATT&CK",
+        "Wireshark"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "job_title": "Senior Graphic Designer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Figma Design Systems",
+        "Cinema 4D",
+        "Brand Identity",
+        "Motion Graphics"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "job_title": "Senior Financial Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Anaplan",
+        "PowerBI DAX",
+        "LBO Modeling",
+        "Hyperion"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "job_title": "Senior Mechanical Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "CATIA V5",
+        "ANSYS Fluent",
+        "Thermal Modeling",
+        "GD&T"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "HR Generalist",
+      "job_title": "Senior HR Generalist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Workday HCM",
+        "Greenhouse ATS",
+        "California Labor Law",
+        "Compensation Bands"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Digital Marketing Specialist",
+      "job_title": "Senior Digital Marketing Specialist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "Google Ads Editor",
+        "Semrush",
+        "HubSpot Automation",
+        "Segment CDP"
+      ],
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "job_title": "Senior Supply Chain Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_skills_in_gaps": [
+        "SAP IBP",
+        "Tableau Supply Chain",
+        "Safety Stock Modeling",
+        "Six Sigma"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "diversity_results": [
+    {
+      "pair": "Graphic Designer vs Mechanical Engineer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Accountant",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Teacher",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Cybersecurity Analyst",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Registered Nurse",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Graphic Designer vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Accountant",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Teacher",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Cybersecurity Analyst",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Registered Nurse",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Mechanical Engineer vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Teacher",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Cybersecurity Analyst",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Registered Nurse",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Accountant vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Teacher vs Cybersecurity Analyst",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Teacher vs Registered Nurse",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Teacher vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Teacher vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Cybersecurity Analyst vs Registered Nurse",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Cybersecurity Analyst vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Cybersecurity Analyst vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Registered Nurse vs Corporate Lawyer",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Registered Nurse vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    },
+    {
+      "pair": "Corporate Lawyer vs Architect",
+      "overlap_count": 0,
+      "jaccard": 0.0,
+      "status": "PASS"
+    }
+  ],
+  "custom_role_flow_results": [
+    {
+      "custom_input": "Data Scientist",
+      "resolved_canonical": "Data Scientist",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Cybersecurity Analyst",
+      "resolved_canonical": "Cybersecurity Analyst",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Graphic Designer",
+      "resolved_canonical": "Graphic Designer",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Financial Analyst",
+      "resolved_canonical": "Financial Analyst",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Mechanical Engineer",
+      "resolved_canonical": "Mechanical Engineer",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Digital Marketing Specialist",
+      "resolved_canonical": "Digital Marketing Specialist",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Accountant",
+      "resolved_canonical": "Accountant",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Registered Nurse",
+      "resolved_canonical": "Registered Nurse",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Civil Engineer",
+      "resolved_canonical": "Civil Engineer",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Procurement Specialist",
+      "resolved_canonical": "Procurement Specialist",
+      "confidence": "HIGH",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Marine Robotics Engineer",
+      "resolved_canonical": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Bioinformatics Engineer",
+      "resolved_canonical": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Renewable Energy Analyst",
+      "resolved_canonical": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    },
+    {
+      "custom_input": "Aviation Safety Analyst",
+      "resolved_canonical": null,
+      "confidence": "LOW",
+      "status": "PASS"
+    }
+  ],
+  "case_insensitivity_results": {
+    "variants": [
+      "Data Scientist",
+      "data scientist",
+      "DATA SCIENTIST",
+      "Data scientist"
+    ],
+    "resolved": [
+      "Data Scientist",
+      "Data Scientist",
+      "Data Scientist",
+      "Data Scientist"
+    ],
+    "status": "PASS"
+  },
+  "defects": []
+}

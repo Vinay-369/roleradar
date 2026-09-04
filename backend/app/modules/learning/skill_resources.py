@@ -224,19 +224,42 @@ SKILL_RESOURCES: dict[str, list[str]] = {
     ],
 }
 
+import re
+
+RESOURCE_SYNONYMS = {
+    "golang": "go",
+    "postgres": "postgresql",
+    "k8s": "kubernetes",
+    "js": "javascript",
+    "ts": "typescript",
+}
+
 
 def get_resources_for_skill(skill: str) -> list[str]:
     key = skill.lower().strip()
+    
+    # 1. Direct exact match
     if key in SKILL_RESOURCES:
         return SKILL_RESOURCES[key]
     
-    # Check substring matches
-    for k, urls in SKILL_RESOURCES.items():
-        if k in key or key in k:
+    # 2. Canonical synonym match
+    if key in RESOURCE_SYNONYMS and RESOURCE_SYNONYMS[key] in SKILL_RESOURCES:
+        return SKILL_RESOURCES[RESOURCE_SYNONYMS[key]]
+    
+    # 3. Safe token / word-boundary match
+    # Sort keys descending by length so longer, more specific keys (e.g. 'javascript')
+    # match before shorter keys (e.g. 'java').
+    # Word-boundary (\b) ensures short tokens like 'go' only match standalone words,
+    # never substrings inside words like 'pedagogy', 'negotiation', 'cargo', etc.
+    for k, urls in sorted(SKILL_RESOURCES.items(), key=lambda item: len(item[0]), reverse=True):
+        pattern = rf"\b{re.escape(k)}\b"
+        if re.search(pattern, key):
             return urls
 
+    # 4. Fallback search URLs
     query = skill.replace(" ", "+")
     return [
         f"https://www.youtube.com/results?search_query={query}+tutorial+crash+course",
         f"https://www.google.com/search?q={query}+documentation+tutorial",
     ]
+

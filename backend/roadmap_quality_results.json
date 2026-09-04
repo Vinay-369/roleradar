@@ -1,0 +1,1768 @@
+{
+  "summary": {
+    "executive_verdict": "PASS",
+    "total_critical_roles_audited": 30,
+    "average_critical_roadmap_score": 100.0,
+    "total_active_defects": 0,
+    "remediation_status": {
+      "DEF-RDMP-001": {
+        "title": "Misleading 'Mastery' UI Language",
+        "status": "FIXED",
+        "evidence": "Replaced 'Sprint 3: Week 2 Mastery' with 'Sprint 3: Practical Implementation' and 'days to master' with 'Estimated study: ~X days'."
+      },
+      "DEF-RDMP-002": {
+        "title": "Domain-Aware Practice Recommendations",
+        "status": "FIXED",
+        "evidence": "Healthcare output: 'Work through a clinical simulation, protocol exercise, or patient care scenario applying Patient Assessment & Triage.'; Finance output: 'Complete a financial case study, ledger reconciliation, or valuation model demonstrating General Ledger Maintenance.'"
+      },
+      "DEF-RDMP-003": {
+        "title": "Study Resource Substring Collisions",
+        "status": "FIXED",
+        "evidence": "Zero Go collisions detected across test words. Standalone 'Go' resolves to go.dev; 'Pedagogy' resolves to search fallback."
+      },
+      "DEF-RDMP-004": {
+        "title": "Prerequisite Inversions in Roadmap",
+        "status": "FIXED",
+        "evidence": "Total inversions detected: 0. Data Scientist now schedules Python/SQL in Sprint 1 & 2 before Predictive ML in Sprint 2."
+      }
+    },
+    "verdict_rationale": "All 4 previously cataloged defects (DEF-RDMP-001, DEF-RDMP-002, DEF-RDMP-003, DEF-RDMP-004) have been successfully remediated. Prerequisite-aware ordering ensures foundational competencies precede advanced methodologies; study resource lookups utilize word-boundary matching eliminating Golang collisions on words containing 'go'; frontend language removes misleading mastery guarantees; and domain-aware practice suggestions provide authentic hands-on recommendations across all 24 career families."
+  },
+  "remediation_status": {
+    "DEF-RDMP-001": {
+      "title": "Misleading 'Mastery' UI Language",
+      "status": "FIXED",
+      "evidence": "Replaced 'Sprint 3: Week 2 Mastery' with 'Sprint 3: Practical Implementation' and 'days to master' with 'Estimated study: ~X days'."
+    },
+    "DEF-RDMP-002": {
+      "title": "Domain-Aware Practice Recommendations",
+      "status": "FIXED",
+      "evidence": "Healthcare output: 'Work through a clinical simulation, protocol exercise, or patient care scenario applying Patient Assessment & Triage.'; Finance output: 'Complete a financial case study, ledger reconciliation, or valuation model demonstrating General Ledger Maintenance.'"
+    },
+    "DEF-RDMP-003": {
+      "title": "Study Resource Substring Collisions",
+      "status": "FIXED",
+      "evidence": "Zero Go collisions detected across test words. Standalone 'Go' resolves to go.dev; 'Pedagogy' resolves to search fallback."
+    },
+    "DEF-RDMP-004": {
+      "title": "Prerequisite Inversions in Roadmap",
+      "status": "FIXED",
+      "evidence": "Total inversions detected: 0. Data Scientist now schedules Python/SQL in Sprint 1 & 2 before Predictive ML in Sprint 2."
+    }
+  },
+  "defects": [],
+  "architecture_analysis": {
+    "pipeline": "Role -> Role Taxonomy Aggregation -> SkillGap Computation -> Prerequisite Topological Sort -> 4-Bucket Equal Distribution",
+    "bucket_strategy": "Modulo-based 4-way partition of topological prerequisite order",
+    "prerequisite_handling": "Declarative Prerequisite Registry with Priority-Constrained Topological Sorting",
+    "duration_strategy": "Estimated study time heuristic by priority: CORE=10 days, SECONDARY=5 days, BONUS=3 days",
+    "resource_lookup": "Exact match + canonical synonyms + length-descending word-boundary regex lookup + safe fallback search",
+    "project_suggestion": "Domain-aware declarative practice recommendation system covering 24 career families",
+    "ui_mastery_claims": "Removed. Sprint 3 labeled 'Sprint 3: Practical Implementation' (~Week 2)"
+  },
+  "market_roadmaps": [
+    {
+      "role": "Software Engineer",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Data Structures & Algorithms",
+        "Object-Oriented Programming",
+        "REST APIs"
+      ],
+      "week_1": [
+        "Git & Version Control",
+        "System Design",
+        "Git"
+      ],
+      "week_2": [
+        "Unit Testing",
+        "Microservices Architecture",
+        "CI/CD Pipelines"
+      ],
+      "month_1": [
+        "Code Review",
+        "Agile Methodologies"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Python",
+        "Statistical Modeling & Hypothesis Testing",
+        "SQL"
+      ],
+      "week_1": [
+        "Predictive Machine Learning",
+        "Data Wrangling",
+        "Feature Engineering"
+      ],
+      "week_2": [
+        "Experimentation & A/B Testing",
+        "Model Evaluation Metrics",
+        "Data Visualization"
+      ],
+      "month_1": [
+        "Production Scripting",
+        "Model Validation"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Linux System Administration",
+        "Docker",
+        "CI/CD Pipeline Automation"
+      ],
+      "week_1": [
+        "Containerization & Orchestration",
+        "Infrastructure as Code (IaC)",
+        "Cloud Infrastructure Configuration"
+      ],
+      "week_2": [
+        "Monitoring & Observability",
+        "Secrets Management",
+        "Automated Testing Integration"
+      ],
+      "month_1": [
+        "Bash Shell Scripting",
+        "Kubernetes"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Threat Monitoring & Detection",
+        "Security Incident Investigation",
+        "Log Analysis (SIEM)"
+      ],
+      "week_1": [
+        "Vulnerability Assessment",
+        "Network Traffic & Packet Analysis",
+        "Incident Triage & Containment"
+      ],
+      "week_2": [
+        "Security Awareness Procedures",
+        "Endpoint Detection & Response (EDR)",
+        "Basic Malware Triage"
+      ],
+      "month_1": [
+        "SIEM (Splunk/QRadar)",
+        "Wireshark"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Visual Composition & Layout",
+        "Typography & Font Pairing",
+        "Color Theory & Palettes"
+      ],
+      "week_1": [
+        "Branding & Identity Guidelines",
+        "Vector Illustration & Asset Export",
+        "Print & Digital Production"
+      ],
+      "week_2": [
+        "Image Retouching & Manipulation",
+        "Marketing Collateral Design",
+        "Packaging Design"
+      ],
+      "month_1": [
+        "Adobe Photoshop",
+        "Adobe Illustrator"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Manager",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Product Strategy & Vision",
+        "User Problem Discovery",
+        "Roadmap Prioritization (RICE/MoSCoW)"
+      ],
+      "week_1": [
+        "PRD & User Story Writing",
+        "Product Metrics & KPI Tracking",
+        "Competitive Market Analysis"
+      ],
+      "week_2": [
+        "Cross-Functional Team Leadership",
+        "User Interviewing",
+        "A/B Testing Hypothesis Definition"
+      ],
+      "month_1": [
+        "Jira",
+        "Figma"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Financial Modeling (DCF/LBO/3-Statement)",
+        "Budgeting & Forecasting (FP&A)",
+        "Variance & Trend Analysis"
+      ],
+      "week_1": [
+        "Capital Expenditure Evaluation",
+        "Management Presentation Deck Creation",
+        "KPI Dashboards for Leadership"
+      ],
+      "week_2": [
+        "Scenario Planning & Sensitivity Analysis",
+        "Cost-Benefit Studies",
+        "Excel (Advanced Formulas/VBA)"
+      ],
+      "month_1": [
+        "PowerPoint",
+        "NetSuite"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Accountant",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "General Ledger Maintenance",
+        "Month-End & Year-End Closing",
+        "Bank & Account Reconciliation"
+      ],
+      "week_1": [
+        "Financial Statement Preparation",
+        "Accounts Payable & Receivable (AP/AR)",
+        "Tax Filing Preparation"
+      ],
+      "week_2": [
+        "Audit Schedule Preparation",
+        "Payroll Accounting",
+        "Variance Review"
+      ],
+      "month_1": [
+        "Excel",
+        "QuickBooks"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Marketing Specialist",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Multi-Channel Campaign Management",
+        "Paid Search & Social Advertising (PPC)",
+        "Conversion Rate Optimization (CRO)"
+      ],
+      "week_1": [
+        "Email Marketing Automation",
+        "Marketing Analytics & Attribution",
+        "A/B Ad Creative Testing"
+      ],
+      "week_2": [
+        "Audience Segmentation",
+        "Budget Allocation",
+        "Landing Page Optimization"
+      ],
+      "month_1": [
+        "Google Ads",
+        "Meta Ads Manager"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "3D CAD Modeling (SolidWorks/Creo)",
+        "Finite Element Analysis (FEA)",
+        "Geometric Dimensioning & Tolerancing (GD&T)"
+      ],
+      "week_1": [
+        "Thermal & Stress Analysis",
+        "Manufacturing Drawing Creation (ANSI/ISO)",
+        "Design for Manufacturing (DFM/DFA)"
+      ],
+      "week_2": [
+        "Prototyping & CNC/3D Printing",
+        "Material Selection (Metals, Polymers)",
+        "Root Cause Failure Analysis"
+      ],
+      "month_1": [
+        "SolidWorks",
+        "ANSYS"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Teacher",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Curriculum & Lesson Planning",
+        "Classroom Facilitation & Engagement",
+        "Differentiated Instruction"
+      ],
+      "week_1": [
+        "Student Assessment & Rubric Design",
+        "Parent & Guardian Communication",
+        "Educational Technology Integration"
+      ],
+      "week_2": [
+        "Classroom Behavior Management",
+        "Individualized Education Plans (IEP)",
+        "Google Classroom"
+      ],
+      "month_1": [
+        "Canvas LMS",
+        "Kahoot"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Registered Nurse",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Patient Assessment & Triage",
+        "Medication Administration & Safety Protocols",
+        "Care Plan Formulation & Clinical Execution"
+      ],
+      "week_1": [
+        "Vital Signs Monitoring & Decompensation Detection",
+        "Clinical Documentation in Electronic Health Records (EHR)",
+        "Infection Prevention & Sterile Techniques"
+      ],
+      "week_2": [
+        "Patient & Family Discharge Education",
+        "Emergency Response Protocols (BLS/ACLS)",
+        "Interprofessional Clinical Communication (SBAR)"
+      ],
+      "month_1": [
+        "Epic EHR",
+        "Cerner"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Demand Forecasting & Inventory Optimization",
+        "Supplier Performance Tracking",
+        "Logistics & Freight Route Analysis"
+      ],
+      "week_1": [
+        "Supply Chain Cost Analysis",
+        "Lead Time Modeling",
+        "ERP Supply Chain Transactions"
+      ],
+      "week_2": [
+        "Purchase Order Tracking",
+        "Safety Stock Calculations",
+        "SAP SCM"
+      ],
+      "month_1": [
+        "Oracle NetSuite",
+        "Excel (Advanced)"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Architect",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Architectural Concept Design & Space Planning",
+        "Building Information Modeling (BIM)",
+        "Construction Document Preparation"
+      ],
+      "week_1": [
+        "Building Codes & Accessibility Standards",
+        "Material Specification & Detailing",
+        "3D Architectural Rendering & Visualization"
+      ],
+      "week_2": [
+        "Client Design Presentations",
+        "Contractor RFIs & Site Visits",
+        "Autodesk Revit"
+      ],
+      "month_1": [
+        "AutoCAD",
+        "Rhino"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Video Editor",
+      "roadmap_type": "MARKET",
+      "personalization_status": "NONE",
+      "is_personalized": false,
+      "total_gaps": 11,
+      "immediate": [
+        "Non-Linear Video Editing (NLE)",
+        "Pacing & Story Rhythm",
+        "Audio Mixing & Sound Design"
+      ],
+      "week_1": [
+        "Color Grading & Correction",
+        "Export Optimization & Codecs",
+        "Motion Graphics & Titles"
+      ],
+      "week_2": [
+        "Multi-Camera Editing",
+        "Asset Organization & Archiving",
+        "Adobe Premiere Pro"
+      ],
+      "month_1": [
+        "DaVinci Resolve",
+        "After Effects"
+      ],
+      "non_punitive": true,
+      "status": "PASS"
+    }
+  ],
+  "personalized_roadmaps": [
+    {
+      "role": "Software Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 9,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Full Stack Developer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Data Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 10,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Product Manager",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "roadmap_type": "CANDIDATE",
+      "personalization_status": "PERSONALIZED",
+      "is_personalized": true,
+      "gaps_count": 11,
+      "falsely_claimed_core": [],
+      "status": "PASS"
+    }
+  ],
+  "job_roadmaps": [
+    {
+      "role": "Software Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Golang",
+        "gRPC",
+        "CockroachDB",
+        "Kafka"
+      ],
+      "scheduled_jd_skills": [
+        "Golang",
+        "gRPC",
+        "CockroachDB",
+        "Kafka"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "PyTorch",
+        "HuggingFace Transformers",
+        "MLflow",
+        "CUDA"
+      ],
+      "scheduled_jd_skills": [
+        "PyTorch",
+        "HuggingFace Transformers",
+        "MLflow",
+        "CUDA"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "ArgoCD",
+        "Istio Service Mesh",
+        "Helm",
+        "Ansible"
+      ],
+      "scheduled_jd_skills": [
+        "ArgoCD",
+        "Istio Service Mesh",
+        "Helm",
+        "Ansible"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Sentinel SIEM",
+        "Kusto Query Language",
+        "MITRE ATT&CK",
+        "Wireshark"
+      ],
+      "scheduled_jd_skills": [
+        "Sentinel SIEM",
+        "Kusto Query Language",
+        "MITRE ATT&CK",
+        "Wireshark"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Figma Design Systems",
+        "Cinema 4D",
+        "Brand Identity",
+        "Motion Graphics"
+      ],
+      "scheduled_jd_skills": [
+        "Figma Design Systems",
+        "Cinema 4D",
+        "Brand Identity",
+        "Motion Graphics"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Anaplan",
+        "PowerBI DAX",
+        "LBO Modeling",
+        "Hyperion"
+      ],
+      "scheduled_jd_skills": [
+        "Anaplan",
+        "PowerBI DAX",
+        "LBO Modeling",
+        "Hyperion"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "CATIA V5",
+        "ANSYS Fluent",
+        "Thermal Modeling",
+        "GD&T"
+      ],
+      "scheduled_jd_skills": [
+        "CATIA V5",
+        "ANSYS Fluent",
+        "Thermal Modeling",
+        "GD&T"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "HR Generalist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Workday HCM",
+        "Greenhouse ATS",
+        "California Labor Law",
+        "Compensation Bands"
+      ],
+      "scheduled_jd_skills": [
+        "Workday HCM",
+        "Greenhouse ATS",
+        "California Labor Law",
+        "Compensation Bands"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Digital Marketing Specialist",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "Google Ads Editor",
+        "Semrush",
+        "HubSpot Automation",
+        "Segment CDP"
+      ],
+      "scheduled_jd_skills": [
+        "Google Ads Editor",
+        "Semrush",
+        "HubSpot Automation",
+        "Segment CDP"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "roadmap_type": "JOB",
+      "personalization_status": "PERSONALIZED",
+      "jd_must_haves": [
+        "SAP IBP",
+        "Tableau Supply Chain",
+        "Safety Stock Modeling",
+        "Six Sigma"
+      ],
+      "scheduled_jd_skills": [
+        "SAP IBP",
+        "Tableau Supply Chain",
+        "Safety Stock Modeling",
+        "Six Sigma"
+      ],
+      "is_jd_driven": true,
+      "status": "PASS"
+    }
+  ],
+  "prerequisite_evaluations": [
+    {
+      "role": "Software Engineer",
+      "prerequisite": "Git & Version Control",
+      "prerequisite_bucket": "week_1",
+      "advanced": "CI/CD Pipelines",
+      "advanced_bucket": "week_2",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Software Engineer",
+      "prerequisite": "Data Structures & Algorithms",
+      "prerequisite_bucket": "immediate",
+      "advanced": "System Design",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Software Engineer",
+      "prerequisite": "Object-Oriented Programming",
+      "prerequisite_bucket": "immediate",
+      "advanced": "System Design",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Software Engineer",
+      "prerequisite": "REST APIs",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Microservices Architecture",
+      "advanced_bucket": "week_2",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Data Scientist",
+      "prerequisite": "Python",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Predictive Machine Learning",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Data Scientist",
+      "prerequisite": "Python",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Statistical Modeling & Hypothesis Testing",
+      "advanced_bucket": "immediate",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Data Scientist",
+      "prerequisite": "Python",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Feature Engineering",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Data Scientist",
+      "prerequisite": "SQL",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Predictive Machine Learning",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "Data Scientist",
+      "prerequisite": "SQL",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Data Wrangling",
+      "advanced_bucket": "week_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "DevOps Engineer",
+      "prerequisite": "Linux System Administration",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Kubernetes",
+      "advanced_bucket": "month_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    },
+    {
+      "role": "DevOps Engineer",
+      "prerequisite": "Docker",
+      "prerequisite_bucket": "immediate",
+      "advanced": "Kubernetes",
+      "advanced_bucket": "month_1",
+      "is_inverted": false,
+      "verdict": "NATURAL_PROGRESSION"
+    }
+  ],
+  "duration_evaluations": {
+    "core_estimated_days": [
+      10
+    ],
+    "secondary_estimated_days": [],
+    "semantics": "Estimated study time (~10 days for CORE, ~5 days for SECONDARY, ~3 days for BONUS). UI framing avoids mastery guarantees."
+  },
+  "resource_evaluations": [],
+  "project_evaluations": [],
+  "cross_domain_evaluations": [],
+  "role_switch_evaluations": [
+    {
+      "pair": "Full Stack Developer -> Data Scientist",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Full Stack Developer -> Cybersecurity Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Full Stack Developer -> Product Manager",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Full Stack Developer -> Financial Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Data Scientist -> Cybersecurity Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Data Scientist -> Product Manager",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Data Scientist -> Financial Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Cybersecurity Analyst -> Product Manager",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Cybersecurity Analyst -> Financial Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    },
+    {
+      "pair": "Product Manager -> Financial Analyst",
+      "shared_learning_targets": [],
+      "jaccard_similarity": 0.0,
+      "is_materially_different": true,
+      "status": "PASS"
+    }
+  ],
+  "traceability_evaluations": [],
+  "stability_evaluations": [],
+  "empty_state_evaluations": [
+    {
+      "scenario": "Unknown / Niche Role (No Resume)",
+      "role": "Underwater Robotics Engineer",
+      "confidence": "LOW",
+      "gaps_count": 0,
+      "message": "We couldn't confidently determine role-specific skill requirements for this role. Add a job description for a more precise analysis.",
+      "is_honest": true,
+      "status": "PASS"
+    }
+  ],
+  "critical_matrix": [
+    {
+      "role": "Software Engineer",
+      "domain": "Software Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "Data Structures & Algorithms",
+        "Object-Oriented Programming",
+        "REST APIs"
+      ],
+      "week_1": [
+        "Git & Version Control",
+        "System Design",
+        "Git"
+      ],
+      "week_2": [
+        "Unit Testing",
+        "Microservices Architecture",
+        "CI/CD Pipelines"
+      ],
+      "month_1": [
+        "Code Review",
+        "Agile Methodologies"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Full Stack Developer",
+      "domain": "Software Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "Frontend UI Development",
+        "Backend API Construction",
+        "Database Schema Design"
+      ],
+      "week_1": [
+        "State Management",
+        "Version Control",
+        "JavaScript"
+      ],
+      "week_2": [
+        "Authentication & Sessions",
+        "Responsive Design",
+        "Containerization Basics"
+      ],
+      "month_1": [
+        "Integration Testing",
+        "TypeScript"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Backend Developer",
+      "domain": "Software Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "RESTful API Design",
+        "Database Modeling & Querying",
+        "Server Architecture"
+      ],
+      "week_1": [
+        "Authentication & Authorization",
+        "Data Structures",
+        "Python"
+      ],
+      "week_2": [
+        "Microservices Architecture",
+        "Caching Strategies",
+        "Message Queues"
+      ],
+      "month_1": [
+        "Unit & Integration Testing",
+        "FastAPI"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Analyst",
+      "domain": "Data & Analytics",
+      "total_scheduled": 11,
+      "immediate": [
+        "SQL Querying & Data Extraction",
+        "Exploratory Data Analysis",
+        "Data Cleaning & Transformation"
+      ],
+      "week_1": [
+        "Dashboard Creation",
+        "Statistical Analysis",
+        "KPI Definition & Tracking"
+      ],
+      "week_2": [
+        "Data Storytelling & Reporting",
+        "Business Intelligence Reporting",
+        "Ad-Hoc Analysis"
+      ],
+      "month_1": [
+        "SQL",
+        "Excel"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Scientist",
+      "domain": "Data & Analytics",
+      "total_scheduled": 11,
+      "immediate": [
+        "Python",
+        "Statistical Modeling & Hypothesis Testing",
+        "SQL"
+      ],
+      "week_1": [
+        "Predictive Machine Learning",
+        "Data Wrangling",
+        "Feature Engineering"
+      ],
+      "week_2": [
+        "Experimentation & A/B Testing",
+        "Model Evaluation Metrics",
+        "Data Visualization"
+      ],
+      "month_1": [
+        "Production Scripting",
+        "Model Validation"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Data Engineer",
+      "domain": "Data & Analytics",
+      "total_scheduled": 11,
+      "immediate": [
+        "SQL & Query Optimization",
+        "SQL",
+        "ETL/ELT Pipeline Development"
+      ],
+      "week_1": [
+        "Data Warehouse Modeling",
+        "Distributed Data Processing",
+        "Data Lake Architecture"
+      ],
+      "week_2": [
+        "Batch & Stream Processing",
+        "Data Quality & Validation",
+        "Database Indexing & Partitioning"
+      ],
+      "month_1": [
+        "Workflow Orchestration",
+        "Python"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Machine Learning Engineer",
+      "domain": "AI / Machine Learning",
+      "total_scheduled": 11,
+      "immediate": [
+        "Python",
+        "ML Pipeline Engineering",
+        "Supervised & Unsupervised Modeling"
+      ],
+      "week_1": [
+        "Feature Store Integration",
+        "Model Serving & Inference APIs",
+        "Model Evaluation & Drift Monitoring"
+      ],
+      "week_2": [
+        "Hyperparameter Optimization",
+        "Data Preprocessing Pipelines",
+        "Model Serialization & Export"
+      ],
+      "month_1": [
+        "Dockerized Deployment",
+        "PyTorch"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "DevOps Engineer",
+      "domain": "Cloud / DevOps / Infrastructure",
+      "total_scheduled": 11,
+      "immediate": [
+        "Linux System Administration",
+        "Docker",
+        "CI/CD Pipeline Automation"
+      ],
+      "week_1": [
+        "Containerization & Orchestration",
+        "Infrastructure as Code (IaC)",
+        "Cloud Infrastructure Configuration"
+      ],
+      "week_2": [
+        "Monitoring & Observability",
+        "Secrets Management",
+        "Automated Testing Integration"
+      ],
+      "month_1": [
+        "Bash Shell Scripting",
+        "Kubernetes"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Cybersecurity Analyst",
+      "domain": "Cybersecurity",
+      "total_scheduled": 11,
+      "immediate": [
+        "Threat Monitoring & Detection",
+        "Security Incident Investigation",
+        "Log Analysis (SIEM)"
+      ],
+      "week_1": [
+        "Vulnerability Assessment",
+        "Network Traffic & Packet Analysis",
+        "Incident Triage & Containment"
+      ],
+      "week_2": [
+        "Security Awareness Procedures",
+        "Endpoint Detection & Response (EDR)",
+        "Basic Malware Triage"
+      ],
+      "month_1": [
+        "SIEM (Splunk/QRadar)",
+        "Wireshark"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Graphic Designer",
+      "domain": "Design",
+      "total_scheduled": 11,
+      "immediate": [
+        "Visual Composition & Layout",
+        "Typography & Font Pairing",
+        "Color Theory & Palettes"
+      ],
+      "week_1": [
+        "Branding & Identity Guidelines",
+        "Vector Illustration & Asset Export",
+        "Print & Digital Production"
+      ],
+      "week_2": [
+        "Image Retouching & Manipulation",
+        "Marketing Collateral Design",
+        "Packaging Design"
+      ],
+      "month_1": [
+        "Adobe Photoshop",
+        "Adobe Illustrator"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "UX Designer",
+      "domain": "Design",
+      "total_scheduled": 11,
+      "immediate": [
+        "User Journey Mapping",
+        "Information Architecture",
+        "Low & Mid-Fidelity Wireframing"
+      ],
+      "week_1": [
+        "Usability Testing & Feedback Synthesis",
+        "Interaction Flow Design",
+        "User Persona Development"
+      ],
+      "week_2": [
+        "Rapid Prototyping",
+        "Heuristic Evaluation",
+        "Figma"
+      ],
+      "month_1": [
+        "Miro",
+        "FigJam"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Product Manager",
+      "domain": "Product",
+      "total_scheduled": 11,
+      "immediate": [
+        "Product Strategy & Vision",
+        "User Problem Discovery",
+        "Roadmap Prioritization (RICE/MoSCoW)"
+      ],
+      "week_1": [
+        "PRD & User Story Writing",
+        "Product Metrics & KPI Tracking",
+        "Competitive Market Analysis"
+      ],
+      "week_2": [
+        "Cross-Functional Team Leadership",
+        "User Interviewing",
+        "A/B Testing Hypothesis Definition"
+      ],
+      "month_1": [
+        "Jira",
+        "Figma"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Project Manager",
+      "domain": "Project Management",
+      "total_scheduled": 11,
+      "immediate": [
+        "Project Scope & Milestone Management",
+        "Work Breakdown Structure (WBS) Creation",
+        "Risk & Issue Register (RAID) Management"
+      ],
+      "week_1": [
+        "Budget & Resource Allocation Planning",
+        "Stakeholder Status Reporting & Steering Committee Alignment",
+        "Critical Path Scheduling (Gantt)"
+      ],
+      "week_2": [
+        "Agile / Scrum Sprint Coordination",
+        "Vendor & Contractor Deliverable Oversight",
+        "Microsoft Project"
+      ],
+      "month_1": [
+        "Jira",
+        "Asana"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Accountant",
+      "domain": "Finance / Accounting",
+      "total_scheduled": 11,
+      "immediate": [
+        "General Ledger Maintenance",
+        "Month-End & Year-End Closing",
+        "Bank & Account Reconciliation"
+      ],
+      "week_1": [
+        "Financial Statement Preparation",
+        "Accounts Payable & Receivable (AP/AR)",
+        "Tax Filing Preparation"
+      ],
+      "week_2": [
+        "Audit Schedule Preparation",
+        "Payroll Accounting",
+        "Variance Review"
+      ],
+      "month_1": [
+        "Excel",
+        "QuickBooks"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Financial Analyst",
+      "domain": "Finance / Accounting",
+      "total_scheduled": 11,
+      "immediate": [
+        "Financial Modeling (DCF/LBO/3-Statement)",
+        "Budgeting & Forecasting (FP&A)",
+        "Variance & Trend Analysis"
+      ],
+      "week_1": [
+        "Capital Expenditure Evaluation",
+        "Management Presentation Deck Creation",
+        "KPI Dashboards for Leadership"
+      ],
+      "week_2": [
+        "Scenario Planning & Sensitivity Analysis",
+        "Cost-Benefit Studies",
+        "Excel (Advanced Formulas/VBA)"
+      ],
+      "month_1": [
+        "PowerPoint",
+        "NetSuite"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Recruiter",
+      "domain": "HR / People",
+      "total_scheduled": 11,
+      "immediate": [
+        "Candidate Sourcing & Outbound Outreach",
+        "Resume Screening & Structured Phone Screens",
+        "Hiring Manager Stakeholder Alignment"
+      ],
+      "week_1": [
+        "Interview Pipeline Coordination",
+        "Offer Negotiation & Closing",
+        "Applicant Tracking System (ATS) Management"
+      ],
+      "week_2": [
+        "Employer Branding Initiatives",
+        "Salary Benchmarking",
+        "LinkedIn Recruiter"
+      ],
+      "month_1": [
+        "Greenhouse",
+        "Lever"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "HR Specialist",
+      "domain": "HR / People",
+      "total_scheduled": 11,
+      "immediate": [
+        "Employee Relations & Conflict Resolution",
+        "Onboarding & Offboarding Orchestration",
+        "HR Policy Implementation & Compliance"
+      ],
+      "week_1": [
+        "Benefits & Compensation Administration",
+        "Performance Management Cycles",
+        "HRIS Database Management"
+      ],
+      "week_2": [
+        "Exit Interviews & Retention Insights",
+        "Workplace Investigations",
+        "Workday"
+      ],
+      "month_1": [
+        "BambooHR",
+        "Gusto"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Marketing Specialist",
+      "domain": "Marketing",
+      "total_scheduled": 11,
+      "immediate": [
+        "Multi-Channel Campaign Management",
+        "Paid Search & Social Advertising (PPC)",
+        "Conversion Rate Optimization (CRO)"
+      ],
+      "week_1": [
+        "Email Marketing Automation",
+        "Marketing Analytics & Attribution",
+        "A/B Ad Creative Testing"
+      ],
+      "week_2": [
+        "Audience Segmentation",
+        "Budget Allocation",
+        "Landing Page Optimization"
+      ],
+      "month_1": [
+        "Google Ads",
+        "Meta Ads Manager"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Registered Nurse",
+      "domain": "Healthcare",
+      "total_scheduled": 11,
+      "immediate": [
+        "Patient Assessment & Triage",
+        "Medication Administration & Safety Protocols",
+        "Care Plan Formulation & Clinical Execution"
+      ],
+      "week_1": [
+        "Vital Signs Monitoring & Decompensation Detection",
+        "Clinical Documentation in Electronic Health Records (EHR)",
+        "Infection Prevention & Sterile Techniques"
+      ],
+      "week_2": [
+        "Patient & Family Discharge Education",
+        "Emergency Response Protocols (BLS/ACLS)",
+        "Interprofessional Clinical Communication (SBAR)"
+      ],
+      "month_1": [
+        "Epic EHR",
+        "Cerner"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Healthcare Analyst",
+      "domain": "Healthcare",
+      "total_scheduled": 11,
+      "immediate": [
+        "Electronic Health Record (EHR) Data Querying",
+        "Clinical Quality Metric Tracking (HEDIS/CMS)",
+        "Healthcare Utilization & Cost Modeling"
+      ],
+      "week_1": [
+        "HIPAA-Compliant Data Handling",
+        "Patient Outcome Trend Analysis",
+        "Medical Coding Cross-Walks (ICD-10, CPT)"
+      ],
+      "week_2": [
+        "Provider Scorecard Generation",
+        "Health Insurance Claims Analysis",
+        "SQL"
+      ],
+      "month_1": [
+        "Excel",
+        "SAS"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Mechanical Engineer",
+      "domain": "Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "3D CAD Modeling (SolidWorks/Creo)",
+        "Finite Element Analysis (FEA)",
+        "Geometric Dimensioning & Tolerancing (GD&T)"
+      ],
+      "week_1": [
+        "Thermal & Stress Analysis",
+        "Manufacturing Drawing Creation (ANSI/ISO)",
+        "Design for Manufacturing (DFM/DFA)"
+      ],
+      "week_2": [
+        "Prototyping & CNC/3D Printing",
+        "Material Selection (Metals, Polymers)",
+        "Root Cause Failure Analysis"
+      ],
+      "month_1": [
+        "SolidWorks",
+        "ANSYS"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Civil Engineer",
+      "domain": "Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "Structural Analysis & Calculations",
+        "Civil Infrastructure Drafting & Plan Sets",
+        "Site Grading & Drainage Design"
+      ],
+      "week_1": [
+        "Local Building Code & Zoning Compliance",
+        "Bill of Quantities & Cost Estimating",
+        "Soil Mechanics & Geotechnical Review"
+      ],
+      "week_2": [
+        "Construction Site Inspections",
+        "Permit Applications",
+        "AutoCAD"
+      ],
+      "month_1": [
+        "Civil 3D",
+        "Revit"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Electrical Engineer",
+      "domain": "Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "Circuit Design & Schematic Capture",
+        "Power Distribution & Load Calculations",
+        "PCB Layout & Routing"
+      ],
+      "week_1": [
+        "Signal Integrity & Noise Filtering",
+        "Electrical Safety Code Adherence (NEC/IEC)",
+        "Oscilloscope & Test Bench Verification"
+      ],
+      "week_2": [
+        "Component Sourcing & Selection",
+        "EMI/EMC Compliance Testing",
+        "Altium Designer"
+      ],
+      "month_1": [
+        "Eagle",
+        "MATLAB / Simulink"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Robotics Engineer",
+      "domain": "Engineering",
+      "total_scheduled": 11,
+      "immediate": [
+        "Kinematics & Dynamics Modeling",
+        "Robot Operating System (ROS/ROS2)",
+        "Sensor Integration (LiDAR, IMU, Encoders)"
+      ],
+      "week_1": [
+        "Motion Planning & Trajectory Generation",
+        "Control Systems (PID, State-Space)",
+        "Embedded Controller Programming (C++/Python)"
+      ],
+      "week_2": [
+        "Actuator & Motor Control",
+        "Hardware-in-the-Loop Testing",
+        "Computer Vision for Robotics"
+      ],
+      "month_1": [
+        "ROS",
+        "ROS2"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Teacher",
+      "domain": "Education",
+      "total_scheduled": 11,
+      "immediate": [
+        "Curriculum & Lesson Planning",
+        "Classroom Facilitation & Engagement",
+        "Differentiated Instruction"
+      ],
+      "week_1": [
+        "Student Assessment & Rubric Design",
+        "Parent & Guardian Communication",
+        "Educational Technology Integration"
+      ],
+      "week_2": [
+        "Classroom Behavior Management",
+        "Individualized Education Plans (IEP)",
+        "Google Classroom"
+      ],
+      "month_1": [
+        "Canvas LMS",
+        "Kahoot"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Instructional Designer",
+      "domain": "Education",
+      "total_scheduled": 11,
+      "immediate": [
+        "Instructional Systems Design (ADDIE/SAM)",
+        "Adult Learning Pedagogy (Andragogy)",
+        "E-Learning Authoring (Storyline/Rise)"
+      ],
+      "week_1": [
+        "Learning Management System (LMS) Administration",
+        "Formative & Summative Learning Assessment Design",
+        "Microlearning & Video Module Scripting"
+      ],
+      "week_2": [
+        "User Experience (UX) for Learners",
+        "Kirkpatrick Training Evaluation",
+        "Articulate 360 (Storyline, Rise)"
+      ],
+      "month_1": [
+        "Canvas LMS",
+        "Moodle"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Supply Chain Analyst",
+      "domain": "Operations / Supply Chain",
+      "total_scheduled": 11,
+      "immediate": [
+        "Demand Forecasting & Inventory Optimization",
+        "Supplier Performance Tracking",
+        "Logistics & Freight Route Analysis"
+      ],
+      "week_1": [
+        "Supply Chain Cost Analysis",
+        "Lead Time Modeling",
+        "ERP Supply Chain Transactions"
+      ],
+      "week_2": [
+        "Purchase Order Tracking",
+        "Safety Stock Calculations",
+        "SAP SCM"
+      ],
+      "month_1": [
+        "Oracle NetSuite",
+        "Excel (Advanced)"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Procurement Specialist",
+      "domain": "Operations / Supply Chain",
+      "total_scheduled": 11,
+      "immediate": [
+        "Strategic Sourcing & Vendor Evaluation",
+        "RFP / RFQ / RFI Process Management",
+        "Commercial Contract Negotiation & Price Term Execution"
+      ],
+      "week_1": [
+        "Supplier Relationship Management (SRM)",
+        "Procurement Spend Analytics & Cost Reduction",
+        "Purchase Order (PO) Lifecycle Management"
+      ],
+      "week_2": [
+        "Procure-to-Pay (P2P) Compliance",
+        "Supplier Quality Auditing Collaboration",
+        "SAP Ariba"
+      ],
+      "month_1": [
+        "Coupa",
+        "Oracle Procurement"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Video Editor",
+      "domain": "Media / Creative",
+      "total_scheduled": 11,
+      "immediate": [
+        "Non-Linear Video Editing (NLE)",
+        "Pacing & Story Rhythm",
+        "Audio Mixing & Sound Design"
+      ],
+      "week_1": [
+        "Color Grading & Correction",
+        "Export Optimization & Codecs",
+        "Motion Graphics & Titles"
+      ],
+      "week_2": [
+        "Multi-Camera Editing",
+        "Asset Organization & Archiving",
+        "Adobe Premiere Pro"
+      ],
+      "month_1": [
+        "DaVinci Resolve",
+        "After Effects"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "role": "Hotel Manager",
+      "domain": "Hospitality / Travel",
+      "total_scheduled": 11,
+      "immediate": [
+        "Guest Experience & Service Excellence",
+        "Front Desk & Housekeeping Operations",
+        "Revenue Management & Room Pricing"
+      ],
+      "week_1": [
+        "Hospitality Staff Leadership & Scheduling",
+        "Facility Maintenance Oversight",
+        "Vendor & Supplier Contract Management"
+      ],
+      "week_2": [
+        "Guest Complaint Escalation Resolution",
+        "Health & Safety Inspections",
+        "Opera PMS"
+      ],
+      "month_1": [
+        "Amadeus",
+        "Excel"
+      ],
+      "traceability": "100%",
+      "quality_score": 100.0,
+      "status": "PASS"
+    }
+  ]
+}

@@ -154,6 +154,22 @@ OPTIMIZATION_VERBS = {"optimized", "accelerated", "boosted", "maximized"}
 ARCHITECTURE_VERBS = {"architected", "overhauled"}
 
 
+LEADERSHIP_EVIDENCE_RE = re.compile(
+    r"\b(?:"
+    r"lead|leads|leading|led|leader|leadership|"
+    r"manage|manages|managed|managing|manager|management|"
+    r"mentor|mentors|mentored|mentoring|mentorship|"
+    r"direct|directs|directed|directing|director|"
+    r"supervise|supervises|supervised|supervising|supervisor|supervision|"
+    r"spearhead|spearheads|spearheaded|spearheading|"
+    r"champion|champions|championed|championing|"
+    r"oversee|oversees|oversaw|overseeing|"
+    r"coordinate|coordinates|coordinated|coordinating"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
 def detect_unsupported_action_verbs_and_scope(original: str, proposed: str) -> list[str]:
     """
     Detects ungrounded action verb and scope escalations in rewritten bullets:
@@ -174,8 +190,9 @@ def detect_unsupported_action_verbs_and_scope(original: str, proposed: str) -> l
     prop_words = set(re.findall(r"\b[a-z-]+\b", prop_lower))
 
     # 1. Leadership escalation
+    has_leadership_evidence = bool(LEADERSHIP_EVIDENCE_RE.search(orig_lower))
     for v in LEADERSHIP_VERBS:
-        if v in prop_words and not any(k in orig_lower for k in ["lead", "led", "manage", "mentor", "direct", "supervis", "spearhead", "champion"]):
+        if v in prop_words and not has_leadership_evidence:
             violations.append(f"Leadership claim ({v}) introduced without source evidence")
 
     # 2. Deployment escalation

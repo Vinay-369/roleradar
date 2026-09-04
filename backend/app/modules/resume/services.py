@@ -103,9 +103,13 @@ async def ingest_resume(
     filename: str,
     file_bytes: bytes,
 ) -> dict:
-    validate_upload(filename, file_bytes, settings)
+    # Sanitize filename metadata to avoid path traversal artifacts (SEC-03)
+    from pathlib import Path
+    sanitized_filename = Path(filename).name.strip("/\\") or "resume.pdf"
 
-    extracted = extract_text_and_layout(file_bytes, filename)
+    validate_upload(sanitized_filename, file_bytes, settings)
+
+    extracted = extract_text_and_layout(file_bytes, sanitized_filename)
     parsed = structure_resume_text(extracted["text"])
     
     # 4-Pillar Deterministic Quality Audit
@@ -137,7 +141,7 @@ async def ingest_resume(
         db,
         user_id=user_id,
         version=version,
-        file_name=filename,
+        file_name=sanitized_filename,
         file_type=extracted["file_type"],
         raw_text=extracted["text"],
         parsed=parsed,

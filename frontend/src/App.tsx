@@ -15,6 +15,7 @@ const CustomTailor = lazy(() => import("./pages/resume/CustomTailor").then((m) =
 const Jobs = lazy(() => import("./pages/opportunities/Jobs").then((m) => ({ default: m.Jobs })));
 const Internships = lazy(() => import("./pages/opportunities/Internships").then((m) => ({ default: m.Internships })));
 const Saved = lazy(() => import("./pages/opportunities/Saved").then((m) => ({ default: m.Saved })));
+const Applications = lazy(() => import("./pages/opportunities/Applications").then((m) => ({ default: m.Applications })));
 const JobDetail = lazy(() => import("./pages/opportunities/JobDetail").then((m) => ({ default: m.JobDetail })));
 const SkillGaps = lazy(() => import("./pages/growth/SkillGaps").then((m) => ({ default: m.SkillGaps })));
 const LearningRoadmap = lazy(() => import("./pages/growth/LearningRoadmap").then((m) => ({ default: m.LearningRoadmap })));
@@ -59,8 +60,8 @@ export default function App() {
             <Route path="/opportunities/saved" element={<Saved />} />
             <Route path="/opportunities/job/:jobId" element={<JobDetail />} />
 
-            <Route path="/applications" element={<Navigate to="/opportunities/saved" replace />} />
-            <Route path="/applications/*" element={<Navigate to="/opportunities/saved" replace />} />
+            <Route path="/applications" element={<Applications />} />
+            <Route path="/applications/*" element={<Applications />} />
 
             <Route path="/growth/skill-gaps" element={<SkillGaps />} />
             <Route path="/growth/roadmap" element={<LearningRoadmap />} />

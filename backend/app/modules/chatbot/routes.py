@@ -7,6 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.ai_service.service import AIService, get_ai_service
 from app.core.config import get_settings
+from app.core.rate_limit import rate_limit
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.chatbot import repositories as repo
@@ -157,7 +158,11 @@ async def delete_conversation_thread(
 # ------------------------------------------------------------------
 # Chat Messaging & Legacy Routes
 # ------------------------------------------------------------------
-@router.post("/message", response_model=ChatResponse)
+@router.post(
+    "/message",
+    response_model=ChatResponse,
+    dependencies=[Depends(rate_limit(max_requests=40, window_seconds=60, key_prefix="copilot_chat"))],
+)
 async def send_message(
     body: ChatRequest,
     current_user: dict = Depends(get_current_user),

@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   UploadCloud, FileText, Check, AlertCircle, AlertTriangle, Layers,
@@ -69,6 +69,10 @@ function categorizeAndFilterSkills(rawSkills: string[]): SkillCategory[] {
 export function MasterResume() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetJobId = searchParams.get("targetJobId") || searchParams.get("jobId");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -86,6 +90,10 @@ export function MasterResume() {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast.success("Master resume parsed and audited across 4 ATS pillars!");
+      if (targetJobId) {
+        toast.info("Resuming tailoring for your target opportunity…");
+        navigate(`/resume/tailor/${targetJobId}`);
+      }
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.detail ?? "Upload failed.";

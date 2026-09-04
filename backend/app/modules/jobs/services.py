@@ -5,18 +5,27 @@ import uuid
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.caching import get_cached_jd_requirements, set_cached_jd_requirements
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.db.mongo import Collections
 from app.modules.jobs import repositories as repo
 from app.modules.jobs.providers import CuratedJobProvider
 from app.modules.jobs.skill_vocabulary import extract_skills_from_text
 from app.modules.jobs.taxonomy import RequirementCategory, StructuredJobRequirements, analyze_job_description
 
+from datetime import datetime, timezone
+
+from app.modules.jobs.deduplication import deduplicate_opportunities
+from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
+from app.modules.jobs.verification import (
+    OpportunityLifecycleStatus,
+    verify_opportunity_sync,
+)
+
 SEED_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "seeds", "jobs_seed.json")
 
 
 async def ensure_seed_loaded(db: AsyncIOMotorDatabase) -> int:
-    """Loads and syncs the seed dataset into MongoDB. Idempotent — safe to call on every app startup."""
+    """Loads, verifies, deduplicates, and syncs the seed dataset into MongoDB. Idempotent — safe to call on every app startup."""
     seed_path = os.path.abspath(SEED_PATH)
     if not os.path.exists(seed_path):
         return 0
@@ -24,9 +33,30 @@ async def ensure_seed_loaded(db: AsyncIOMotorDatabase) -> int:
     with open(seed_path) as f:
         jobs = json.load(f)
 
-    if jobs:
-        await repo.upsert_jobs(db, jobs)
-    return len(jobs)
+    if not jobs:
+        return 0
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    processed_jobs = []
+    for job in jobs:
+        url_type, url_reason = classify_application_url(job.get("apply_url"), company=job.get("company"))
+        job_copy = dict(job)
+        job_copy["source"] = "curated_benchmark"
+        job_copy["verification_status"] = OpportunityLifecycleStatus.MARKET_BENCHMARK.value
+        job_copy["url_type"] = url_type.value
+        job_copy["is_direct_apply"] = False
+        job_copy["first_seen_at"] = now_iso
+        job_copy["last_verified_at"] = now_iso
+        job_copy["verified_at"] = now_iso
+        job_copy["verification_reason"] = f"Curated catalog benchmark record: {url_reason}"
+        job_copy["verification_method"] = "seed_catalog"
+        if not job_copy.get("source_url"):
+            job_copy["source_url"] = job_copy.get("apply_url")
+        processed_jobs.append(job_copy)
+
+    deduped = deduplicate_opportunities(processed_jobs)
+    await repo.upsert_jobs(db, deduped)
+    return len(deduped)
 
 
 async def search_jobs(db: AsyncIOMotorDatabase, filters: dict, user_id: str | None = None) -> list[dict]:
@@ -37,26 +67,243 @@ async def search_jobs(db: AsyncIOMotorDatabase, filters: dict, user_id: str | No
     return await provider.search(search_filters)
 
 
+async def sync_all_greenhouse_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
+    """Synchronizes all configured Greenhouse company boards into MongoDB."""
+    active_settings = settings or get_settings()
+    if not getattr(active_settings, "GREENHOUSE_ENABLED", True):
+        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
+
+    from app.modules.jobs.greenhouse_provider import GreenhouseJobProvider
+    provider = GreenhouseJobProvider(active_settings)
+
+    raw_boards = getattr(active_settings, "GREENHOUSE_COMPANIES", "postman,inmobi,groww")
+    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
+
+    results = []
+    total_active = 0
+    total_closed = 0
+
+    for b in boards:
+        res = await provider.sync_company_openings(db, b)
+        results.append(res)
+        total_active += res.get("verified_active", 0)
+        total_closed += res.get("closed", 0)
+
+    return {
+        "total_boards": len(boards),
+        "verified_active": total_active,
+        "closed": total_closed,
+        "results": results,
+    }
+
+
+async def sync_greenhouse_board(
+    db: AsyncIOMotorDatabase,
+    board_token: str,
+    company_name: str | None = None,
+    settings: Settings | None = None,
+) -> dict:
+    """Synchronizes a single Greenhouse board token."""
+    from app.modules.jobs.greenhouse_provider import GreenhouseJobProvider
+    provider = GreenhouseJobProvider(settings or get_settings())
+    return await provider.sync_company_openings(db, board_token, company_name=company_name)
+
+
+async def sync_lever_board(
+    db: AsyncIOMotorDatabase,
+    board_token: str,
+    company_name: str | None = None,
+    settings: Settings | None = None,
+) -> dict:
+    """Synchronizes a single Lever board token."""
+    from app.modules.jobs.lever_provider import LeverJobProvider
+    provider = LeverJobProvider(settings or get_settings())
+    return await provider.sync_company_openings(db, board_token, company_name=company_name)
+
+
+async def sync_all_lever_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
+    """Synchronizes all configured Lever company boards into MongoDB."""
+    active_settings = settings or get_settings()
+    if not getattr(active_settings, "LEVER_ENABLED", False):
+        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
+
+    from app.modules.jobs.lever_provider import LeverJobProvider
+    provider = LeverJobProvider(active_settings)
+
+    raw_boards = getattr(active_settings, "LEVER_COMPANIES", "paytm,meesho,cred,fi")
+    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
+
+    results = []
+    total_active = 0
+    total_closed = 0
+
+    for b in boards:
+        res = await provider.sync_company_openings(db, b)
+        results.append(res)
+        total_active += res.get("verified_active", 0)
+        total_closed += res.get("closed", 0)
+
+    return {
+        "total_boards": len(boards),
+        "verified_active": total_active,
+        "closed": total_closed,
+        "results": results,
+    }
+
+
+async def sync_smartrecruiters_board(
+    db: AsyncIOMotorDatabase,
+    board_token: str,
+    company_name: str | None = None,
+    country: str | None = None,
+    settings: Settings | None = None,
+) -> dict:
+    """Synchronizes a single SmartRecruiters board token."""
+    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
+    provider = SmartRecruitersJobProvider(settings or get_settings())
+    return await provider.sync_company_openings(db, board_token, company_name=company_name, country=country)
+
+
+async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
+    """Synchronizes all configured SmartRecruiters company boards into MongoDB."""
+    active_settings = settings or get_settings()
+    if not getattr(active_settings, "SMARTRECRUITERS_ENABLED", False):
+        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
+
+    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
+    provider = SmartRecruitersJobProvider(active_settings)
+
+    raw_boards = getattr(active_settings, "SMARTRECRUITERS_COMPANIES", "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2")
+    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
+
+    results = []
+    total_active = 0
+    total_closed = 0
+
+    for b in boards:
+        res = await provider.sync_company_openings(db, b)
+        results.append(res)
+        total_active += res.get("verified_active", 0)
+        total_closed += res.get("closed", 0)
+
+    return {
+        "total_boards": len(boards),
+        "verified_active": total_active,
+        "closed": total_closed,
+        "results": results,
+    }
+
+
 async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict) -> int:
     """
-    Fetches from Adzuna (if configured) and upserts results into the
-    jobs collection so they show up in normal searches alongside
-    curated data.
+    Refreshes opportunities from active live providers:
+    1. Greenhouse Direct ATS Provider (if enabled).
+    2. Lever Direct ATS Provider (if enabled).
+    3. SmartRecruiters Direct ATS Provider (if enabled).
+    4. Adzuna Provider (if configured in hybrid mode).
+    Normalizes, verifies, deduplicates, and upserts into MongoDB.
     """
-    if settings.JOB_SOURCE_MODE != "hybrid":
-        return 0
+    added_count = 0
 
-    from app.modules.jobs.live_provider import AdzunaConfigError, AdzunaJobProvider
+    # 1. Greenhouse Direct ATS Provider
+    if getattr(settings, "GREENHOUSE_ENABLED", False):
+        try:
+            gh_res = await sync_all_greenhouse_boards(db, settings)
+            added_count += gh_res.get("verified_active", 0)
+        except Exception:
+            pass
 
-    try:
-        provider = AdzunaJobProvider(settings)
-    except AdzunaConfigError:
-        return 0
+    # 2. Lever Direct ATS Provider
+    if getattr(settings, "LEVER_ENABLED", False):
+        try:
+            lever_res = await sync_all_lever_boards(db, settings)
+            added_count += lever_res.get("verified_active", 0)
+        except Exception:
+            pass
 
-    live_jobs = await provider.search(filters)
-    if live_jobs:
-        await repo.upsert_jobs(db, live_jobs)
-    return len(live_jobs)
+    # 3. SmartRecruiters Direct ATS Provider
+    if getattr(settings, "SMARTRECRUITERS_ENABLED", False):
+        try:
+            sr_res = await sync_all_smartrecruiters_boards(db, settings)
+            added_count += sr_res.get("verified_active", 0)
+        except Exception:
+            pass
+
+    # 4. Adzuna Provider (if configured in hybrid mode)
+    if settings.JOB_SOURCE_MODE == "hybrid":
+        from app.modules.jobs.live_provider import AdzunaConfigError, AdzunaJobProvider
+        try:
+            provider = AdzunaJobProvider(settings)
+            live_jobs = await provider.search(filters)
+            if live_jobs:
+                verified_live_jobs = []
+                for job in live_jobs:
+                    vres = verify_opportunity_sync(job)
+                    job_copy = dict(job)
+                    job_copy["verification_status"] = vres.status.value
+                    job_copy["verified_at"] = vres.verified_at
+                    job_copy["verification_reason"] = vres.reason
+                    job_copy["verification_method"] = "live_provider_verified"
+                    if vres.status == OpportunityLifecycleStatus.VERIFIED_ACTIVE:
+                        verified_live_jobs.append(job_copy)
+
+                if verified_live_jobs:
+                    deduped = deduplicate_opportunities(verified_live_jobs)
+                    await repo.upsert_jobs(db, deduped)
+                    added_count += len(deduped)
+        except AdzunaConfigError:
+            pass
+
+    return added_count
+
+
+async def reverify_active_opportunities(db: AsyncIOMotorDatabase, now: datetime | None = None) -> dict:
+    """
+    Re-verifies existing opportunities in MongoDB.
+    Transitions stale/closed/expired/invalid listings out of VERIFIED_ACTIVE.
+    Preserves historical records internally with updated status.
+    """
+    cursor = db[Collections.JOBS].find({})
+    all_jobs = await cursor.to_list(length=2000)
+
+    stats = {
+        "checked": len(all_jobs),
+        "retained_active": 0,
+        "transitioned_closed": 0,
+        "transitioned_expired": 0,
+        "transitioned_stale": 0,
+        "transitioned_invalid": 0,
+    }
+
+    for job in all_jobs:
+        prev_status = job.get("verification_status", OpportunityLifecycleStatus.VERIFIED_ACTIVE.value)
+        vres = verify_opportunity_sync(job, now=now)
+        new_status = vres.status.value
+
+        update_fields = {
+            "verification_status": new_status,
+            "verified_at": vres.verified_at,
+            "last_verified_at": vres.verified_at,
+            "verification_reason": vres.reason,
+            "verification_method": "reverification_audit",
+            "url_type": vres.url_type.value,
+            "is_direct_apply": (vres.url_type == ApplicationUrlType.DIRECT_REQUISITION and new_status == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value),
+        }
+
+        if new_status == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value:
+            stats["retained_active"] += 1
+        elif new_status == OpportunityLifecycleStatus.CLOSED.value:
+            stats["transitioned_closed"] += 1
+        elif new_status == OpportunityLifecycleStatus.EXPIRED.value:
+            stats["transitioned_expired"] += 1
+        elif new_status == OpportunityLifecycleStatus.STALE.value:
+            stats["transitioned_stale"] += 1
+        elif new_status == OpportunityLifecycleStatus.INVALID.value:
+            stats["transitioned_invalid"] += 1
+
+        await db[Collections.JOBS].update_one({"id": job["id"]}, {"$set": update_fields})
+
+    return stats
 
 
 async def get_job(db: AsyncIOMotorDatabase, job_id: str, user_id: str | None = None) -> dict | None:
@@ -67,6 +314,15 @@ async def get_job(db: AsyncIOMotorDatabase, job_id: str, user_id: str | None = N
     if job.get("source") == "custom" and job.get("user_id"):
         if user_id and job.get("user_id") != user_id:
             return None
+
+    posted_at = job.get("posted_at") or job.get("first_seen_at")
+    if posted_at:
+        try:
+            p_dt = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+            job["posted_days_ago"] = max(0, (datetime.now(timezone.utc) - p_dt).days)
+        except (ValueError, TypeError):
+            pass
+
     return job
 
 
@@ -193,6 +449,11 @@ async def create_custom_job(
         "fresher_friendly": exp_min == 0,
         "posted_days_ago": 0,
         "apply_url": "",
+        "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
+        "url_type": ApplicationUrlType.DIRECT_REQUISITION.value,
+        "is_direct_apply": True,
+        "verification_reason": "User-created private custom opportunity",
+        "verification_method": "custom_creation",
     }
 
     # Persist and cache canonical analysis

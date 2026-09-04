@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Copy, Target,
-  Briefcase, GraduationCap, Bookmark,
+  Briefcase, GraduationCap, Bookmark, ClipboardCheck,
   Map, MessageCircleQuestion, Bot, X,
 } from "lucide-react";
 
@@ -22,7 +22,8 @@ const groups: NavGroup[] = [
     items: [
       { label: "Jobs For You", to: "/opportunities/jobs", icon: Briefcase },
       { label: "Internships", to: "/opportunities/internships", icon: GraduationCap },
-      { label: "Saved", to: "/opportunities/saved", icon: Bookmark },
+      { label: "Applications", to: "/applications", icon: ClipboardCheck },
+      { label: "Saved Roles", to: "/opportunities/saved", icon: Bookmark },
     ],
   },
   {

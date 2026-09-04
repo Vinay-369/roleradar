@@ -9,6 +9,11 @@ export type SkillGap = {
   resources: string[];
   project_suggestion: string;
   estimated_days: number;
+  candidate_status?: "MATCHED" | "PARTIAL" | "RELATED" | "MISSING" | null;
+  source?: string;
+  confidence?: "HIGH" | "MEDIUM" | "LOW";
+  domain?: string;
+  subdomain?: string;
 };
 
 export type Roadmap = {
@@ -16,6 +21,13 @@ export type Roadmap = {
   week_1: string[];
   week_2: string[];
   month_1: string[];
+  is_personalized?: boolean;
+  roadmap_type?: "MARKET" | "CANDIDATE" | "JOB";
+  personalization_status?: "NONE" | "LIMITED_EVIDENCE" | "PERSONALIZED";
+  role_context?: string;
+  role_confidence?: "HIGH" | "MEDIUM" | "LOW";
+  provenance_source?: string;
+  message?: string;
 };
 
 export async function getSkillGaps(params?: string | { jobId?: string; role?: string }): Promise<SkillGap[]> {
