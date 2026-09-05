@@ -1947,3 +1947,6 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
     # Examples: "Marine Robotics Engineer", "Spacecraft Propulsion Specialist", "Quantum Cryogenics Technician"
     # Never guess or hallucinate generic tech roles. Return LOW confidence.
     return None, "LOW", "UNCONFIRMED_ROLE_IDENTITY"
+
+
+match_canonical_role = resolve_role

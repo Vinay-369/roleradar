@@ -5,7 +5,7 @@ from app.core.config import Settings, get_settings
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import services
-from app.modules.jobs.schemas import JobOut
+from app.modules.jobs.schemas import JobOut, CreateCustomJobRequest
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
 
@@ -66,25 +66,8 @@ async def list_jobs(
         "direct_apply_only": True,
     }
 
-    # Build a personalized live-fetch query from the candidate's own
-    # data instead of an empty/generic search -- this is what makes
-    # live results actually relevant to this specific person rather
-    # than just "whatever Adzuna returns with no keywords".
-    live_filters = dict(filters)
-    if not skill:
-        resume = await resume_repo.get_active_master_resume(db, str(current_user["_id"]))
-        profile = await profile_repo.get_profile(db, str(current_user["_id"]))
-        skills_from_resume = resume["parsed"].get("skills", []) if resume else []
-        roles_from_profile = profile.get("target_roles", []) if profile else []
-        live_filters["skills"] = (skills_from_resume[:6] + roles_from_profile[:2]) or None
-        if not location and profile and profile.get("preferred_locations"):
-            live_filters["location"] = profile["preferred_locations"][0]
-
-    # Best-effort: if a live source is configured, refresh before
-    # searching so real listings are included. Never blocks or fails
-    # the request if the live source is unavailable or unconfigured.
-    await services.refresh_live_jobs(db, settings, live_filters)
-
+    # Opportunity discovery queries persisted MongoDB opportunities directly without
+    # blocking on external ATS synchronizations (decoupled in Phase 16C).
     jobs = await services.search_jobs(db, filters, user_id=str(current_user["_id"]))
 
     from app.modules.jobs.location_normalization import is_india_opportunity
@@ -97,6 +80,42 @@ async def list_jobs(
 
     jobs.sort(key=lambda j: (0 if _is_india_job(j) else 1, j.get("posted_days_ago", 0)))
     return [JobOut(**_strip_for_list(j)) for j in jobs]
+
+
+@router.post("/sync")
+async def sync_live_jobs(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """
+    Explicit background/on-demand synchronization of active live opportunities
+    from ATS providers (Greenhouse, Lever, SmartRecruiters, Adzuna). Decoupled from user read requests.
+    """
+    added_count = await services.refresh_live_jobs(db, settings, {})
+    return {"status": "success", "added_count": added_count}
+
+
+
+@router.post("/custom", response_model=JobOut)
+async def create_custom_job_endpoint(
+    payload: CreateCustomJobRequest,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    if not payload.jd_text or not payload.jd_text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Job description text is required.",
+        )
+    job = await services.create_custom_job(
+        db,
+        company=payload.company or "",
+        title=payload.title or "",
+        jd_text=payload.jd_text,
+        user_id=str(current_user["_id"]),
+    )
+    return JobOut(**_strip_for_detail(job))
 
 
 @router.get("/{job_id}", response_model=JobOut)

@@ -54,7 +54,7 @@ TECH_SYNONYMS: dict[str, set[str]] = {
 
 # Related (Adjacent / Non-Equivalent) Skill Clusters
 RELATED_SKILL_CLUSTERS = [
-    {"python", "flask", "fastapi", "django", "tornado", "backend"},
+    {"python", "flask", "fastapi", "django", "tornado", "backend", "rest apis", "restful api design", "api"},
     {"react", "vue", "angular", "svelte", "next.js", "frontend", "typescript", "javascript"},
     {"docker", "kubernetes", "containers", "eks", "helm", "devops", "containerd"},
     {"postgresql", "mysql", "sql", "mongodb", "redis", "cassandra", "dynamodb"},

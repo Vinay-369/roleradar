@@ -55,6 +55,12 @@ class JobOut(BaseModel):
     realistic_fit: str | None = None
 
 
+class CreateCustomJobRequest(BaseModel):
+    company: str | None = None
+    title: str | None = None
+    jd_text: str
+
+
 class JobFilters(BaseModel):
     job_type: str | None = None
     location: str | None = None

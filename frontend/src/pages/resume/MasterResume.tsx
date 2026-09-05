@@ -72,6 +72,8 @@ export function MasterResume() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const targetJobId = searchParams.get("targetJobId") || searchParams.get("jobId");
+  const targetRole = searchParams.get("targetRole") || searchParams.get("role");
+  const redirectUrl = searchParams.get("redirect");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,10 +91,17 @@ export function MasterResume() {
       queryClient.invalidateQueries({ queryKey: ["master-resume"] });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["skill-gaps"] });
+      queryClient.invalidateQueries({ queryKey: ["career-alignment"] });
       toast.success("Master resume parsed and audited across 4 ATS pillars!");
       if (targetJobId) {
         toast.info("Resuming tailoring for your target opportunity…");
         navigate(`/resume/tailor/${targetJobId}`);
+      } else if (targetRole) {
+        toast.info(`Evaluating your resume against ${targetRole}…`);
+        navigate(`/growth/skill-gaps?role=${encodeURIComponent(targetRole)}`);
+      } else if (redirectUrl) {
+        navigate(redirectUrl);
       }
     },
     onError: (err: any) => {

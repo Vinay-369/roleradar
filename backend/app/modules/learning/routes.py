@@ -10,22 +10,38 @@ from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import repositories as jobs_repo
 from app.modules.jobs.services import get_canonical_job_requirements
-from app.modules.learning.engine import build_roadmap, compute_skill_gaps
+from app.modules.learning.engine import (
+    build_roadmap,
+    compute_skill_gaps,
+    evaluate_career_competencies,
+    determine_competency_tier,
+    SkillGap,
+)
 from app.modules.learning.schemas import (
     RoadmapOut,
     SkillGapOut,
+    CareerAlignmentOut,
+    CareerAlignmentSummary,
+    CanonicalRoleOut,
     _MIN_SKILLS_FOR_PERSONALIZATION,
 )
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
-
-router = APIRouter()
-
-
+from app.modules.resume.models import CandidateProfile
+from app.modules.learning.skill_resources import get_resources_for_skill
+from app.modules.matching.evidence_mapping import (
+    map_resume_to_jd_evidence,
+    EvidenceMatchStatus,
+    RequirementCategory,
+)
 from app.modules.learning.role_taxonomy import (
+    ROLE_TAXONOMY,
+    match_canonical_role,
     resolve_role,
     _normalize_role_input,
 )
+
+router = APIRouter()
 
 # ---------------------------------------------------------------------------
 # Internal: provenance descriptor produced by _compute_gaps
@@ -195,16 +211,16 @@ async def _compute_gaps(
     Returns (gaps, job) by default for backward compatibility.
     If include_provenance=True, returns (gaps, job, provenance).
 
-    Distinguishes two primary operational modes:
-    - Mode A (No Resume): Returns pure market benchmark competencies without claiming
-      missing skills against the user.
-    - Mode B (Resume Present): Evaluates verified candidate evidence against requirements
-      and produces personalized skill gaps.
+    Evaluates:
+    - CAREER GAP (no specific job): Canonical RoleCompetencyProfile against candidate evidence.
+      Both with and without resume, uses the EXACT SAME canonical hierarchy.
+      Preserves DEMONSTRATED skills, evidence provenance, and neutral wording.
+    - JOB GAP (specific job ID): StructuredJobRequirements against candidate evidence
+      using authoritative evidence mapping.
     """
     resume = await resume_repo.get_active_master_resume(db, user_id)
     job, job_is_specific = await _resolve_job_for_context(db, user_id, job_id=job_id, role=role)
 
-    # 1. Resolve Canonical Phase 3 StructuredJobRequirements
     reqs = await get_canonical_job_requirements(db, job)
 
     resume_found = resume is not None and bool(resume.get("parsed"))
@@ -218,6 +234,7 @@ async def _compute_gaps(
     preferreds = reqs.preferred_skills if reqs.preferred_skills else job.get("skills_nice_to_have", [])
 
     job_title = job.get("title", reqs.target_role or (role or "Target Role"))
+    target_role_query = role or job_title
 
     # --------------------------------------------------------------------------
     # MODE A: NO RESUME AVAILABLE
@@ -234,42 +251,60 @@ async def _compute_gaps(
             message=message,
         )
 
-        if role_confidence == "LOW" or (not must_haves and not preferreds):
-            gaps = []
+        if not job_is_specific:
+            role_prof, r_conf, _ = match_canonical_role(target_role_query)
+            if role_prof is not None:
+                gaps = evaluate_career_competencies(
+                    role_prof,
+                    candidate=None,
+                    source=provenance_source,
+                    confidence=r_conf,
+                )
+            elif role_confidence == "LOW" or (not must_haves and not preferreds):
+                gaps = []
+            else:
+                gaps = compute_skill_gaps(
+                    missing_required=must_haves,
+                    partial_required=[],
+                    missing_nice_to_have=preferreds,
+                    job_title=job_title,
+                    is_market_benchmark=True,
+                    source=provenance_source,
+                    confidence=role_confidence,
+                    domain=domain,
+                    subdomain=subdomain,
+                )
         else:
-            gaps = compute_skill_gaps(
-                missing_required=must_haves,
-                partial_required=[],
-                missing_nice_to_have=preferreds,
-                job_title=job_title,
-                is_market_benchmark=True,
-                source=provenance_source,
-                confidence=role_confidence,
-                domain=domain,
-                subdomain=subdomain,
-            )
+            if role_confidence == "LOW" or (not must_haves and not preferreds):
+                gaps = []
+            else:
+                gaps = compute_skill_gaps(
+                    missing_required=must_haves,
+                    partial_required=[],
+                    missing_nice_to_have=preferreds,
+                    job_title=job_title,
+                    is_market_benchmark=True,
+                    source=provenance_source,
+                    confidence=role_confidence,
+                    domain=domain,
+                    subdomain=subdomain,
+                )
 
         if include_provenance:
             return gaps, job, provenance
         return gaps, job
 
     # --------------------------------------------------------------------------
-    # MODE B: RESUME AVAILABLE (PERSONALIZED OR SPECIFIC JOB)
+    # MODE B: RESUME AVAILABLE (CANONICAL CANDIDATE EVIDENCE ALIGNMENT)
     # --------------------------------------------------------------------------
-    candidate_skills = list(resume["parsed"].get("skills", []))
-    for s in resume["parsed"].get("inferred_skills", []):
-        if s not in candidate_skills:
-            candidate_skills.append(s)
-    for e in resume["parsed"].get("experience_entries", []):
-        for t in e.get("technologies", []):
-            if t not in candidate_skills:
-                candidate_skills.append(t)
-    for p in resume["parsed"].get("project_entries", []):
-        for t in p.get("technologies", []):
+    candidate_profile = CandidateProfile.from_parsed_dict(resume["parsed"])
+
+    candidate_skills = list(candidate_profile.skills_explicit or candidate_profile.skills)
+    for ev in candidate_profile.evidence_units:
+        for t in ev.technologies:
             if t not in candidate_skills:
                 candidate_skills.append(t)
 
-    # Check achievements if present
     try:
         achievements = await resume_repo.list_achievements(db, user_id)
         for a in achievements or []:
@@ -280,7 +315,6 @@ async def _compute_gaps(
         pass
 
     sufficient_evidence = len(candidate_skills) >= _MIN_SKILLS_FOR_PERSONALIZATION
-    candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
 
     if job_is_specific:
         role_context = f"{job_title} at {job.get('company', 'Company')}"
@@ -303,46 +337,98 @@ async def _compute_gaps(
             return gaps, job, provenance
         return gaps, job
 
-    embedder = build_embedding_provider(settings)
-
-    missing_required = []
-    partial_required = []
-    candidate_status_map: dict[str, str] = {}
-
-    for req_skill in must_haves:
-        r_low = req_skill.lower().strip()
-        if r_low in candidate_skills_lower:
-            candidate_status_map[req_skill] = "MATCHED"
-            continue
-        best_sim = max((embedder.similarity(r_low, c) for c in candidate_skills_lower), default=0.0)
-        if best_sim >= 0.55:
-            partial_required.append(req_skill)
-            candidate_status_map[req_skill] = "PARTIAL"
+    if not job_is_specific:
+        # CAREER GAP: Evaluate Canonical RoleCompetencyProfile against CandidateProfile
+        role_prof, r_conf, _ = match_canonical_role(target_role_query)
+        if role_prof is not None:
+            gaps = evaluate_career_competencies(
+                role_prof,
+                candidate=candidate_profile,
+                source=provenance_source,
+                confidence=r_conf,
+            )
         else:
-            missing_required.append(req_skill)
-            candidate_status_map[req_skill] = "MISSING"
+            embedder = build_embedding_provider(settings)
+            candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
+            missing_required = []
+            partial_required = []
+            candidate_status_map = {}
+            for req_skill in must_haves:
+                r_low = req_skill.lower().strip()
+                if r_low in candidate_skills_lower:
+                    candidate_status_map[req_skill] = "MATCHED"
+                    continue
+                best_sim = max((embedder.similarity(r_low, c) for c in candidate_skills_lower), default=0.0)
+                if best_sim >= 0.55:
+                    partial_required.append(req_skill)
+                    candidate_status_map[req_skill] = "PARTIAL"
+                else:
+                    missing_required.append(req_skill)
+                    candidate_status_map[req_skill] = "MISSING"
 
-    missing_preferred = []
-    for pref_skill in preferreds:
-        p_low = pref_skill.lower().strip()
-        if p_low in candidate_skills_lower:
-            candidate_status_map[pref_skill] = "MATCHED"
-            continue
-        missing_preferred.append(pref_skill)
-        candidate_status_map[pref_skill] = "MISSING"
+            missing_preferred = []
+            for pref_skill in preferreds:
+                p_low = pref_skill.lower().strip()
+                if p_low in candidate_skills_lower:
+                    candidate_status_map[pref_skill] = "MATCHED"
+                    continue
+                missing_preferred.append(pref_skill)
+                candidate_status_map[pref_skill] = "MISSING"
 
-    gaps = compute_skill_gaps(
-        missing_required=missing_required,
-        partial_required=partial_required,
-        missing_nice_to_have=missing_preferred,
-        job_title=job_title,
-        is_market_benchmark=False,
-        source=provenance_source,
-        confidence=role_confidence,
-        domain=domain,
-        subdomain=subdomain,
-        candidate_status_map=candidate_status_map,
-    )
+            gaps = compute_skill_gaps(
+                missing_required=missing_required,
+                partial_required=partial_required,
+                missing_nice_to_have=missing_preferred,
+                job_title=job_title,
+                is_market_benchmark=False,
+                source=provenance_source,
+                confidence=role_confidence,
+                domain=domain,
+                subdomain=subdomain,
+                candidate_status_map=candidate_status_map,
+            )
+    else:
+        # JOB GAP: StructuredJobRequirements against CandidateProfile
+        embedder = build_embedding_provider(settings)
+        candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
+        missing_required = []
+        partial_required = []
+        candidate_status_map = {}
+
+        for req_skill in must_haves:
+            r_low = req_skill.lower().strip()
+            if r_low in candidate_skills_lower:
+                candidate_status_map[req_skill] = "MATCHED"
+                continue
+            best_sim = max((embedder.similarity(r_low, c) for c in candidate_skills_lower), default=0.0)
+            if best_sim >= 0.55:
+                partial_required.append(req_skill)
+                candidate_status_map[req_skill] = "PARTIAL"
+            else:
+                missing_required.append(req_skill)
+                candidate_status_map[req_skill] = "MISSING"
+
+        missing_preferred = []
+        for pref_skill in preferreds:
+            p_low = pref_skill.lower().strip()
+            if p_low in candidate_skills_lower:
+                candidate_status_map[pref_skill] = "MATCHED"
+                continue
+            missing_preferred.append(pref_skill)
+            candidate_status_map[pref_skill] = "MISSING"
+
+        gaps = compute_skill_gaps(
+            missing_required=missing_required,
+            partial_required=partial_required,
+            missing_nice_to_have=missing_preferred,
+            job_title=job_title,
+            is_market_benchmark=False,
+            source="JOB_REQUIREMENTS",
+            confidence=role_confidence,
+            domain=domain,
+            subdomain=subdomain,
+            candidate_status_map=candidate_status_map,
+        )
 
     if include_provenance:
         return gaps, job, provenance
@@ -399,7 +485,7 @@ def _provenance_to_roadmap_fields(p: _RoadmapProvenance) -> dict:
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("/gaps", response_model=list[SkillGapOut])
+@router.get("/gaps", response_model=CareerAlignmentOut)
 async def get_skill_gaps_for_role(
     role: str | None = Query(default=None, description="Target role name"),
     job_id: str | None = Query(default=None, description="Optional job ID"),
@@ -407,19 +493,84 @@ async def get_skill_gaps_for_role(
     db: AsyncIOMotorDatabase = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    gaps, _ = await _compute_gaps(db, settings, str(current_user["_id"]), job_id=job_id, role=role)
-    return [SkillGapOut(**g.__dict__) for g in gaps]
+    gaps, job, provenance = await _compute_gaps(
+        db, settings, str(current_user["_id"]), job_id=job_id, role=role, include_provenance=True
+    )
+
+    demonstrated_count = sum(1 for g in gaps if getattr(g, "status", None) == "DEMONSTRATED")
+    partial_count = sum(1 for g in gaps if getattr(g, "status", None) == "PARTIALLY_DEMONSTRATED")
+    no_evidence_count = sum(1 for g in gaps if getattr(g, "status", None) == "NO_RESUME_EVIDENCE")
+
+    summary = CareerAlignmentSummary(
+        total=len(gaps),
+        demonstrated=demonstrated_count,
+        partially_demonstrated=partial_count,
+        no_resume_evidence=no_evidence_count,
+    )
+
+    return CareerAlignmentOut(
+        role=job.get("title", role or "Target Role"),
+        domain=job.get("domain"),
+        subdomain=job.get("subdomain"),
+        confidence=job.get("confidence", "HIGH"),
+        provenance=job.get("provenance", "ROLE_TAXONOMY"),
+        has_resume=provenance.resume_found,
+        message=job.get("message"),
+        summary=summary,
+        competencies=[SkillGapOut(**g.__dict__) for g in gaps],
+    )
 
 
-@router.get("/gaps/{job_id}", response_model=list[SkillGapOut])
+@router.get("/gaps/{job_id}", response_model=CareerAlignmentOut)
 async def get_skill_gaps(
     job_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ):
-    gaps, _ = await _compute_gaps(db, settings, str(current_user["_id"]), job_id=job_id)
-    return [SkillGapOut(**g.__dict__) for g in gaps]
+    gaps, job, provenance = await _compute_gaps(
+        db, settings, str(current_user["_id"]), job_id=job_id, include_provenance=True
+    )
+
+    demonstrated_count = sum(1 for g in gaps if getattr(g, "status", None) == "DEMONSTRATED")
+    partial_count = sum(1 for g in gaps if getattr(g, "status", None) == "PARTIALLY_DEMONSTRATED")
+    no_evidence_count = sum(1 for g in gaps if getattr(g, "status", None) == "NO_RESUME_EVIDENCE")
+
+    summary = CareerAlignmentSummary(
+        total=len(gaps),
+        demonstrated=demonstrated_count,
+        partially_demonstrated=partial_count,
+        no_resume_evidence=no_evidence_count,
+    )
+
+    return CareerAlignmentOut(
+        role=job.get("title", "Target Opportunity"),
+        domain=job.get("domain"),
+        subdomain=job.get("subdomain"),
+        confidence=job.get("confidence", "HIGH"),
+        provenance=job.get("provenance", "JOB_REQUIREMENTS"),
+        has_resume=provenance.resume_found,
+        message=job.get("message"),
+        summary=summary,
+        competencies=[SkillGapOut(**g.__dict__) for g in gaps],
+    )
+
+
+@router.get("/roles", response_model=list[CanonicalRoleOut])
+async def get_canonical_roles():
+    """
+    Returns canonical list of supported career roles directly from the backend authoritative
+    ROLE_TAXONOMY, eliminating the need for hardcoded frontend duplicates.
+    """
+    roles = []
+    for prof in ROLE_TAXONOMY.values():
+        roles.append(CanonicalRoleOut(
+            role=prof.canonical_role,
+            domain=prof.domain,
+            subdomain=prof.subdomain,
+            aliases=prof.aliases,
+        ))
+    return roles
 
 
 @router.get("/roadmap", response_model=RoadmapOut)

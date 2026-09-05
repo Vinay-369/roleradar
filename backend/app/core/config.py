@@ -31,6 +31,8 @@ class Settings(BaseSettings):
 
     # --- Rate Limiting ---
     RATE_LIMITING_ENABLED: bool = True
+    AUTH_RATE_LIMIT_MAX_REQUESTS: int = 10
+    AUTH_RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # --- Database ---
     MONGO_URI: str = "mongodb://localhost:27017"

@@ -188,9 +188,11 @@ export function Internships() {
           </div>
           <Link
             to="/resume/tailor-custom"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-signal-600 hover:text-signal-700 bg-signal-500/10 hover:bg-signal-500/15 px-3 py-1.5 rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-800 hover:text-ink-950 bg-white hover:bg-ink-50 border border-ink-200 px-3 py-1.5 rounded-md transition-colors shadow-2xs"
           >
-            <Sparkles size={13} /> Tailor for external internship <ArrowRight size={13} />
+            <Sparkles size={13} className="text-signal-600" />
+            <span>Paste External JD</span>
+            <ArrowRight size={13} />
           </Link>
         </div>
       </div>

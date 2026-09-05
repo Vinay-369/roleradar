@@ -240,10 +240,15 @@ async def test_personalization_mode_b_resume_with_strong_match():
         assert fields["personalization_status"] == "PERSONALIZED"
         assert fields["is_personalized"] is True
 
-        gap_skills = [g.skill for g in gaps]
-        # Verified skills should not be reported as missing
-        assert "Visual Composition & Layout" not in gap_skills
-        assert "Typography & Font Pairing" not in gap_skills
+        # Phase 16D Update: Demonstrated skills are preserved in the canonical API response
+        # with DEMONSTRATED status, rather than being discarded.
+        # Verified skills must NOT be reported as missing.
+        missing_skills = [g.skill for g in gaps if g.status == "NO_RESUME_EVIDENCE" or g.current_evidence == "MISSING"]
+        assert "Visual Composition & Layout" not in missing_skills
+        assert "Typography & Font Pairing" not in missing_skills
+        demonstrated_skills = [g.skill for g in gaps if g.status == "DEMONSTRATED"]
+        assert "Visual Composition & Layout" in demonstrated_skills
+        assert "Typography & Font Pairing" in demonstrated_skills
 
 
 @pytest.mark.asyncio

@@ -33,3 +33,21 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     return user
+
+
+async def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+    settings: Settings = Depends(get_settings),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict | None:
+    """Returns the authenticated user if valid credentials are provided, or None if unauthenticated."""
+    if credentials is None:
+        return None
+    try:
+        user_id = decode_access_token(credentials.credentials, settings)
+        if user_id is None:
+            return None
+        return await repo.get_user_by_id(db, user_id)
+    except Exception:
+        return None
+

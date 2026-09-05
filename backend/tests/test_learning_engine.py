@@ -52,7 +52,8 @@ def test_unknown_skill_gets_honest_fallback_resource_not_fabricated_link():
         missing_nice_to_have=[],
         job_title="Backend Developer",
     )
-    assert "youtube.com/results" in gaps[0].resources[0]
+    # Phase 16E requirement: Do NOT manufacture generic YouTube / Google search links as fallback
+    assert len(gaps[0].resources) == 0
 
 
 def test_roadmap_prioritizes_core_gaps_earliest():

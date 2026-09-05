@@ -1,6 +1,35 @@
+from enum import Enum
 from typing import Literal
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
+
+class CompetencyStatus(str, Enum):
+    DEMONSTRATED = "DEMONSTRATED"
+    PARTIALLY_DEMONSTRATED = "PARTIALLY_DEMONSTRATED"
+    NO_RESUME_EVIDENCE = "NO_RESUME_EVIDENCE"
+
+
+class CompetencyTier(str, Enum):
+    FOUNDATION = "FOUNDATION"
+    CORE = "CORE"
+    DOMAIN_PROCESSING = "DOMAIN_PROCESSING"
+    TOOLS = "TOOLS"
+    CLOUD_SPECIALIZATION = "CLOUD_SPECIALIZATION"
+    ADVANCED = "ADVANCED"
+
+
+class CompetencyImportance(str, Enum):
+    CORE = "CORE"
+    COMMON = "COMMON"
+    OPTIONAL = "OPTIONAL"
+
+
+class CompetencyEvidenceOut(BaseModel):
+    section: str = "SKILLS"  # EXPERIENCE | PROJECTS | SKILLS | EDUCATION | SUMMARY
+    entity_name: str | None = None  # e.g., "RoleRadar", "Acme Corp", "B.Tech Computer Science"
+    text: str = ""  # Evidence snippet or bullet text
+    evidence_type: str = "EXPLICIT_SKILL"  # WORK_EXPERIENCE | PROJECT | EXPLICIT_SKILL | COURSEWORK | RELATED_TECHNOLOGY | NONE
+    source_reference: str | None = None
 
 
 class SkillGapOut(BaseModel):
@@ -9,33 +38,59 @@ class SkillGapOut(BaseModel):
     reason: str
     target_job_title: str
     current_evidence: str
-    resources: list[str]
-    project_suggestion: str
-    estimated_days: int
+    resources: list[str] = Field(default_factory=list)
+    project_suggestion: str = ""
+    estimated_days: int = 5
     # Extended Role Intelligence & Provenance fields
     candidate_status: str | None = None
     source: str = "ROLE_TAXONOMY"
     confidence: str = "HIGH"
     domain: str | None = None
     subdomain: str | None = None
+    # Canonical Phase 16D Career Skill Intelligence fields
+    tier: str = CompetencyTier.CORE.value
+    status: str = CompetencyStatus.NO_RESUME_EVIDENCE.value
+    importance: str = CompetencyImportance.CORE.value
+    evidence: list[CompetencyEvidenceOut] = Field(default_factory=list)
+    explanation: str = ""
+    evidence_type: str = "NONE"
+
+
+CareerCompetencyOut = SkillGapOut
+
+
+class CareerAlignmentSummary(BaseModel):
+    total: int = 0
+    demonstrated: int = 0
+    partially_demonstrated: int = 0
+    no_resume_evidence: int = 0
+
+
+class CareerAlignmentOut(BaseModel):
+    role: str
+    domain: str | None = None
+    subdomain: str | None = None
+    confidence: str = "HIGH"
+    provenance: str = "ROLE_TAXONOMY"
+    has_resume: bool = False
+    message: str | None = None
+    summary: CareerAlignmentSummary = Field(default_factory=CareerAlignmentSummary)
+    competencies: list[CareerCompetencyOut] = Field(default_factory=list)
+
+
+class CanonicalRoleOut(BaseModel):
+    role: str
+    domain: str
+    subdomain: str
+    aliases: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
 # Roadmap provenance types
 # ---------------------------------------------------------------------------
 
-# MARKET    – no real candidate evidence; skills represent role market benchmark
-# CANDIDATE – real candidate evidence compared against market aggregate for role
-# JOB       – real candidate evidence compared against a specific job's requirements
 RoadmapType = Literal["MARKET", "CANDIDATE", "JOB"]
-
-# NONE              – no resume uploaded; candidate skills are unknown
-# LIMITED_EVIDENCE  – resume present but too few parsed skills to compute meaningful gaps
-# PERSONALIZED      – sufficient candidate evidence exists
 PersonalizationStatus = Literal["NONE", "LIMITED_EVIDENCE", "PERSONALIZED"]
-
-# Minimum number of distinct candidate skills required to claim personalization.
-# Below this threshold the roadmap defaults to MARKET / LIMITED_EVIDENCE.
 _MIN_SKILLS_FOR_PERSONALIZATION = 3
 
 

@@ -112,3 +112,15 @@ export async function getRecommendedMatches(
   const res = await apiClient.get<JobMatch[]>("/matches/recommended", { params });
   return res.data;
 }
+
+export type CreateCustomJobPayload = {
+  company?: string;
+  title?: string;
+  jd_text: string;
+};
+
+export async function createCustomJob(payload: CreateCustomJobPayload): Promise<any> {
+  const res = await apiClient.post("/jobs/custom", payload);
+  return res.data;
+}
+

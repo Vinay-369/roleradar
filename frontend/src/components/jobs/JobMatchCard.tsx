@@ -24,7 +24,61 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
     onError: () => toast.error("Failed to bookmark job."),
   });
 
-  const readiness = job.apply_readiness ? READINESS_LABEL[job.apply_readiness] : null;
+  const eligibility = job.eligibility;
+  const isExpMismatch = eligibility?.status === "EXPERIENCE_MISMATCH";
+  const isDegreeMismatch = eligibility?.status === "DEGREE_MISMATCH";
+  const isLocMismatch = eligibility?.status === "LOCATION_MISMATCH";
+  const isGradMismatch = eligibility?.status === "GRADUATION_MISMATCH";
+  const isIneligible = isExpMismatch || isDegreeMismatch || isLocMismatch || isGradMismatch;
+  const isLikelyEligible = eligibility?.status === "LIKELY_ELIGIBLE";
+  const isEligible = eligibility?.status === "ELIGIBLE" || isLikelyEligible;
+
+  // Truthful Readiness Badge (Part 4): Never claim "Ready to apply" when hard constraints fail!
+  const effectiveReadiness = (() => {
+    if (isIneligible) {
+      return {
+        label: "Not eligible",
+        className: "bg-alert-600/10 text-alert-700 border border-alert-600/30 font-bold",
+      };
+    }
+    if (eligibility?.status === "OPPORTUNITY_NOT_SUFFICIENTLY_SPECIFIED" || eligibility?.status === "UNKNOWN") {
+      return {
+        label: "Check requirement",
+        className: "bg-amber-500/10 text-amber-800 border border-amber-500/30 font-medium",
+      };
+    }
+    if (isLikelyEligible) {
+      if (job.overall_score !== null && job.overall_score !== undefined && job.overall_score >= 75) {
+        return {
+          label: "Ready to apply · Likely eligible",
+          className: "bg-signal-500/10 text-signal-700 border border-signal-500/30 font-semibold",
+        };
+      }
+      return {
+        label: "Likely eligible",
+        className: "bg-signal-500/10 text-signal-700 border border-signal-500/30 font-semibold",
+      };
+    }
+    if (job.apply_readiness) {
+      return READINESS_LABEL[job.apply_readiness];
+    }
+    return null;
+  })();
+
+  // Honest Freshness Presentation (Part 5): Distinguish recent vs. evergreen active
+  const freshnessLabel = (() => {
+    if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {
+      if (job.posted_days_ago === 0) return "Posted today";
+      if (job.posted_days_ago === 1) return "Posted 1d ago";
+      if (job.posted_days_ago <= 14) return `Posted ${job.posted_days_ago}d ago`;
+      if (job.verification_status === "VERIFIED_ACTIVE") return "Verified active · Continuous hiring";
+      return `Posted ${job.posted_days_ago}d ago`;
+    }
+    if (job.verification_status === "VERIFIED_ACTIVE") {
+      return "Verified active today";
+    }
+    return "Active listing";
+  })();
 
   const FIT_BADGES: Record<string, { label: string; className: string }> = {
     GOOD_FIT: { label: "Good Fit", className: "bg-signal-500/10 text-signal-700 border border-signal-500/30" },
@@ -49,11 +103,6 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
     ? job.location
     : "On-site / Hybrid";
 
-  const eligibility = job.eligibility;
-  const isExpMismatch = eligibility?.status === "EXPERIENCE_MISMATCH";
-  const isDegreeMismatch = eligibility?.status === "DEGREE_MISMATCH";
-  const isEligible = eligibility?.status === "ELIGIBLE" || eligibility?.status === "LIKELY_ELIGIBLE";
-
   return (
     <div className={`rounded-xl border ${isExpMismatch ? "border-amber-200 bg-amber-50/20" : "border-ink-100 bg-white"} p-5 transition-all duration-200 hover:shadow-md`}>
       <div className="flex items-start justify-between mb-2">
@@ -72,12 +121,10 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
                 Verified recently
               </span>
             )}
-            {job.posted_days_ago !== undefined && (
-              <span className="flex items-center gap-1 text-[10px] text-ink-500 font-semibold bg-ink-50 px-2 py-0.5 rounded-full border border-ink-100">
-                <Clock size={10} className="text-signal-600" />
-                <span>{job.posted_days_ago === 0 ? "Posted today" : `Posted ${job.posted_days_ago}d ago`}</span>
-              </span>
-            )}
+            <span className="flex items-center gap-1 text-[10px] text-ink-500 font-semibold bg-ink-50 px-2 py-0.5 rounded-full border border-ink-100">
+              <Clock size={10} className="text-signal-600" />
+              <span>{freshnessLabel}</span>
+            </span>
           </div>
           <p className="text-xs text-ink-500 font-medium mt-0.5">{job.company}</p>
 
@@ -148,9 +195,9 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
           {job.has_match && job.overall_score !== null && job.overall_score !== undefined ? (
             <>
               <p className="text-2xl font-display font-bold text-ink-900">{job.overall_score}%</p>
-              {readiness && (
-                <span className={`inline-block mt-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${readiness.className}`}>
-                  {readiness.label}
+              {effectiveReadiness && (
+                <span className={`inline-block mt-1 rounded-full px-2.5 py-0.5 text-[11px] ${effectiveReadiness.className}`}>
+                  {effectiveReadiness.label}
                 </span>
               )}
               <div className="mt-1">

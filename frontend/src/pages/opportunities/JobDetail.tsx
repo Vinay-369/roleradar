@@ -44,6 +44,18 @@ export function JobDetail() {
 
   const hasDirectApply = Boolean(isVerifiedActive && job.apply_url && !job.apply_url.includes("example.com"));
 
+  const postedText = (() => {
+    if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {
+      if (job.posted_days_ago === 0) return "Today";
+      if (job.posted_days_ago === 1) return "1 day ago";
+      if (job.posted_days_ago <= 14) return `${job.posted_days_ago} days ago`;
+      if (isVerifiedActive) return "Verified active · Continuous hiring";
+      return `${job.posted_days_ago} days ago`;
+    }
+    if (isVerifiedActive) return "Verified active today";
+    return "Active listing";
+  })();
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 sm:px-6">
       <Link to="/opportunities/jobs" className="text-xs text-ink-500 hover:text-ink-800 mb-4 inline-block">
@@ -100,7 +112,7 @@ export function JobDetail() {
         </div>
         <div className="rounded-lg border border-ink-100 bg-white p-3">
           <p className="text-xs text-ink-500">Posted</p>
-          <p className="text-ink-900">{job.posted_days_ago === 0 ? "Today" : `${job.posted_days_ago} days ago`}</p>
+          <p className="text-ink-900">{postedText}</p>
         </div>
       </div>
 
@@ -139,6 +151,12 @@ export function JobDetail() {
           className="rounded-md bg-ink-950 hover:bg-ink-900 text-white px-4 py-2 text-sm font-medium transition-transform active:scale-95"
         >
           Tailor resume for this job
+        </Link>
+        <Link
+          to={`/growth/skill-gaps?jobId=${job.id}`}
+          className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-700 px-4 py-2 text-sm font-medium transition-transform active:scale-95"
+        >
+          View skill gap for this job
         </Link>
         <Link
           to={`/growth/roadmap/${job.id}`}

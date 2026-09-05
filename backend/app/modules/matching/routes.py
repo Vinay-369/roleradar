@@ -30,17 +30,8 @@ async def recommended_matches(
     profile = await profile_repo.get_profile(db, user_id)
     resume = await resume_repo.get_active_master_resume(db, user_id)
 
-    # Refresh live jobs if configured (best effort)
-    live_filters: dict = {"job_type": job_type}
-    if resume and profile:
-        live_filters["skills"] = (resume["parsed"].get("skills", [])[:6] + profile.get("target_roles", [])[:2]) or None
-        live_filters["location"] = profile.get("preferred_locations", [None])[0] if profile.get("preferred_locations") else None
-    elif profile:
-        live_filters["skills"] = profile.get("target_roles", [])[:2] or None
-        live_filters["location"] = profile.get("preferred_locations", [None])[0] if profile.get("preferred_locations") else None
-
-    await jobs_services.refresh_live_jobs(db, settings, live_filters)
-
+    # Opportunity discovery queries persisted MongoDB opportunities directly without
+    # blocking on external ATS synchronizations (decoupled in Phase 16C).
     search_filters: dict = {
         "limit": 500,
         "active_discovery_only": True,

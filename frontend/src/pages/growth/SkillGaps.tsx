@@ -1,26 +1,77 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, Target, Map as MapIcon, ArrowRight, Info, ShieldAlert, Layers, Briefcase } from "lucide-react";
+import {
+  Target,
+  Map as MapIcon,
+  ArrowRight,
+  Info,
+  ShieldAlert,
+  Layers,
+  Briefcase,
+  CheckCircle2,
+  AlertCircle,
+  MinusCircle,
+  FileCheck,
+} from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { getProfile } from "../../lib/profile";
-import { getSkillGaps, getRoadmap, type SkillGap } from "../../lib/learning";
+import {
+  getCareerAlignment,
+  getCanonicalRoles,
+  getRoadmap,
+  type SkillGap,
+  type CompetencyTier,
+} from "../../lib/learning";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
-const MARKET_PRIORITY_STYLE: Record<SkillGap["priority"], { badge: string; label: string }> = {
-  CORE: { badge: "bg-blue-600/10 text-blue-700 border border-blue-600/20", label: "Core Competency" },
-  SECONDARY: { badge: "bg-amber-500/10 text-amber-700 border border-amber-500/20", label: "Common Competency" },
-  BONUS: { badge: "bg-signal-500/10 text-signal-700 border border-signal-500/20", label: "Optional / Specialization" },
+const TIER_METADATA: Record<
+  CompetencyTier,
+  { label: string; description: string; badge: string }
+> = {
+  FOUNDATION: {
+    label: "Foundation",
+    description: "Fundamental languages, systems, and core CS prerequisites",
+    badge: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+  },
+  CORE: {
+    label: "Core Competencies",
+    description: "Essential role architectures and primary delivery competencies",
+    badge: "bg-blue-600/10 text-blue-700 border-blue-600/20",
+  },
+  DOMAIN_PROCESSING: {
+    label: "Domain & Processing",
+    description: "Domain methodologies, processing patterns, and data flows",
+    badge: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
+  },
+  TOOLS: {
+    label: "Tools & Technologies",
+    description: "Concrete frameworks, libraries, and developer tools",
+    badge: "bg-teal-500/10 text-teal-700 border-teal-500/20",
+  },
+  CLOUD_SPECIALIZATION: {
+    label: "Cloud & Specialization",
+    description: "Cloud platforms, infrastructure, and advanced specialization",
+    badge: "bg-sky-500/10 text-sky-700 border-sky-500/20",
+  },
+  ADVANCED: {
+    label: "Advanced & Electives",
+    description: "High-impact optional competencies that strengthen candidacy",
+    badge: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  },
 };
 
-const PERSONALIZED_PRIORITY_STYLE: Record<SkillGap["priority"], { badge: string; label: string }> = {
-  CORE: { badge: "bg-alert-600/10 text-alert-600 border border-alert-600/20", label: "Critical Missing Skill" },
-  SECONDARY: { badge: "bg-amber-500/10 text-amber-700 border border-amber-500/20", label: "Partially Covered" },
-  BONUS: { badge: "bg-signal-500/10 text-signal-700 border border-signal-500/20", label: "Bonus / Recommended" },
-};
+const TIER_ORDER: CompetencyTier[] = [
+  "FOUNDATION",
+  "CORE",
+  "DOMAIN_PROCESSING",
+  "TOOLS",
+  "CLOUD_SPECIALIZATION",
+  "ADVANCED",
+];
 
 export function SkillGaps() {
   const [searchParams] = useSearchParams();
@@ -39,48 +90,78 @@ export function SkillGaps() {
 
   const activeRole = selectedRole || defaultRole;
 
+  const { data: canonicalRoles } = useQuery({
+    queryKey: ["canonical-roles"],
+    queryFn: getCanonicalRoles,
+  });
+
+  const roleOptions =
+    canonicalRoles && canonicalRoles.length > 0
+      ? canonicalRoles.map((r) => r.role)
+      : ALL_JOB_ROLES;
+
   const { data: roadmap, isLoading: roadmapLoading } = useQuery({
     queryKey: ["roadmap-role", activeRole],
     queryFn: () => getRoadmap({ role: activeRole }),
     enabled: !!activeRole,
   });
 
-  const { data: gaps, isLoading: gapsLoading, error } = useQuery({
-    queryKey: ["skill-gaps-role", activeRole],
-    queryFn: () => getSkillGaps({ role: activeRole }),
+  const { data: alignment, isLoading: gapsLoading, error } = useQuery({
+    queryKey: ["career-alignment-role", activeRole, targetJobId],
+    queryFn: () =>
+      getCareerAlignment(targetJobId ? { jobId: targetJobId } : { role: activeRole }),
     enabled: !!activeRole,
   });
 
   const isLoading = gapsLoading || roadmapLoading;
+  const gaps = alignment?.competencies || [];
+  const hasResume = alignment?.has_resume ?? false;
 
   const isMarketBenchmark =
+    !hasResume ||
     roadmap?.roadmap_type === "MARKET" ||
     roadmap?.personalization_status === "NONE" ||
-    (gaps && gaps.length > 0 && gaps[0].current_evidence === "MARKET_REQUIREMENT");
+    (gaps.length > 0 && gaps[0].current_evidence === "MARKET_REQUIREMENT");
 
   const isLowConfidence =
     roadmap?.role_confidence === "LOW" ||
-    (gaps && gaps.length > 0 && gaps[0].confidence === "LOW");
+    (alignment && alignment.confidence === "LOW");
 
-  const firstGap = gaps && gaps.length > 0 ? gaps[0] : null;
+  const firstGap = gaps.length > 0 ? gaps[0] : null;
+
+  // Group competencies by Tier preserving TIER_ORDER
+  const groupedByTier = TIER_ORDER.map((tierKey) => {
+    const items = gaps.filter(
+      (g) => (g.tier || "CORE").toUpperCase() === tierKey.toUpperCase()
+    );
+    return {
+      tierKey,
+      meta: TIER_METADATA[tierKey] || {
+        label: tierKey,
+        description: "",
+        badge: "bg-ink-100 text-ink-700",
+      },
+      items,
+    };
+  }).filter((group) => group.items.length > 0);
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Target size={24} className="text-signal-600" />
           <h1 className="font-display text-2xl text-ink-900">
-            {isMarketBenchmark ? "Market Skill Benchmark" : "Personalized Skill Gap Analysis"}
+            {isMarketBenchmark ? "Career Competency Map" : "Canonical Career Skill Alignment"}
           </h1>
         </div>
       </div>
       <p className="text-ink-500 mb-6 text-sm">
         {isMarketBenchmark
-          ? `Skills commonly expected across the industry for ${activeRole}. Upload your resume to see your personalized gaps.`
-          : `Direct comparison between your verified resume evidence and market requirements for ${activeRole}.`}
+          ? `Canonical role competency structure for ${activeRole}. Upload your resume to evaluate demonstrated evidence against this structure.`
+          : `Verified alignment between your resume evidence and canonical competencies for ${activeRole}.`}
       </p>
 
-      {/* P3-02 Target Opportunity Context Banner */}
+      {/* Target Opportunity Context Banner */}
       {targetJob && (
         <div className="rounded-xl border border-signal-500/20 bg-signal-50/60 p-4 mb-6 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
@@ -102,7 +183,10 @@ export function SkillGaps() {
                   <div className="flex flex-wrap items-center gap-1 mt-2">
                     <span className="text-[11px] font-semibold text-ink-700 mr-1">Requisition Skills:</span>
                     {targetJob.skills_required.slice(0, 8).map((s: string) => (
-                      <span key={s} className="px-1.5 py-0.5 bg-white border border-ink-200 text-ink-800 rounded text-[10px]">
+                      <span
+                        key={s}
+                        className="px-1.5 py-0.5 bg-white border border-ink-200 text-ink-800 rounded text-[10px]"
+                      >
                         {s}
                       </span>
                     ))}
@@ -123,12 +207,12 @@ export function SkillGaps() {
       {/* Target Role Selector Bar */}
       <div className="bg-white rounded-lg border border-ink-100 p-4 mb-6 shadow-xs">
         <RoleDropdownSelector
-          label="Analyzing Gaps For Target Role:"
+          label="Analyzing Career Role:"
           selectedRole={activeRole}
           onRoleChange={setSelectedRole}
-          roles={ALL_JOB_ROLES}
+          roles={roleOptions}
           includeAllOption={false}
-          helperText="Select or specify any target role across software, data, engineering, design, healthcare, business, or education."
+          helperText="Select any canonical career role from RoleRadar's authoritative competency taxonomy."
         />
       </div>
 
@@ -136,7 +220,49 @@ export function SkillGaps() {
 
       {error && (
         <div className="rounded-xl bg-alert-600/10 border border-alert-600/20 p-4 text-xs text-alert-800 mb-4">
-          <p>{(error as any)?.response?.data?.detail || "Unable to evaluate skill gaps for this role. Please retry."}</p>
+          <p>
+            {(error as any)?.response?.data?.detail ||
+              "Unable to evaluate career competencies for this role. Please retry."}
+          </p>
+        </div>
+      )}
+
+      {/* Summary Metrics Bar */}
+      {!isLoading && alignment?.summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
+            <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
+            <span className="text-xl font-bold text-ink-900 mt-0.5 block">
+              {alignment.summary.total}
+            </span>
+          </div>
+          <div className="bg-white p-3.5 rounded-xl border border-emerald-500/20 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-emerald-700">Demonstrated</span>
+              <CheckCircle2 size={14} className="text-emerald-600" />
+            </div>
+            <span className="text-xl font-bold text-emerald-700 mt-0.5 block">
+              {alignment.summary.demonstrated}
+            </span>
+          </div>
+          <div className="bg-white p-3.5 rounded-xl border border-amber-500/20 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-amber-700">Partially Demonstrated</span>
+              <AlertCircle size={14} className="text-amber-600" />
+            </div>
+            <span className="text-xl font-bold text-amber-700 mt-0.5 block">
+              {alignment.summary.partially_demonstrated}
+            </span>
+          </div>
+          <div className="bg-white p-3.5 rounded-xl border border-ink-200 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-ink-500">No Resume Evidence</span>
+              <MinusCircle size={14} className="text-ink-400" />
+            </div>
+            <span className="text-xl font-bold text-ink-700 mt-0.5 block">
+              {alignment.summary.no_resume_evidence}
+            </span>
+          </div>
         </div>
       )}
 
@@ -150,18 +276,20 @@ export function SkillGaps() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 px-2 py-0.5 rounded-full border border-blue-500/20">
-                  Market Skill Benchmark
+                  Market Benchmark View
                 </span>
                 {firstGap?.domain && (
                   <span className="text-[11px] text-ink-600 font-medium flex items-center gap-1">
                     <Layers size={11} className="text-ink-400" />
                     <span>Domain: {firstGap.domain}</span>
-                    {firstGap.subdomain && <span className="text-ink-400">({firstGap.subdomain})</span>}
+                    {firstGap.subdomain && (
+                      <span className="text-ink-400">({firstGap.subdomain})</span>
+                    )}
                   </span>
                 )}
               </div>
               <p className="text-xs text-ink-700 mt-1.5 leading-relaxed">
-                This is a market benchmark, not a personalized assessment. Upload your master resume to discover which competencies you already demonstrate and which are personal gaps.
+                Viewing canonical competencies for {activeRole}. Upload your master resume to see what skills you currently demonstrate and what evidence is missing.
               </p>
             </div>
           </div>
@@ -176,13 +304,14 @@ export function SkillGaps() {
       )}
 
       {/* Low Confidence State: Arbitrary or Unknown Role */}
-      {!isLoading && isLowConfidence && (!gaps || gaps.length === 0) && (
+      {!isLoading && isLowConfidence && gaps.length === 0 && (
         <EmptyState
           icon={ShieldAlert}
-          title="Limited market evidence for this role"
+          title="Limited evidence for this role"
           description={
+            alignment?.message ||
             roadmap?.message ||
-            `We couldn't confidently determine role-specific skill requirements for "${activeRole}". Add a job description or choose a standard industry role for a more precise analysis.`
+            `We couldn't confidently determine role-specific skill requirements for "${activeRole}". Select a canonical role from the taxonomy for full analysis.`
           }
           actionText="Explore Job Openings"
           actionHref="/opportunities/jobs"
@@ -191,68 +320,126 @@ export function SkillGaps() {
         />
       )}
 
-      {/* Zero Gaps Detected (When personalized & candidate covered all) */}
-      {!isLoading && !isLowConfidence && gaps && gaps.length === 0 && (
-        <EmptyState
-          icon={Sparkles}
-          title="Zero skill gaps detected!"
-          description={`Your resume demonstrates comprehensive coverage of all market competencies required for ${activeRole}.`}
-          actionText="Practice Interview Questions"
-          actionHref="/growth/interview"
-          secondaryActionText="Explore Job Openings"
-          secondaryActionHref="/opportunities/jobs"
-        />
-      )}
-
-      {/* Gaps List */}
-      <div className="space-y-3">
-        {gaps?.map((gap, i) => {
-          const styleMap = isMarketBenchmark ? MARKET_PRIORITY_STYLE : PERSONALIZED_PRIORITY_STYLE;
-          const style = styleMap[gap.priority] || styleMap.CORE;
-
-          return (
-            <div key={i} className="rounded-xl border border-ink-100 bg-white p-5 transition-shadow hover:shadow-xs">
-              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-ink-900 text-base">{gap.skill}</h3>
-                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${style.badge}`}>
-                    {style.label}
-                  </span>
-                  {gap.source && (
-                    <span className="text-[10px] text-ink-400 bg-ink-50 border border-ink-100 px-2 py-0.5 rounded-md font-mono">
-                      {gap.source === "ROLE_TAXONOMY_AND_MARKET"
-                        ? "Taxonomy + Market Postings"
-                        : gap.source === "ROLE_TAXONOMY"
-                        ? "Role Taxonomy"
-                        : gap.source === "JOB_REQUIREMENTS"
-                        ? "Job Posting"
-                        : gap.source}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-ink-400 font-mono">
-                  Estimated study: ~{gap.estimated_days} days
+      {/* Structured Competency Groups by Tier */}
+      <div className="space-y-8">
+        {groupedByTier.map((group) => (
+          <div key={group.tierKey} className="space-y-3">
+            <div className="flex items-center justify-between pb-1 border-b border-ink-100">
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md uppercase tracking-wider ${group.meta.badge}`}>
+                  {group.meta.label}
                 </span>
+                <span className="text-xs text-ink-400">({group.items.length})</span>
               </div>
-
-              <p className="text-xs text-ink-600 mb-3 leading-relaxed">{gap.reason}</p>
-
-              <div className="pt-3 border-t border-ink-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-[11px] text-ink-400">
-                  Ready to develop this competency with guided study resources?
-                </span>
-                <Link
-                  to="/growth/roadmap"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-xs font-bold transition-colors shrink-0"
-                >
-                  <MapIcon size={13} className="text-signal-600" />
-                  <span>Follow in Learning Roadmap</span>
-                  <ArrowRight size={12} />
-                </Link>
-              </div>
+              <span className="text-[11px] text-ink-400 hidden sm:inline">{group.meta.description}</span>
             </div>
-          );
-        })}
+
+            <div className="space-y-3">
+              {group.items.map((gap: SkillGap, i: number) => {
+                const status = gap.status || "NO_RESUME_EVIDENCE";
+                const isDemonstrated = status === "DEMONSTRATED";
+                const isPartial = status === "PARTIALLY_DEMONSTRATED";
+
+                return (
+                  <div
+                    key={`${gap.skill}-${i}`}
+                    className={`rounded-xl border p-4.5 transition-shadow hover:shadow-xs ${
+                      isDemonstrated
+                        ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                        : isPartial
+                        ? "border-amber-500/20 bg-amber-500/[0.02]"
+                        : "border-ink-100 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-ink-900 text-sm">{gap.skill}</h3>
+
+                          {/* Canonical Status Badge */}
+                          {hasResume ? (
+                            isDemonstrated ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                                <CheckCircle2 size={11} />
+                                <span>Demonstrated</span>
+                              </span>
+                            ) : isPartial ? (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                                <AlertCircle size={11} />
+                                <span>Partially Demonstrated</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-ink-100 text-ink-600 border border-ink-200">
+                                <MinusCircle size={11} />
+                                <span>No Resume Evidence</span>
+                              </span>
+                            )
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-700 border border-blue-500/20">
+                              Standard Requirement
+                            </span>
+                          )}
+
+                          {/* Importance Badge */}
+                          {gap.importance && (
+                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-ink-50 text-ink-500 border border-ink-100">
+                              {gap.importance}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <span className="text-[11px] text-ink-400 font-mono">
+                        Estimated study: ~{gap.estimated_days} days
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-ink-600 mb-2 leading-relaxed">
+                      {gap.explanation || gap.reason}
+                    </p>
+
+                    {/* Evidence Provenance Section */}
+                    {hasResume && gap.evidence && gap.evidence.length > 0 && (
+                      <div className="mt-2 mb-2 p-2.5 rounded-lg bg-ink-50/70 border border-ink-100 text-[11px] space-y-1">
+                        <div className="flex items-center gap-1.5 text-ink-700 font-medium">
+                          <FileCheck size={12} className="text-signal-600 shrink-0" />
+                          <span>
+                            Evidence: {gap.evidence[0].entity_name || gap.evidence[0].section}
+                          </span>
+                          <span className="text-[10px] text-ink-400 font-mono">
+                            ({gap.evidence[0].evidence_type})
+                          </span>
+                        </div>
+                        {gap.evidence[0].text && (
+                          <p className="text-ink-600 italic text-[10.5px] line-clamp-2">
+                            "{gap.evidence[0].text}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Footer */}
+                    {status !== "DEMONSTRATED" && (
+                      <div className="pt-2.5 border-t border-ink-100/70 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-ink-400">
+                          Add this competency to your study roadmap?
+                        </span>
+                        <Link
+                          to="/growth/roadmap"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-[11px] font-semibold transition-colors shrink-0"
+                        >
+                          <MapIcon size={11} className="text-signal-600" />
+                          <span>View in Roadmap</span>
+                          <ArrowRight size={10} />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

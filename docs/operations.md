@@ -166,4 +166,53 @@ Before launching the production stack, ensure the following environment variable
 | `CLOUD_FALLBACK_API_KEY` | Production API key for cloud LLM | Secret API token |
 | `CLOUD_FALLBACK_MODEL` | Target model name | `gemini-2.5-flash` |
 | `RATE_LIMITING_ENABLED`| Global rate limiting switch | `true` |
+| `AUTH_RATE_LIMIT_MAX_REQUESTS` | Maximum unauthenticated login/register attempts per IP window | `10` |
+| `AUTH_RATE_LIMIT_WINDOW_SECONDS`| Sliding rate limit window duration in seconds | `60` |
 | `MAX_UPLOAD_MB` | Maximum allowed resume upload size | `5` |
+
+---
+
+## 5. Live Opportunity Provider Synchronization (Decoupled in Phase 16C)
+
+In Phase 16C, live opportunity provider synchronization (`refresh_live_jobs()`) was permanently decoupled from synchronous user discovery requests (`GET /matching/recommended` and `GET /jobs`).
+
+### Architectural Behavior
+- **User Discovery Path**: Queries indexed MongoDB opportunity documents directly (<25ms). No synchronous HTTP calls to external ATS platforms (Greenhouse, Lever, SmartRecruiters, or Adzuna) occur during user requests.
+- **Provider Synchronization Path**: Live opportunity ingestion is triggered independently out-of-band.
+
+### Triggering Provider Synchronization
+Provider synchronization can be triggered on-demand or via scheduled jobs:
+
+1. **Authenticated API Endpoint**:
+   ```bash
+   POST /api/jobs/sync
+   Authorization: Bearer <token>
+   ```
+   Returns:
+   ```json
+   {
+     "status": "success",
+     "added_count": 5
+   }
+   ```
+
+2. **Automated Scheduled Ingestion (Cron / Celery / Task Scheduler)**:
+   Set up a recurring worker or cron job (e.g., every 2–4 hours) to invoke the sync endpoint or directly execute the provider refresh script:
+   ```bash
+   # Example crontab (every 2 hours)
+   0 */2 * * * curl -X POST https://api.roleradar.example.com/api/jobs/sync -H "Authorization: Bearer $SYNC_SERVICE_TOKEN"
+   ```
+
+---
+
+## 6. Authentication Rate Limiting
+
+Unauthenticated authentication endpoints are protected by sliding-window rate limiting to prevent brute-force attacks:
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+
+### Features:
+- **IP-Based Keying**: Identifies unauthenticated clients via `X-Forwarded-For`, `X-Real-IP`, or direct socket client address without requiring bearer tokens.
+- **Configurable Limits**: Default is 10 requests per 60 seconds (`AUTH_RATE_LIMIT_MAX_REQUESTS=10`, `AUTH_RATE_LIMIT_WINDOW_SECONDS=60`).
+- **HTTP 429 Response**: Returns `429 Too Many Requests` with standard `Retry-After` header when exceeded.
+

@@ -222,6 +222,10 @@ SKILL_RESOURCES: dict[str, list[str]] = {
     "unit testing": [
         "https://martinfowler.com/articles/practical-test-pyramid.html",
     ],
+    "kafka": [
+        "https://kafka.apache.org/documentation/",
+        "https://developer.confluent.io/quickstart/kafka-local/",
+    ],
 }
 
 import re
@@ -232,6 +236,23 @@ RESOURCE_SYNONYMS = {
     "k8s": "kubernetes",
     "js": "javascript",
     "ts": "typescript",
+    "gcp": "google cloud platform",
+    "azure": "microsoft azure",
+    "restful apis": "rest apis",
+    "restful api design": "rest apis",
+    "rest api": "rest apis",
+    "api design": "rest apis",
+    "version control": "git",
+    "git & version control": "git",
+    "data structures & algorithms": "data structures",
+    "dsa": "data structures",
+    "relational databases": "sql",
+    "relational database design": "sql",
+    "sql querying": "sql",
+    "continuous integration": "ci/cd",
+    "continuous delivery": "ci/cd",
+    "github actions": "ci/cd",
+    "testing": "unit testing",
 }
 
 
@@ -256,10 +277,7 @@ def get_resources_for_skill(skill: str) -> list[str]:
         if re.search(pattern, key):
             return urls
 
-    # 4. Fallback search URLs
-    query = skill.replace(" ", "+")
-    return [
-        f"https://www.youtube.com/results?search_query={query}+tutorial+crash+course",
-        f"https://www.google.com/search?q={query}+documentation+tutorial",
-    ]
+    # 4. Honest fallback: If no curated resource is verified, return empty list rather than
+    # fabricating a generic search URL (Phase 16E requirement)
+    return []
 

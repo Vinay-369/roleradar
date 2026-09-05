@@ -438,20 +438,23 @@ def render_pdf_from_structured(
     if template == "compact":
         top_m, bot_m, left_m, right_m = 0.35 * inch, 0.35 * inch, 0.4 * inch, 0.4 * inch
         heading_space_before = 7
-        body_leading = 10.0
-        bullet_leading = 10.0
+        body_font_size = 9.0
+        body_leading = 11.0
+        bullet_leading = 11.0
         bullet_space_after = 1.0
     elif template == "classic":
         top_m, bot_m, left_m, right_m = 0.4 * inch, 0.4 * inch, 0.45 * inch, 0.45 * inch
         heading_space_before = 10
-        body_leading = 11.5
-        bullet_leading = 11.5
+        body_font_size = 9.5
+        body_leading = 12.0
+        bullet_leading = 12.0
         bullet_space_after = 1.5
     else:  # standard
         top_m, bot_m, left_m, right_m = 0.4 * inch, 0.4 * inch, 0.45 * inch, 0.45 * inch
         heading_space_before = 9
-        body_leading = 11.0
-        bullet_leading = 11.0
+        body_font_size = 9.5
+        body_leading = 12.0
+        bullet_leading = 12.0
         bullet_space_after = 1.5
 
     doc = SimpleDocTemplate(
@@ -502,11 +505,11 @@ def render_pdf_from_structured(
         leading=10.5, textColor=HexColor(INK_700), spaceAfter=2, keepWithNext=True,
     )
     body_style = ParagraphStyle(
-        "Body", parent=styles["Normal"], fontName=font_family, fontSize=8.5,
+        "Body", parent=styles["Normal"], fontName=font_family, fontSize=body_font_size,
         textColor=HexColor(INK_900), leading=body_leading, spaceAfter=1.5,
     )
     bullet_style = ParagraphStyle(
-        "Bullet", parent=styles["Normal"], fontName=font_family, fontSize=8.5,
+        "Bullet", parent=styles["Normal"], fontName=font_family, fontSize=body_font_size,
         textColor=HexColor(INK_900), leading=bullet_leading, leftIndent=12, firstLineIndent=-8, spaceAfter=bullet_space_after,
     )
 
@@ -1065,22 +1068,29 @@ def render_docx_from_structured(
         section.left_margin = Inches(margin_size)
         section.right_margin = Inches(margin_size)
 
+    sec = document.sections[0]
+    usable_width_inches = sec.page_width.inches - sec.left_margin.inches - sec.right_margin.inches
+    right_tab_stop = Inches(round(usable_width_inches, 2))
+
     if template == "classic":
         font_name = "Times New Roman"
         accent_color = CLASSIC_ACCENT
         alignment = WD_ALIGN_PARAGRAPH.CENTER
+        body_font_pt = Pt(10.0)
     elif template == "compact":
         font_name = "Calibri"
         accent_color = INK_900
         alignment = WD_ALIGN_PARAGRAPH.LEFT
+        body_font_pt = Pt(9.0)
     else:  # standard
         font_name = "Calibri"
         accent_color = SIGNAL_600
         alignment = WD_ALIGN_PARAGRAPH.CENTER
+        body_font_pt = Pt(9.5)
 
     normal = document.styles["Normal"]
     normal.font.name = font_name
-    normal.font.size = Pt(8.5 if template == "compact" else 9.0)
+    normal.font.size = body_font_pt
 
     personal = parsed_data.get("personal", {}) or parsed_data.get("personal_info", {}) or {}
     name = personal.get("name") or personal.get("full_name") or candidate_name or "Candidate"
@@ -1231,14 +1241,14 @@ def render_docx_from_structured(
                                 seen_sk.add(cs.lower())
                                 clean_unique.append(cs)
                         r_sk = p_sk.add_run(", ".join(clean_unique))
-                        r_sk.font.size = Pt(8.5)
+                        r_sk.font.size = body_font_pt
                         _set_run_color(r_sk, INK_900)
                 else:
                     p_sk = document.add_paragraph()
                     p_sk.paragraph_format.space_before = Pt(0)
                     p_sk.paragraph_format.space_after = Pt(2)
                     r_sk = p_sk.add_run(str(skills))
-                    r_sk.font.size = Pt(8.5)
+                    r_sk.font.size = body_font_pt
                     _set_run_color(r_sk, INK_900)
                 rendered_sections.add("skills")
 
@@ -1262,18 +1272,18 @@ def render_docx_from_structured(
                         p_comp.paragraph_format.space_after = Pt(1)
                         p_comp.paragraph_format.keep_with_next = True
                         if loc:
-                            p_comp.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                            p_comp.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                             r_c = p_comp.add_run(comp)
                             r_c.bold = True
-                            r_c.font.size = Pt(9.0)
+                            r_c.font.size = Pt(9.5)
                             _set_run_color(r_c, INK_900)
                             r_l = p_comp.add_run(f"\t{loc}")
-                            r_l.font.size = Pt(8.5)
+                            r_l.font.size = body_font_pt
                             _set_run_color(r_l, INK_700)
                         else:
                             r_c = p_comp.add_run(comp)
                             r_c.bold = True
-                            r_c.font.size = Pt(9.0)
+                            r_c.font.size = Pt(9.5)
                             _set_run_color(r_c, INK_900)
 
                     prog = ent.progression if hasattr(ent, "progression") else ent.get("progression", [])
@@ -1286,18 +1296,18 @@ def render_docx_from_structured(
                             p_tit.paragraph_format.space_after = Pt(1)
                             p_tit.paragraph_format.keep_with_next = True
                             if p_dates:
-                                p_tit.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                                p_tit.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                                 r1 = p_tit.add_run(p_title)
                                 r1.bold = True
-                                r1.font.size = Pt(8.5)
+                                r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
                                 r2 = p_tit.add_run(f"\t{p_dates}")
-                                r2.font.size = Pt(8.5)
+                                r2.font.size = body_font_pt
                                 _set_run_color(r2, INK_700)
                             else:
                                 r1 = p_tit.add_run(p_title)
                                 r1.bold = True
-                                r1.font.size = Pt(8.5)
+                                r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
 
                             p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
@@ -1309,7 +1319,7 @@ def render_docx_from_structured(
                                     p_b.paragraph_format.space_after = Pt(1)
                                     p_b.paragraph_format.left_indent = Inches(0.2)
                                     r_b = p_b.add_run(clean_b)
-                                    r_b.font.size = Pt(8.5)
+                                    r_b.font.size = body_font_pt
                                     _set_run_color(r_b, INK_900)
                     elif (hasattr(ent, "role") and ent.role) or (isinstance(ent, dict) and ent.get("role")):
                         r_title = ent.role if hasattr(ent, "role") else ent.get("role", "")
@@ -1319,18 +1329,18 @@ def render_docx_from_structured(
                         p_tit.paragraph_format.space_after = Pt(1)
                         p_tit.paragraph_format.keep_with_next = True
                         if r_dates:
-                            p_tit.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                            p_tit.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                             r1 = p_tit.add_run(r_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
                             r2 = p_tit.add_run(f"\t{r_dates}")
-                            r2.font.size = Pt(8.5)
+                            r2.font.size = body_font_pt
                             _set_run_color(r2, INK_700)
                         else:
                             r1 = p_tit.add_run(r_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
 
                     r_groups = ent.responsibility_groups if hasattr(ent, "responsibility_groups") else ent.get("responsibility_groups", [])
@@ -1344,7 +1354,7 @@ def render_docx_from_structured(
                                 p_grp.paragraph_format.keep_with_next = True
                                 r_grp = p_grp.add_run(g_heading)
                                 r_grp.bold = True
-                                r_grp.font.size = Pt(8.5)
+                                r_grp.font.size = body_font_pt
                                 _set_run_color(r_grp, INK_900)
                             g_bullets = grp.bullets if hasattr(grp, "bullets") else grp.get("bullets", [])
                             for b in g_bullets:
@@ -1355,7 +1365,7 @@ def render_docx_from_structured(
                                     p_b.paragraph_format.space_after = Pt(1)
                                     p_b.paragraph_format.left_indent = Inches(0.2)
                                     r_b = p_b.add_run(clean_b)
-                                    r_b.font.size = Pt(8.5)
+                                    r_b.font.size = body_font_pt
                                     _set_run_color(r_b, INK_900)
                     else:
                         e_bullets = ent.bullets if hasattr(ent, "bullets") else ent.get("bullets", [])
@@ -1368,7 +1378,7 @@ def render_docx_from_structured(
                                     p_b.paragraph_format.space_after = Pt(1)
                                     p_b.paragraph_format.left_indent = Inches(0.2)
                                     r_b = p_b.add_run(clean_b)
-                                    r_b.font.size = Pt(8.5)
+                                    r_b.font.size = body_font_pt
                                     _set_run_color(r_b, INK_900)
                 rendered_sections.add("experience")
 
@@ -1393,18 +1403,18 @@ def render_docx_from_structured(
                         p_comp.paragraph_format.space_after = Pt(1)
                         p_comp.paragraph_format.keep_with_next = True
                         if loc:
-                            p_comp.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                            p_comp.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                             r_c = p_comp.add_run(comp)
                             r_c.bold = True
-                            r_c.font.size = Pt(9.0)
+                            r_c.font.size = Pt(9.5)
                             _set_run_color(r_c, INK_900)
                             r_l = p_comp.add_run(f"\t{loc}")
-                            r_l.font.size = Pt(8.5)
+                            r_l.font.size = body_font_pt
                             _set_run_color(r_l, INK_700)
                         else:
                             r_c = p_comp.add_run(comp)
                             r_c.bold = True
-                            r_c.font.size = Pt(9.0)
+                            r_c.font.size = Pt(9.5)
                             _set_run_color(r_c, INK_900)
 
                     r_title = ent.role if hasattr(ent, "role") else ent.get("role", "")
@@ -1415,18 +1425,18 @@ def render_docx_from_structured(
                         p_tit.paragraph_format.space_after = Pt(1)
                         p_tit.paragraph_format.keep_with_next = True
                         if r_dates:
-                            p_tit.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                            p_tit.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                             r1 = p_tit.add_run(r_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
                             r2 = p_tit.add_run(f"\t{r_dates}")
-                            r2.font.size = Pt(8.5)
+                            r2.font.size = body_font_pt
                             _set_run_color(r2, INK_700)
                         else:
                             r1 = p_tit.add_run(r_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
 
                     e_bullets = ent.bullets if hasattr(ent, "bullets") else ent.get("bullets", [])
@@ -1438,7 +1448,7 @@ def render_docx_from_structured(
                             p_b.paragraph_format.space_after = Pt(1)
                             p_b.paragraph_format.left_indent = Inches(0.2)
                             r_b = p_b.add_run(clean_b)
-                            r_b.font.size = Pt(8.5)
+                            r_b.font.size = body_font_pt
                             _set_run_color(r_b, INK_900)
                 rendered_sections.add("internships")
 
@@ -1463,18 +1473,18 @@ def render_docx_from_structured(
                         p_tit.paragraph_format.space_after = Pt(1)
                         p_tit.paragraph_format.keep_with_next = True
                         if p_dates:
-                            p_tit.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                            p_tit.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                             r1 = p_tit.add_run(p_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
                             r2 = p_tit.add_run(f"\t{p_dates}")
-                            r2.font.size = Pt(8.5)
+                            r2.font.size = body_font_pt
                             _set_run_color(r2, INK_700)
                         else:
                             r1 = p_tit.add_run(p_title)
                             r1.bold = True
-                            r1.font.size = Pt(8.5)
+                            r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
 
                     if p_tech:
@@ -1484,7 +1494,7 @@ def render_docx_from_structured(
                         p_t.paragraph_format.space_after = Pt(2)
                         r_tech = p_t.add_run(f"Technologies: {p_tech_str}")
                         r_tech.italic = True
-                        r_tech.font.size = Pt(8.0)
+                        r_tech.font.size = Pt(8.5)
                         _set_run_color(r_tech, INK_700)
 
                     p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
@@ -1496,7 +1506,7 @@ def render_docx_from_structured(
                             p_b.paragraph_format.space_after = Pt(1)
                             p_b.paragraph_format.left_indent = Inches(0.2)
                             r_b = p_b.add_run(clean_b)
-                            r_b.font.size = Pt(8.5)
+                            r_b.font.size = body_font_pt
                             _set_run_color(r_b, INK_900)
                 rendered_sections.add("projects")
 
@@ -1520,19 +1530,19 @@ def render_docx_from_structured(
                             p_inst.paragraph_format.keep_with_next = True
                             inst_text = inst + (f", {loc}" if loc else "")
                             if dates:
-                                p_inst.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                                p_inst.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                                 r1 = p_inst.add_run(inst_text)
                                 r1.bold = True
-                                r1.font.size = Pt(8.5)
+                                r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
                                 r2 = p_inst.add_run(f"\t{dates}")
                                 r2.bold = True if template == "classic" else False
-                                r2.font.size = Pt(8.5)
+                                r2.font.size = body_font_pt
                                 _set_run_color(r2, INK_700)
                             else:
                                 r1 = p_inst.add_run(inst_text)
                                 r1.bold = True
-                                r1.font.size = Pt(8.5)
+                                r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
 
                         deg_parts = []
@@ -1545,7 +1555,7 @@ def render_docx_from_structured(
                             p_deg.paragraph_format.space_before = Pt(0)
                             p_deg.paragraph_format.space_after = Pt(1.5)
                             r_deg = p_deg.add_run(" | ".join(deg_parts))
-                            r_deg.font.size = Pt(8.5)
+                            r_deg.font.size = body_font_pt
                             _set_run_color(r_deg, INK_900)
                     else:
                         item_str = str(item).strip()
@@ -1560,18 +1570,18 @@ def render_docx_from_structured(
                             cleaned = _clean_title_and_date(sub_clean)
                             if cleaned and cleaned[0] and cleaned[1] and sub_idx == 0:
                                 t_str, d_str = cleaned
-                                p_ed.paragraph_format.tab_stops.add_tab_stop(Inches(7.3), WD_TAB_ALIGNMENT.RIGHT)
+                                p_ed.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
                                 r1 = p_ed.add_run(t_str)
                                 r1.bold = True
-                                r1.font.size = Pt(8.5)
+                                r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
                                 r2 = p_ed.add_run(f"\t{d_str}")
                                 r2.bold = True if template == "classic" else False
-                                r2.font.size = Pt(8.5)
+                                r2.font.size = body_font_pt
                                 _set_run_color(r2, INK_700)
                             else:
                                 r_ed = p_ed.add_run(sub_clean)
-                                r_ed.font.size = Pt(8.5)
+                                r_ed.font.size = body_font_pt
                                 if sub_idx == 0:
                                     r_ed.bold = True
                                     _set_run_color(r_ed, INK_900)
@@ -1594,7 +1604,7 @@ def render_docx_from_structured(
                     p_b.paragraph_format.space_after = Pt(1)
                     p_b.paragraph_format.left_indent = Inches(0.2)
                     r_b = p_b.add_run(clean_b)
-                    r_b.font.size = Pt(8.5)
+                    r_b.font.size = body_font_pt
                     _set_run_color(r_b, INK_900)
                 rendered_sections.add("certifications")
 
@@ -1613,7 +1623,7 @@ def render_docx_from_structured(
                     p_b.paragraph_format.space_after = Pt(1)
                     p_b.paragraph_format.left_indent = Inches(0.2)
                     r_b = p_b.add_run(clean_b)
-                    r_b.font.size = Pt(8.5)
+                    r_b.font.size = body_font_pt
                     _set_run_color(r_b, INK_900)
                 rendered_sections.add("achievements")
 
@@ -1632,7 +1642,7 @@ def render_docx_from_structured(
                     p_b.paragraph_format.space_after = Pt(1)
                     p_b.paragraph_format.left_indent = Inches(0.2)
                     r_b = p_b.add_run(clean_b)
-                    r_b.font.size = Pt(8.5)
+                    r_b.font.size = body_font_pt
                     _set_run_color(r_b, INK_900)
                 rendered_sections.add("publications")
 
@@ -1651,7 +1661,7 @@ def render_docx_from_structured(
                     p_b.paragraph_format.space_after = Pt(1)
                     p_b.paragraph_format.left_indent = Inches(0.2)
                     r_b = p_b.add_run(clean_b)
-                    r_b.font.size = Pt(8.5)
+                    r_b.font.size = body_font_pt
                     _set_run_color(r_b, INK_900)
                 rendered_sections.add("research")
 
@@ -1665,7 +1675,7 @@ def render_docx_from_structured(
                 p_lang.paragraph_format.space_after = Pt(2)
                 lang_text = ", ".join(str(l) for l in langs if l) if isinstance(langs, list) else str(langs)
                 r_lang = p_lang.add_run(lang_text)
-                r_lang.font.size = Pt(8.5)
+                r_lang.font.size = body_font_pt
                 _set_run_color(r_lang, INK_900)
                 rendered_sections.add("languages")
 
@@ -1695,7 +1705,7 @@ def render_docx_from_structured(
                         p_b.paragraph_format.space_after = Pt(1)
                         p_b.paragraph_format.left_indent = Inches(0.2)
                         r_b = p_b.add_run(clean_b)
-                        r_b.font.size = Pt(8.5)
+                        r_b.font.size = body_font_pt
                         _set_run_color(r_b, INK_900)
                 items = (
                     add_sec.get("items", [])
@@ -1710,7 +1720,7 @@ def render_docx_from_structured(
                         p_b.paragraph_format.space_after = Pt(1)
                         p_b.paragraph_format.left_indent = Inches(0.2)
                         r_b = p_b.add_run(clean_b)
-                        r_b.font.size = Pt(8.5)
+                        r_b.font.size = body_font_pt
                         _set_run_color(r_b, INK_900)
                 rendered_sections.add(sec_title.lower())
 

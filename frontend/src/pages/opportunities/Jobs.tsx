@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Briefcase, Sparkles, Search } from "lucide-react";
+import { Briefcase, Sparkles, Search, FileText } from "lucide-react";
 import { getRecommendedMatches } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -183,30 +183,40 @@ export function Jobs() {
           </p>
         </div>
 
-        {/* P1-01 India-First vs Global Scope Explorer */}
-        <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
-          <button
-            type="button"
-            onClick={() => setRegionScope("india")}
-            className={`px-3 py-1.5 rounded-md transition-all ${
-              regionScope === "india"
-                ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
-                : "text-ink-600 hover:text-ink-950"
-            }`}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <Link
+            to="/resume/tailor-custom"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold transition-colors shadow-2xs"
           >
-            🇮🇳 India Opportunities
-          </button>
-          <button
-            type="button"
-            onClick={() => setRegionScope("global")}
-            className={`px-3 py-1.5 rounded-md transition-all ${
-              regionScope === "global"
-                ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
-                : "text-ink-600 hover:text-ink-950"
-            }`}
-          >
-            🌐 Global / All Locations
-          </button>
+            <FileText size={13} className="text-signal-600" />
+            <span>Paste External JD</span>
+          </Link>
+
+          {/* P1-01 India-First vs Global Scope Explorer */}
+          <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
+            <button
+              type="button"
+              onClick={() => setRegionScope("india")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                regionScope === "india"
+                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
+                  : "text-ink-600 hover:text-ink-950"
+              }`}
+            >
+              🇮🇳 India Opportunities
+            </button>
+            <button
+              type="button"
+              onClick={() => setRegionScope("global")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                regionScope === "global"
+                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
+                  : "text-ink-600 hover:text-ink-950"
+              }`}
+            >
+              🌐 Global / All Locations
+            </button>
+          </div>
         </div>
       </div>
 

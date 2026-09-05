@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ClipboardCheck,
   Building2,
@@ -73,10 +73,27 @@ export function Applications() {
     queryFn: listApplications,
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get("tab")?.toUpperCase();
+  const initialTab: "ALL" | "SAVED" | "TAILORED" | "APPLIED" | "ARCHIVED" =
+    urlTab === "SAVED" || urlTab === "TAILORED" || urlTab === "APPLIED" || urlTab === "ARCHIVED"
+      ? urlTab
+      : "ALL";
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"ALL" | "ACTIVE" | "APPLIED" | "INTERVIEW" | "ARCHIVED">("ALL");
+  const [activeTab, setActiveTab] = useState<"ALL" | "SAVED" | "TAILORED" | "APPLIED" | "ARCHIVED">(initialTab);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+
+  const handleTabChange = (tab: "ALL" | "SAVED" | "TAILORED" | "APPLIED" | "ARCHIVED") => {
+    setActiveTab(tab);
+    if (tab === "ALL") {
+      searchParams.delete("tab");
+      setSearchParams(searchParams, { replace: true });
+    } else {
+      setSearchParams({ tab }, { replace: true });
+    }
+  };
 
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: { status?: ApplicationStatus; notes?: string } }) =>
@@ -100,7 +117,13 @@ export function Applications() {
     onError: () => toast.error("Failed to delete application."),
   });
 
-  const filteredApps = (applications ?? []).filter((app) => {
+  const allApps = applications ?? [];
+  const savedCount = allApps.filter((a) => a.status === "SAVED").length;
+  const tailoredCount = allApps.filter((a) => a.status === "TAILORED" || a.status === "QUEUED").length;
+  const appliedCount = allApps.filter((a) => a.status === "APPLIED" || a.status === "SHORTLISTED" || a.status === "INTERVIEW" || a.status === "OFFER").length;
+  const archivedCount = allApps.filter((a) => a.status === "REJECTED" || a.status === "WITHDRAWN").length;
+
+  const filteredApps = allApps.filter((app) => {
     // 1. Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -109,15 +132,15 @@ export function Applications() {
       if (!matchTitle && !matchCompany) return false;
     }
 
-    // 2. Status Tab Filter
-    if (activeTab === "ACTIVE") {
-      return app.status === "SAVED" || app.status === "TAILORED" || app.status === "QUEUED";
+    // 2. Status Tab Filter (Simplified User Flow: SAVED -> TAILORED -> APPLIED -> ARCHIVED)
+    if (activeTab === "SAVED") {
+      return app.status === "SAVED";
+    }
+    if (activeTab === "TAILORED") {
+      return app.status === "TAILORED" || app.status === "QUEUED";
     }
     if (activeTab === "APPLIED") {
-      return app.status === "APPLIED" || app.status === "SHORTLISTED";
-    }
-    if (activeTab === "INTERVIEW") {
-      return app.status === "INTERVIEW" || app.status === "OFFER";
+      return app.status === "APPLIED" || app.status === "SHORTLISTED" || app.status === "INTERVIEW" || app.status === "OFFER";
     }
     if (activeTab === "ARCHIVED") {
       return app.status === "REJECTED" || app.status === "WITHDRAWN";
@@ -169,48 +192,48 @@ export function Applications() {
         <div className="flex items-center gap-1 bg-ink-100/70 p-1 rounded-xl text-xs font-medium overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveTab("ALL")}
+            onClick={() => handleTabChange("ALL")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               activeTab === "ALL" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
             }`}
           >
-            All ({applications?.length ?? 0})
+            All ({allApps.length})
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("ACTIVE")}
+            onClick={() => handleTabChange("SAVED")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "ACTIVE" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+              activeTab === "SAVED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
             }`}
           >
-            Saved / Queued
+            Saved ({savedCount})
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("APPLIED")}
+            onClick={() => handleTabChange("TAILORED")}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === "TAILORED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            }`}
+          >
+            Tailored ({tailoredCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("APPLIED")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               activeTab === "APPLIED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
             }`}
           >
-            Applied
+            Applied ({appliedCount})
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("INTERVIEW")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "INTERVIEW" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
-            }`}
-          >
-            Interview / Offer
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("ARCHIVED")}
+            onClick={() => handleTabChange("ARCHIVED")}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               activeTab === "ARCHIVED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
             }`}
           >
-            Archived
+            Archived ({archivedCount})
           </button>
         </div>
 

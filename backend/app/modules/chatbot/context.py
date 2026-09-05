@@ -81,31 +81,60 @@ async def build_copilot_context(
 
     top_matches: list[dict] = []
     if profile is not None and resume is not None:
-        from app.core.config import get_settings
-        from app.core.embeddings.factory import build_embedding_provider
+        from app.db.mongo import Collections
 
-        active_settings = settings or get_settings()
-        embedder = build_embedding_provider(active_settings)
-        candidate = {
-            "skills": resume["parsed"].get("skills", []),
-            "target_roles": profile.get("target_roles", []),
-            "experience_years": profile.get("experience_years", 0),
-            "preferred_locations": profile.get("preferred_locations", []),
-            "remote_preference": profile.get("remote_preference", "any"),
-            "min_lpa": profile.get("min_lpa"),
-            "industries": profile.get("industries", []),
-        }
-        jobs = await jobs_services.search_jobs(db, {"limit": 100}, user_id=user_id)
-        scored = []
-        for job in jobs:
-            match = compute_match(candidate, job, embedder, category=profile.get("category", "FRESHER"))
-            scored.append({
-                "job_id": job["id"], "title": job["title"], "company": job["company"],
-                "overall_score": match.overall_score, "apply_readiness": match.apply_readiness,
-                "missing_skills": match.skill_match.missing,
-            })
-        scored.sort(key=lambda s: s["overall_score"], reverse=True)
-        top_matches = scored[:5]
+        # 1. Prefer existing persisted match data from Collections.JOB_MATCHES (Phase 16C)
+        cursor = db[Collections.JOB_MATCHES].find(
+            {"user_id": user_id}
+        ).sort("overall_score", -1).limit(5)
+        cached_matches = await cursor.to_list(length=5)
+
+        if cached_matches:
+            job_ids = [m["job_id"] for m in cached_matches]
+            jobs_cursor = db[Collections.JOBS].find({"id": {"$in": job_ids}})
+            jobs_by_id = {j["id"]: j async for j in jobs_cursor}
+            for m in cached_matches:
+                j = jobs_by_id.get(m["job_id"], {})
+                m_data = m.get("match_data", {})
+                top_matches.append({
+                    "job_id": m["job_id"],
+                    "title": j.get("title") or m_data.get("job_title", "Opportunity"),
+                    "company": j.get("company") or m_data.get("company", "Company"),
+                    "overall_score": m.get("overall_score", m_data.get("overall_score", 0)),
+                    "apply_readiness": m_data.get("apply_readiness", "READY" if m.get("overall_score", 0) >= 70 else "DEVELOPING"),
+                    "missing_skills": m_data.get("missing_skills", []),
+                })
+        else:
+            # 2. Cold-start fallback: evaluate at most 5 jobs (not 100), eliminating CPU/embedding bottleneck
+            sample_jobs = await jobs_services.search_jobs(db, {"limit": 5}, user_id=user_id)
+            if sample_jobs:
+                from app.core.config import get_settings
+                from app.core.embeddings.factory import build_embedding_provider
+
+                active_settings = settings or get_settings()
+                embedder = build_embedding_provider(active_settings)
+                candidate = {
+                    "skills": resume["parsed"].get("skills", []),
+                    "target_roles": profile.get("target_roles", []),
+                    "experience_years": profile.get("experience_years", 0),
+                    "preferred_locations": profile.get("preferred_locations", []),
+                    "remote_preference": profile.get("remote_preference", "any"),
+                    "min_lpa": profile.get("min_lpa"),
+                    "industries": profile.get("industries", []),
+                }
+                scored = []
+                for job in sample_jobs:
+                    match = compute_match(candidate, job, embedder, category=profile.get("category", "FRESHER"))
+                    scored.append({
+                        "job_id": job["id"],
+                        "title": job["title"],
+                        "company": job["company"],
+                        "overall_score": match.overall_score,
+                        "apply_readiness": match.apply_readiness,
+                        "missing_skills": match.skill_match.missing,
+                    })
+                scored.sort(key=lambda s: s["overall_score"], reverse=True)
+                top_matches = scored[:5]
     else:
         notes.append("Job matches can't be computed until both a profile and a resume exist.")
 

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2, Info, ArrowRight } from "lucide-react";
 import { getProfile } from "../../lib/profile";
-import { getRoadmap, getSkillGaps, type SkillGap } from "../../lib/learning";
+import { getRoadmap, getSkillGaps, getCanonicalRoles, type SkillGap } from "../../lib/learning";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
@@ -65,7 +65,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
         <p className="text-[11px] text-ink-600 leading-snug">{gap.project_suggestion}</p>
       </div>
 
-      {gap.resources && gap.resources.length > 0 && (
+      {gap.resources && gap.resources.length > 0 ? (
         <div>
           <p className="text-[10px] uppercase font-bold tracking-wider text-ink-400 mb-1.5 flex items-center gap-1">
             <BookOpen size={11} className="text-signal-600" /> Recommended Study Resources:
@@ -89,6 +89,10 @@ function GapDetail({ gap }: { gap: SkillGap }) {
             })}
           </div>
         </div>
+      ) : (
+        <p className="text-[11px] text-ink-400 italic">
+          Curated study resource currently unavailable for this specialized competency.
+        </p>
       )}
     </div>
   );
@@ -158,6 +162,16 @@ export function LearningRoadmap() {
     ? roadmap.immediate.length + roadmap.week_1.length + roadmap.week_2.length + roadmap.month_1.length
     : 0;
 
+  const { data: canonicalRoles } = useQuery({
+    queryKey: ["canonical-roles"],
+    queryFn: getCanonicalRoles,
+  });
+
+  const availableRoles = useMemo(() => {
+    if (!canonicalRoles || canonicalRoles.length === 0) return ALL_JOB_ROLES;
+    return canonicalRoles.map((r) => r.role);
+  }, [canonicalRoles]);
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-2">
@@ -184,7 +198,7 @@ export function LearningRoadmap() {
           label="Roadmap for Target Role:"
           selectedRole={activeRole}
           onRoleChange={setSelectedRole}
-          roles={ALL_JOB_ROLES}
+          roles={availableRoles}
           includeAllOption={false}
           helperText="Select or specify any target role to generate a personalized multi-week learning progression."
         />
