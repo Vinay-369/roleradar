@@ -14,6 +14,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/resume/versions")) return "Tailored Versions";
   if (pathname.startsWith("/resume/tailor-custom")) return "Custom Tailoring";
   if (pathname.startsWith("/resume/tailor")) return "Resume Tailor Review";
+  if (pathname.match(/^\/opportunities\/(?:job|jobs|internship|internships)\/[^/]+$/)) return "Opportunity Details";
   if (pathname.startsWith("/opportunities/jobs")) return "Jobs For You";
   if (pathname.startsWith("/opportunities/internships")) return "Internships";
   if (pathname.startsWith("/opportunities/saved")) return "Saved";

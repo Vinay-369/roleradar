@@ -54,6 +54,9 @@ export type JobMatch = {
   stipend_min?: number | null;
   stipend_max?: number | null;
   posted_days_ago?: number;
+  experience_min?: number | null;
+  experience_max?: number | null;
+  industry?: string | null;
   created_at?: string;
   has_match?: boolean;
   verification_status?: string;
@@ -73,6 +76,8 @@ export type JobMatch = {
   stipend_currency?: string | null;
   stipend_period?: string | null;
   salary_currency?: string | null;
+  compensation_type?: string | null;
+  compensation_text?: string | null;
   eligibility_text?: string | null;
   degree_requirements?: string[];
   graduation_year_requirements?: number[];
@@ -83,6 +88,16 @@ export type JobMatch = {
   fit_explanation?: string | null;
   factor_weights?: Record<string, number> | null;
   score_explanation?: string | null;
+  canonical_role?: string | null;
+  canonical_role_key?: string | null;
+  role_domain?: string | null;
+  contextual_requirements?: string[];
+  completeness_status?: string | null;
+  quality_tier?: "PRIMARY" | "SECONDARY" | string | null;
+  role_confidence?: string | null;
+  recommendation_quality?: string | null;
+  seniority?: string | null;
+  fresher_friendly?: boolean;
 };
 
 export type JobQueryFilters = {
@@ -93,13 +108,27 @@ export type JobQueryFilters = {
   locationPreset?: string;
   workplaceType?: string;
   region?: string;
+  role?: string;
+  domain?: string;
+  stage?: string;
+  search?: string;
+  sortBy?: "recent" | "match" | "salary" | "stipend";
+  maxPostedDays?: number;
+  includeBenchmarks?: boolean;
+  page?: number;
+  pageSize?: number;
+};
+
+export type RecommendedMatchesResult = {
+  items: JobMatch[];
+  total: number;
 };
 
 export async function getRecommendedMatches(
   jobType?: "full_time" | "internship",
   liveOnly?: boolean,
   filters?: Partial<JobQueryFilters>
-): Promise<JobMatch[]> {
+): Promise<RecommendedMatchesResult> {
   const params: Record<string, any> = {};
   if (jobType) params.job_type = jobType;
   if (liveOnly !== undefined) params.live_only = liveOnly;
@@ -108,9 +137,21 @@ export async function getRecommendedMatches(
   if (filters?.locationPreset) params.location_preset = filters.locationPreset;
   if (filters?.workplaceType) params.workplace_type = filters.workplaceType;
   if (filters?.region) params.region = filters.region;
+  if (filters?.role) params.role = filters.role;
+  if (filters?.domain) params.domain = filters.domain;
+  if (filters?.stage) params.stage = filters.stage;
+  if (filters?.search) params.search = filters.search;
+  if (filters?.sortBy) params.sort_by = filters.sortBy;
+  if (filters?.maxPostedDays) params.max_posted_days = filters.maxPostedDays;
+  if (filters?.includeBenchmarks !== undefined) params.include_benchmarks = filters.includeBenchmarks;
+  if (filters?.page) params.page = filters.page;
+  if (filters?.pageSize) params.page_size = filters.pageSize;
 
   const res = await apiClient.get<JobMatch[]>("/matches/recommended", { params });
-  return res.data;
+  const rawTotal = res.headers["x-total-count"];
+  const parsedTotal = rawTotal ? parseInt(rawTotal, 10) : res.data.length;
+  const total = isNaN(parsedTotal) ? res.data.length : parsedTotal;
+  return { items: res.data, total };
 }
 
 export type CreateCustomJobPayload = {

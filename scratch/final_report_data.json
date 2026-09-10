@@ -1,0 +1,558 @@
+{
+  "total_documents_in_db": 2968,
+  "total_active_indian": 588,
+  "by_provider": {
+    "greenhouse": 64,
+    "smartrecruiters": 296,
+    "lever": 228
+  },
+  "by_completeness_status": {
+    "VERIFIED_COMPLETE": 564,
+    "VERIFIED_PARTIAL": 23,
+    "INSUFFICIENT": 1
+  },
+  "by_quality": {
+    "HIGH": 564,
+    "MEDIUM": 23,
+    "LOW": 1
+  },
+  "by_opp_type": {
+    "FULL_TIME": 576,
+    "INTERNSHIP": 12
+  },
+  "eligible_primary_recommendations": 587,
+  "insufficient_count": 1,
+  "direct_apply_count": 588,
+  "direct_apply_rate": 100.0,
+  "duplicate_count": 1,
+  "duplicate_rate": 0.17,
+  "compensation": {
+    "numeric_salary_count": 5,
+    "numeric_stipend_count": 0,
+    "qualitative_count": 38,
+    "undisclosed_count": 545,
+    "numeric_salary_samples": [
+      [
+        "lever_cred_fa6c100a-0fe0-4892-a8a3-8d2169d5005e",
+        null,
+        5.0,
+        null
+      ],
+      [
+        "lever_cred_8b535f0b-1c68-4982-95b0-91f9edb5945e",
+        null,
+        5.0,
+        null
+      ],
+      [
+        "lever_cred_91a5f0f1-b11f-412a-a816-ffc8b08a5617",
+        null,
+        5.0,
+        null
+      ],
+      [
+        "lever_cred_7301faf3-d7ec-40d4-b49a-07ed20fc9691",
+        null,
+        5.0,
+        null
+      ],
+      [
+        "lever_cred_e7edcd33-9faa-4e2f-8a87-4a88719f94ec",
+        null,
+        5.0,
+        null
+      ]
+    ]
+  },
+  "field_recovery": {
+    "skills_extracted_count": 102,
+    "qualifications_extracted_count": 161,
+    "responsibilities_extracted_count": 177,
+    "experience_extracted_count": 304
+  },
+  "performance_latency_ms": {
+    "jobs_search_p50": 64.15,
+    "internships_search_p50": 86.75,
+    "jobs_returned_count": 50,
+    "internships_returned_count": 12
+  },
+  "role_coverage": {
+    "software_engineer": {
+      "jobs": 8,
+      "internships": 1
+    },
+    "engineering_manager": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "backend_developer": {
+      "jobs": 8,
+      "internships": 0
+    },
+    "frontend_developer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "full_stack_developer": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "mobile_developer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "qa_test_engineer": {
+      "jobs": 5,
+      "internships": 0
+    },
+    "embedded_software_engineer": {
+      "jobs": 5,
+      "internships": 0
+    },
+    "systems_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "data_analyst": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "data_scientist": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "data_engineer": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "bi_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "analytics_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "quantitative_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "machine_learning_engineer": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "ai_engineer": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "nlp_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "computer_vision_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "ai_researcher": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "devops_engineer": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "cloud_engineer": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "site_reliability_engineer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "platform_engineer": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "infrastructure_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "cybersecurity_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "security_engineer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "soc_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "penetration_tester": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "security_consultant": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "grc_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "cloud_security_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "product_manager": {
+      "jobs": 20,
+      "internships": 0
+    },
+    "product_owner": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "technical_product_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "program_manager": {
+      "jobs": 4,
+      "internships": 0
+    },
+    "project_manager": {
+      "jobs": 6,
+      "internships": 0
+    },
+    "graphic_designer": {
+      "jobs": 4,
+      "internships": 1
+    },
+    "ui_designer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "ux_designer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "product_designer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "ux_researcher": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "digital_marketing_specialist": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "seo_specialist": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "content_marketing_specialist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "social_media_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "sales_executive": {
+      "jobs": 6,
+      "internships": 0
+    },
+    "business_development_executive": {
+      "jobs": 5,
+      "internships": 0
+    },
+    "account_manager": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "accountant": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "financial_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "investment_analyst": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "hr_generalist": {
+      "jobs": 2,
+      "internships": 1
+    },
+    "recruiter": {
+      "jobs": 0,
+      "internships": 2
+    },
+    "operations_analyst": {
+      "jobs": 5,
+      "internships": 0
+    },
+    "supply_chain_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "management_consultant": {
+      "jobs": 4,
+      "internships": 0
+    },
+    "healthcare_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "clinical_research_associate": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "mechanical_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "civil_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "electrical_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "chemical_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "robotics_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "architect": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "legal_associate": {
+      "jobs": 2,
+      "internships": 0
+    },
+    "teacher": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "research_scientist": {
+      "jobs": 29,
+      "internships": 0
+    },
+    "video_editor": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "hotel_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "pharmaceutical_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "manufacturing_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "solutions_architect": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "cloud_architect": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "motion_designer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "customer_success_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "financial_controller": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "audit_associate": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "risk_analyst": {
+      "jobs": 3,
+      "internships": 0
+    },
+    "hr_business_partner": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "learning_and_development_specialist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "procurement_specialist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "inventory_analyst": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "demand_planner": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "technology_consultant": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "risk_consultant": {
+      "jobs": 0,
+      "internships": 1
+    },
+    "registered_nurse": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "medical_coder": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "pharmacovigilance_specialist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "regulatory_affairs_associate": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "biostatistician": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "electronics_engineer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "industrial_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "biomedical_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "automotive_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "aerospace_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "interior_designer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "construction_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "bim_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "quantity_surveyor": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "compliance_analyst": {
+      "jobs": 4,
+      "internships": 0
+    },
+    "contract_specialist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "instructional_designer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "curriculum_developer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "academic_coordinator": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "professor": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "laboratory_scientist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "content_creator": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "copywriter": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "creative_director": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "photographer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "3d_artist": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "front_office_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "travel_consultant": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "event_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "restaurant_manager": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "process_engineer": {
+      "jobs": 0,
+      "internships": 0
+    },
+    "quality_engineer": {
+      "jobs": 1,
+      "internships": 0
+    },
+    "maintenance_engineer": {
+      "jobs": 0,
+      "internships": 0
+    }
+  },
+  "unmatched_or_specialized_titles_count": 420
+}

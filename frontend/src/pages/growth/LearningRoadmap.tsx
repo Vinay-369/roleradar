@@ -91,7 +91,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
         </div>
       ) : (
         <p className="text-[11px] text-ink-400 italic">
-          Curated study resource currently unavailable for this specialized competency.
+          No curated resource available yet.
         </p>
       )}
     </div>

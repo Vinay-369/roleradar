@@ -371,8 +371,7 @@ async def generate_tailoring(
     else:
         master_parsed = resume.get("parsed") or {}
         candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, "")
-
-    master_skills = master_parsed.get("skills", [])
+    master_skills = candidate_profile.get_all_demonstrated_skills() if hasattr(candidate_profile, "get_all_demonstrated_skills") else master_parsed.get("skills", [])
 
     # Canonical Phase 3 JD Analysis
     jd_reqs = await jobs_services.get_canonical_job_requirements(db, job)
@@ -981,7 +980,10 @@ def _audit_user_edits(
     scope_escalations: list[str] = []
 
     # 1. Master candidate verified technologies
-    master_skills = master_parsed.get("skills", []) or []
+    if master_profile and hasattr(master_profile, "get_all_demonstrated_skills"):
+        master_skills = master_profile.get_all_demonstrated_skills()
+    else:
+        master_skills = master_parsed.get("skills", []) or []
     master_skills_set = {str(s).lower().strip() for s in master_skills if s}
     if master_profile:
         for ev in getattr(master_profile, "evidence_units", []):

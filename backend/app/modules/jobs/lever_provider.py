@@ -16,6 +16,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import html
 import logging
 import re
 from typing import Any
@@ -34,7 +35,7 @@ from app.modules.jobs.location_normalization import (
     extract_country_from_location,
     is_india_opportunity,
 )
-from app.modules.jobs.skill_vocabulary import extract_skills_from_text
+from app.modules.jobs.compensation_extractor import extract_compensation_from_payload_and_text
 from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
 from app.modules.jobs.verification import OpportunityLifecycleStatus
 
@@ -54,15 +55,11 @@ class LeverNetworkError(LeverProviderError):
 
 
 def _clean_html_description(html_text: str | None) -> str:
-    """Strips basic HTML tags for plaintext preview while retaining text structure."""
+    """Strips basic HTML tags and unescapes all character entities for plaintext preview."""
     if not html_text:
         return ""
     clean = re.sub(r"<[^>]+>", " ", html_text)
-    clean = re.sub(r"&nbsp;", " ", clean)
-    clean = re.sub(r"&amp;", "&", clean)
-    clean = re.sub(r"&lt;", "<", clean)
-    clean = re.sub(r"&gt;", ">", clean)
-    clean = re.sub(r"&quot;", '"', clean)
+    clean = html.unescape(clean)
     clean = re.sub(r"\s+", " ", clean).strip()
     return clean
 
@@ -373,10 +370,53 @@ class LeverJobProvider:
         country = extract_country_from_location(location)
         is_india = is_india_opportunity(location, clean_desc)
 
-        # Skills extraction from text
-        extracted_skills = extract_skills_from_text(f"{title}\n{clean_desc}")
+        # Skills extraction via canonical requirement-aware taxonomy
+        from app.modules.jobs.taxonomy import analyze_job_description
+        reqs = analyze_job_description(clean_desc, title)
+        skills_required = list(dict.fromkeys(reqs.must_have_skills or reqs.required_skills))
+        skills_nice_to_have = list(dict.fromkeys(reqs.preferred_skills))
 
         canonical_id = f"lever_{board_token.lower()}_{job_id}"
+
+        comp = extract_compensation_from_payload_and_text(
+            text=f"{clean_desc} {raw_html or ''}",
+            raw_payload=raw,
+            is_internship=is_intern,
+        )
+
+        # Completeness evaluation
+        from app.modules.jobs.completeness import evaluate_opportunity_completeness
+        comp_eval = evaluate_opportunity_completeness({
+            "title": title,
+            "company": resolved_company,
+            "location": location,
+            "country": country,
+            "is_india_opportunity": is_india,
+            "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
+            "description": clean_desc,
+            "responsibilities": reqs.responsibilities,
+            "qualifications": reqs.qualifications,
+            "skills_required": skills_required,
+            "skills_nice_to_have": skills_nice_to_have,
+            "verification_status": verification_status,
+            "apply_url": apply_url,
+            "is_direct_apply": is_direct_apply,
+            "salary_min": comp.salary_min,
+            "salary_max": comp.salary_max,
+            "stipend_min": comp.stipend_min,
+            "stipend_max": comp.stipend_max,
+            "compensation_text": comp.compensation_text,
+            "experience_min": (
+                int(reqs.min_years_experience)
+                if reqs.min_years_experience is not None
+                else (0 if is_intern else None)
+            ),
+            "experience_max": (
+                int(reqs.max_years_experience)
+                if reqs.max_years_experience is not None
+                else (2 if is_intern else None)
+            ),
+        })
 
         return {
             "id": canonical_id,
@@ -389,20 +429,38 @@ class LeverJobProvider:
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
-            "skills_required": extracted_skills[:8],
-            "skills_nice_to_have": extracted_skills[8:16],
-            "responsibilities": [],
-            "experience_min": 0 if is_intern else None,
-            "experience_max": 2 if is_intern else None,
+            "skills_required": skills_required,
+            "skills_nice_to_have": skills_nice_to_have,
+            "responsibilities": reqs.responsibilities,
+            "qualifications": reqs.qualifications,
+            "structured_requirements": reqs.model_dump(mode="json"),
+            "experience_min": (
+                int(reqs.min_years_experience)
+                if reqs.min_years_experience is not None
+                else (0 if is_intern else None)
+            ),
+            "experience_max": (
+                int(reqs.max_years_experience)
+                if reqs.max_years_experience is not None
+                else (2 if is_intern else None)
+            ),
             "job_type": job_type,
+            "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
             "country": country,
             "location": location,
             "is_remote": is_remote,
+            "workplace_type": "REMOTE" if is_remote else "ON_SITE",
             "is_india_opportunity": is_india,
-            "salary_min": None,
-            "salary_max": None,
-            "salary_disclosed": False,
-            "stipend_min": None,
+            "completeness_status": comp_eval.source_completeness.value,
+            "recommendation_quality": comp_eval.recommendation_quality.value,
+            "salary_min": comp.salary_min,
+            "salary_max": comp.salary_max,
+            "salary_currency": comp.salary_currency,
+            "salary_disclosed": comp.salary_disclosed,
+            "stipend_min": comp.stipend_min,
+            "stipend_max": comp.stipend_max,
+            "compensation_type": comp.compensation_type,
+            "compensation_text": comp.compensation_text,
             "internship_duration_months": 3 if is_intern else None,
             "fresher_friendly": classification.fresher_eligible,
             "student_friendly": classification.student_eligible,

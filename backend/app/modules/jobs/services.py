@@ -67,6 +67,14 @@ async def search_jobs(db: AsyncIOMotorDatabase, filters: dict, user_id: str | No
     return await provider.search(search_filters)
 
 
+async def count_jobs(db: AsyncIOMotorDatabase, filters: dict, user_id: str | None = None) -> int:
+    search_filters = dict(filters)
+    if user_id:
+        search_filters["user_id"] = user_id
+    provider = CuratedJobProvider(db)
+    return await provider.count(search_filters)
+
+
 async def sync_all_greenhouse_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
     """Synchronizes all configured Greenhouse company boards into MongoDB."""
     active_settings = settings or get_settings()
@@ -179,9 +187,9 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
     results = []
     total_active = 0
     total_closed = 0
-
+    country_filter = getattr(active_settings, "SMARTRECRUITERS_COUNTRY", "in")
     for b in boards:
-        res = await provider.sync_company_openings(db, b)
+        res = await provider.sync_company_openings(db, b, country=country_filter)
         results.append(res)
         total_active += res.get("verified_active", 0)
         total_closed += res.get("closed", 0)
@@ -214,7 +222,7 @@ async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filter
             pass
 
     # 2. Lever Direct ATS Provider
-    if getattr(settings, "LEVER_ENABLED", False):
+    if getattr(settings, "LEVER_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
         try:
             lever_res = await sync_all_lever_boards(db, settings)
             added_count += lever_res.get("verified_active", 0)
@@ -222,7 +230,7 @@ async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filter
             pass
 
     # 3. SmartRecruiters Direct ATS Provider
-    if getattr(settings, "SMARTRECRUITERS_ENABLED", False):
+    if getattr(settings, "SMARTRECRUITERS_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
         try:
             sr_res = await sync_all_smartrecruiters_boards(db, settings)
             added_count += sr_res.get("verified_active", 0)
@@ -337,7 +345,29 @@ async def get_canonical_job_requirements(db: AsyncIOMotorDatabase, job: dict) ->
     # 1. Direct structured_requirements in document
     if job.get("structured_requirements") and isinstance(job["structured_requirements"], dict):
         try:
-            return StructuredJobRequirements(**job["structured_requirements"])
+            sr = StructuredJobRequirements(**job["structured_requirements"])
+            # If experience bounds were not extracted previously, re-evaluate to catch explicit requirements
+            if sr.min_years_experience is None and sr.max_years_experience is None:
+                jd_text = job.get("jd_text") or job.get("description") or ""
+                fresh = analyze_job_description(jd_text, job.get("title") or "")
+                if fresh.min_years_experience is not None or fresh.max_years_experience is not None:
+                    sr.min_years_experience = fresh.min_years_experience
+                    sr.max_years_experience = fresh.max_years_experience
+                    sr.experience_requirements = fresh.experience_requirements
+                    if job.get("id"):
+                        try:
+                            update_dict = {"structured_requirements": sr.model_dump(mode="json")}
+                            if sr.min_years_experience is not None:
+                                update_dict["experience_min"] = int(sr.min_years_experience)
+                                job["experience_min"] = int(sr.min_years_experience)
+                            if sr.max_years_experience is not None:
+                                update_dict["experience_max"] = int(sr.max_years_experience)
+                                job["experience_max"] = int(sr.max_years_experience)
+                            await db[Collections.JOBS].update_one({"id": job["id"]}, {"$set": update_dict})
+                        except Exception:
+                            pass
+            if sr.must_have_skills or sr.required_skills or sr.responsibilities:
+                return sr
         except Exception:
             pass
 
@@ -354,11 +384,18 @@ async def get_canonical_job_requirements(db: AsyncIOMotorDatabase, job: dict) ->
     set_cached_jd_requirements(jd_text, title, reqs)
 
     # Lazily update MongoDB job document if it has an id
-    if job.get("id") and not job.get("structured_requirements"):
+    if job.get("id"):
         try:
+            update_dict = {"structured_requirements": reqs.model_dump(mode="json")}
+            if reqs.min_years_experience is not None and job.get("experience_min") is None:
+                update_dict["experience_min"] = int(reqs.min_years_experience)
+                job["experience_min"] = int(reqs.min_years_experience)
+            if reqs.max_years_experience is not None and job.get("experience_max") is None:
+                update_dict["experience_max"] = int(reqs.max_years_experience)
+                job["experience_max"] = int(reqs.max_years_experience)
             await db[Collections.JOBS].update_one(
                 {"id": job["id"]},
-                {"$set": {"structured_requirements": reqs.model_dump(mode="json")}}
+                {"$set": update_dict}
             )
         except Exception:
             pass
@@ -447,11 +484,10 @@ async def create_custom_job(
         "stipend_min": None,
         "internship_duration_months": None,
         "fresher_friendly": exp_min == 0,
-        "posted_days_ago": 0,
         "apply_url": "",
         "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
-        "url_type": ApplicationUrlType.DIRECT_REQUISITION.value,
-        "is_direct_apply": True,
+        "url_type": ApplicationUrlType.UNVERIFIED.value,
+        "is_direct_apply": False,
         "verification_reason": "User-created private custom opportunity",
         "verification_method": "custom_creation",
     }

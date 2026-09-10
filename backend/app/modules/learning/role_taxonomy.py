@@ -34,6 +34,10 @@ class RoleCompetencyProfile:
     soft_skills: list[str] = field(default_factory=list)
     typical_responsibilities: list[str] = field(default_factory=list)
 
+    @property
+    def role(self) -> str:
+        return self.canonical_role
+
 
 # Generic tokens that must NEVER independently determine role identity
 GENERIC_ROLE_TOKENS = {
@@ -77,7 +81,11 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Software Engineer",
         domain="Software Engineering",
         subdomain="General & Systems",
-        aliases=["Software Developer", "Software Development Engineer", "SDE", "SWE"],
+        aliases=[
+            "Software Developer", "Software Development Engineer", "SDE", "SWE",
+            ".NET Developer", ".NET Software Developer", "Dot Net Developer", "Dot Net Software Developer",
+            "C++ Developer", "C++ Software Engineer", "R&D Engineer (C++)"
+        ],
         core_competencies=["Data Structures & Algorithms", "System Design", "Object-Oriented Programming", "REST APIs", "Git & Version Control"],
         common_competencies=["Unit Testing", "Microservices Architecture", "CI/CD Pipelines", "Code Review", "Agile Methodologies"],
         optional_competencies=["Distributed Systems", "Cloud Deployment", "Performance Optimization"],
@@ -85,11 +93,34 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         knowledge_areas=["Software Lifecycle", "Concurrency", "Database Design", "Design Patterns"],
         soft_skills=["Problem Solving", "Collaboration", "Technical Communication", "Code Ownership"],
     ),
+    "engineering_manager": RoleCompetencyProfile(
+        canonical_role="Engineering Manager",
+        domain="Software Engineering",
+        subdomain="Engineering Leadership",
+        aliases=[
+            "Software Engineering Manager", "Software Development Manager", "SDM",
+            "Technical Engineering Manager", "EM"
+        ],
+        core_competencies=["Engineering Leadership", "Technical Architecture", "Team Mentorship & Growth", "Sprint & Project Planning", "Hiring & Performance Management"],
+        common_competencies=["System Design", "Agile & Scrum Methodologies", "Cross-Functional Collaboration", "Code Quality Governance"],
+        optional_competencies=["Budget Management", "Executive Communication", "Vendor Management"],
+        tools_technologies=["Jira", "Confluence", "Git", "GitHub", "CI/CD"],
+        knowledge_areas=["Software Engineering Practices", "Organizational Design", "System Scalability", "Engineering Metrics"],
+        soft_skills=["Leadership", "Mentorship", "Strategic Thinking", "Conflict Resolution"],
+    ),
     "backend_developer": RoleCompetencyProfile(
         canonical_role="Backend Developer",
         domain="Software Engineering",
         subdomain="Backend Systems",
-        aliases=["Backend Engineer", "Server-Side Developer", "API Engineer"],
+        aliases=[
+            "Backend Engineer", "Server-Side Developer", "API Engineer",
+            "Python Developer", "Python Engineer", "Python Backend Developer",
+            "Java Developer", "Java Engineer", "Java Backend Developer",
+            "Node.js Developer", "Node Developer", "Node JS Developer", "NodeJS Developer",
+            "PHP Developer", "PHP Backend Developer",
+            "Golang Developer", "Go Developer",
+            "Software Engineer - Backend", "Backend Software Engineer", "SDE - Backend", "SDE Backend"
+        ],
         core_competencies=["RESTful API Design", "Database Modeling & Querying", "Server Architecture", "Authentication & Authorization", "Data Structures"],
         common_competencies=["Microservices Architecture", "Caching Strategies", "Message Queues", "Unit & Integration Testing"],
         optional_competencies=["GraphQL", "gRPC", "High-Throughput Systems", "Event-Driven Systems"],
@@ -101,7 +132,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Frontend Developer",
         domain="Software Engineering",
         subdomain="Web & Client Interfaces",
-        aliases=["Frontend Engineer", "Web Developer", "Client-Side Developer", "UI Engineer"],
+        aliases=[
+            "Frontend Engineer", "Web Developer", "Client-Side Developer", "UI Engineer",
+            "React Developer", "UI Developer", "Software Engineer - Frontend", "Frontend Software Engineer", "SDE - Frontend", "SDE Frontend"
+        ],
         core_competencies=["Component-Based UI Architecture", "Responsive Web Design", "DOM Manipulation & Events", "State Management", "Web Accessibility (a11y)"],
         common_competencies=["CSS Frameworks & Flexbox/Grid", "Client-Side Routing", "RESTful API Consumption", "Cross-Browser Compatibility", "Web Performance"],
         optional_competencies=["Server-Side Rendering (SSR)", "Static Site Generation", "Animation Libraries", "Progressive Web Apps"],
@@ -113,7 +147,12 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Full Stack Developer",
         domain="Software Engineering",
         subdomain="End-to-End Applications",
-        aliases=["Full Stack Engineer", "Fullstack Developer", "Fullstack Engineer"],
+        aliases=[
+            "Full Stack Engineer", "Fullstack Developer", "Fullstack Engineer", "Full Stack Software Engineer",
+            "Software Engineer - Full Stack", "Software Engineer - Fullstack", "SDE - Full Stack", "SDE Full Stack",
+            "Full Stack Lead", "Full Stack Web Developer",
+            "MEAN Stack Developer", "MERN Stack Developer", "MEAN Stack Engineer", "MERN Stack Engineer"
+        ],
         core_competencies=["Frontend UI Development", "Backend API Construction", "Database Schema Design", "State Management", "Version Control"],
         common_competencies=["Authentication & Sessions", "Responsive Design", "Containerization Basics", "Integration Testing"],
         optional_competencies=["DevOps & CI/CD", "Serverless Architecture", "Performance Tuning"],
@@ -125,7 +164,11 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Mobile Developer",
         domain="Software Engineering",
         subdomain="Mobile Platforms",
-        aliases=["Mobile Engineer", "iOS Developer", "Android Developer", "Mobile App Developer"],
+        aliases=[
+            "Mobile Engineer", "iOS Developer", "Android Developer", "Mobile App Developer",
+            "React Native Developer", "Flutter Developer", "iOS Engineer", "Android Engineer", "Mobile Software Engineer",
+            "iOS Application Engineer", "Android Application Engineer", "iOS App Developer", "Android App Developer"
+        ],
         core_competencies=["Mobile UI Design Patterns", "Mobile State & Lifecycle Management", "Offline Storage & Sync", "REST API Integration", "Mobile Security"],
         common_competencies=["App Store / Play Store Deployment", "Native Performance Profiling", "Push Notifications", "Crash Reporting"],
         optional_competencies=["Cross-Platform Frameworks", "Native SDK Integration", "Deep Linking"],
@@ -137,7 +180,12 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="QA / Test Engineer",
         domain="Software Engineering",
         subdomain="Quality & Automation",
-        aliases=["QA Engineer", "Software Development Engineer in Test", "SDET", "Test Automation Engineer", "Quality Assurance Engineer"],
+        aliases=[
+            "QA Engineer", "Software Development Engineer in Test", "SDET", "Test Automation Engineer",
+            "Quality Assurance Engineer", "QA Automation Engineer", "Test Engineer", "Automation Engineer",
+            "QA Automation Engineer Intern", "Software Test Engineer", "QA Automation Intern",
+            "Embedded Testing Engineer", "EmbTesting", "Embedded Test Engineer"
+        ],
         core_competencies=["Test Case Design & Planning", "Automated Functional Testing", "API Testing & Validation", "Regression Testing", "Defect Tracking"],
         common_competencies=["End-to-End Automation", "Performance & Load Testing", "CI/CD Test Integration", "Bug Reporting & Triaging"],
         optional_competencies=["Security Testing", "Cross-Browser Cloud Testing", "Contract Testing"],
@@ -177,7 +225,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Data Analyst",
         domain="Data & Analytics",
         subdomain="Business & Exploratory Analytics",
-        aliases=["Business Data Analyst", "Reporting Analyst", "Analytics Specialist"],
+        aliases=[
+            "Business Data Analyst", "Reporting Analyst", "Analytics Specialist",
+            "Advanced Analytics", "Lead - Advanced Analytics", "Business Analyst - Ads", "Business Analyst- Paytm Ads"
+        ],
         core_competencies=["SQL Querying & Data Extraction", "Exploratory Data Analysis", "Data Cleaning & Transformation", "Dashboard Creation", "Statistical Analysis"],
         common_competencies=["KPI Definition & Tracking", "Data Storytelling & Reporting", "Business Intelligence Reporting", "Ad-Hoc Analysis"],
         optional_competencies=["A/B Testing Analysis", "Predictive Trend Analysis", "Automated Pipeline Scripts"],
@@ -253,7 +304,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Machine Learning Engineer",
         domain="AI / Machine Learning",
         subdomain="Applied Machine Learning",
-        aliases=["ML Engineer", "Machine Learning Developer", "Applied ML Engineer", "AI / Machine Learning Engineer", "AI/ML Engineer"],
+        aliases=[
+            "ML Engineer", "Machine Learning Developer", "Applied ML Engineer", "AI / Machine Learning Engineer", "AI/ML Engineer",
+            "Senior Software Engineer(AI/ML)", "Software Engineer(AI/ML)", "Software Engineer - AI/ML", "Staff Applied Scientist"
+        ],
         core_competencies=["ML Pipeline Engineering", "Supervised & Unsupervised Modeling", "Feature Store Integration", "Model Serving & Inference APIs", "Model Evaluation & Drift Monitoring"],
         common_competencies=["Hyperparameter Optimization", "Data Preprocessing Pipelines", "Model Serialization & Export", "Dockerized Deployment"],
         optional_competencies=["Distributed Training", "ONNX Optimization", "GPU Acceleration"],
@@ -365,7 +419,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Infrastructure Engineer",
         domain="Cloud / DevOps / Infrastructure",
         subdomain="Core Infrastructure",
-        aliases=["Infra Engineer", "Systems Infrastructure Engineer"],
+        aliases=[
+            "Infra Engineer", "Systems Infrastructure Engineer",
+            "Network Engineer", "Senior Network Engineer", "Network Infrastructure Engineer"
+        ],
         core_competencies=["Server Hardware & OS Provisioning", "Network Configuration & Routing", "Storage Systems Management", "Data Center / Cloud Core Infrastructure", "High-Throughput Networking"],
         common_competencies=["Backup & Recovery", "DNS/DHCP Management", "Configuration Management", "Virtualization (KVM/VMware)"],
         optional_competencies=["Hardware Telemetry", "Bare-Metal Automation", "Optical Networking"],
@@ -393,7 +450,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Security Engineer",
         domain="Cybersecurity",
         subdomain="Security Architecture & Engineering",
-        aliases=["InfoSec Engineer", "Information Security Engineer"],
+        aliases=["InfoSec Engineer", "Information Security Engineer", "Cybersecurity Engineer", "Cyber Security Engineer"],
         core_competencies=["Security Architecture Design", "Identity & Access Governance", "Vulnerability Remediation", "Cryptographic Implementations", "Secure Network Configuration"],
         common_competencies=["Automated Security Scanners", "Firewall & WAF Management", "Security Tool Deployment", "Hardening Operating Systems"],
         optional_competencies=["Zero Trust Architecture", "DevSecOps Integration", "Threat Modeling"],
@@ -649,7 +706,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Sales Executive",
         domain="Sales / Business Development",
         subdomain="Direct Sales",
-        aliases=["Account Executive", "Sales Representative", "Commercial Sales Executive"],
+        aliases=[
+            "Account Executive", "Sales Representative", "Commercial Sales Executive",
+            "Enterprise Account Executive", "Senior Account Executive"
+        ],
         core_competencies=["Prospect Qualification & Discovery", "Value Proposition Pitching", "Objection Handling & Negotiation", "Contract Closing & Deal Structuring", "Pipeline & Forecast Management"],
         common_competencies=["CRM Hygiene & Activity Tracking", "Product Demonstrations", "Territory Management"],
         optional_competencies=["Enterprise RFP Responses", "Partner Co-Selling"],
@@ -661,7 +721,10 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Business Development Executive",
         domain="Sales / Business Development",
         subdomain="Outbound & Partnerships",
-        aliases=["BDE", "BDR", "SDR", "Sales Development Representative"],
+        aliases=[
+            "BDE", "BDR", "SDR", "Sales Development Representative",
+            "Business Development & Strategic Partnerships", "Business Development & Partnerships", "Strategic Partnerships"
+        ],
         core_competencies=["Cold Outreach & Prospecting", "Lead Qualification", "Email & Phone Cadences", "Setting Qualified Discovery Meetings", "Ideal Customer Profile (ICP) Research"],
         common_competencies=["Multi-Touch Sequences", "Objection Overcoming", "CRM Lead Logging"],
         optional_competencies=["Event Lead Follow-Up", "Social Selling"],
@@ -1189,7 +1252,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Technology Consultant",
         domain="Consulting",
         subdomain="Technology Strategy & Advisory",
-        aliases=["IT Consultant", "Digital Transformation Consultant"],
+        aliases=["IT Consultant", "Digital Transformation Consultant", "Enterprise Solutions Consultant", "Solutions Consultant"],
         core_competencies=["IT Strategy & Technology Roadmap Definition", "Digital Transformation Gap Assessment", "Technology Vendor Evaluation & Selection", "Business Architecture Alignment", "Technology Cost & ROI Business Case Formulation"],
         common_competencies=["Cloud Transformation Advisory", "System Implementation Quality Assurance", "Operating Model Design for IT"],
         optional_competencies=["Enterprise Agility Coaching", "Emerging Tech Feasibility (GenAI/Blockchain)"],
@@ -1509,7 +1572,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Copywriter",
         domain="Media / Creative",
         subdomain="Copywriting & Creative Writing",
-        aliases=["Advertising Copywriter", "Creative Copywriter", "Marketing Copywriter"],
+        aliases=["Advertising Copywriter", "Creative Copywriter", "Marketing Copywriter", "Content Writer", "Web Content Writer", "Copy Editor", "Proof Reader", "Content Editor"],
         core_competencies=["Persuasive Advertising Headline & Body Copy", "Brand Voice & Tone Guidelines Conception", "Direct-Response & Landing Page Copywriting", "Creative Campaign Conceptualization", "Email Marketing Campaign Sequences"],
         common_competencies=["A/B Copy Testing & Message Refinement", "Collaboration with Art Directors & Designers", "Proofreading & Editorial Polish"],
         optional_competencies=["SEO Copy Optimization", "Scriptwriting for TV & Radio Commercials"],
@@ -1521,7 +1584,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Creative Director",
         domain="Media / Creative",
         subdomain="Creative Leadership & Art Direction",
-        aliases=["Executive Creative Director", "Head of Creative"],
+        aliases=["Executive Creative Director", "Head of Creative", "Interactive Art Director", "Art Director"],
         core_competencies=["Creative Campaign Vision & Strategic Direction", "Creative Team Leadership & Mentorship", "Client Creative Pitching & Stakeholder Alignment", "Brand Identity & Visual Cohesion Governance", "Cross-Channel Concept Development (Digital, Print, Video)"],
         common_competencies=["Production Budget Oversight", "Creative Agency Roster Management", "Critique & Constructive Art Direction"],
         optional_competencies=["Global Brand Architecture", "Experiential Creative Strategy"],
@@ -1832,12 +1895,43 @@ def _compose_specialized_profile(
     )
 
 
+SENIORITY_ROLE_MODIFIERS = {
+    "senior", "sr", "junior", "jr", "lead", "staff", "principal", "associate",
+    "intern", "internship", "trainee", "fresher", "graduate", "entry", "level",
+    "1", "2", "3", "i", "ii", "iii", "iv", "experienced"
+}
+
+
 def _normalize_role_input(raw: str) -> str:
     """Cleans role strings: lowers, removes punctuation noise, collapses spaces."""
     s = raw.lower().strip()
+    s = re.sub(r"\bfullstack\b", "full stack", s)
+    s = re.sub(r"\bengineering\b", "engineer", s)
     s = re.sub(r"[/\\_-]+", " ", s)
     s = re.sub(r"[^\w\s]", "", s)
     return re.sub(r"\s+", " ", s).strip()
+
+
+def _expand_compound_titles(title: str) -> list[str]:
+    """
+    Expands compound role conjunctions into candidate role strings.
+    For example:
+    - "Backend and System Engineer" -> ["Backend Engineer", "System Engineer"]
+    - "Data & Analytics Engineer" -> ["Data Engineer", "Analytics Engineer"]
+    - "Cloud / DevOps Engineer" -> ["Cloud Engineer", "DevOps Engineer"]
+    """
+    res = [title]
+    m = re.match(
+        r"^([\w\s]+?)\s+(?:and|&|\/)\s+([\w\s]+?)\s+(engineer|developer|analyst|specialist|architect|consultant|manager|scientist|administrator)$",
+        title.strip(),
+        re.IGNORECASE,
+    )
+    if m:
+        w1, w2, suffix = m.group(1).strip(), m.group(2).strip(), m.group(3).strip()
+        if w1 and w2 and suffix:
+            res.append(f"{w1} {suffix}")
+            res.append(f"{w2} {suffix}")
+    return res
 
 
 def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, RoleConfidence, str]:
@@ -1885,6 +1979,53 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
     # If the user typed solely a generic token, reject with LOW confidence
     if norm in GENERIC_ROLE_TOKENS or tokens.issubset(GENERIC_ROLE_TOKENS):
         return None, "LOW", "AMBIGUOUS_GENERIC_TOKEN_ONLY"
+
+    # 3b. Check seniority/level stripped tokens (e.g. "Senior Python Developer", "QA Automation Engineer Intern")
+    clean_tokens = tokens - SENIORITY_ROLE_MODIFIERS
+    if clean_tokens and clean_tokens != tokens:
+        for alias_name, prof in _ROLE_ALIAS_LOOKUP.items():
+            if set(_normalize_role_input(alias_name).split()) == clean_tokens:
+                return prof, "HIGH", "STRIPPED_SENIORITY_ALIAS_MATCH"
+        for canon_name, prof in _ROLE_CANONICAL_LOOKUP.items():
+            if set(_normalize_role_input(canon_name).split()) == clean_tokens:
+                return prof, "HIGH", "STRIPPED_SENIORITY_CANONICAL_MATCH"
+
+    # 3c. Segmented delimiter split (e.g. "Software Engineer - Fullstack", "SDE - Backend", "Backend and System Engineer, Flows", "Manager- Application Security")
+    if any(sep in role_name for sep in [" - ", " / ", " | ", " (", ", ", "- "]):
+        parts = re.split(r" - | / | \| | \(|, |- ", role_name)
+        resolved_parts = []
+        for p in parts:
+            clean_p = p.strip("() ").strip()
+            if clean_p and clean_p.lower() != role_name.lower():
+                p_prof, p_conf, _ = resolve_role(clean_p)
+                if p_prof and p_conf in ("HIGH", "MEDIUM"):
+                    resolved_parts.append(p_prof)
+                else:
+                    for exp in _expand_compound_titles(clean_p)[1:]:
+                        exp_prof, exp_conf, _ = resolve_role(exp)
+                        if exp_prof and exp_conf in ("HIGH", "MEDIUM"):
+                            resolved_parts.append(exp_prof)
+                            break
+        if resolved_parts:
+            # Prefer more specific specialization over generic Software Engineer
+            for p_prof in resolved_parts:
+                if p_prof.canonical_role != "Software Engineer":
+                    return p_prof, "HIGH", "SEGMENT_SPECIFIC_MATCH"
+            return resolved_parts[0], "HIGH", "SEGMENT_MATCH"
+
+    # 3d. Semantic keywords subset check
+    if {"full", "stack"}.issubset(tokens):
+        return ROLE_TAXONOMY["full_stack_developer"], "HIGH", "KEYWORD_SUBSET_MATCH"
+    if {"qa"}.issubset(tokens) and any(t in tokens for t in ["automation", "test", "testing", "engineer", "intern"]):
+        return ROLE_TAXONOMY["qa_test_engineer"], "HIGH", "KEYWORD_SUBSET_MATCH"
+
+    # 3e. Compound title conjunction expansion (e.g. "Backend and System Engineer", "Data & Analytics Engineer")
+    compound_candidates = _expand_compound_titles(role_name)
+    if len(compound_candidates) > 1:
+        for cand in compound_candidates[1:]:
+            c_prof, c_conf, _ = resolve_role(cand)
+            if c_prof and c_conf in ("HIGH", "MEDIUM"):
+                return c_prof, "HIGH", f"COMPOUND_CONJUNCT_MATCH ({cand})"
 
     # 4. Multi-word and discriminative modifier matching
     # Extract discriminative tokens (words not in GENERIC_ROLE_TOKENS)

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Bookmark, Check, Sparkles, Clock } from "lucide-react";
+import { MapPin, Bookmark, Check, Sparkles } from "lucide-react";
 import type { JobMatch } from "../../lib/jobs";
 import { saveApplication } from "../../lib/applications";
 import { WhyScoreModal } from "../common/WhyScoreModal";
@@ -12,7 +12,7 @@ const READINESS_LABEL: Record<string, { label: string; className: string }> = {
   learn_first: { label: "Learn first", className: "bg-alert-600/10 text-alert-600 border border-alert-600/20" },
 };
 
-export function JobMatchCard({ job }: { job: JobMatch }) {
+export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetail?: () => void }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const save = useMutation({
@@ -93,7 +93,27 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
     if (job.stipend) return `₹${job.stipend.toLocaleString()} / mo`;
     if (job.stipend_min && job.stipend_max) return `₹${job.stipend_min.toLocaleString()}–${job.stipend_max.toLocaleString()} / mo`;
     if (job.stipend_min) return `₹${job.stipend_min.toLocaleString()} / mo`;
-    if (job.job_type === "internship" || job.opportunity_type === "INTERNSHIP") return "Stipend not specified";
+    if (job.compensation_text) {
+      if (job.compensation_text.toLowerCase().includes("best in industry")) return "Best in industry";
+      if (job.compensation_text.toLowerCase().includes("commensurate")) return "Commensurate";
+      if (job.compensation_text.toLowerCase().includes("paid")) return "Paid";
+      if (job.compensation_text.toLowerCase().includes("unpaid")) return "Unpaid";
+      return "Competitive";
+    }
+    return null;
+  })();
+
+  const experienceDisplay = (() => {
+    const hasMin = job.experience_min !== null && job.experience_min !== undefined;
+    const hasMax = job.experience_max !== null && job.experience_max !== undefined;
+    if (hasMin && hasMax) {
+      if (job.experience_min === job.experience_max) {
+        return `${job.experience_min} yr${job.experience_min === 1 ? "" : "s"}`;
+      }
+      return `${job.experience_min}–${job.experience_max} yrs`;
+    }
+    if (hasMin) return `${job.experience_min}+ yrs`;
+    if (job.fresher_friendly || job.fresher_eligible) return "Fresher (0–1 yr)";
     return null;
   })();
 
@@ -108,28 +128,26 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
       <div className="flex items-start justify-between mb-2">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Link to={`/opportunities/job/${job.job_id}`} className="font-semibold text-ink-900 hover:text-signal-600 hover:underline">
+            <Link to={`/opportunities/job/${job.job_id}`} onClick={onViewDetail} className="font-semibold text-ink-900 hover:text-signal-600 hover:underline">
               {job.job_title}
             </Link>
-            {job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply && (
-              <span className="rounded-full bg-signal-500/10 text-signal-700 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                Verified Direct Opening
+            {job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold tracking-tight">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Verified Direct
               </span>
-            )}
-            {job.last_verified_at && (
-              <span className="rounded-full bg-ink-50 text-ink-600 border border-ink-100 px-2 py-0.5 text-[10px] font-medium" title={`Audited: ${job.last_verified_at}`}>
-                Verified recently
+            ) : job.verification_status === "MARKET_BENCHMARK" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-medium">
+                Market Benchmark
               </span>
-            )}
-            <span className="flex items-center gap-1 text-[10px] text-ink-500 font-semibold bg-ink-50 px-2 py-0.5 rounded-full border border-ink-100">
-              <Clock size={10} className="text-signal-600" />
-              <span>{freshnessLabel}</span>
-            </span>
+            ) : null}
           </div>
-          <p className="text-xs text-ink-500 font-medium mt-0.5">{job.company}</p>
+          <p className="text-xs text-ink-500 font-medium mt-0.5">
+            {job.company} <span className="text-ink-300">•</span> <span className="text-ink-400 font-normal">{freshnessLabel}</span>
+          </p>
 
-          {/* Location & Compensation Chips */}
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-ink-500 flex-wrap">
+          {/* Location, Compensation, Experience & Seniority Chips */}
+          <div className="flex items-center gap-2.5 mt-1.5 text-xs text-ink-500 flex-wrap">
             <span className="flex items-center gap-1">
               <MapPin size={12} className="text-ink-400" />
               <span>{locationDisplay}</span>
@@ -139,14 +157,22 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
                 {compensationDisplay}
               </span>
             )}
-            {job.workplace_type && job.workplace_type !== "UNKNOWN" && (
+            <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
+              {job.job_type === "internship" || job.opportunity_type === "INTERNSHIP" ? "Internship" : "Full-time"}
+            </span>
+            {experienceDisplay && (
               <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
-                {job.workplace_type}
+                {experienceDisplay}
               </span>
             )}
-            {job.degree_requirements && job.degree_requirements.length > 0 && (
-              <span className="rounded bg-ink-100/70 text-ink-600 px-1.5 py-0.5 text-[10px] font-medium">
-                {job.degree_requirements.join(", ")}
+            {job.seniority && (
+              <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
+                {job.seniority}
+              </span>
+            )}
+            {job.workplace_type && job.workplace_type !== "UNKNOWN" && (
+              <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
+                {job.workplace_type.replace("_", " ")}
               </span>
             )}
           </div>
@@ -239,10 +265,21 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-1.5 mt-3">
-          <span className="text-[11px] text-ink-400 font-medium mr-1">Skills:</span>
-          {(job.skills_required && job.skills_required.length > 0 ? job.skills_required : job.matched_skills).map((s) => (
-            <span key={s} className="rounded-full bg-ink-50 text-ink-700 border border-ink-100 px-2 py-0.5 text-xs font-medium">{s}</span>
-          ))}
+          {(job.skills_required && job.skills_required.length > 0) || (job.matched_skills && job.matched_skills.length > 0) ? (
+            <>
+              <span className="text-[11px] text-ink-400 font-medium mr-1">Skills:</span>
+              {(job.skills_required && job.skills_required.length > 0 ? job.skills_required : job.matched_skills).slice(0, 6).map((s) => (
+                <span key={s} className="rounded-full bg-ink-50 text-ink-700 border border-ink-100 px-2 py-0.5 text-xs font-medium">{s}</span>
+              ))}
+            </>
+          ) : job.role_domain || (job.canonical_role && job.canonical_role !== "Specialized Requisition") ? (
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-400">
+              <span>Domain:</span>
+              <span className="rounded-full bg-ink-50 text-ink-600 border border-ink-100 px-2 py-0.5 text-xs font-normal">
+                {job.role_domain || job.canonical_role}
+              </span>
+            </span>
+          ) : null}
         </div>
       )}
 
@@ -251,15 +288,15 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
         <div className="flex items-center gap-2">
           <Link
             to={job.has_match ? `/resume/tailor/${job.job_id}` : `/resume/master?targetJobId=${encodeURIComponent(job.job_id)}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 px-3.5 py-1.5 rounded-lg shadow-xs transition-all"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-700 hover:text-ink-950 bg-ink-50 hover:bg-ink-100 border border-ink-200 px-3 py-1.5 rounded-lg transition-all"
           >
-            <Sparkles size={13} />
-            <span>{job.has_match ? "Tailor Resume" : "Upload Resume to Tailor"}</span>
+            <Sparkles size={12} className="text-signal-600" />
+            <span>{job.has_match ? "Tailor Resume" : "Tailor"}</span>
           </Link>
           <button
             onClick={() => save.mutate()}
             disabled={save.isPending || save.isSuccess}
-            className="inline-flex items-center gap-1 text-xs font-medium text-ink-600 hover:text-ink-950 bg-ink-50 hover:bg-ink-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+            className="inline-flex items-center gap-1 text-xs font-medium text-ink-600 hover:text-ink-950 bg-ink-50 hover:bg-ink-100 border border-ink-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
           >
             {save.isSuccess ? (
               <>
@@ -275,24 +312,27 @@ export function JobMatchCard({ job }: { job: JobMatch }) {
           </button>
         </div>
 
-        {job.is_direct_apply && job.apply_url ? (
-          <a
-            href={job.apply_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg bg-signal-500 hover:bg-signal-600 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-all active:scale-95 ml-auto"
-            title={`Apply directly on official portal for ${job.company}`}
-          >
-            Apply Directly ↗
-          </a>
-        ) : (
+        <div className="flex items-center gap-2 ml-auto">
           <Link
             to={`/opportunities/job/${job.job_id}`}
-            className="inline-flex items-center gap-1 rounded-lg bg-ink-100 hover:bg-ink-200 text-ink-700 px-3.5 py-1.5 text-xs font-semibold transition-all ml-auto"
+            onClick={onViewDetail}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-ink-950 hover:bg-ink-900 text-white px-4 py-1.5 text-xs font-semibold shadow-xs transition-all active:scale-95"
           >
-            View Details
+            <span>View Details</span>
+            <span>→</span>
           </Link>
-        )}
+          {job.is_direct_apply && job.apply_url && (
+            <a
+              href={job.apply_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-lg bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 border border-signal-500/20 px-3 py-1.5 text-xs font-semibold transition-all active:scale-95"
+              title={`Apply directly on official portal for ${job.company}`}
+            >
+              Apply ↗
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

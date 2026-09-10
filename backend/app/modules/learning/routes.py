@@ -297,20 +297,17 @@ async def _compute_gaps(
     # --------------------------------------------------------------------------
     # MODE B: RESUME AVAILABLE (CANONICAL CANDIDATE EVIDENCE ALIGNMENT)
     # --------------------------------------------------------------------------
-    candidate_profile = CandidateProfile.from_parsed_dict(resume["parsed"])
-
-    candidate_skills = list(candidate_profile.skills_explicit or candidate_profile.skills)
-    for ev in candidate_profile.evidence_units:
-        for t in ev.technologies:
-            if t not in candidate_skills:
-                candidate_skills.append(t)
+    candidate_profile = CandidateProfile.from_parsed_dict(resume["parsed"], resume.get("raw_text", ""))
+    candidate_skills = candidate_profile.get_all_demonstrated_skills()
 
     try:
+        from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
         achievements = await resume_repo.list_achievements(db, user_id)
         for a in achievements or []:
             for t in a.get("skills_tags", []):
-                if t not in candidate_skills:
-                    candidate_skills.append(t)
+                canon_t = canonicalize_skill_name(t)
+                if canon_t and canon_t not in candidate_skills:
+                    candidate_skills.append(canon_t)
     except Exception:
         pass
 
@@ -500,12 +497,18 @@ async def get_skill_gaps_for_role(
     demonstrated_count = sum(1 for g in gaps if getattr(g, "status", None) == "DEMONSTRATED")
     partial_count = sum(1 for g in gaps if getattr(g, "status", None) == "PARTIALLY_DEMONSTRATED")
     no_evidence_count = sum(1 for g in gaps if getattr(g, "status", None) == "NO_RESUME_EVIDENCE")
+    core_count = sum(1 for g in gaps if getattr(g, "importance", "CORE") == "CORE")
+    important_count = sum(1 for g in gaps if getattr(g, "importance", "") in ("IMPORTANT", "COMMON"))
+    supporting_count = sum(1 for g in gaps if getattr(g, "importance", "") in ("SUPPORTING", "OPTIONAL"))
 
     summary = CareerAlignmentSummary(
         total=len(gaps),
         demonstrated=demonstrated_count,
         partially_demonstrated=partial_count,
         no_resume_evidence=no_evidence_count,
+        core_count=core_count,
+        important_count=important_count,
+        supporting_count=supporting_count,
     )
 
     return CareerAlignmentOut(
@@ -535,12 +538,18 @@ async def get_skill_gaps(
     demonstrated_count = sum(1 for g in gaps if getattr(g, "status", None) == "DEMONSTRATED")
     partial_count = sum(1 for g in gaps if getattr(g, "status", None) == "PARTIALLY_DEMONSTRATED")
     no_evidence_count = sum(1 for g in gaps if getattr(g, "status", None) == "NO_RESUME_EVIDENCE")
+    core_count = sum(1 for g in gaps if getattr(g, "importance", "CORE") == "CORE")
+    important_count = sum(1 for g in gaps if getattr(g, "importance", "") in ("IMPORTANT", "COMMON"))
+    supporting_count = sum(1 for g in gaps if getattr(g, "importance", "") in ("SUPPORTING", "OPTIONAL"))
 
     summary = CareerAlignmentSummary(
         total=len(gaps),
         demonstrated=demonstrated_count,
         partially_demonstrated=partial_count,
         no_resume_evidence=no_evidence_count,
+        core_count=core_count,
+        important_count=important_count,
+        supporting_count=supporting_count,
     )
 
     return CareerAlignmentOut(

@@ -10,7 +10,9 @@ export type CompetencyTier =
   | "CLOUD_SPECIALIZATION"
   | "ADVANCED";
 
-export type CompetencyImportance = "CORE" | "COMMON" | "OPTIONAL";
+export type CompetencyImportance = "CORE" | "IMPORTANT" | "SUPPORTING" | "COMMON" | "OPTIONAL";
+
+export type CompetencyPriorityGroup = "LEARN_FIRST" | "STRENGTHEN" | "LATER_SUPPORTING" | "DEMONSTRATED";
 
 export type CompetencyEvidence = {
   section: string;
@@ -38,6 +40,7 @@ export type SkillGap = {
   tier?: CompetencyTier;
   status?: CompetencyStatus;
   importance?: CompetencyImportance;
+  priority_group?: CompetencyPriorityGroup;
   evidence?: CompetencyEvidence[];
   explanation?: string;
   evidence_type?: string;
@@ -48,6 +51,9 @@ export type CareerAlignmentSummary = {
   demonstrated: number;
   partially_demonstrated: number;
   no_resume_evidence: number;
+  core_count?: number;
+  important_count?: number;
+  supporting_count?: number;
 };
 
 export type CareerAlignment = {

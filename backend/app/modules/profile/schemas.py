@@ -60,3 +60,6 @@ class OnboardingRequest(BaseModel):
 
 class ProfileResponse(OnboardingRequest):
     user_id: str
+    category: CandidateCategory = CandidateCategory.FRESHER
+    consent_text: str = "Standard candidate registration consent."
+    target_roles: list[str] = Field(default_factory=lambda: ["Software Engineer"])

@@ -21,7 +21,7 @@ class JobOut(BaseModel):
     stipend_min: float | None
     internship_duration_months: int | None
     fresher_friendly: bool
-    posted_days_ago: int
+    posted_days_ago: int = 0
     apply_url: str
     source_job_id: str | None = None
     source_url: str | None = None
@@ -37,6 +37,7 @@ class JobOut(BaseModel):
     first_seen_at: str | None = None
     last_seen_at: str | None = None
     responsibilities: list[str] = []
+    qualifications: list[str] = []
     country: str | None = None
     opportunity_type: str | None = "FULL_TIME"
     candidate_suitability: str | None = "UNKNOWN"
@@ -46,6 +47,8 @@ class JobOut(BaseModel):
     stipend_currency: str | None = None
     stipend_period: str | None = None
     salary_currency: str | None = "INR"
+    compensation_type: str | None = None
+    compensation_text: str | None = None
     eligibility_text: str | None = None
     degree_requirements: list[str] = []
     graduation_year_requirements: list[int] = []
@@ -53,6 +56,16 @@ class JobOut(BaseModel):
     normalized_location: str | None = None
     eligibility: dict | None = None
     realistic_fit: str | None = None
+    canonical_role: str | None = None
+    canonical_role_key: str | None = None
+    role_domain: str | None = None
+    contextual_requirements: list[str] = []
+    completeness_status: str | None = None
+    quality_tier: str | None = "PRIMARY"
+    role_confidence: str | None = None
+    rejection_reason: str | None = None
+    structured_requirements: dict | None = None
+    match: dict | None = None
 
 
 class CreateCustomJobRequest(BaseModel):

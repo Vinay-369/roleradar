@@ -54,3 +54,18 @@ def test_onboarding_requires_at_least_one_target_role():
             target_roles=[],
             consent_text="I consent.",
         )
+
+
+def test_legacy_profile_response_defaults():
+    from app.modules.profile.schemas import ProfileResponse
+    legacy_doc = {
+        "user_id": "test_legacy_user_123",
+        "experience_years": 1.5,
+        "remote_preference": "remote",
+    }
+    resp = ProfileResponse(**legacy_doc)
+    assert resp.user_id == "test_legacy_user_123"
+    assert resp.category == CandidateCategory.FRESHER
+    assert resp.consent_text == "Standard candidate registration consent."
+    assert resp.target_roles == ["Software Engineer"]
+

@@ -123,19 +123,167 @@ WORK_MODES = {"remote", "hybrid", "on-site", "onsite", "in-office"}
 JOB_TYPES = {"full-time", "part-time", "contract", "internship", "temporary", "freelance"}
 
 _BULLET_PREFIX_RE = re.compile(
-    r"^\s*(?:[•▪▫►▶◆◇●○✓✔➔→➢·∙\-\*–—]|\uf0b7|\uf0a7|\u2022|\u25aa|\u25b6|\u25c6|\u2713|\u27a4|\d+[\.\)]|[a-zA-Z][\.\)])\s*"
+    r"^\s*(?:[•▪▫►▶◆◇●○✓✔➔→➢·∙\-\*–—]|\uf0b7|\uf0a7|\u2022|\u25aa|\u25b6|\u25c6|\u2713|\u27a4|\d+[\.\)]\s*|[a-zA-Z][\.\)]\s+)\s*"
 )
+_EXP_LABEL_RANGE_RE = re.compile(
+    r"(?:^|[\n\r•\-\*])\s*(?:total\s+|relevant\s+|work\s+)?(?:experience|exp)(?:\s*(?:required|requirements?|level))?\s*[:\-]\s*(?:(?:minimum|min|at\s+least)\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\+?\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b",
+    re.IGNORECASE
+)
+_EXP_LABEL_PLUS_RE = re.compile(
+    r"(?:^|[\n\r•\-\*])\s*(?:total\s+|relevant\s+|work\s+)?(?:experience|exp)(?:\s*(?:required|requirements?|level))?\s*[:\-]\s*(?:(?:minimum|min|at\s+least)\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*\+\s*(?:years?|yrs?)\b",
+    re.IGNORECASE
+)
+_EXP_LABEL_MIN_RE = re.compile(
+    r"(?:^|[\n\r•\-\*])\s*(?:total\s+|relevant\s+|work\s+)?(?:experience|exp)(?:\s*(?:required|requirements?|level))?\s*[:\-]\s*(?:(?:minimum|min|at\s+least)\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b",
+    re.IGNORECASE
+)
+_EXP_RANGE_RE = re.compile(
+    r"\b(?:(?:minimum|min|at\s+least)\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\+?\s*(?:-|–|—|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?\b",
+    re.IGNORECASE
+)
+_EXP_PLUS_RE = re.compile(
+    r"\b(?:(?:minimum|min|at\s+least)\s+(?:of\s+)?)?(\d+(?:\.\d+)?)\s*\+\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?\b",
+    re.IGNORECASE
+)
+_EXP_MIN_RE = re.compile(
+    r"\b(?:minimum|min|at\s+least)\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?\b",
+    re.IGNORECASE
+)
+_EXP_MAX_RE = re.compile(
+    r"\b(?:up\s+to|maximum|max)\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*(?:years?|yrs?)(?:\s+(?:of\s+)?experience)?\b",
+    re.IGNORECASE
+)
+_EXP_SINGLE_RE = re.compile(
+    r"\b(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\s+(?:of\s+)?experience\b",
+    re.IGNORECASE
+)
+_EDU_RE = re.compile(
+    r"(?:\b(?:bachelor(?:\x27s)?|master(?:\x27s)?|phd|doctorate|degree|diploma|mca|bca|engineering\s+degree|graduate)\b|\b(?:b\.?e|b\.?tech|m\.?tech|b\.?s|m\.?s|b\.?sc|m\.?sc)(?:\.|\b))",
+    re.IGNORECASE
+)
+
 _EXP_PATTERN = re.compile(
     r"\b(?:minimum\s+(?:of\s+)?)?(\d+\+?(?:\s*(?:to|-)\s*\d+)?)\s*(?:years?|yrs?)(?:\s+of)?(?:\s+[\w\s,\/\-]{1,65})?\s+experience\b",
     re.IGNORECASE
 )
 
 
+def _extract_experience_from_text(text: str) -> tuple[float | None, float | None, str | None]:
+    """
+    Extracts min_years, max_years, and matching raw text from explicit experience phrasing.
+    Strictly guards against company founding dates, company tenure, marketing claims,
+    notice periods, or project durations.
+    """
+    if not text or len(text) < 3:
+        return None, None, None
+    lower_t = text.lower()
+    if any(w in lower_t for w in [
+        "our company", "we have", "firm with", "history of", "in business",
+        "founded in", "established in", "years old", "celebrating", "combined", "collective", "team experience"
+    ]):
+        return None, None, None
+    if re.search(r"\b(?:over|\+)\s*\d+\s+years\s+(?:of\s+)?(?:excellence|innovation|history|service|experience\s+as\s+a\s+company)\b", lower_t):
+        return None, None, None
+
+    def _sanitize(p_min: float | None, p_max: float | None, p_raw: str | None):
+        if p_min is not None and p_min > 30:
+            return None, None, None
+        if p_max is not None and p_max > 40:
+            return None, None, None
+        return p_min, p_max, p_raw
+
+    # 1. Label-Prefixed Range: "Experience: 3+ to 7 yrs", "Exp: 3 to 7 years", "Relevant Experience: 5-8 yrs"
+    m_lbl_range = _EXP_LABEL_RANGE_RE.search(text)
+    if m_lbl_range:
+        try:
+            return _sanitize(float(m_lbl_range.group(1)), float(m_lbl_range.group(2)), m_lbl_range.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 2. Label-Prefixed Plus: "Experience: 3+ years", "Exp: 2+ yrs"
+    m_lbl_plus = _EXP_LABEL_PLUS_RE.search(text)
+    if m_lbl_plus:
+        try:
+            return _sanitize(float(m_lbl_plus.group(1)), None, m_lbl_plus.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Label-Prefixed Single: "Experience: 5 years", "Exp: 3 yrs"
+    m_lbl_min = _EXP_LABEL_MIN_RE.search(text)
+    if m_lbl_min:
+        try:
+            return _sanitize(float(m_lbl_min.group(1)), None, m_lbl_min.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 4. Explicit Range: "3+ to 7 yrs", "6 - 9 years", "2-4 years", "6–9 years"
+    m_range = _EXP_RANGE_RE.search(text)
+    if m_range:
+        try:
+            return _sanitize(float(m_range.group(1)), float(m_range.group(2)), m_range.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 5. Plus: "3+ years", "5+ yrs experience"
+    m_plus = _EXP_PLUS_RE.search(text)
+    if m_plus:
+        try:
+            return _sanitize(float(m_plus.group(1)), None, m_plus.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 6. Minimum: "minimum 3 years", "at least 2 years"
+    m_min = _EXP_MIN_RE.search(text)
+    if m_min:
+        try:
+            return _sanitize(float(m_min.group(1)), None, m_min.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 7. Maximum / Up to: "up to 5 years"
+    m_max = _EXP_MAX_RE.search(text)
+    if m_max:
+        try:
+            return _sanitize(0.0, float(m_max.group(1)), m_max.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 8. Single number with "years of experience": "3 years of experience"
+    m_single = _EXP_SINGLE_RE.search(text)
+    if m_single:
+        try:
+            return _sanitize(float(m_single.group(1)), None, m_single.group(0).strip())
+        except (ValueError, TypeError):
+            pass
+
+    # 9. Multi-word intervening qualifier: "7 years of professional experience", "5+ years of hands-on experience"
+    m_pat = _EXP_PATTERN.search(text)
+    if m_pat:
+        val_str = m_pat.group(1).replace("+", "").strip()
+        if "-" in val_str or "–" in val_str or "to" in val_str:
+            pts = re.findall(r"\d+(?:\.\d+)?", val_str)
+            if len(pts) >= 2:
+                return _sanitize(float(pts[0]), float(pts[1]), m_pat.group(0).strip())
+            elif pts:
+                return _sanitize(float(pts[0]), None, m_pat.group(0).strip())
+        else:
+            try:
+                return _sanitize(float(val_str), None, m_pat.group(0).strip())
+            except (ValueError, TypeError):
+                pass
+
+    # 10. Freshers / Entry level explicit text
+    if re.search(r"\b(?:freshers?(?:\s+can\s+apply)?|entry\s*level|fresh\s+graduates?|no\s+prior\s+experience\s+required)\b", text, re.IGNORECASE):
+        return 0.0, 1.0, "Entry level / Freshers"
+
+    return None, None, None
+
+
 def _normalize_heading_text(heading: str) -> str:
-    """Normalizes raw heading string by stripping punctuation, extra spaces, and casing."""
+    """Normalizes raw heading string by stripping markdown hashes, punctuation, extra spaces, and casing."""
     h = heading.strip().lower()
     h = re.sub(r"['’`]", "", h)
-    h = re.sub(r"[:\-\*•\(\)\/&|]+", " ", h)
+    h = re.sub(r"[#:\-\*•\(\)\/&|]+", " ", h)
     return re.sub(r"\s+", " ", h).strip()
 
 
@@ -170,11 +318,11 @@ def _detect_section_category(raw_line: str) -> tuple[RequirementCategory, str] |
         return RequirementCategory.BENEFITS, norm
 
     # 3. Role Overview (must check before generic company overview)
-    if any(k in norm for k in ["role overview", "about the role", "job overview", "position overview", "job summary", "the opportunity", "position summary", "role summary", "about this role"]):
+    if any(k in norm for k in ["role overview", "about the role", "job overview", "position overview", "job summary", "the opportunity", "position summary", "role summary", "about this role", "job description", "about this position", "the position"]):
         return RequirementCategory.ROLE_OVERVIEW, norm
 
     # 4. Company Overview
-    if any(k in norm for k in ["about us", "about the company", "company overview", "who we are", "our company", "our mission", "about "]) and not any(k in norm for k in ["role", "position", "job"]):
+    if any(k in norm for k in ["about us", "about the company", "company overview", "company description", "who we are", "our company", "our mission", "welcome to", "our story", "culture at", "life at", "about "]) and not any(k in norm for k in ["role", "position", "job"]):
         return RequirementCategory.COMPANY_OVERVIEW, norm
 
     # 5. Preferred / Nice-to-Have (must check before required)
@@ -186,13 +334,17 @@ def _detect_section_category(raw_line: str) -> tuple[RequirementCategory, str] |
     ]):
         return RequirementCategory.PREFERRED, norm
 
-    # 6. Must-Have / Required
+    # 6. Must-Have / Required Skills
     if any(norm == k or norm.startswith(k + " ") or norm.endswith(" " + k) or f" {k} " in norm for k in [
         "requirements", "must have", "must haves", "basic qualifications", "minimum qualifications",
-        "what you need", "core requirements", "essential skills", "what were looking for",
+        "what you need", "what youll need", "what you will need", "core requirements", "essential skills", "what were looking for",
         "what we are looking for", "mandatory requirements", "required qualifications",
         "key requirements", "what you bring", "minimum requirements", "required skills",
-        "skills required", "qualifications"
+        "skills required", "skills", "technical skills", "tech stack", "our tech stack",
+        "technologies", "tech checklist", "technical requirements", "candidate profile", "who you are",
+        "core skills", "skills qualifications", "qualifications skills", "skills and experience",
+        "key skills", "required experience", "expected skill set", "expected skills", "skill set",
+        "skillset", "technical skillset", "required skillset", "key skill set", "expected technical skills"
     ]):
         return RequirementCategory.MUST_HAVE, norm
 
@@ -200,12 +352,17 @@ def _detect_section_category(raw_line: str) -> tuple[RequirementCategory, str] |
     if any(norm == k or norm.startswith(k + " ") or norm.endswith(" " + k) or f" {k} " in norm for k in [
         "responsibilities", "what youll do", "what you will do", "duties", "the role",
         "key responsibilities", "day to day", "scope of work", "your mission", "core duties",
-        "what you will be doing", "what youll be doing", "how youll make an impact"
+        "what you will be doing", "what youll be doing", "how youll make an impact",
+        "tasks", "tasks responsibilities", "tasks and responsibilities", "tasks / responsibilities"
     ]):
         return RequirementCategory.RESPONSIBILITY, norm
 
-    # 8. Education / Qualifications
-    if any(k in norm for k in ["education & experience", "education experience", "eligibility", "education requirements", "academic background"]):
+    # 8. Education / Qualifications / Additional Information
+    if any(norm == k or norm.startswith(k + " ") or norm.endswith(" " + k) or f" {k} " in norm for k in [
+        "education & experience", "education experience", "eligibility", "education requirements",
+        "academic background", "qualifications", "qualification", "additional information",
+        "educational qualifications", "academic qualifications", "education"
+    ]):
         return RequirementCategory.QUALIFICATION, norm
 
     # 9. Domain Knowledge / Context
@@ -406,7 +563,63 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
 
         # 2. Role Overview
         if sec_cat == RequirementCategory.ROLE_OVERVIEW:
-            role_overview_blocks.append(" ".join(sec_lines))
+            for line in sec_lines:
+                clean_l = _BULLET_PREFIX_RE.sub("", line).strip()
+                if not clean_l:
+                    continue
+
+                # Experience extraction within Role Overview
+                if min_years is None and max_years is None:
+                    p_min, p_max, p_raw = _extract_experience_from_text(clean_l)
+                    if p_min is not None or p_max is not None:
+                        min_years = p_min
+                        max_years = p_max
+                        experience_req = p_raw
+
+                # If an inline subheading appears within Role Overview, skip treating it as a responsibility
+                if clean_l.endswith(":") and len(clean_l.split()) <= 5:
+                    sub_check = _detect_section_category(clean_l)
+                    if sub_check:
+                        continue
+
+                is_bullet = bool(_BULLET_PREFIX_RE.match(line))
+                is_req = bool(re.search(
+                    r"\b(?:strong proficiency (?:in|with)|proficiency (?:in|with)|proficient in|in-depth understanding of|solid understanding of|strong understanding of|experience (?:with|in|integrating)|hands-on with|knowledge of|working knowledge of|must have|should have|candidates? should have|required skills?|skills? required)\b",
+                    clean_l,
+                    re.IGNORECASE,
+                ))
+                is_pref = any(w in clean_l.lower() for w in ["preferred", "nice to have", "plus", "bonus", "desirable", "good to have", "familiarity with"])
+
+                if is_req:
+                    line_skills = extract_skills_from_text(clean_l)
+                    if line_skills:
+                        if is_pref:
+                            preferred_skills.update(line_skills)
+                        else:
+                            must_have_skills.update(line_skills)
+                        req_id = f"req_{len(requirements)}"
+                        requirements.append(JobRequirement(
+                            id=req_id,
+                            category=RequirementCategory.PREFERRED if is_pref else RequirementCategory.MUST_HAVE,
+                            text=clean_l,
+                            skills_detected=line_skills,
+                            importance_weight=0.6 if is_pref else 1.0,
+                            source_section=RequirementCategory.ROLE_OVERVIEW.value,
+                            source_heading=sec_heading,
+                            raw_text=line,
+                            normalized_text=clean_l,
+                        ))
+                        continue
+
+                is_action = any(clean_l.lower().startswith(p) for p in [
+                    "responsible for", "duties include", "work with", "design and", "develop",
+                    "lead", "manage", "support", "ensure", "participate", "collaborate",
+                    "execute", "create", "implement", "coordinate", "requirement analysis"
+                ])
+                if is_bullet or is_action:
+                    responsibilities.append(clean_l)
+                else:
+                    role_overview_blocks.append(clean_l)
             continue
 
         # 3. Benefits / EEO / Legal (isolated from candidate requirements)
@@ -420,7 +633,11 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                     continue
                 if any(w in line.lower() for w in ["looking for", "we are seeking", "join our team"]):
                     role_overview_blocks.append(line)
-                elif any(w in line.lower() for w in ["consultancy", "global company", "founded in", "mission is"]):
+                elif any(w in line.lower() for w in [
+                    "consultancy", "global company", "founded in", "mission is",
+                    "welcome to", "where every story begins", "our mission", "who we are",
+                    "fastest growing", "we are building", "ecommerce platform", "e-commerce platform"
+                ]):
                     company_overview_blocks.append(line)
             continue
 
@@ -439,27 +656,15 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                     continue
 
             # Experience extraction
-            if not experience_req:
-                if not any(w in clean_text.lower() for w in ["our company", "we have", "firm with", "history of", "in business"]):
-                    exp_m = _EXP_PATTERN.search(clean_text)
-                    if exp_m:
-                        experience_req = exp_m.group(0).strip()
-                        years_val_str = exp_m.group(1).replace("+", "").strip()
-                        if "-" in years_val_str or "to" in years_val_str:
-                            p_nums = re.findall(r"\d+", years_val_str)
-                            if len(p_nums) >= 2:
-                                min_years = float(p_nums[0])
-                                max_years = float(p_nums[1])
-                        else:
-                            try:
-                                min_years = float(years_val_str)
-                            except ValueError:
-                                pass
+            if min_years is None and max_years is None:
+                p_min, p_max, p_raw = _extract_experience_from_text(clean_text)
+                if p_min is not None or p_max is not None:
+                    min_years = p_min
+                    max_years = p_max
+                    experience_req = p_raw
 
             # Education extraction
-            is_edu = any(re.search(r"\b" + kw + r"\b", clean_text, re.IGNORECASE) for kw in [
-                "bachelor", "master", "phd", "degree", "diploma", "b.tech", "b.e", "m.tech", "bs in", "ms in", "b.s.", "m.s."
-            ])
+            is_edu = bool(_EDU_RE.search(clean_text))
             if is_edu:
                 education_reqs.append(clean_text)
                 qualifications.append(clean_text)
@@ -500,8 +705,15 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                 responsibilities.append(clean_text)
                 weight = 0.8
             elif item_cat == RequirementCategory.QUALIFICATION:
-                qualifications.append(clean_text)
-                weight = 0.7
+                p_min, p_max, _ = _extract_experience_from_text(clean_text)
+                if p_min is None and p_max is None:
+                    qualifications.append(clean_text)
+                if any(w in clean_text.lower() for w in ["preferred", "nice to have", "plus", "bonus", "desirable"]):
+                    preferred_skills.update(detected_skills)
+                    weight = 0.6
+                else:
+                    must_have_skills.update(detected_skills)
+                    weight = 0.8
             elif item_cat == RequirementCategory.DOMAIN:
                 detected_domains.add(clean_text)
                 weight = 0.65
@@ -520,6 +732,55 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                 raw_text=raw_line,
                 normalized_text=clean_text,
             ))
+
+    # Step 10b: If no skills were detected in must_have_skills and preferred_skills,
+    # but body lines contain technical skills with explicit requirement semantics, infer them conservatively
+    if not must_have_skills and not preferred_skills:
+        for sec in sections_map:
+            if sec["category"] in (RequirementCategory.BENEFITS, RequirementCategory.EEO_LEGAL, RequirementCategory.COMPANY_OVERVIEW):
+                continue
+            for raw_line in sec["lines"]:
+                clean_line = _BULLET_PREFIX_RE.sub("", raw_line).strip()
+                if not clean_line or len(clean_line) < 3:
+                    continue
+                # Skip company marketing, culture, or boilerplate prose
+                if any(w in clean_line.lower() for w in [
+                    "about us", "equal opportunity", "benefits", "compensation", "salary", "founded in",
+                    "welcome to", "about the company", "who we are", "our story", "our mission",
+                    "where every story begins", "culture at", "life at", "we believe in", "our values"
+                ]):
+                    continue
+
+                # Check requirement semantics: Must contain explicit candidate requirement predicates
+                has_req_semantics = bool(re.search(
+                    r"\b(?:strong proficiency (?:in|with)|proficiency (?:in|with)|proficient in|experience (?:with|in|integrating)|knowledge of|skilled in|expertise in|familiarity with|hands-on with|working knowledge of|demonstrated ability in|in-depth understanding of|solid understanding of|strong understanding of|looking for (?:a|an|candidates?)|must have|should have|candidates? should have|required skills?|skills? required|qualifications?|requirements?|degree in|tech stack)\b",
+                    clean_line,
+                    re.IGNORECASE
+                ))
+                
+                # Generic prose or action bullets without explicit requirement predicates are contextual or responsibilities
+                if not has_req_semantics:
+                    continue
+
+                line_skills = extract_skills_from_text(clean_line)
+                if line_skills:
+                    is_pref = any(w in clean_line.lower() for w in ["preferred", "nice to have", "plus", "bonus", "desirable"])
+                    if is_pref:
+                        preferred_skills.update(line_skills)
+                    else:
+                        must_have_skills.update(line_skills)
+                    req_id = f"req_{len(requirements)}"
+                    requirements.append(JobRequirement(
+                        id=req_id,
+                        category=RequirementCategory.PREFERRED if is_pref else RequirementCategory.MUST_HAVE,
+                        text=clean_line,
+                        skills_detected=line_skills,
+                        importance_weight=0.75,
+                        source_section=RequirementCategory.PREFERRED.value if is_pref else RequirementCategory.MUST_HAVE.value,
+                        source_heading=sec.get("heading"),
+                        raw_text=raw_line,
+                        normalized_text=clean_line,
+                    ))
 
     # Step 11: Seniority Classification (Anchored Evidence)
     seniority = "MID"
@@ -584,10 +845,25 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
     best_domain = max(domain_scores.items(), key=lambda x: x[1])
     assigned_domain = best_domain[0] if best_domain[1] > 0 else "Full Stack Engineering"
 
+    # Step 10c: Experience fallback scan across all raw lines if not yet found
+    if min_years is None and max_years is None:
+        for line in lines:
+            clean_l = _BULLET_PREFIX_RE.sub("", line).strip()
+            p_min, p_max, p_raw = _extract_experience_from_text(clean_l)
+            if p_min is not None or p_max is not None:
+                min_years = p_min
+                max_years = p_max
+                experience_req = p_raw
+                break
+
     domain_list = sorted(list(detected_domains))
     req_skills = sorted(list(must_have_skills))
     pref_skills = sorted(list(preferred_skills))
     all_soft = sorted(list(soft_skills))
+
+    qual_list = list(dict.fromkeys([q.strip() for q in qualifications if q.strip()]))
+    resp_list = list(dict.fromkeys([r.strip() for r in responsibilities if r.strip()]))
+    edu_list = list(dict.fromkeys([e.strip() for e in education_reqs if e.strip()]))
 
     return StructuredJobRequirements(
         target_role=inferred_title or None,
@@ -604,11 +880,11 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
         required_skills=req_skills,
         must_have_skills=req_skills,
         preferred_skills=pref_skills,
-        responsibilities=responsibilities,
+        responsibilities=resp_list,
         tools=sorted(list(detected_tools)),
         technologies=sorted(list(detected_techs)),
-        qualifications=qualifications,
-        education_requirements=education_reqs,
+        qualifications=qual_list,
+        education_requirements=edu_list,
         certifications=cert_reqs,
         experience_requirements=experience_req,
         min_years_experience=min_years,

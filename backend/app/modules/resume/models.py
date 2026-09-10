@@ -30,6 +30,30 @@ class ClaimType(str, Enum):
     QUALIFICATION = "QUALIFICATION"
 
 
+class SkillEvidenceTier(str, Enum):
+    EXPERIENCE = "EXPERIENCE"       # Demonstrated in professional work experience or internship
+    PROJECT = "PROJECT"             # Demonstrated in applied project (tech stack or project bullet)
+    EXPLICIT = "EXPLICIT"           # Explicitly listed under technical skills section
+    WEAK_MENTION = "WEAK_MENTION"   # Mentioned only in summary or non-evidence section
+    INFERRED = "INFERRED"           # Inferred from NLP contextual extraction without explicit mention or demonstration
+    UNSUPPORTED = "UNSUPPORTED"     # No evidence anywhere in candidate background
+
+
+class CandidateSkillEvidence(BaseModel):
+    """
+    Provenance-backed candidate skill entity.
+    Maintains the link between the normalized skill and its underlying evidence units.
+    """
+    skill: str  # Canonical name, e.g. "Python", "MongoDB", "Node.js"
+    tier: SkillEvidenceTier
+    sources: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    has_metrics: bool = False
+    is_explicit: bool = False
+    is_demonstrated: bool = False  # True for EXPERIENCE, PROJECT, EXPLICIT
+    is_professional: bool = False  # True strictly for EXPERIENCE
+
+
 class SourceCoverageState(str, Enum):
     PRESERVED = "PRESERVED"
     REWRITTEN = "REWRITTEN"
@@ -369,6 +393,169 @@ class CandidateProfile(BaseModel):
             results.append(ev)
         return results
 
+    def get_canonical_skills_map(self, include_inferred: bool = False) -> dict[str, CandidateSkillEvidence]:
+        """
+        Builds the authoritative canonical mapping of all candidate skills with provenance,
+        evidence strength, and source references.
+        Keys are lowercase canonical names for fast case-insensitive lookup.
+        """
+        from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
+
+        tier_weights = {
+            SkillEvidenceTier.EXPERIENCE: 5,
+            SkillEvidenceTier.PROJECT: 4,
+            SkillEvidenceTier.EXPLICIT: 3,
+            SkillEvidenceTier.WEAK_MENTION: 2,
+            SkillEvidenceTier.INFERRED: 1,
+            SkillEvidenceTier.UNSUPPORTED: 0,
+        }
+
+        records: dict[str, CandidateSkillEvidence] = {}
+
+        def record_skill(
+            raw_skill: str,
+            tier: SkillEvidenceTier,
+            source: str,
+            ev_id: str | None = None,
+            has_metric: bool = False,
+            is_explicit: bool = False,
+        ) -> None:
+            canon = canonicalize_skill_name(raw_skill)
+            if not canon:
+                return
+            key = canon.lower()
+
+            if key not in records:
+                records[key] = CandidateSkillEvidence(
+                    skill=canon,
+                    tier=tier,
+                    sources=[source] if source else [],
+                    evidence_ids=[ev_id] if ev_id else [],
+                    has_metrics=has_metric,
+                    is_explicit=is_explicit or tier == SkillEvidenceTier.EXPLICIT,
+                    is_demonstrated=tier in (SkillEvidenceTier.EXPERIENCE, SkillEvidenceTier.PROJECT, SkillEvidenceTier.EXPLICIT),
+                    is_professional=tier == SkillEvidenceTier.EXPERIENCE,
+                )
+            else:
+                rec = records[key]
+                if tier_weights.get(tier, 0) > tier_weights.get(rec.tier, 0):
+                    rec.tier = tier
+                if source and source not in rec.sources:
+                    rec.sources.append(source)
+                if ev_id and ev_id not in rec.evidence_ids:
+                    rec.evidence_ids.append(ev_id)
+                if has_metric:
+                    rec.has_metrics = True
+                if is_explicit or tier == SkillEvidenceTier.EXPLICIT:
+                    rec.is_explicit = True
+                rec.is_demonstrated = rec.tier in (SkillEvidenceTier.EXPERIENCE, SkillEvidenceTier.PROJECT, SkillEvidenceTier.EXPLICIT)
+                rec.is_professional = rec.tier == SkillEvidenceTier.EXPERIENCE
+
+        # 1. Explicit Skills
+        inferred_lower = {s.lower() for s in self.skills_inferred}
+        explicit_source = self.skills_explicit or [s for s in self.skills if s.lower() not in inferred_lower]
+        for s in explicit_source:
+            record_skill(s, SkillEvidenceTier.EXPLICIT, source="EXPLICIT_SKILLS", is_explicit=True)
+
+        # 2. Professional Experience Entities & Bullets
+        for exp in self.experience:
+            comp_name = exp.company or "Experience"
+            for t in exp.technologies:
+                record_skill(t, SkillEvidenceTier.EXPERIENCE, source=f"EXPERIENCE: {comp_name}")
+            for ev in exp.evidence_units:
+                for t in ev.technologies:
+                    record_skill(t, SkillEvidenceTier.EXPERIENCE, source=f"EXPERIENCE: {comp_name}", ev_id=ev.id, has_metric=bool(ev.metrics))
+
+        # 3. Internships
+        for intern in self.internships:
+            comp_name = intern.company or "Internship"
+            for t in intern.technologies:
+                record_skill(t, SkillEvidenceTier.EXPERIENCE, source=f"INTERNSHIP: {comp_name}")
+            for ev in intern.evidence_units:
+                for t in ev.technologies:
+                    record_skill(t, SkillEvidenceTier.EXPERIENCE, source=f"INTERNSHIP: {comp_name}", ev_id=ev.id, has_metric=bool(ev.metrics))
+
+        # 4. Projects (Tech Stack and Bullets)
+        for pe in self.projects:
+            p_name = pe.title or "Project"
+            for t in pe.technologies:
+                record_skill(t, SkillEvidenceTier.PROJECT, source=f"PROJECT: {p_name}")
+            for ev in pe.evidence_units:
+                for t in ev.technologies:
+                    record_skill(t, SkillEvidenceTier.PROJECT, source=f"PROJECT: {p_name}", ev_id=ev.id, has_metric=bool(ev.metrics))
+
+        # 5. Certifications & Achievements
+        for c in self.certifications:
+            record_skill(c, SkillEvidenceTier.EXPLICIT, source="CERTIFICATIONS")
+        for a in self.achievements:
+            record_skill(a, SkillEvidenceTier.EXPLICIT, source="ACHIEVEMENTS")
+
+        # 6. Additional Sections
+        for sec in self.additional_sections:
+            for ev in sec.evidence_units:
+                for t in ev.technologies:
+                    record_skill(t, SkillEvidenceTier.PROJECT, source=f"ADDITIONAL: {sec.heading}", ev_id=ev.id, has_metric=bool(ev.metrics))
+
+        # 7. Inferred Skills (only if requested)
+        if include_inferred:
+            for s in self.skills_inferred:
+                record_skill(s, SkillEvidenceTier.INFERRED, source="INFERRED_CONTEXT")
+
+        return records
+
+    def get_all_demonstrated_skills(self, include_inferred: bool = False) -> list[str]:
+        """
+        Authoritative single source of truth for all verified candidate skills.
+        Returns a deterministic list of canonical skill names in discovery order
+        that have proven candidate demonstration (EXPLICIT, PROJECT, EXPERIENCE).
+        Excludes ungrounded INFERRED skills by default.
+        """
+        skill_map = self.get_canonical_skills_map(include_inferred=include_inferred)
+        seen: set[str] = set()
+        demonstrated: list[str] = []
+        for ev in skill_map.values():
+            if ev.is_demonstrated or (include_inferred and ev.tier == SkillEvidenceTier.INFERRED):
+                if ev.skill not in seen:
+                    seen.add(ev.skill)
+                    demonstrated.append(ev.skill)
+        return demonstrated
+
+    def get_skills_by_evidence_tier(self) -> dict[str, list[str]]:
+        """
+        Categorizes canonical demonstrated skills by evidence tier:
+        EXPERIENCE, PROJECT, EXPLICIT, WEAK_MENTION, INFERRED.
+        """
+        skill_map = self.get_canonical_skills_map(include_inferred=True)
+        by_tier: dict[str, list[str]] = {
+            "EXPERIENCE": [],
+            "PROJECT": [],
+            "EXPLICIT": [],
+            "WEAK_MENTION": [],
+            "INFERRED": [],
+        }
+        for ev in skill_map.values():
+            tier_key = ev.tier.value if hasattr(ev.tier, "value") else str(ev.tier)
+            if tier_key in by_tier:
+                by_tier[tier_key].append(ev.skill)
+            else:
+                by_tier.setdefault(tier_key, []).append(ev.skill)
+
+        for k in by_tier:
+            by_tier[k] = sorted(list(set(by_tier[k])))
+        return by_tier
+
+    def has_demonstrated_skill(self, skill: str) -> bool:
+        """
+        Checks whether a skill is verified in candidate evidence (EXPLICIT, PROJECT, EXPERIENCE)
+        with alias resolution.
+        """
+        from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
+        canon = canonicalize_skill_name(skill)
+        if not canon:
+            return False
+        skill_map = self.get_canonical_skills_map(include_inferred=False)
+        return canon.lower() in skill_map and skill_map[canon.lower()].is_demonstrated
+
     def to_parsed_dict(self) -> dict[str, Any]:
         """
         Converts canonical profile into the exact backward-compatible dictionary format
@@ -438,10 +625,11 @@ class CandidateProfile(BaseModel):
         return {
             "personal": dict(self.personal),
             "summary": self.summary,
-            "skills": list(self.skills),
+            "skills": list(self.skills) if self.skills else self.get_all_demonstrated_skills(),
             "skills_explicit": list(self.skills_explicit),
             "skills_inferred": list(self.skills_inferred),
             "skills_categorized": list(self.skills_categorized),
+            "skills_by_tier": self.get_skills_by_evidence_tier(),
             "experience": [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in self.experience],
             "experience_raw": exp_raw if exp_raw else [b for exp in self.experience for b in exp.bullets],
             "internships": [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in self.internships],
@@ -805,18 +993,22 @@ class CandidateProfile(BaseModel):
                     evidence_units=ev_list,
                 ))
 
-        skills_explicit = list(data.get("skills_explicit") or data.get("skills") or [])
-        skills_inferred = list(data.get("skills_inferred") or [])
-        skills_all = list(data.get("skills") or skills_explicit)
+        from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
 
-        return cls(
+        raw_explicit = list(data.get("skills_explicit") or [])
+        skills_explicit = [canonicalize_skill_name(s) for s in raw_explicit if canonicalize_skill_name(s)]
+        skills_inferred = [canonicalize_skill_name(s) for s in (data.get("skills_inferred") or []) if canonicalize_skill_name(s)]
+        raw_skills = list(data.get("skills") or [])
+        canonical_raw_skills = [canonicalize_skill_name(s) for s in raw_skills if canonicalize_skill_name(s)]
+
+        profile = cls(
             personal=data.get("personal", {}),
             summary=data.get("summary"),
             experience=exp_entities,
             internships=intern_entities,
             projects=proj_entities,
             education=edu_entities,
-            skills=skills_all,
+            skills=canonical_raw_skills or skills_explicit,
             skills_explicit=skills_explicit,
             skills_inferred=skills_inferred,
             skills_categorized=data.get("skills_categorized", []),
@@ -832,3 +1024,7 @@ class CandidateProfile(BaseModel):
             additional_sections=add_sections,
             evidence_units=evidence_units,
         )
+        # If no skills were provided at all, populate from demonstrated skills
+        if not profile.skills:
+            profile.skills = profile.get_all_demonstrated_skills()
+        return profile

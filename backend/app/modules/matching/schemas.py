@@ -48,6 +48,8 @@ class JobMatchOut(BaseModel):
     stipend_currency: str | None = None
     stipend_period: str | None = None
     salary_currency: str | None = "INR"
+    compensation_type: str | None = None
+    compensation_text: str | None = None
     eligibility_text: str | None = None
     degree_requirements: list[str] = []
     graduation_year_requirements: list[int] = []
@@ -58,3 +60,7 @@ class JobMatchOut(BaseModel):
     fit_explanation: str | None = None
     factor_weights: dict[str, float] | None = None
     score_explanation: str | None = None
+    canonical_role: str | None = None
+    canonical_role_key: str | None = None
+    role_domain: str | None = None
+    contextual_requirements: list[str] = []

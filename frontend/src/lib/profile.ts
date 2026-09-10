@@ -1,5 +1,15 @@
 import { apiClient } from "./apiClient";
 
+export const CANONICAL_CAREER_STAGES = [
+  { value: "ALL", label: "All Career Stages" },
+  { value: "FRESHER", label: "Fresher / New Graduate" },
+  { value: "EXPERIENCED", label: "Experienced Professional" },
+  { value: "CAREER_SWITCHER", label: "Career Switcher" },
+  { value: "INTERNSHIP_SEEKER", label: "Internship Seeker" },
+] as const;
+
+export type CandidateStageValue = (typeof CANONICAL_CAREER_STAGES)[number]["value"];
+
 export type Profile = {
   category: "FRESHER" | "EXPERIENCED" | "CAREER_SWITCHER" | "INTERNSHIP_SEEKER";
   experience_years: number;

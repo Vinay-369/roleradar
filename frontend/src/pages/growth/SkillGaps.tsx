@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Target,
   Map as MapIcon,
   ArrowRight,
-  Info,
   ShieldAlert,
   Layers,
   Briefcase,
@@ -13,6 +12,10 @@ import {
   AlertCircle,
   MinusCircle,
   FileCheck,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { getProfile } from "../../lib/profile";
@@ -64,14 +67,45 @@ const TIER_METADATA: Record<
   },
 };
 
-const TIER_ORDER: CompetencyTier[] = [
-  "FOUNDATION",
-  "CORE",
-  "DOMAIN_PROCESSING",
-  "TOOLS",
-  "CLOUD_SPECIALIZATION",
-  "ADVANCED",
-];
+
+function getEvidenceBadge(evidenceType?: string): { label: string; className: string } {
+  switch ((evidenceType || "").toUpperCase()) {
+    case "WORK_EXPERIENCE":
+    case "EXPERIENCE":
+      return {
+        label: "Professional Experience",
+        className: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+      };
+    case "PROJECT":
+      return {
+        label: "Project Delivery",
+        className: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+      };
+    case "COURSEWORK":
+    case "EDUCATION":
+      return {
+        label: "Coursework & Education",
+        className: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+      };
+    case "EXPLICIT_SKILL":
+    case "EXPLICIT":
+      return {
+        label: "Explicit Skill Mention",
+        className: "bg-teal-500/10 text-teal-700 border-teal-500/20",
+      };
+    case "RELATED_TECHNOLOGY":
+    case "INFERRED":
+      return {
+        label: "Related Technology Cluster",
+        className: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+      };
+    default:
+      return {
+        label: evidenceType || "Resume Evidence",
+        className: "bg-ink-100 text-ink-700 border-ink-200",
+      };
+  }
+}
 
 export function SkillGaps() {
   const [searchParams] = useSearchParams();
@@ -127,23 +161,47 @@ export function SkillGaps() {
     roadmap?.role_confidence === "LOW" ||
     (alignment && alignment.confidence === "LOW");
 
-  const firstGap = gaps.length > 0 ? gaps[0] : null;
 
-  // Group competencies by Tier preserving TIER_ORDER
-  const groupedByTier = TIER_ORDER.map((tierKey) => {
-    const items = gaps.filter(
-      (g) => (g.tier || "CORE").toUpperCase() === tierKey.toUpperCase()
-    );
-    return {
-      tierKey,
-      meta: TIER_METADATA[tierKey] || {
-        label: tierKey,
-        description: "",
-        badge: "bg-ink-100 text-ink-700",
-      },
-      items,
-    };
-  }).filter((group) => group.items.length > 0);
+  // Mode B Tab state: "LEARN_FIRST" | "STRENGTHEN" | "LATER_SUPPORTING" | "DEMONSTRATED" | "ALL"
+  const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
+  // Mode A Tab state: "ALL" | "CORE" | "IMPORTANT" | "SUPPORTING"
+  const [importanceFilter, setImportanceFilter] = useState<string>("ALL");
+  // Expandable details tracking
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const toggleCard = (skillKey: string) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [skillKey]: !prev[skillKey],
+    }));
+  };
+
+  // Helper to get normalized priority group
+  const getEffectivePriorityGroup = (gap: SkillGap): string => {
+    if (gap.priority_group) return gap.priority_group;
+    if (gap.status === "DEMONSTRATED") return "DEMONSTRATED";
+    if (gap.status === "PARTIALLY_DEMONSTRATED") return "STRENGTHEN";
+    if (gap.importance === "CORE" || gap.priority === "CORE") return "LEARN_FIRST";
+    if (gap.importance === "IMPORTANT" || gap.priority === "SECONDARY") return "STRENGTHEN";
+    return "LATER_SUPPORTING";
+  };
+
+  // Filtered gaps
+  const filteredGaps = useMemo(() => {
+    if (!hasResume) {
+      if (importanceFilter === "ALL") return gaps;
+      return gaps.filter((g) => (g.importance || "CORE").toUpperCase() === importanceFilter);
+    } else {
+      if (priorityFilter === "ALL") return gaps;
+      return gaps.filter((g) => getEffectivePriorityGroup(g) === priorityFilter);
+    }
+  }, [gaps, hasResume, importanceFilter, priorityFilter]);
+
+  // Counts for Mode B
+  const learnFirstCount = gaps.filter((g) => getEffectivePriorityGroup(g) === "LEARN_FIRST").length;
+  const strengthenCount = gaps.filter((g) => getEffectivePriorityGroup(g) === "STRENGTHEN").length;
+  const laterCount = gaps.filter((g) => getEffectivePriorityGroup(g) === "LATER_SUPPORTING").length;
+  const demonstratedCount = gaps.filter((g) => g.status === "DEMONSTRATED").length;
 
   return (
     <div className="max-w-4xl">
@@ -151,13 +209,13 @@ export function SkillGaps() {
         <div className="flex items-center gap-2">
           <Target size={24} className="text-signal-600" />
           <h1 className="font-display text-2xl text-ink-900">
-            {isMarketBenchmark ? "Career Competency Map" : "Canonical Career Skill Alignment"}
+            {isMarketBenchmark ? "Career Skill Map" : "Canonical Career Skill Alignment"}
           </h1>
         </div>
       </div>
       <p className="text-ink-500 mb-6 text-sm">
         {isMarketBenchmark
-          ? `Canonical role competency structure for ${activeRole}. Upload your resume to evaluate demonstrated evidence against this structure.`
+          ? `Authoritative competency structure for ${activeRole}. Clearly categorized into Core, Important, and Supporting skills.`
           : `Verified alignment between your resume evidence and canonical competencies for ${activeRole}.`}
       </p>
 
@@ -227,80 +285,209 @@ export function SkillGaps() {
         </div>
       )}
 
-      {/* Summary Metrics Bar */}
-      {!isLoading && alignment?.summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
-            <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
-            <span className="text-xl font-bold text-ink-900 mt-0.5 block">
-              {alignment.summary.total}
-            </span>
-          </div>
-          <div className="bg-white p-3.5 rounded-xl border border-emerald-500/20 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-emerald-700">Demonstrated</span>
-              <CheckCircle2 size={14} className="text-emerald-600" />
+      {/* Mode A Beginner-Friendly Summary Box: When No Resume Exists */}
+      {!isLoading && isMarketBenchmark && !isLowConfidence && (
+        <>
+          {/* Beginner Guidance Callout */}
+          <div className="rounded-xl border border-signal-500/20 bg-signal-50/60 p-4 mb-6 shadow-2xs">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 rounded-lg bg-signal-500/10 text-signal-700 shrink-0 mt-0.5">
+                <Sparkles size={16} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink-950 text-sm">
+                  What should I learn to enter {activeRole}?
+                </h3>
+                <p className="text-xs text-ink-600 mt-1 leading-relaxed">
+                  Start with the <strong className="text-ink-900">{alignment?.summary?.core_count ?? 0} Core</strong> competencies first—these are foundational requirements expected in role interviews. Next, broaden into <strong className="text-ink-900">{alignment?.summary?.important_count ?? 0} Important</strong> domain workflows, and round out your preparation with <strong className="text-ink-900">{alignment?.summary?.supporting_count ?? 0} Supporting</strong> developer tools.
+                </p>
+              </div>
+              <Link
+                to="/resume/master"
+                className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 px-3 py-1.5 rounded-lg shrink-0 transition-colors shadow-2xs"
+              >
+                <span>Upload Resume</span>
+                <ArrowRight size={12} />
+              </Link>
             </div>
-            <span className="text-xl font-bold text-emerald-700 mt-0.5 block">
-              {alignment.summary.demonstrated}
-            </span>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-amber-500/20 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-amber-700">Partially Demonstrated</span>
-              <AlertCircle size={14} className="text-amber-600" />
+
+          {/* Mode A Metrics Bar: Core vs Important vs Supporting */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
+              <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
+              <span className="text-xl font-bold text-ink-900 mt-0.5 block">
+                {alignment?.summary?.total ?? gaps.length}
+              </span>
             </div>
-            <span className="text-xl font-bold text-amber-700 mt-0.5 block">
-              {alignment.summary.partially_demonstrated}
-            </span>
-          </div>
-          <div className="bg-white p-3.5 rounded-xl border border-ink-200 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-ink-500">No Resume Evidence</span>
-              <MinusCircle size={14} className="text-ink-400" />
+            <div className="bg-white p-3.5 rounded-xl border border-blue-500/20 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-blue-700">Core (Learn First)</span>
+                <Target size={14} className="text-blue-600" />
+              </div>
+              <span className="text-xl font-bold text-blue-700 mt-0.5 block">
+                {alignment?.summary?.core_count ?? gaps.filter((g) => g.importance === "CORE").length}
+              </span>
             </div>
-            <span className="text-xl font-bold text-ink-700 mt-0.5 block">
-              {alignment.summary.no_resume_evidence}
-            </span>
+            <div className="bg-white p-3.5 rounded-xl border border-indigo-500/20 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-indigo-700">Important</span>
+                <Layers size={14} className="text-indigo-600" />
+              </div>
+              <span className="text-xl font-bold text-indigo-700 mt-0.5 block">
+                {alignment?.summary?.important_count ?? gaps.filter((g) => g.importance === "IMPORTANT" || g.importance === "COMMON").length}
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-teal-500/20 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-teal-700">Supporting Tools</span>
+                <BookOpen size={14} className="text-teal-600" />
+              </div>
+              <span className="text-xl font-bold text-teal-700 mt-0.5 block">
+                {alignment?.summary?.supporting_count ?? gaps.filter((g) => g.importance === "SUPPORTING" || g.importance === "OPTIONAL").length}
+              </span>
+            </div>
           </div>
-        </div>
+
+          {/* Mode A Filter Tabs */}
+          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+            <button
+              onClick={() => setImportanceFilter("ALL")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                importanceFilter === "ALL"
+                  ? "bg-ink-900 text-white shadow-2xs"
+                  : "bg-white text-ink-600 hover:bg-ink-50 border border-ink-200"
+              }`}
+            >
+              All Requirements ({gaps.length})
+            </button>
+            <button
+              onClick={() => setImportanceFilter("CORE")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                importanceFilter === "CORE"
+                  ? "bg-blue-600 text-white shadow-2xs"
+                  : "bg-white text-blue-700 hover:bg-blue-50 border border-blue-200"
+              }`}
+            >
+              Core Foundations ({alignment?.summary?.core_count ?? 0})
+            </button>
+            <button
+              onClick={() => setImportanceFilter("IMPORTANT")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                importanceFilter === "IMPORTANT"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200"
+              }`}
+            >
+              Important ({alignment?.summary?.important_count ?? 0})
+            </button>
+            <button
+              onClick={() => setImportanceFilter("SUPPORTING")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                importanceFilter === "SUPPORTING"
+                  ? "bg-teal-600 text-white shadow-2xs"
+                  : "bg-white text-teal-700 hover:bg-teal-50 border border-teal-200"
+              }`}
+            >
+              Supporting Tools ({alignment?.summary?.supporting_count ?? 0})
+            </button>
+          </div>
+        </>
       )}
 
-      {/* Mode A Notice Banner: When No Resume Exists */}
-      {!isLoading && isMarketBenchmark && !isLowConfidence && (
-        <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 mb-6 shadow-2xs flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-700 shrink-0 mt-0.5">
-              <Info size={16} />
+      {/* Mode B Metrics Bar: When Resume Exists */}
+      {!isLoading && !isMarketBenchmark && alignment?.summary && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
+              <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
+              <span className="text-xl font-bold text-ink-900 mt-0.5 block">
+                {alignment.summary.total}
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 px-2 py-0.5 rounded-full border border-blue-500/20">
-                  Market Benchmark View
-                </span>
-                {firstGap?.domain && (
-                  <span className="text-[11px] text-ink-600 font-medium flex items-center gap-1">
-                    <Layers size={11} className="text-ink-400" />
-                    <span>Domain: {firstGap.domain}</span>
-                    {firstGap.subdomain && (
-                      <span className="text-ink-400">({firstGap.subdomain})</span>
-                    )}
-                  </span>
-                )}
+            <div className="bg-white p-3.5 rounded-xl border border-emerald-500/20 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-emerald-700">Demonstrated</span>
+                <CheckCircle2 size={14} className="text-emerald-600" />
               </div>
-              <p className="text-xs text-ink-700 mt-1.5 leading-relaxed">
-                Viewing canonical competencies for {activeRole}. Upload your master resume to see what skills you currently demonstrate and what evidence is missing.
-              </p>
+              <span className="text-xl font-bold text-emerald-700 mt-0.5 block">
+                {alignment.summary.demonstrated}
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-amber-500/20 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-amber-700">Partially Demonstrated</span>
+                <AlertCircle size={14} className="text-amber-600" />
+              </div>
+              <span className="text-xl font-bold text-amber-700 mt-0.5 block">
+                {alignment.summary.partially_demonstrated}
+              </span>
+            </div>
+            <div className="bg-white p-3.5 rounded-xl border border-ink-200 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-ink-500">No Resume Evidence</span>
+                <MinusCircle size={14} className="text-ink-400" />
+              </div>
+              <span className="text-xl font-bold text-ink-700 mt-0.5 block">
+                {alignment.summary.no_resume_evidence}
+              </span>
             </div>
           </div>
-          <Link
-            to="/resume/master"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 px-3 py-1.5 rounded-lg shrink-0 transition-colors shadow-2xs"
-          >
-            <span>Upload Resume</span>
-            <ArrowRight size={12} />
-          </Link>
-        </div>
+
+          {/* Mode B Prioritized Action Tabs */}
+          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+            <button
+              onClick={() => setPriorityFilter("ALL")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                priorityFilter === "ALL"
+                  ? "bg-ink-900 text-white shadow-2xs"
+                  : "bg-white text-ink-600 hover:bg-ink-50 border border-ink-200"
+              }`}
+            >
+              All Gaps ({gaps.length})
+            </button>
+            <button
+              onClick={() => setPriorityFilter("LEARN_FIRST")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                priorityFilter === "LEARN_FIRST"
+                  ? "bg-alert-700 text-white shadow-2xs"
+                  : "bg-white text-alert-700 hover:bg-alert-50 border border-alert-200"
+              }`}
+            >
+              Learn First ({learnFirstCount})
+            </button>
+            <button
+              onClick={() => setPriorityFilter("STRENGTHEN")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                priorityFilter === "STRENGTHEN"
+                  ? "bg-amber-600 text-white shadow-2xs"
+                  : "bg-white text-amber-700 hover:bg-amber-50 border border-amber-200"
+              }`}
+            >
+              Strengthen ({strengthenCount})
+            </button>
+            <button
+              onClick={() => setPriorityFilter("LATER_SUPPORTING")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                priorityFilter === "LATER_SUPPORTING"
+                  ? "bg-teal-600 text-white shadow-2xs"
+                  : "bg-white text-teal-700 hover:bg-teal-50 border border-teal-200"
+              }`}
+            >
+              Later / Supporting ({laterCount})
+            </button>
+            <button
+              onClick={() => setPriorityFilter("DEMONSTRATED")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                priorityFilter === "DEMONSTRATED"
+                  ? "bg-emerald-600 text-white shadow-2xs"
+                  : "bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200"
+              }`}
+            >
+              Demonstrated ({demonstratedCount})
+            </button>
+          </div>
+        </>
       )}
 
       {/* Low Confidence State: Arbitrary or Unknown Role */}
@@ -320,126 +507,185 @@ export function SkillGaps() {
         />
       )}
 
-      {/* Structured Competency Groups by Tier */}
-      <div className="space-y-8">
-        {groupedByTier.map((group) => (
-          <div key={group.tierKey} className="space-y-3">
-            <div className="flex items-center justify-between pb-1 border-b border-ink-100">
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md uppercase tracking-wider ${group.meta.badge}`}>
-                  {group.meta.label}
-                </span>
-                <span className="text-xs text-ink-400">({group.items.length})</span>
-              </div>
-              <span className="text-[11px] text-ink-400 hidden sm:inline">{group.meta.description}</span>
-            </div>
+      {/* Competency Card List with Progressive Disclosure */}
+      <div className="space-y-3">
+        {filteredGaps.map((gap: SkillGap, i: number) => {
+          const status = gap.status || "NO_RESUME_EVIDENCE";
+          const isDemonstrated = status === "DEMONSTRATED";
+          const isPartial = status === "PARTIALLY_DEMONSTRATED";
+          const isNoEvidence = status === "NO_RESUME_EVIDENCE";
+          const priorityGroup = getEffectivePriorityGroup(gap);
+          const isExpanded = !!expandedCards[gap.skill];
 
-            <div className="space-y-3">
-              {group.items.map((gap: SkillGap, i: number) => {
-                const status = gap.status || "NO_RESUME_EVIDENCE";
-                const isDemonstrated = status === "DEMONSTRATED";
-                const isPartial = status === "PARTIALLY_DEMONSTRATED";
+          const tierMeta = TIER_METADATA[(gap.tier as CompetencyTier) || "CORE"] || {
+            label: gap.tier || "Core",
+            badge: "bg-ink-100 text-ink-700 border-ink-200",
+          };
 
-                return (
-                  <div
-                    key={`${gap.skill}-${i}`}
-                    className={`rounded-xl border p-4.5 transition-shadow hover:shadow-xs ${
-                      isDemonstrated
-                        ? "border-emerald-500/20 bg-emerald-500/[0.02]"
-                        : isPartial
-                        ? "border-amber-500/20 bg-amber-500/[0.02]"
-                        : "border-ink-100 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-ink-900 text-sm">{gap.skill}</h3>
+          return (
+            <div
+              key={`${gap.skill}-${i}`}
+              className={`rounded-xl border transition-shadow hover:shadow-xs p-4.5 ${
+                isDemonstrated
+                  ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                  : isPartial
+                  ? "border-amber-500/20 bg-amber-500/[0.02]"
+                  : priorityGroup === "LEARN_FIRST"
+                  ? "border-signal-500/30 bg-signal-500/[0.01]"
+                  : "border-ink-100 bg-white"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-ink-900 text-sm">{gap.skill}</h3>
 
-                          {/* Canonical Status Badge */}
-                          {hasResume ? (
-                            isDemonstrated ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                                <CheckCircle2 size={11} />
-                                <span>Demonstrated</span>
-                              </span>
-                            ) : isPartial ? (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20">
-                                <AlertCircle size={11} />
-                                <span>Partially Demonstrated</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-ink-100 text-ink-600 border border-ink-200">
-                                <MinusCircle size={11} />
-                                <span>No Resume Evidence</span>
-                              </span>
-                            )
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-700 border border-blue-500/20">
-                              Standard Requirement
-                            </span>
-                          )}
+                    {/* Mode B: Canonical Status Badge */}
+                    {hasResume ? (
+                      isDemonstrated ? (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                          <CheckCircle2 size={11} />
+                          <span>Demonstrated</span>
+                        </span>
+                      ) : isPartial ? (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                          <AlertCircle size={11} />
+                          <span>Partially Demonstrated</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-ink-100 text-ink-600 border border-ink-200">
+                          <MinusCircle size={11} />
+                          <span>No Resume Evidence</span>
+                        </span>
+                      )
+                    ) : null}
 
-                          {/* Importance Badge */}
-                          {gap.importance && (
-                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-ink-50 text-ink-500 border border-ink-100">
-                              {gap.importance}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <span className="text-[11px] text-ink-400 font-mono">
-                        Estimated study: ~{gap.estimated_days} days
+                    {/* Mode A & B Priority Group Badge */}
+                    {hasResume && !isDemonstrated && (
+                      <span
+                        className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
+                          priorityGroup === "LEARN_FIRST"
+                            ? "bg-alert-600/10 text-alert-700 border-alert-600/20"
+                            : priorityGroup === "STRENGTHEN"
+                            ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                            : "bg-teal-500/10 text-teal-700 border-teal-500/20"
+                        }`}
+                      >
+                        {priorityGroup === "LEARN_FIRST"
+                          ? "Learn First"
+                          : priorityGroup === "STRENGTHEN"
+                          ? "Strengthen"
+                          : "Later / Supporting"}
                       </span>
-                    </div>
-
-                    <p className="text-xs text-ink-600 mb-2 leading-relaxed">
-                      {gap.explanation || gap.reason}
-                    </p>
-
-                    {/* Evidence Provenance Section */}
-                    {hasResume && gap.evidence && gap.evidence.length > 0 && (
-                      <div className="mt-2 mb-2 p-2.5 rounded-lg bg-ink-50/70 border border-ink-100 text-[11px] space-y-1">
-                        <div className="flex items-center gap-1.5 text-ink-700 font-medium">
-                          <FileCheck size={12} className="text-signal-600 shrink-0" />
-                          <span>
-                            Evidence: {gap.evidence[0].entity_name || gap.evidence[0].section}
-                          </span>
-                          <span className="text-[10px] text-ink-400 font-mono">
-                            ({gap.evidence[0].evidence_type})
-                          </span>
-                        </div>
-                        {gap.evidence[0].text && (
-                          <p className="text-ink-600 italic text-[10.5px] line-clamp-2">
-                            "{gap.evidence[0].text}"
-                          </p>
-                        )}
-                      </div>
                     )}
 
-                    {/* Action Footer */}
-                    {status !== "DEMONSTRATED" && (
-                      <div className="pt-2.5 border-t border-ink-100/70 flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-ink-400">
-                          Add this competency to your study roadmap?
-                        </span>
-                        <Link
-                          to="/growth/roadmap"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-[11px] font-semibold transition-colors shrink-0"
-                        >
-                          <MapIcon size={11} className="text-signal-600" />
-                          <span>View in Roadmap</span>
-                          <ArrowRight size={10} />
-                        </Link>
-                      </div>
+                    {/* Importance Level */}
+                    {gap.importance && (
+                      <span
+                        className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border ${
+                          gap.importance === "CORE"
+                            ? "bg-blue-500/10 text-blue-700 border-blue-500/20 font-semibold"
+                            : gap.importance === "IMPORTANT" || gap.importance === "COMMON"
+                            ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20"
+                            : "bg-ink-50 text-ink-500 border-ink-100"
+                        }`}
+                      >
+                        {gap.importance}
+                      </span>
+                    )}
+
+                    {/* Tier Badge */}
+                    {gap.tier && (
+                      <span
+                        className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${tierMeta.badge}`}
+                      >
+                        {tierMeta.label}
+                      </span>
                     )}
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-ink-400 font-mono">
+                    Estimated study: ~{gap.estimated_days} days
+                  </span>
+                  <button
+                    onClick={() => toggleCard(gap.skill)}
+                    className="p-1 rounded text-ink-400 hover:text-ink-700 hover:bg-ink-50 transition-colors"
+                    aria-label="Toggle details"
+                  >
+                    {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Concise summary reason */}
+              <p className="text-xs text-ink-600 mb-2 leading-relaxed">
+                {gap.explanation || gap.reason}
+              </p>
+
+              {/* Evidence Provenance Section (When Resume Exists & Evidence Found) */}
+              {hasResume && gap.evidence && gap.evidence.length > 0 && (
+                <div className="mt-2 mb-2 p-2.5 rounded-lg bg-ink-50/70 border border-ink-100 text-[11px] space-y-1">
+                  <div className="flex items-center gap-1.5 text-ink-700 font-medium flex-wrap">
+                    <FileCheck size={12} className="text-signal-600 shrink-0" />
+                    <span>Evidence Source: {gap.evidence[0].entity_name || gap.evidence[0].section}</span>
+                    {gap.evidence[0].evidence_type && (
+                      <span
+                        className={`text-[9.5px] px-1.5 py-0.2 rounded border font-sans font-semibold ${
+                          getEvidenceBadge(gap.evidence[0].evidence_type).className
+                        }`}
+                      >
+                        {getEvidenceBadge(gap.evidence[0].evidence_type).label}
+                      </span>
+                    )}
+                  </div>
+                  {gap.evidence[0].text && (
+                    <p className="text-ink-600 italic text-[10.5px] line-clamp-2">
+                      "{gap.evidence[0].text}"
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Progressive Disclosure Section (Expanded) */}
+              {isExpanded && (
+                <div className="mt-3 pt-3 border-t border-ink-100 space-y-2 text-xs">
+                  {gap.project_suggestion && (
+                    <div className="p-2.5 rounded-lg bg-signal-50/50 border border-signal-500/10">
+                      <span className="font-semibold text-ink-900 block mb-0.5">
+                        💡 Hands-on Practice Suggestion:
+                      </span>
+                      <p className="text-ink-600 leading-snug">{gap.project_suggestion}</p>
+                    </div>
+                  )}
+                  {isNoEvidence && (
+                    <p className="text-[11px] text-ink-400 italic">
+                      Tip: If you have experience with {gap.skill}, ensure it is explicitly listed in your work history or project highlights.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Action Footer */}
+              {!isDemonstrated && (
+                <div className="pt-2.5 mt-2 border-t border-ink-100/70 flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-ink-400">
+                    Step-by-step roadmap available in learning progression
+                  </span>
+                  <Link
+                    to="/growth/roadmap"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-[11px] font-semibold transition-colors shrink-0"
+                  >
+                    <MapIcon size={11} className="text-signal-600" />
+                    <span>View in Roadmap</span>
+                    <ArrowRight size={10} />
+                  </Link>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

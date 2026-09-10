@@ -15,6 +15,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import html
 import logging
 import re
 from typing import Any
@@ -26,6 +27,7 @@ from app.core.config import Settings, get_settings
 from app.db.mongo import Collections
 from app.modules.jobs import repositories as repo
 from app.modules.jobs.deduplication import deduplicate_opportunities
+from app.modules.jobs.compensation_extractor import extract_compensation_from_payload_and_text
 from app.modules.jobs.location_normalization import extract_country_from_location
 from app.modules.jobs.skill_vocabulary import extract_skills_from_text
 from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
@@ -47,10 +49,11 @@ class GreenhouseNetworkError(GreenhouseProviderError):
 
 
 def _clean_html_description(html_text: str | None) -> str:
-    """Strips basic HTML tags for plaintext preview while retaining text structure."""
+    """Strips basic HTML tags and unescapes all character entities for plaintext preview."""
     if not html_text:
         return ""
     clean = re.sub(r"<[^>]+>", " ", html_text)
+    clean = html.unescape(clean)
     clean = re.sub(r"\s+", " ", clean).strip()
     return clean
 
@@ -172,9 +175,10 @@ class GreenhouseJobProvider:
         location = (location or "Not specified").strip()
         is_remote = "remote" in location.lower() or "remote" in title.lower()
 
-        # HTML and clean description
+        # HTML and clean description: unescape HTML entities (&lt;p&gt; etc.) before stripping tags
         raw_html = raw.get("content") or ""
-        clean_desc = _clean_html_description(raw_html) or title
+        unescaped_html = html.unescape(raw_html)
+        clean_desc = _clean_html_description(unescaped_html) or title
 
         # Application URL classification
         apply_url = (raw.get("absolute_url") or "").strip()
@@ -215,13 +219,24 @@ class GreenhouseJobProvider:
         departments = raw.get("departments") or []
         is_intern = is_internship_opportunity(title, departments)
         job_type = "internship" if is_intern else "full_time"
+        opportunity_type = "INTERNSHIP" if is_intern else "FULL_TIME"
+        workplace_type = "remote" if is_remote else "on_site"
 
-        # Skills extraction from text
-        extracted_skills = extract_skills_from_text(f"{title}\n{clean_desc}")
+        # Skills extraction via canonical requirement-aware taxonomy
+        from app.modules.jobs.taxonomy import analyze_job_description
+        reqs = analyze_job_description(clean_desc, title)
+        skills_required = list(dict.fromkeys(reqs.must_have_skills or reqs.required_skills))
+        skills_nice_to_have = list(dict.fromkeys(reqs.preferred_skills))
 
         canonical_id = f"gh_{board_token.lower()}_{job_id}"
 
-        return {
+        comp = extract_compensation_from_payload_and_text(
+            text=f"{clean_desc} {raw_html or ''}",
+            raw_payload=raw,
+            is_internship=is_intern,
+        )
+
+        job_doc = {
             "id": canonical_id,
             "source": "greenhouse",
             "source_job_id": job_id,
@@ -232,19 +247,35 @@ class GreenhouseJobProvider:
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
-            "skills_required": extracted_skills[:8],
-            "skills_nice_to_have": extracted_skills[8:16],
-            "responsibilities": [],
-            "experience_min": 0 if is_intern else None,
-            "experience_max": 2 if is_intern else None,
+            "skills_required": skills_required,
+            "skills_nice_to_have": skills_nice_to_have,
+            "responsibilities": reqs.responsibilities,
+            "qualifications": reqs.qualifications,
+            "structured_requirements": reqs.model_dump(mode="json"),
+            "experience_min": (
+                int(reqs.min_years_experience)
+                if reqs.min_years_experience is not None
+                else (0 if is_intern else None)
+            ),
+            "experience_max": (
+                int(reqs.max_years_experience)
+                if reqs.max_years_experience is not None
+                else (2 if is_intern else None)
+            ),
             "job_type": job_type,
+            "opportunity_type": opportunity_type,
             "country": extract_country_from_location(location),
             "location": location,
             "is_remote": is_remote,
-            "salary_min": None,
-            "salary_max": None,
-            "salary_disclosed": False,
-            "stipend_min": None,
+            "workplace_type": workplace_type,
+            "salary_min": comp.salary_min,
+            "salary_max": comp.salary_max,
+            "salary_currency": comp.salary_currency,
+            "salary_disclosed": comp.salary_disclosed,
+            "stipend_min": comp.stipend_min,
+            "stipend_max": comp.stipend_max,
+            "compensation_type": comp.compensation_type,
+            "compensation_text": comp.compensation_text,
             "internship_duration_months": 3 if is_intern else None,
             "fresher_friendly": is_intern or ("junior" in title.lower()) or ("graduate" in title.lower()),
             "posted_days_ago": posted_days_ago,
@@ -262,6 +293,12 @@ class GreenhouseJobProvider:
             "url_type": url_type.value,
             "is_direct_apply": (url_type == ApplicationUrlType.DIRECT_REQUISITION),
         }
+
+        from app.modules.jobs.completeness import evaluate_opportunity_completeness
+        comp_res = evaluate_opportunity_completeness(job_doc)
+        job_doc["completeness_status"] = comp_res.source_completeness.value
+        job_doc["recommendation_quality"] = comp_res.recommendation_quality.value
+        return job_doc
 
     async def sync_company_openings(
         self,
