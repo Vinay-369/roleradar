@@ -105,6 +105,21 @@ React 19 + Vite (TypeScript)  ──────►  FastAPI (Python 3.12)  ─�
 - *(Optional)* [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) for local LLM inference
 
 ---
+### 🔐 Secret Management
+
+The project uses environment files (`.env`) to store secrets such as API keys, database credentials, and AI provider tokens.
+
+- **Never commit real `.env` files** – they are listed in `.gitignore` and ignored by Git.
+- **Provide a template**: `backend/.env.example` contains placeholder keys and usage instructions.
+- **Setup**: after cloning, copy the template and fill in your values:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+- **Version control**: only the example file is tracked; the generated `.env` remains local and is excluded from pushes.
+
+---
 
 ### 1. Database (MongoDB)
 

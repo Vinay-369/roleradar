@@ -202,13 +202,56 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
     }
 
 
+async def sync_ashby_board(
+    db: AsyncIOMotorDatabase,
+    board_token: str,
+    company_name: str | None = None,
+    settings: Settings | None = None,
+) -> dict:
+    """Synchronizes a single Ashby board token."""
+    from app.modules.jobs.ashby_provider import AshbyJobProvider
+    provider = AshbyJobProvider(settings or get_settings())
+    return await provider.sync_company_openings(db, board_token, company_name=company_name)
+
+
+async def sync_all_ashby_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
+    """Synchronizes all configured Ashby company boards into MongoDB."""
+    active_settings = settings or get_settings()
+    if not getattr(active_settings, "ASHBY_ENABLED", False):
+        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
+
+    from app.modules.jobs.ashby_provider import AshbyJobProvider
+    provider = AshbyJobProvider(active_settings)
+
+    raw_boards = getattr(active_settings, "ASHBY_COMPANIES", "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs")
+    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
+
+    results = []
+    total_active = 0
+    total_closed = 0
+
+    for b in boards:
+        res = await provider.sync_company_openings(db, b)
+        results.append(res)
+        total_active += res.get("verified_active", 0)
+        total_closed += res.get("closed", 0)
+
+    return {
+        "total_boards": len(boards),
+        "verified_active": total_active,
+        "closed": total_closed,
+        "results": results,
+    }
+
+
 async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict) -> int:
     """
     Refreshes opportunities from active live providers:
     1. Greenhouse Direct ATS Provider (if enabled).
     2. Lever Direct ATS Provider (if enabled).
     3. SmartRecruiters Direct ATS Provider (if enabled).
-    4. Adzuna Provider (if configured in hybrid mode).
+    4. Ashby Direct ATS Provider (if enabled).
+    5. Adzuna Provider (if configured in hybrid mode).
     Normalizes, verifies, deduplicates, and upserts into MongoDB.
     """
     added_count = 0
@@ -237,7 +280,15 @@ async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filter
         except Exception:
             pass
 
-    # 4. Adzuna Provider (if configured in hybrid mode)
+    # 4. Ashby Direct ATS Provider
+    if getattr(settings, "ASHBY_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
+        try:
+            ashby_res = await sync_all_ashby_boards(db, settings)
+            added_count += ashby_res.get("verified_active", 0)
+        except Exception:
+            pass
+
+    # 5. Adzuna Provider (if configured in hybrid mode)
     if settings.JOB_SOURCE_MODE == "hybrid":
         from app.modules.jobs.live_provider import AdzunaConfigError, AdzunaJobProvider
         try:
@@ -320,7 +371,7 @@ async def get_job(db: AsyncIOMotorDatabase, job_id: str, user_id: str | None = N
         return None
     # User-scoping for custom JDs
     if job.get("source") == "custom" and job.get("user_id"):
-        if user_id and job.get("user_id") != user_id:
+        if not user_id or job.get("user_id") != user_id:
             return None
 
     posted_at = job.get("posted_at") or job.get("first_seen_at")

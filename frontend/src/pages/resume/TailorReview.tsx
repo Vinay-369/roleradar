@@ -132,7 +132,7 @@ export function TailorReview() {
     enabled: !!effectiveTargetJobId && !effectiveTargetJobId.startsWith("custom-"),
   });
 
-  const directApplyUrl = (jobData?.is_direct_apply && jobData?.apply_url && !jobData.apply_url.includes("example.com"))
+  const directApplyUrl = (jobData?.is_direct_apply && jobData?.apply_url && (jobData.apply_url.startsWith("https://") || jobData.apply_url.startsWith("http://")) && !jobData.apply_url.includes("example.com"))
     ? jobData.apply_url
     : null;
 
