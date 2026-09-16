@@ -68,7 +68,7 @@ PROTECTED_SECTION_NAMES = {
 }
 
 _METRIC_CLAIM_RE = re.compile(
-    r"(?:\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\+?\s*%?|\b\d+(?:\.\d+)?\+?\s*(?:%|percent|x|ms|s|secs?|seconds?|mins?|minutes?|hours?|days?|users?|requests?|records?|rows?|transactions?|deployments?|regions?))",
+    r"(?:\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\+?\s*%?|\b\d+(?:\.\d+)?\+?\s*(?:%|percent|x|ms|s|secs?|seconds?|mins?|minutes?|hours?|days?|weeks?|months?|years?|yrs?|mos?|users?|requests?|records?|rows?|transactions?|deployments?|regions?))",
     re.IGNORECASE,
 )
 
@@ -158,10 +158,58 @@ def detect_dropped_source_skills(original: str, proposed: str) -> list[str]:
     return sorted(original_skills - proposed_skills)
 
 
-LEADERSHIP_VERBS = {"led", "managed", "spearheaded", "directed", "mentored", "supervised", "championed"}
-DEPLOYMENT_VERBS = {"deployed", "provisioned", "containerized", "orchestrated"}
-OPTIMIZATION_VERBS = {"optimized", "accelerated", "boosted", "maximized"}
-ARCHITECTURE_VERBS = {"architected", "overhauled"}
+LEADERSHIP_VERBS = {
+    "led", "leads", "leading", "lead",
+    "managed", "manages", "managing",
+    "spearheaded", "spearheads", "spearheading",
+    "directed", "directs", "directing",
+    "mentored", "mentors", "mentoring",
+    "supervised", "supervises", "supervising",
+    "championed", "champions", "championing",
+}
+DEPLOYMENT_VERBS = {
+    "deployed", "deploying", "provisioned", "provisioning",
+    "containerized", "containerizing", "orchestrated", "orchestrating",
+}
+OPTIMIZATION_VERBS = {
+    "optimized", "optimizing", "accelerated", "accelerating",
+    "boosted", "boosting", "maximized", "maximizing",
+}
+ARCHITECTURE_VERBS = {
+    "architected", "architecting", "overhauled", "overhauling",
+}
+
+SENIOR_ROLES = {
+    "senior", "sr", "sr.", "lead", "staff", "principal", "architect",
+    "head", "director", "vp", "chief",
+}
+JUNIOR_ROLES = {
+    "intern", "internship", "trainee", "student", "apprentice", "fresher",
+}
+
+
+def detect_seniority_and_title_inflation(original: str, proposed: str) -> list[str]:
+    """
+    Detects ungrounded title and seniority inflation (e.g. Student/Intern -> Senior Software Engineer).
+    """
+    if not proposed:
+        return []
+    orig_lower = (original or "").lower()
+    prop_lower = proposed.lower()
+
+    orig_words = set(re.findall(r"\b[a-z.-]+\b", orig_lower))
+    prop_words = set(re.findall(r"\b[a-z.-]+\b", prop_lower))
+
+    has_orig_senior = any(r in orig_words for r in SENIOR_ROLES)
+    has_orig_junior = any(r in orig_words for r in JUNIOR_ROLES)
+    has_prop_senior = any(r in prop_words for r in SENIOR_ROLES)
+
+    violations = []
+    if has_prop_senior and (has_orig_junior or not has_orig_senior):
+        escalated_terms = [r for r in SENIOR_ROLES if r in prop_words]
+        violations.append(f"Seniority / Title inflation ({', '.join(escalated_terms)}) introduced without source evidence")
+
+    return violations
 
 
 LEADERSHIP_EVIDENCE_RE = re.compile(
@@ -188,6 +236,7 @@ def detect_unsupported_action_verbs_and_scope(original: str, proposed: str) -> l
     - Optimization claims (optimized, accelerated) when source has no optimization/performance evidence
     - Architecture claims (architected) when source has no architecture evidence
     - Production scope modifiers introduced without source backing
+    - Seniority and title inflation
     """
     if not original or not proposed:
         return []
@@ -227,6 +276,11 @@ def detect_unsupported_action_verbs_and_scope(original: str, proposed: str) -> l
     # 5. Production scope modifier
     if "production" in prop_words and not any(k in orig_lower for k in ["production", "prod", "live", "clinical", "commercial", "industry"]):
         violations.append("Production scope modifier introduced without source evidence")
+
+    # 6. Seniority / Title Inflation check
+    seniority_viols = detect_seniority_and_title_inflation(original, proposed)
+    if seniority_viols:
+        violations.extend(seniority_viols)
 
     return sorted(list(set(violations)))
 

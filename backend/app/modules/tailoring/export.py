@@ -270,6 +270,7 @@ INK_500 = "#6b7280"
 SIGNAL_600 = "#0d766e"
 CLASSIC_ACCENT = "#111827"
 TECH_ACCENT = "#1e3a8a"
+HARVARD_ACCENT = "#a51c30"
 
 # Strict bullet prefix regex: matches standard bullet glyphs and numbered lists
 # NEVER matches degree abbreviations like 'B.E', 'B.Tech', 'M.Tech', 'B.Sc', 'M.S.'
@@ -427,10 +428,16 @@ def render_pdf_from_structured(
     template = template.lower() if template else "standard"
     if template in ("modern", "technical", "stanford"):
         template = "standard"
-    elif template in ("executive", "harvard"):
+    elif template in ("classic", "traditional"):
         template = "classic"
-    elif template == "minimal":
+    elif template in ("executive", "tech_executive"):
+        template = "executive"
+    elif template in ("harvard", "academic"):
+        template = "harvard"
+    elif template in ("minimal", "compact"):
         template = "compact"
+    else:
+        template = "standard"
 
     buffer = io.BytesIO()
 
@@ -442,6 +449,20 @@ def render_pdf_from_structured(
         body_leading = 11.0
         bullet_leading = 11.0
         bullet_space_after = 1.0
+    elif template == "executive":
+        top_m, bot_m, left_m, right_m = 0.35 * inch, 0.35 * inch, 0.4 * inch, 0.4 * inch
+        heading_space_before = 8
+        body_font_size = 9.2
+        body_leading = 11.5
+        bullet_leading = 11.5
+        bullet_space_after = 1.2
+    elif template == "harvard":
+        top_m, bot_m, left_m, right_m = 0.45 * inch, 0.45 * inch, 0.45 * inch, 0.45 * inch
+        heading_space_before = 10
+        body_font_size = 9.5
+        body_leading = 12.0
+        bullet_leading = 12.0
+        bullet_space_after = 1.5
     elif template == "classic":
         top_m, bot_m, left_m, right_m = 0.4 * inch, 0.4 * inch, 0.45 * inch, 0.45 * inch
         heading_space_before = 10
@@ -449,7 +470,7 @@ def render_pdf_from_structured(
         body_leading = 12.0
         bullet_leading = 12.0
         bullet_space_after = 1.5
-    else:  # standard
+    else:  # standard / modern
         top_m, bot_m, left_m, right_m = 0.4 * inch, 0.4 * inch, 0.45 * inch, 0.45 * inch
         heading_space_before = 9
         body_font_size = 9.5
@@ -470,12 +491,30 @@ def render_pdf_from_structured(
         font_italic = "Times-Italic"
         accent_color = CLASSIC_ACCENT
         name_align = 1  # center
-    else:
+    elif template == "harvard":
+        font_family = "Times-Roman"
+        font_bold = "Times-Bold"
+        font_italic = "Times-Italic"
+        accent_color = HARVARD_ACCENT
+        name_align = 1  # center
+    elif template == "executive":
         font_family = "Helvetica"
         font_bold = "Helvetica-Bold"
         font_italic = "Helvetica-Oblique"
-        accent_color = SIGNAL_600 if template == "standard" else INK_900
-        name_align = 1 if template == "standard" else 0
+        accent_color = TECH_ACCENT
+        name_align = 0  # left-aligned executive header
+    elif template == "compact":
+        font_family = "Helvetica"
+        font_bold = "Helvetica-Bold"
+        font_italic = "Helvetica-Oblique"
+        accent_color = INK_900
+        name_align = 0  # left
+    else:  # standard / modern
+        font_family = "Helvetica"
+        font_bold = "Helvetica-Bold"
+        font_italic = "Helvetica-Oblique"
+        accent_color = SIGNAL_600
+        name_align = 1  # center
 
     usable_width = A4[0] - (left_m + right_m)
 
@@ -546,12 +585,12 @@ def render_pdf_from_structured(
         formatted_contacts = " • ".join(str(c).strip(" •·|") for c in contacts if str(c).strip())
         story.append(Paragraph(esc(formatted_contacts), contact_style))
     if name or contacts:
-        divider_color = HexColor(accent_color if template == "standard" else INK_700)
+        divider_color = HexColor(accent_color if template in ("standard", "executive", "harvard") else INK_700)
         story.append(HRFlowable(width="100%", thickness=0.6, color=divider_color, spaceAfter=3))
 
     def add_section_header(title: str):
         story.append(Paragraph(esc(title.upper()), heading_style))
-        story.append(HRFlowable(width="100%", thickness=0.5, color=HexColor(accent_color if template == "classic" else INK_500), spaceAfter=2))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=HexColor(accent_color if template != "classic" else INK_700), spaceAfter=2))
 
     # Resolve dynamic section ordering
     strategy_info = parsed_data.get("_strategy", {}) if isinstance(parsed_data.get("_strategy"), dict) else {}
@@ -1053,15 +1092,21 @@ def render_docx_from_structured(
     template = template.lower() if template else "standard"
     if template in ("modern", "technical", "stanford"):
         template = "standard"
-    elif template in ("executive", "harvard"):
+    elif template in ("classic", "traditional"):
         template = "classic"
-    elif template == "minimal":
+    elif template in ("executive", "tech_executive"):
+        template = "executive"
+    elif template in ("harvard", "academic"):
+        template = "harvard"
+    elif template in ("minimal", "compact"):
         template = "compact"
+    else:
+        template = "standard"
 
     document = Document()
 
     # Set margins
-    margin_size = 0.35 if template == "compact" else 0.45
+    margin_size = 0.35 if template in ("compact", "executive") else 0.45
     for section in document.sections:
         section.top_margin = Inches(margin_size)
         section.bottom_margin = Inches(margin_size)
@@ -1077,12 +1122,22 @@ def render_docx_from_structured(
         accent_color = CLASSIC_ACCENT
         alignment = WD_ALIGN_PARAGRAPH.CENTER
         body_font_pt = Pt(10.0)
+    elif template == "harvard":
+        font_name = "Times New Roman"
+        accent_color = HARVARD_ACCENT
+        alignment = WD_ALIGN_PARAGRAPH.CENTER
+        body_font_pt = Pt(9.5)
+    elif template == "executive":
+        font_name = "Calibri"
+        accent_color = TECH_ACCENT
+        alignment = WD_ALIGN_PARAGRAPH.LEFT
+        body_font_pt = Pt(9.0)
     elif template == "compact":
         font_name = "Calibri"
         accent_color = INK_900
         alignment = WD_ALIGN_PARAGRAPH.LEFT
         body_font_pt = Pt(9.0)
-    else:  # standard
+    else:  # standard / modern
         font_name = "Calibri"
         accent_color = SIGNAL_600
         alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1933,19 +1988,21 @@ def verify_export_against_structured_resume(
     if "\ufffd" in extracted_text:
         report["replacement_characters"].append("Found \\ufffd replacement character in exported document")
 
-    norm_extracted = re.sub(r"[^\w\s]", " ", extracted_text.lower())
+    norm_extracted = " ".join(re.sub(r"[^\w\s]", " ", extracted_text.lower()).split())
     norm_words = set(norm_extracted.split())
 
     # 2. Personal contact info
     personal = data.get("personal", {}) or data.get("personal_info", {}) or {}
     name = personal.get("name") or personal.get("full_name")
-    if name and re.sub(r"[^\w\s]", " ", str(name).lower()).strip() not in norm_extracted:
-        report["missing_facts"].append(f"Candidate Name: {name}")
+    if name:
+        name_norm = " ".join(re.sub(r"[^\w\s]", " ", str(name).lower()).split())
+        if name_norm and name_norm not in norm_extracted:
+            report["missing_facts"].append(f"Candidate Name: {name}")
 
     email = personal.get("email")
     if email:
         email_raw = str(email).strip().lower()
-        email_norm = re.sub(r"[^\w\s]", " ", email_raw).strip()
+        email_norm = " ".join(re.sub(r"[^\w\s]", " ", email_raw).split())
         if email_raw not in extracted_text.lower() and email_norm not in norm_extracted:
             report["missing_facts"].append(f"Candidate Email: {email}")
 
@@ -1957,18 +2014,18 @@ def verify_export_against_structured_resume(
             if ":" in sc_clean:
                 _, _, items = sc_clean.partition(":")
                 for item in items.split(","):
-                    item_c = re.sub(r"[^\w\s]", " ", item).strip().lower()
+                    item_c = " ".join(re.sub(r"[^\w\s]", " ", item).strip().lower().split())
                     if len(item_c) > 2 and item_c not in norm_extracted:
                         report["missing_facts"].append(f"Skill item: {item_c}")
             else:
-                sc_norm = re.sub(r"[^\w\s]", " ", sc_clean).strip()
+                sc_norm = " ".join(re.sub(r"[^\w\s]", " ", sc_clean).split())
                 if len(sc_norm) > 2 and sc_norm not in norm_extracted:
                     report["missing_facts"].append(f"Skill line: {sc}")
     else:
         skills = data.get("skills", [])
         if isinstance(skills, list):
             for sk in skills:
-                sk_clean = re.sub(r"[^\w\s]", " ", str(sk)).strip().lower()
+                sk_clean = " ".join(re.sub(r"[^\w\s]", " ", str(sk)).strip().lower().split())
                 if len(sk_clean) > 2 and sk_clean not in norm_extracted:
                     report["missing_facts"].append(f"Skill: {sk}")
 
@@ -1977,7 +2034,7 @@ def verify_export_against_structured_resume(
     for exp in exp_list:
         if isinstance(exp, dict):
             comp = exp.get("company", "")
-            comp_norm = re.sub(r"[^\w\s]", " ", comp).strip().lower()
+            comp_norm = " ".join(re.sub(r"[^\w\s]", " ", comp).strip().lower().split())
             if comp_norm and comp_norm not in norm_extracted:
                 report["missing_facts"].append(f"Company: {comp}")
             for bullet in exp.get("bullets", []):
@@ -2005,7 +2062,7 @@ def verify_export_against_structured_resume(
     for proj in proj_list:
         if isinstance(proj, dict):
             title = proj.get("title") or proj.get("name", "")
-            title_norm = re.sub(r"[^\w\s]", " ", title).strip().lower()
+            title_norm = " ".join(re.sub(r"[^\w\s]", " ", title).strip().lower().split())
             if title_norm and title_norm not in norm_extracted:
                 report["project_integrity_issues"].append(f"Project title missing: {title}")
             for bullet in proj.get("bullets", []):
@@ -2030,7 +2087,7 @@ def verify_export_against_structured_resume(
     for edu in edu_list:
         if isinstance(edu, dict):
             inst = edu.get("institution") or edu.get("school", "")
-            inst_norm = re.sub(r"[^\w\s]", " ", inst).strip().lower()
+            inst_norm = " ".join(re.sub(r"[^\w\s]", " ", inst).strip().lower().split())
             if inst_norm and inst_norm not in norm_extracted:
                 report["education_integrity_issues"].append(f"Education institution missing: {inst}")
         elif isinstance(edu, str) and edu.strip():

@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
     SMARTRECRUITERS_COUNTRY: str = "in"
 
+    # --- Direct ATS: Ashby Configuration ---
+    ASHBY_ENABLED: bool = True
+    ASHBY_COMPANIES: str = "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs"
+    ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
+
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         if self.ENV.lower() == "production":
@@ -107,6 +112,8 @@ class Settings(BaseSettings):
                     "Production configuration error: A strong, non-default JWT_SECRET "
                     "environment variable must be configured when ENV=production."
                 )
+            # Production mode enforces debug=False
+            self.DEBUG = False
         return self
 
 

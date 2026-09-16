@@ -270,6 +270,7 @@ export function Applications() {
           {filteredApps.map((app) => {
             const hasDirectApply =
               Boolean(app.apply_url) &&
+              (app.apply_url.startsWith("https://") || app.apply_url.startsWith("http://")) &&
               !app.apply_url.includes("example.com") &&
               !app.apply_url.includes("google.com");
 

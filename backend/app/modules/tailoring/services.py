@@ -84,6 +84,19 @@ class InvalidChangeStatusError(Exception):
 from app.modules.resume.metrics import extract_quantified_metrics, _extract_quantified_metrics
 
 
+def _flatten_texts(items: Any) -> str:
+    """Recursively flattens nested strings, lists, or dicts into a single space-separated string."""
+    if not items:
+        return ""
+    if isinstance(items, str):
+        return items
+    if isinstance(items, dict):
+        return " ".join(_flatten_texts(v) for v in items.values() if v)
+    if isinstance(items, (list, tuple, set)):
+        return " ".join(_flatten_texts(x) for x in items if x)
+    return str(items)
+
+
 def _truth_guard_warning(
     original: str,
     proposed: str,
@@ -222,7 +235,7 @@ def _merge_structured_tailoring(
     master_exp = master_parsed.get("experience_raw", [])
     exp_rewrites = result_dict.get("experience_bullets", [])
     if exp_rewrites:
-        merged_exp = list(master_exp)
+        merged_exp = copy.deepcopy(master_exp)
         for idx, item in enumerate(exp_rewrites):
             cid = item.get("change_id") or f"chg_exp_{idx}"
             b_idx = item.get("bullet_index", idx)
@@ -234,35 +247,52 @@ def _merge_structured_tailoring(
 
             matched = False
             # Check if b_idx matches orig_str directly
-            if 0 <= b_idx < len(merged_exp) and orig_str and (orig_str in merged_exp[b_idx] or merged_exp[b_idx] in orig_str):
-                merged_exp[b_idx] = prop_str
-                matched = True
-            else:
-                # Search by exact or normalized original string across all entries
+            if 0 <= b_idx < len(merged_exp):
+                target_entry = merged_exp[b_idx]
+                if isinstance(target_entry, dict) and "bullets" in target_entry:
+                    bullets = target_entry.get("bullets", [])
+                    for b_i, b in enumerate(bullets):
+                        if orig_str and (orig_str in b or b in orig_str):
+                            bullets[b_i] = prop_str
+                            matched = True
+                            break
+                elif isinstance(target_entry, str):
+                    if orig_str and (orig_str in target_entry or target_entry in orig_str):
+                        merged_exp[b_idx] = prop_str
+                        matched = True
+
+            if not matched:
                 clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig_str).strip()
                 for m_i, m_b in enumerate(merged_exp):
-                    if orig_str and (orig_str in m_b or m_b in orig_str):
-                        merged_exp[m_i] = prop_str
-                        matched = True
-                        break
-                    elif clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_b.lower():
-                        merged_exp[m_i] = prop_str
-                        matched = True
-                        break
+                    if isinstance(m_b, dict) and "bullets" in m_b:
+                        bullets = m_b.get("bullets", [])
+                        for b_i, b in enumerate(bullets):
+                            if (orig_str and (orig_str in b or b in orig_str)) or (clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in b.lower()):
+                                bullets[b_i] = prop_str
+                                matched = True
+                                break
+                        if matched:
+                            break
+                    elif isinstance(m_b, str):
+                        if (orig_str and (orig_str in m_b or m_b in orig_str)) or (clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_b.lower()):
+                            merged_exp[m_i] = prop_str
+                            matched = True
+                            break
 
                 if not matched and 0 <= b_idx < len(merged_exp) and not orig_str:
-                    merged_exp[b_idx] = prop_str
-                elif not matched and prop_str and not any(prop_str in m_b for m_b in merged_exp):
+                    if isinstance(merged_exp[b_idx], str):
+                        merged_exp[b_idx] = prop_str
+                elif not matched and prop_str and not any(prop_str in _flatten_texts(m_b) for m_b in merged_exp):
                     merged_exp.append(prop_str)
         merged["experience_raw"] = merged_exp
     else:
-        merged["experience_raw"] = list(master_exp)
+        merged["experience_raw"] = copy.deepcopy(master_exp)
 
     # 4. Project Bullets - 100% Retain All Master Projects (Tailor only targeted entries)
     master_proj = master_parsed.get("projects_raw", [])
     proj_rewrites = result_dict.get("project_bullets", [])
     if proj_rewrites:
-        merged_proj = list(master_proj)
+        merged_proj = copy.deepcopy(master_proj)
         for idx, item in enumerate(proj_rewrites):
             cid = item.get("change_id") or f"chg_proj_{idx}"
             b_idx = item.get("bullet_index", idx)
@@ -283,30 +313,46 @@ def _merge_structured_tailoring(
                     prop_str = "\n".join(header_lines + [prop_str])
 
             matched = False
-            # Check if b_idx matches orig_str directly
-            if 0 <= b_idx < len(merged_proj) and orig_str and (orig_str in str(merged_proj[b_idx]) or str(merged_proj[b_idx]) in orig_str):
-                merged_proj[b_idx] = prop_str
-                matched = True
-            else:
+            if 0 <= b_idx < len(merged_proj):
+                target_entry = merged_proj[b_idx]
+                if isinstance(target_entry, dict) and "bullets" in target_entry:
+                    bullets = target_entry.get("bullets", [])
+                    for b_i, b in enumerate(bullets):
+                        if orig_str and (orig_str in b or b in orig_str):
+                            bullets[b_i] = prop_str
+                            matched = True
+                            break
+                elif isinstance(target_entry, str):
+                    if orig_str and (orig_str in target_entry or target_entry in orig_str):
+                        merged_proj[b_idx] = prop_str
+                        matched = True
+
+            if not matched:
                 clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig_str).strip()
                 for m_i, m_p in enumerate(merged_proj):
-                    m_p_str = str(m_p)
-                    if orig_str and (orig_str in m_p_str or m_p_str in orig_str):
-                        merged_proj[m_i] = prop_str
-                        matched = True
-                        break
-                    elif clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_p_str.lower():
-                        merged_proj[m_i] = prop_str
-                        matched = True
-                        break
+                    if isinstance(m_p, dict) and "bullets" in m_p:
+                        bullets = m_p.get("bullets", [])
+                        for b_i, b in enumerate(bullets):
+                            if (orig_str and (orig_str in b or b in orig_str)) or (clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in b.lower()):
+                                bullets[b_i] = prop_str
+                                matched = True
+                                break
+                        if matched:
+                            break
+                    elif isinstance(m_p, str):
+                        if (orig_str and (orig_str in m_p or m_p in orig_str)) or (clean_orig and len(clean_orig) >= 10 and clean_orig.lower() in m_p.lower()):
+                            merged_proj[m_i] = prop_str
+                            matched = True
+                            break
 
                 if not matched and 0 <= b_idx < len(merged_proj) and not orig_str:
-                    merged_proj[b_idx] = prop_str
-                elif not matched and prop_str and not any(prop_str in str(m_p) for m_p in merged_proj):
+                    if isinstance(merged_proj[b_idx], str):
+                        merged_proj[b_idx] = prop_str
+                elif not matched and prop_str and not any(prop_str in _flatten_texts(m_p) for m_p in merged_proj):
                     merged_proj.append(prop_str)
         merged["projects_raw"] = merged_proj
     else:
-        merged["projects_raw"] = list(master_proj)
+        merged["projects_raw"] = copy.deepcopy(master_proj)
 
     return merged
 
@@ -485,9 +531,9 @@ async def generate_tailoring(
         # Skill Additions with strict source grounding validation
         all_master_text = (
             (master_raw_text or "") + " " +
-            " ".join(master_parsed.get("skills") or []) + " " +
-            " ".join(master_parsed.get("experience_raw") or []) + " " +
-            " ".join(master_parsed.get("projects_raw") or [])
+            _flatten_texts(master_parsed.get("skills")) + " " +
+            _flatten_texts(master_parsed.get("experience_raw")) + " " +
+            _flatten_texts(master_parsed.get("projects_raw"))
         ).lower()
 
         for idx, addition in enumerate(result.skills.additions):
