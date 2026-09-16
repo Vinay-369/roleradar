@@ -2028,8 +2028,10 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
                 return c_prof, "HIGH", f"COMPOUND_CONJUNCT_MATCH ({cand})"
 
     # 4. Multi-word and discriminative modifier matching
-    # Extract discriminative tokens (words not in GENERIC_ROLE_TOKENS)
-    discriminative_tokens = tokens - GENERIC_ROLE_TOKENS
+    # Extract discriminative tokens (words not in GENERIC_ROLE_TOKENS or SENIORITY_ROLE_MODIFIERS)
+    discriminative_tokens = tokens - GENERIC_ROLE_TOKENS - SENIORITY_ROLE_MODIFIERS
+    if not discriminative_tokens:
+        return None, "LOW", "AMBIGUOUS_GENERIC_OR_SENIORITY_ONLY"
 
     # Check against known profiles where ALL discriminative tokens match the profile's canonical identity
     candidates: list[tuple[RoleCompetencyProfile, int, float]] = []
@@ -2037,12 +2039,15 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
     for prof in ROLE_TAXONOMY.values():
         canon_norm = _normalize_role_input(prof.canonical_role)
         canon_tokens = set(canon_norm.split())
-        prof_discriminative = canon_tokens - GENERIC_ROLE_TOKENS
+        prof_discriminative = canon_tokens - GENERIC_ROLE_TOKENS - SENIORITY_ROLE_MODIFIERS
 
         # Exact match of discriminative modifiers (e.g. {"cybersecurity"}, {"graphic"}, {"mechanical"})
         # If the input has extra unrepresented modifiers (e.g. {"marine", "robotics"} vs {"robotics"}),
         # it is a specialized/niche domain that must NOT be collapsed into an unrelated or overly generic role.
         if prof_discriminative and prof_discriminative == discriminative_tokens:
+            canon_cat = canon_tokens.intersection(GENERIC_ROLE_TOKENS)
+            if canon_cat and not canon_cat.intersection(tokens):
+                continue
             overlap = len(tokens.intersection(canon_tokens))
             candidates.append((prof, overlap, 1.0))
             continue
@@ -2051,8 +2056,11 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
         for alias in prof.aliases:
             alias_norm = _normalize_role_input(alias)
             alias_tokens = set(alias_norm.split())
-            alias_discriminative = alias_tokens - GENERIC_ROLE_TOKENS
+            alias_discriminative = alias_tokens - GENERIC_ROLE_TOKENS - SENIORITY_ROLE_MODIFIERS
             if alias_discriminative and alias_discriminative == discriminative_tokens:
+                alias_cat = alias_tokens.intersection(GENERIC_ROLE_TOKENS)
+                if alias_cat and not alias_cat.intersection(tokens):
+                    continue
                 overlap = len(tokens.intersection(alias_tokens))
                 candidates.append((prof, overlap, 0.95))
                 break
