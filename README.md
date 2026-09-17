@@ -178,7 +178,35 @@ npm run dev
 
 ---
 
-### 4. ⚡ 1-Click Quick Demo Sign-In
+### 4. 📦 Production Build & Run (Single-Port Unified Serving)
+
+To run RoleRadar in unified production mode where FastAPI serves the compiled React SPA:
+
+```bash
+# 1. Build the frontend bundle
+cd frontend
+npm install
+npm run build
+
+# 2. Configure production secrets in backend/.env
+# Set ENV=production and a strong JWT_SECRET (minimum 16 characters)
+
+# 3. Start the production ASGI server
+cd ../backend
+# Linux / Docker Container Production (Multi-Worker):
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+# Windows Local Production-Mode Validation (Single-Worker):
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+- **Unified Production URL**: [http://localhost:8000](http://localhost:8000)
+- **API Endpoints**: [http://localhost:8000/api](http://localhost:8000/api)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### 5. ⚡ 1-Click Quick Demo Sign-In
 
 1. Open [http://localhost:5173/login](http://localhost:5173/login).
 2. Click **"⚡ 1-Click Sign In as Demo Candidate"** (or enter `demo@example.com` / `Password123!`).
