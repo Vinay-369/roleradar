@@ -147,6 +147,23 @@ server {
   ```
 - **Cloudflare Pages**: Automatically falls back to `index.html` for single-page applications.
 
+### C. Standalone Unified FastAPI Serving (Built-in SPA Host)
+RoleRadar supports zero-proxy unified production serving. `backend/app/main.py` detects compiled frontend assets in `frontend/dist/` and automatically mounts `/assets` while falling back to `dist/index.html` for client-side deep links (`/app/*`, `/login`, etc.) while safeguarding `/api/` and Swagger docs.
+
+```bash
+# 1. Build frontend bundle
+cd frontend
+npm install
+npm run build
+
+# 2. Start production ASGI server (from backend/)
+# Linux / Docker Container Production (multi-worker):
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+# Windows Local Production-Mode Validation (single-worker):
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
 ---
 
 ## 4. Production Environment Configuration Checklist

@@ -1,0 +1,64 @@
+# ==============================================================================
+# RoleRadar Production Packaging & Docker Ignore
+# ==============================================================================
+
+# Version control
+.git
+.gitignore
+
+# Agent & planning systems
+.agent/
+.planning/
+.vscode/
+
+# Python virtual environments & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node dependencies & caches
+node_modules/
+frontend/node_modules/
+.vite/
+
+# Development scratch scripts & local data dumps
+scratch/
+backend/scratch/
+backend/scratch_*.py
+backend/forensic_debug.py
+backend/scripts/*_report.json
+backend/phase15c_acceptance_report.json
+backend/roadmap_quality_results.json
+backend/role_benchmark_quality_results.json
+backend/validation_raw_results.json
+
+# Local environment and secret files
+.env
+.env.*
+*.env
+backend/.env
+
+# Local storage and test exports
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/generated/*
+!backend/storage/generated/.gitkeep
+backend/storage/db/
+backend/storage/*.log
+backend/tmp/
+backend/.temp/
+backend/.tmp/
+*.log
+*.pdf
+*.docx
+backend/test_out.*
+
+# OS generated files
+.DS_Store
+Thumbs.db

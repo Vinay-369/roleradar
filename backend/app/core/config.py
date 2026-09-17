@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "phi4-mini:latest"  # Fast, accurate local model
     OLLAMA_CHAT_MODEL: str | None = None  # Uses OLLAMA_MODEL or auto-detects available installed model
     COPILOT_MODEL: str | None = None
+    LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
     LMSTUDIO_MODEL: str = "local-model"
 
     # Optional cloud fallback — only used if AI_PROVIDER=cloud_fallback
