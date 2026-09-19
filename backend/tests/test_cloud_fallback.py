@@ -181,3 +181,55 @@ async def test_ai_service_integration_with_cloud_fallback(monkeypatch):
     assert isinstance(tailoring_res, StructuredTailoringResult)
     assert len(tailoring_res.changes) == 1
     assert tailoring_res.changes[0].proposed == "Architected FastAPI backend services."
+
+
+@pytest.mark.asyncio
+async def test_lmstudio_provider_initialization_and_call(monkeypatch):
+    from app.core.ai_service.providers.lmstudio_provider import LMStudioProvider
+
+    settings = Settings(
+        AI_PROVIDER="lmstudio",
+        LMSTUDIO_BASE_URL="http://localhost:1234/v1",
+        LMSTUDIO_MODEL="custom-local-model",
+    )
+    provider = build_provider(settings)
+    assert isinstance(provider, LMStudioProvider)
+    assert provider._base_url == "http://localhost:1234/v1"
+    assert provider._model == "custom-local-model"
+
+    captured = {}
+
+    class MockAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def post(self, url, json=None):
+            captured["url"] = url
+            captured["json"] = json
+
+            class MockResponse:
+                status_code = 200
+
+                def raise_for_status(self):
+                    pass
+
+                def json(self):
+                    return {
+                        "choices": [
+                            {"message": {"content": "LM Studio generated text"}}
+                        ]
+                    }
+
+            return MockResponse()
+
+    monkeypatch.setattr("app.core.ai_service.providers.lmstudio_provider.httpx.AsyncClient", MockAsyncClient)
+    res = await provider.complete("System prompt", "User prompt")
+    assert res == "LM Studio generated text"
+    assert captured["url"] == "http://localhost:1234/v1/chat/completions"
+    assert captured["json"]["model"] == "custom-local-model"

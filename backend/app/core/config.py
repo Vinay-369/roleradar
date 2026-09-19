@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "phi4-mini:latest"  # Fast, accurate local model
     OLLAMA_CHAT_MODEL: str | None = None  # Uses OLLAMA_MODEL or auto-detects available installed model
     COPILOT_MODEL: str | None = None
+    LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
     LMSTUDIO_MODEL: str = "local-model"
 
     # Optional cloud fallback — only used if AI_PROVIDER=cloud_fallback
@@ -90,6 +91,14 @@ class Settings(BaseSettings):
     SMARTRECRUITERS_COMPANIES: str = "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2"
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
     SMARTRECRUITERS_COUNTRY: str = "in"
+<<<<<<< HEAD
+=======
+
+    # --- Direct ATS: Ashby Configuration ---
+    ASHBY_ENABLED: bool = True
+    ASHBY_COMPANIES: str = "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs"
+    ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
@@ -107,6 +116,8 @@ class Settings(BaseSettings):
                     "Production configuration error: A strong, non-default JWT_SECRET "
                     "environment variable must be configured when ENV=production."
                 )
+            # Production mode enforces debug=False
+            self.DEBUG = False
         return self
 
 

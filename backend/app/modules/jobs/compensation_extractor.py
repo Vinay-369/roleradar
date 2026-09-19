@@ -122,6 +122,33 @@ def extract_compensation_from_payload_and_text(
             result.salary_disclosed = True
             result.compensation_type = "NUMERIC"
 
+<<<<<<< HEAD
+=======
+    # Ashby: compensation = {'summaryComponents': [{'compensationType': 'Salary', 'minValue': ..., 'maxValue': ..., 'currencyCode': 'INR'}]}
+    ashby_comp = payload.get("compensation")
+    if isinstance(ashby_comp, dict):
+        components = ashby_comp.get("summaryComponents") or []
+        for comp in components:
+            if isinstance(comp, dict) and comp.get("compensationType") == "Salary":
+                c_curr = comp.get("currencyCode")
+                c_min = comp.get("minValue")
+                c_max = comp.get("maxValue")
+                if isinstance(c_min, (int, float)) and c_min > 0:
+                    result.salary_min = c_min / 100000.0 if (c_min > 1000 and c_curr == "INR") else float(c_min)
+                    result.salary_disclosed = True
+                    result.salary_currency = c_curr or result.salary_currency
+                    result.compensation_type = "NUMERIC"
+                if isinstance(c_max, (int, float)) and c_max > 0:
+                    result.salary_max = c_max / 100000.0 if (c_max > 1000 and c_curr == "INR") else float(c_max)
+                    result.salary_disclosed = True
+                    result.salary_currency = c_curr or result.salary_currency
+                    result.compensation_type = "NUMERIC"
+                tier_summary = ashby_comp.get("scrapeableCompensationSalarySummary") or ashby_comp.get("compensationTierSummary")
+                if tier_summary and isinstance(tier_summary, str):
+                    result.compensation_text = tier_summary.strip()
+                break
+
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
     # If structured numeric compensation already found, format text and return
     if result.compensation_type == "NUMERIC":
         if result.salary_min and result.salary_max:

@@ -99,7 +99,16 @@ def is_direct_apply_url(url: str) -> bool:
     for ind in aggregator_indicators:
         if ind in url_lower:
             return False
-    return "careers." in url_lower or "/careers" in url_lower or "/jobs" in url_lower or "workday" in url_lower or "greenhouse" in url_lower or "lever.co" in url_lower
+    return (
+        "careers." in url_lower
+        or "/careers" in url_lower
+        or "/jobs" in url_lower
+        or "workday" in url_lower
+        or "greenhouse" in url_lower
+        or "lever.co" in url_lower
+        or "ashbyhq.com" in url_lower
+        or "smartrecruiters.com" in url_lower
+    )
 
 
 def merge_two_opportunities(primary: dict, secondary: dict) -> dict:
