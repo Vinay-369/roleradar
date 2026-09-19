@@ -46,10 +46,16 @@ TECH_SYNONYMS: dict[str, set[str]] = {
     "kubernetes": {"k8s"},
     "k8s": {"kubernetes"},
     "aws": {"amazon web services"},
+    "amazon web services": {"aws"},
     "gcp": {"google cloud", "google cloud platform"},
+    "google cloud": {"gcp", "google cloud platform"},
+    "google cloud platform": {"gcp", "google cloud"},
+    "azure": {"microsoft azure"},
+    "microsoft azure": {"azure"},
     "typescript": {"ts"},
     "javascript": {"js"},
     "mongodb": {"mongo"},
+    "mongo": {"mongodb"},
 }
 
 # Related (Adjacent / Non-Equivalent) Skill Clusters
@@ -58,7 +64,7 @@ RELATED_SKILL_CLUSTERS = [
     {"react", "vue", "angular", "svelte", "next.js", "frontend", "typescript", "javascript"},
     {"docker", "kubernetes", "containers", "eks", "helm", "devops", "containerd"},
     {"postgresql", "mysql", "sql", "mongodb", "redis", "cassandra", "dynamodb"},
-    {"aws", "gcp", "azure", "cloud", "terraform"},
+    {"aws", "amazon web services", "gcp", "google cloud", "google cloud platform", "azure", "microsoft azure", "cloud", "terraform"},
     {"pytorch", "tensorflow", "opencv", "machine learning", "deep learning", "ai", "keras", "scikit-learn"},
     {"c++", "c", "rust", "go", "systems programming", "embedded"},
 ]
@@ -228,7 +234,8 @@ def map_resume_to_jd_evidence(
     """
     # Build candidate skills set excluding negative/aspirational mentions
     candidate_skills_lower: set[str] = set()
-    for s in profile.skills:
+    source_skills = profile.skills
+    for s in source_skills:
         s_low = s.lower()
         matching_evs = [
             ev for ev in profile.evidence_units
@@ -237,11 +244,16 @@ def map_resume_to_jd_evidence(
         if matching_evs and all(_is_negative_or_aspirational(ev.normalized_text, s) for ev in matching_evs):
             continue  # Exclude negated/aspirational mention
         candidate_skills_lower.add(s_low)
+        if s_low in TECH_SYNONYMS:
+            candidate_skills_lower.update(TECH_SYNONYMS[s_low])
 
     for ev in profile.evidence_units:
         for t in ev.technologies:
             if not _is_negative_or_aspirational(ev.normalized_text, t):
-                candidate_skills_lower.add(t.lower())
+                t_low = t.lower()
+                candidate_skills_lower.add(t_low)
+                if t_low in TECH_SYNONYMS:
+                    candidate_skills_lower.update(TECH_SYNONYMS[t_low])
 
     mappings: list[RequirementEvidenceMapping] = []
     exact_count = 0

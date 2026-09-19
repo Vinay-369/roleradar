@@ -20,8 +20,17 @@ class CompetencyTier(str, Enum):
 
 class CompetencyImportance(str, Enum):
     CORE = "CORE"
+    IMPORTANT = "IMPORTANT"
+    SUPPORTING = "SUPPORTING"
     COMMON = "COMMON"
     OPTIONAL = "OPTIONAL"
+
+
+class CompetencyPriorityGroup(str, Enum):
+    LEARN_FIRST = "LEARN_FIRST"
+    STRENGTHEN = "STRENGTHEN"
+    LATER_SUPPORTING = "LATER_SUPPORTING"
+    DEMONSTRATED = "DEMONSTRATED"
 
 
 class CompetencyEvidenceOut(BaseModel):
@@ -51,6 +60,7 @@ class SkillGapOut(BaseModel):
     tier: str = CompetencyTier.CORE.value
     status: str = CompetencyStatus.NO_RESUME_EVIDENCE.value
     importance: str = CompetencyImportance.CORE.value
+    priority_group: str = CompetencyPriorityGroup.LEARN_FIRST.value
     evidence: list[CompetencyEvidenceOut] = Field(default_factory=list)
     explanation: str = ""
     evidence_type: str = "NONE"
@@ -64,6 +74,9 @@ class CareerAlignmentSummary(BaseModel):
     demonstrated: int = 0
     partially_demonstrated: int = 0
     no_resume_evidence: int = 0
+    core_count: int = 0
+    important_count: int = 0
+    supporting_count: int = 0
 
 
 class CareerAlignmentOut(BaseModel):

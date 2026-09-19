@@ -382,6 +382,8 @@ def is_india_opportunity(location: str | None, description: str | None = "", cur
         country = extract_country_from_location(seg)
         if country == "India":
             return True
+        if country is not None and country != "India":
+            continue
 
         # Check Indian Metro Clusters on segment
         for canonical_city, aliases in INDIA_METRO_CLUSTERS.items():

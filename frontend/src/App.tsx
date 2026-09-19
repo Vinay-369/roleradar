@@ -59,6 +59,9 @@ export default function App() {
             <Route path="/opportunities/internships" element={<Internships />} />
             <Route path="/opportunities/saved" element={<Saved />} />
             <Route path="/opportunities/job/:jobId" element={<JobDetail />} />
+            <Route path="/opportunities/jobs/:jobId" element={<JobDetail />} />
+            <Route path="/opportunities/internship/:jobId" element={<JobDetail />} />
+            <Route path="/opportunities/internships/:jobId" element={<JobDetail />} />
 
             <Route path="/applications" element={<Applications />} />
             <Route path="/applications/*" element={<Applications />} />

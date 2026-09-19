@@ -81,14 +81,15 @@ class Settings(BaseSettings):
     MAX_VERIFICATION_AGE_HOURS: int = 48
 
     # --- Direct ATS: Lever Configuration ---
-    LEVER_ENABLED: bool = False
+    LEVER_ENABLED: bool = True
     LEVER_COMPANIES: str = "paytm,meesho,cred,fi"
     LEVER_REQUEST_TIMEOUT_SECONDS: int = 15
 
     # --- Direct ATS: SmartRecruiters Configuration ---
-    SMARTRECRUITERS_ENABLED: bool = False
+    SMARTRECRUITERS_ENABLED: bool = True
     SMARTRECRUITERS_COMPANIES: str = "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2"
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
+    SMARTRECRUITERS_COUNTRY: str = "in"
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":

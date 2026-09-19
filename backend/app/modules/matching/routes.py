@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import Settings, get_settings
@@ -15,13 +15,23 @@ router = APIRouter()
 
 @router.get("/recommended", response_model=list[JobMatchOut])
 async def recommended_matches(
-    job_type: str | None = Query(default=None, description="full_time | internship"),
-    live_only: bool = Query(default=False, description="Return only live postings with direct apply links"),
-    opportunity_type: str | None = Query(default=None, description="FULL_TIME | INTERNSHIP | GRADUATE_PROGRAM | APPRENTICESHIP"),
-    experience_tier: str | None = Query(default=None, description="internship | fresher | 0-1 | 1-3 | 3+"),
-    location_preset: str | None = Query(default=None, description="Bengaluru | Hyderabad | Pune | Delhi NCR | etc."),
-    workplace_type: str | None = Query(default=None, description="REMOTE | HYBRID | ON_SITE"),
-    region: str | None = Query(default=None, description="india | global | all"),
+    job_type: str | None = None,
+    live_only: bool = False,
+    opportunity_type: str | None = None,
+    experience_tier: str | None = None,
+    location_preset: str | None = None,
+    workplace_type: str | None = None,
+    region: str | None = None,
+    role: str | None = None,
+    domain: str | None = None,
+    stage: str | None = None,
+    search: str | None = None,
+    sort_by: str | None = None,
+    max_posted_days: int | None = None,
+    include_benchmarks: bool = False,
+    page: int = 1,
+    page_size: int = 50,
+    response: Response = Response(),
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
     settings: Settings = Depends(get_settings),
@@ -30,12 +40,22 @@ async def recommended_matches(
     profile = await profile_repo.get_profile(db, user_id)
     resume = await resume_repo.get_active_master_resume(db, user_id)
 
+    raw_page = page.default if hasattr(page, "default") else page
+    raw_page_size = page_size.default if hasattr(page_size, "default") else page_size
+    raw_include_benchmarks = include_benchmarks.default if hasattr(include_benchmarks, "default") else include_benchmarks
+
+    safe_page = max(1, int(raw_page or 1))
+    safe_page_size = min(max(1, int(raw_page_size or 50)), 100)
+    skip = (safe_page - 1) * safe_page_size
+
     # Opportunity discovery queries persisted MongoDB opportunities directly without
     # blocking on external ATS synchronizations (decoupled in Phase 16C).
     search_filters: dict = {
-        "limit": 500,
-        "active_discovery_only": True,
-        "direct_apply_only": True,
+        "skip": skip,
+        "limit": safe_page_size,
+        "active_discovery_only": not include_benchmarks,
+        "direct_apply_only": not include_benchmarks,
+        "include_benchmarks": include_benchmarks,
     }
     if job_type:
         search_filters["job_type"] = job_type
@@ -49,6 +69,25 @@ async def recommended_matches(
         search_filters["location_preset"] = location_preset
     if workplace_type:
         search_filters["workplace_type"] = workplace_type
+    if role:
+        search_filters["role"] = role
+    if domain:
+        search_filters["domain"] = domain
+    if stage:
+        search_filters["stage"] = stage
+    if search:
+        search_filters["search"] = search
+    if sort_by:
+        search_filters["sort_by"] = sort_by
+    if max_posted_days:
+        search_filters["max_posted_days"] = max_posted_days
+    if region:
+        search_filters["region"] = region
+
+    total_count = await jobs_services.count_jobs(db, search_filters, user_id=user_id)
+    if response is not None:
+        response.headers["X-Total-Count"] = str(total_count)
+        response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
 
     jobs = await jobs_services.search_jobs(db, search_filters, user_id=user_id)
     if live_only:
@@ -161,6 +200,8 @@ async def recommended_matches(
             stipend_currency=stipend_curr,
             stipend_period=stipend_per,
             salary_currency=j.get("salary_currency", "INR"),
+            compensation_type=j.get("compensation_type"),
+            compensation_text=j.get("compensation_text"),
             eligibility_text=intrinsic_eligibility["reasons"][0],
             degree_requirements=classification.degree_requirements,
             graduation_year_requirements=classification.graduation_year_requirements,
@@ -169,5 +210,7 @@ async def recommended_matches(
             eligibility=intrinsic_eligibility,
             realistic_fit="UNKNOWN",
             fit_explanation=intrinsic_eligibility["fit_explanation"],
+            contextual_requirements=j.get("contextual_requirements", []),
+            **matching_services._get_role_metadata(j),
         ))
     return results

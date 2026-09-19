@@ -1,189 +1,220 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Briefcase, Sparkles, Search, FileText } from "lucide-react";
-import { getRecommendedMatches } from "../../lib/jobs";
+import { Briefcase, Sparkles, Search, FileText, RotateCcw } from "lucide-react";
+import { getRecommendedMatches, type JobMatch } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
+import { CANONICAL_CAREER_STAGES, getProfile } from "../../lib/profile";
+import {
+  saveListState,
+  loadListState,
+  clearListState,
+  markNavigatedToDetail,
+  consumeNavigatedToDetail,
+} from "../../lib/listState";
+
+const PAGE_SIZE = 20;
 
 export function Jobs() {
-  const [regionScope, setRegionScope] = useState<"india" | "global">("india");
+  // Check if returning from detail navigation
+  const restoredState = useMemo(() => {
+    if (consumeNavigatedToDetail("jobs")) {
+      return loadListState("jobs");
+    }
+    return null;
+  }, []);
 
-  const { data: matches, isLoading } = useQuery({
-    queryKey: ["matches", "full_time", regionScope],
-    queryFn: () => getRecommendedMatches("full_time", false, { region: regionScope }),
+  const [regionScope, setRegionScope] = useState<"india" | "global">(restoredState?.regionScope ?? "india");
+  const [includeBenchmarks, setIncludeBenchmarks] = useState<boolean>(restoredState?.includeBenchmarks ?? false);
+
+  // Core Discovery Controls
+  const [searchQuery, setSearchQuery] = useState<string>(restoredState?.searchQuery ?? "");
+  const [selectedRole, setSelectedRole] = useState<string>(restoredState?.selectedRole ?? "ALL");
+  const [locationPreset, setLocationPreset] = useState<string>(restoredState?.locationPreset ?? "ALL");
+  const [stageFilter, setStageFilter] = useState<string>(restoredState?.stageFilter ?? "ALL");
+  const [workplaceFilter, setWorkplaceFilter] = useState<string>(restoredState?.workplaceFilter ?? "ALL");
+  const [onlyEligible, setOnlyEligible] = useState<boolean>(restoredState?.onlyEligible ?? false);
+  const [sortBy, setSortBy] = useState<"recent" | "match" | "salary">(
+    (restoredState?.sortBy as any) ?? "recent"
+  );
+
+  // Progressive Loading State
+  const [page, setPage] = useState<number>(restoredState?.page ?? 1);
+  const [loadedJobs, setLoadedJobs] = useState<JobMatch[]>(restoredState?.loadedItems ?? []);
+  const [totalCount, setTotalCount] = useState<number>(restoredState?.totalCount ?? 0);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+
+  const isRestoringRef = useRef<boolean>(!!restoredState);
+  const targetScrollYRef = useRef<number | null>(restoredState?.scrollY ?? null);
+
+  // User Profile for Registration Stage Alignment
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
   });
 
-  const [selectedRole, setSelectedRole] = useState<string>("ALL");
-  const [minLpa, setMinLpa] = useState<string>("ALL");
-  const [remoteFilter, setRemoteFilter] = useState<string>("ALL");
-  const [experienceFilter, setExperienceFilter] = useState<string>("ALL");
-  const [locationPreset, setLocationPreset] = useState<string>("ALL");
-  const [opportunityTypeFilter, setOpportunityTypeFilter] = useState<string>("ALL");
-  const [onlyEligible, setOnlyEligible] = useState<boolean>(false);
-  const [dateFilter, setDateFilter] = useState<string>("ALL");
-  const [sortBy, setSortBy] = useState<"recent" | "match" | "salary">("recent");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  // Initial Page 1 Query (automatically refetches when discovery filters change)
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      "matches",
+      "full_time",
+      regionScope,
+      includeBenchmarks,
+      selectedRole,
+      locationPreset,
+      stageFilter,
+      workplaceFilter,
+      searchQuery,
+      sortBy,
+    ],
+    queryFn: () =>
+      getRecommendedMatches("full_time", false, {
+        region: regionScope,
+        includeBenchmarks,
+        role: selectedRole !== "ALL" ? selectedRole : undefined,
+        locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
+        stage: stageFilter !== "ALL" ? stageFilter : undefined,
+        workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
+        search: searchQuery.trim() || undefined,
+        sortBy,
+        page: 1,
+        pageSize: PAGE_SIZE,
+      }),
+  });
+
+  // Synchronize initial page results
+  useEffect(() => {
+    if (isRestoringRef.current) {
+      isRestoringRef.current = false;
+      return;
+    }
+    if (data) {
+      setLoadedJobs(data.items);
+      setTotalCount(data.total);
+      setPage(1);
+    }
+  }, [data]);
+
+  // Restore scroll position after loaded items are rendered
+  useEffect(() => {
+    if (targetScrollYRef.current !== null && loadedJobs.length > 0) {
+      const scrollY = targetScrollYRef.current;
+      targetScrollYRef.current = null;
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: scrollY, behavior: "instant" });
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [loadedJobs]);
+
+  const handleSaveListState = () => {
+    saveListState("jobs", {
+      regionScope,
+      includeBenchmarks,
+      searchQuery,
+      selectedRole,
+      locationPreset,
+      stageFilter,
+      workplaceFilter,
+      onlyEligible,
+      sortBy,
+      page,
+      loadedItems: loadedJobs,
+      totalCount,
+      scrollY: window.scrollY,
+    });
+    markNavigatedToDetail("jobs");
+  };
 
   const hasResume = useMemo(() => {
-    return matches?.some((m) => m.has_match) ?? false;
-  }, [matches]);
+    return loadedJobs.some((m) => m.has_match) ?? false;
+  }, [loadedJobs]);
 
-  const filteredJobs = useMemo(() => {
-    if (!matches) return [];
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery.trim()) count++;
+    if (selectedRole !== "ALL") count++;
+    if (locationPreset !== "ALL") count++;
+    if (stageFilter !== "ALL") count++;
+    if (workplaceFilter !== "ALL") count++;
+    if (onlyEligible) count++;
+    return count;
+  }, [searchQuery, selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible]);
 
-    let list = matches.filter((job) => {
-      // 1. Role Filter
-      if (selectedRole !== "ALL") {
-        const titleLower = job.job_title.toLowerCase();
-        const selectedLower = selectedRole.toLowerCase();
-        if (!titleLower.includes(selectedLower) && !selectedLower.includes(titleLower)) {
-          return false;
-        }
-      }
+  const resetAllFilters = () => {
+    clearListState("jobs");
+    setSearchQuery("");
+    setSelectedRole("ALL");
+    setLocationPreset("ALL");
+    setStageFilter("ALL");
+    setWorkplaceFilter("ALL");
+    setOnlyEligible(false);
+    setSortBy("recent");
+    setPage(1);
+  };
 
-      // 2. Minimum LPA Filter
-      if (minLpa !== "ALL") {
-        const minVal = Number(minLpa);
-        if (job.salary_min !== undefined && job.salary_min !== null && job.salary_min < minVal) {
-          return false;
-        }
-      }
-
-      // 3. Workplace / Remote Filter
-      if (remoteFilter === "remote") {
-        if (!job.is_remote && !job.location?.toLowerCase().includes("remote")) {
-          return false;
-        }
-      } else if (remoteFilter === "hybrid") {
-        if (!job.location?.toLowerCase().includes("hybrid")) {
-          return false;
-        }
-      } else if (remoteFilter === "onsite") {
-        if (job.is_remote || job.location?.toLowerCase().includes("remote")) {
-          return false;
-        }
-      }
-
-      // 4. Experience Filter
-      if (experienceFilter !== "ALL") {
-        const titleLower = job.job_title.toLowerCase();
-        if (experienceFilter === "fresher") {
-          if (titleLower.includes("senior") || titleLower.includes("lead") || titleLower.includes("staff") || titleLower.includes("principal")) {
-            return false;
-          }
-        } else if (experienceFilter === "mid") {
-          if (titleLower.includes("intern") || titleLower.includes("principal")) {
-            return false;
-          }
-        } else if (experienceFilter === "senior") {
-          if (!titleLower.includes("senior") && !titleLower.includes("lead") && !titleLower.includes("staff")) {
-            return false;
-          }
-        }
-      }
-
-      // 5. India Location Preset Filter
-      if (locationPreset !== "ALL") {
-        const locNorm = (job.normalized_location || "").toLowerCase();
-        const locRaw = (job.location || "").toLowerCase();
-        const presetLower = locationPreset.toLowerCase();
-        if (!locNorm.includes(presetLower) && !locRaw.includes(presetLower)) {
-          if (presetLower === "delhi ncr") {
-            const isNcr = ["delhi", "noida", "gurugram", "gurgaon"].some((c) => locNorm.includes(c) || locRaw.includes(c));
-            if (!isNcr) return false;
-          } else {
-            return false;
-          }
-        }
-      }
-
-      // 6. Opportunity Type Filter
-      if (opportunityTypeFilter !== "ALL") {
-        if (job.opportunity_type && job.opportunity_type !== opportunityTypeFilter) {
-          return false;
-        }
-      }
-
-      // 7. Explicit "Only Eligible" Filter
-      if (onlyEligible) {
-        if (hasResume) {
-          const isEligible = job.eligibility?.status === "ELIGIBLE" || job.eligibility?.status === "LIKELY_ELIGIBLE";
-          if (!isEligible) return false;
-        } else {
-          if (!job.fresher_eligible && !job.student_eligible) return false;
-        }
-      }
-
-      // 8. Date Posted Recency Filter
-      if (dateFilter !== "ALL") {
-        const maxDays = Number(dateFilter);
-        if (job.posted_days_ago !== undefined && job.posted_days_ago > maxDays) {
-          return false;
-        }
-      }
-
-      // 9. Keyword search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = job.job_title.toLowerCase().includes(q);
-        const matchCompany = job.company.toLowerCase().includes(q);
-        const skillsToCheck = job.skills_required && job.skills_required.length > 0 ? job.skills_required : job.matched_skills;
-        const matchSkills = skillsToCheck.some((s) => s.toLowerCase().includes(q));
-        if (!matchTitle && !matchCompany && !matchSkills) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    const isIndia = (j: (typeof list)[0]) => j.country === "India" || (j.normalized_location && j.normalized_location !== "Other");
-
-    // Default: India-first sorting, then user selected criterion
-    if (sortBy === "recent") {
-      return list.sort((a, b) => {
-        const aInd = isIndia(a) ? 0 : 1;
-        const bInd = isIndia(b) ? 0 : 1;
-        if (aInd !== bInd) return aInd - bInd;
-        return (a.posted_days_ago ?? 0) - (b.posted_days_ago ?? 0);
+  // Progressive "Show More" Handler
+  const handleShowMore = async () => {
+    if (isLoadingMore || loadedJobs.length >= totalCount) return;
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const res = await getRecommendedMatches("full_time", false, {
+        region: regionScope,
+        includeBenchmarks,
+        role: selectedRole !== "ALL" ? selectedRole : undefined,
+        locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
+        stage: stageFilter !== "ALL" ? stageFilter : undefined,
+        workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
+        search: searchQuery.trim() || undefined,
+        sortBy,
+        page: nextPage,
+        pageSize: PAGE_SIZE,
       });
-    } else if (sortBy === "match") {
-      return list.sort((a, b) => {
-        const aInd = isIndia(a) ? 0 : 1;
-        const bInd = isIndia(b) ? 0 : 1;
-        if (aInd !== bInd) return aInd - bInd;
-        return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+      setLoadedJobs((prev) => {
+        const existing = new Set(prev.map((j) => j.job_id));
+        const newItems = res.items.filter((j) => !existing.has(j.job_id));
+        return [...prev, ...newItems];
       });
-    } else if (sortBy === "salary") {
-      return list.sort((a, b) => {
-        const aInd = isIndia(a) ? 0 : 1;
-        const bInd = isIndia(b) ? 0 : 1;
-        if (aInd !== bInd) return aInd - bInd;
-        return (b.salary_min ?? 0) - (a.salary_min ?? 0);
-      });
+      setTotalCount(res.total);
+      setPage(nextPage);
+    } catch (err) {
+      console.error("Failed to load more opportunities:", err);
+    } finally {
+      setIsLoadingMore(false);
     }
+  };
 
-    return list;
-  }, [matches, selectedRole, minLpa, remoteFilter, experienceFilter, locationPreset, opportunityTypeFilter, onlyEligible, dateFilter, sortBy, searchQuery, hasResume]);
+  // Secondary client filter for "Eligible for my profile only"
+  const visibleJobs = useMemo(() => {
+    if (!onlyEligible) return loadedJobs;
+    return loadedJobs.filter((job) => {
+      if (hasResume) {
+        return job.eligibility?.status === "ELIGIBLE" || job.eligibility?.status === "LIKELY_ELIGIBLE";
+      }
+      return job.fresher_eligible || job.student_eligible;
+    });
+  }, [loadedJobs, onlyEligible, hasResume]);
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="max-w-5xl mx-auto pt-4 pb-12 px-4 sm:px-6">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Briefcase size={20} className="text-signal-600" />
-            <h1 className="text-2xl font-bold font-display text-ink-950">Active Full-Time Openings</h1>
+          <div className="flex items-center gap-2 mb-0.5">
+            <Briefcase size={18} className="text-signal-600" />
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-ink-950">Active Full-Time Openings</h1>
           </div>
-          <p className="text-sm text-ink-600">
-            Discover verified direct-apply career opportunities across India and remote.
+          <p className="text-xs text-ink-500">
+            Verified direct opportunities sourced straight from official employer applicant tracking systems.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/resume/tailor-custom"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold transition-colors shadow-2xs"
@@ -192,236 +223,287 @@ export function Jobs() {
             <span>Paste External JD</span>
           </Link>
 
-          {/* P1-01 India-First vs Global Scope Explorer */}
+          {/* India-First vs Global Scope Explorer */}
           <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => setRegionScope("india")}
-              className={`px-3 py-1.5 rounded-md transition-all ${
+              className={`px-3 py-1 rounded-md transition-all ${
                 regionScope === "india"
                   ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
                   : "text-ink-600 hover:text-ink-950"
               }`}
             >
-              🇮🇳 India Opportunities
+              🇮🇳 India
             </button>
             <button
               type="button"
               onClick={() => setRegionScope("global")}
-              className={`px-3 py-1.5 rounded-md transition-all ${
+              className={`px-3 py-1 rounded-md transition-all ${
                 regionScope === "global"
                   ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
                   : "text-ink-600 hover:text-ink-950"
               }`}
             >
-              🌐 Global / All Locations
+              🌐 Global
             </button>
           </div>
         </div>
       </div>
 
       {/* Pre-Resume Discovery Banner */}
-      {!hasResume && !isLoading && matches && matches.length > 0 && (
-        <div className="bg-signal-500/10 border border-signal-500/20 rounded-xl p-4 mb-6 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-signal-500/20 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles size={16} className="text-signal-700" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-signal-900">Browsing Public Verified Openings</p>
-              <p className="text-xs text-signal-700 mt-0.5">
-                Upload your resume to see your personalized match score, skill gap breakdown, and instant tailoring.
-              </p>
-            </div>
+      {!hasResume && !isLoading && visibleJobs.length > 0 && (
+        <div className="bg-signal-500/10 border border-signal-500/20 rounded-xl p-3 mb-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <Sparkles size={16} className="text-signal-700 shrink-0" />
+            <p className="text-xs text-signal-800">
+              <span className="font-semibold text-signal-950">Browsing Verified Direct Openings:</span> Upload your resume to calculate your match score, missing skills, and instant tailoring.
+            </p>
           </div>
           <Link
             to="/resume/master"
-            className="shrink-0 text-sm font-semibold text-white bg-signal-600 hover:bg-signal-700 px-4 py-2 rounded-lg transition-colors shadow-sm"
+            className="shrink-0 text-xs font-semibold text-white bg-signal-600 hover:bg-signal-700 px-3 py-1.5 rounded-lg transition-colors shadow-2xs ml-auto"
           >
             Upload Resume
           </Link>
         </div>
       )}
 
-      {/* Target Role & Advanced Filters Card */}
-      <div className="bg-white rounded-xl border border-ink-100 p-4 mb-6 shadow-xs space-y-4">
-        {/* Target Role Dropdown Selector */}
-        <RoleDropdownSelector
-          label="Filter by Target Role:"
-          selectedRole={selectedRole}
-          onRoleChange={setSelectedRole}
-          roles={ALL_JOB_ROLES}
-          includeAllOption={true}
-          allOptionLabel="All Openings"
-        />
-
-        {/* Multi-Filter Controls: Search, Min LPA, Workplace, Experience */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-3 border-t border-ink-50">
-          <div className="relative">
+      {/* Streamlined Core Filter Panel */}
+      <div className="bg-white rounded-xl border border-ink-100 p-3.5 mb-3 shadow-xs space-y-3">
+        {/* Row 1: Search + Role */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <div className="sm:col-span-6 relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search title, company, skill…"
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-ink-100 text-xs outline-none focus:border-signal-500 shadow-2xs"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-ink-200 text-xs outline-none focus:border-signal-500 shadow-2xs"
             />
           </div>
 
-          <div>
-            <select
-              value={minLpa}
-              onChange={(e) => setMinLpa(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
-            >
-              <option value="ALL">Min Compensation: Any</option>
-              <option value="4">Min ₹4 LPA</option>
-              <option value="6">Min ₹6 LPA</option>
-              <option value="8">Min ₹8 LPA</option>
-              <option value="12">Min ₹12 LPA</option>
-              <option value="15">Min ₹15 LPA</option>
-              <option value="20">Min ₹20+ LPA</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={remoteFilter}
-              onChange={(e) => setRemoteFilter(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
-            >
-              <option value="ALL">Workplace: Any</option>
-              <option value="remote">Remote Only</option>
-              <option value="hybrid">Hybrid</option>
-              <option value="onsite">Onsite / Office</option>
-            </select>
-          </div>
-
-          <div>
-            <select
-              value={experienceFilter}
-              onChange={(e) => setExperienceFilter(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
-            >
-              <option value="ALL">Experience: Any</option>
-              <option value="fresher">Fresher / Entry Level (0–1 yr)</option>
-              <option value="mid">Mid-Level (1–3 yrs)</option>
-              <option value="senior">Senior / Lead (3+ yrs)</option>
-            </select>
+          <div className="sm:col-span-6">
+            <RoleDropdownSelector
+              label="Role:"
+              selectedRole={selectedRole}
+              onRoleChange={setSelectedRole}
+              roles={ALL_JOB_ROLES}
+              includeAllOption={true}
+              allOptionLabel="All Roles"
+            />
           </div>
         </div>
 
-        {/* India Metros & Opportunity Type Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-ink-50">
+        {/* Row 2: Location + Your Stage + Workplace */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-ink-50">
           <div>
+            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">Location</label>
             <select
               value={locationPreset}
               onChange={(e) => setLocationPreset(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
             >
-              <option value="ALL">City / Metro: All India</option>
-              <option value="Bengaluru">Bengaluru / Bangalore</option>
-              <option value="Delhi NCR">Delhi NCR (Noida/Gurugram)</option>
+              <option value="ALL">All Locations</option>
+              <option value="Bengaluru">Bengaluru</option>
+              <option value="Delhi NCR">Delhi NCR</option>
               <option value="Hyderabad">Hyderabad</option>
               <option value="Pune">Pune</option>
               <option value="Mumbai">Mumbai</option>
               <option value="Chennai">Chennai</option>
-              <option value="Noida">Noida</option>
-              <option value="Gurugram">Gurugram / Gurgaon</option>
             </select>
           </div>
 
           <div>
+            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">
+              Your Stage
+            </label>
             <select
-              value={opportunityTypeFilter}
-              onChange={(e) => setOpportunityTypeFilter(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
             >
-              <option value="ALL">Type: All Openings</option>
-              <option value="FULL_TIME">Full-Time Career</option>
-              <option value="GRADUATE_PROGRAM">Graduate Engineer Trainee (GET)</option>
-              <option value="INTERNSHIP">Internship</option>
-              <option value="APPRENTICESHIP">Apprenticeship</option>
+              {CANONICAL_CAREER_STAGES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                  {profile?.category === s.value ? " (Your Stage)" : ""}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-2 px-2 py-1 bg-ink-50/60 rounded-lg border border-ink-100">
-            <input
-              type="checkbox"
-              id="onlyEligibleCheck"
-              checked={onlyEligible}
-              onChange={(e) => setOnlyEligible(e.target.checked)}
-              className="rounded text-signal-600 focus:ring-signal-500 cursor-pointer"
-            />
-            <label htmlFor="onlyEligibleCheck" className="text-xs font-semibold text-ink-800 cursor-pointer select-none">
-              Only eligible for my profile
-            </label>
+          <div>
+            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">Workplace</label>
+            <select
+              value={workplaceFilter}
+              onChange={(e) => setWorkplaceFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+            >
+              <option value="ALL">Any Workplace</option>
+              <option value="remote">Remote Only</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">On-site / Office</option>
+            </select>
           </div>
         </div>
 
-        {/* Date Posted & Sort Order Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-ink-50">
-          <div>
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
-            >
-              <option value="ALL">Date Posted: Any Time</option>
-              <option value="1">Date Posted: Past 24 Hours</option>
-              <option value="3">Date Posted: Past 3 Days</option>
-              <option value="7">Date Posted: Past Week</option>
-              <option value="14">Date Posted: Past 2 Weeks</option>
-              <option value="30">Date Posted: Past Month</option>
-            </select>
+        {/* Row 3: Auxiliary Toggles + Sort + Reset */}
+        <div className="flex items-center justify-between gap-3 pt-2 border-t border-ink-50 flex-wrap text-xs">
+          <div className="flex items-center gap-4 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-ink-700 hover:text-ink-950 font-medium">
+              <input
+                type="checkbox"
+                checked={includeBenchmarks}
+                onChange={(e) => setIncludeBenchmarks(e.target.checked)}
+                className="rounded border-ink-300 text-signal-600 focus:ring-signal-500 cursor-pointer"
+              />
+              <span>Include Market Benchmark Profiles</span>
+            </label>
+
+            {hasResume && (
+              <label className="flex items-center gap-2 cursor-pointer select-none text-ink-700 hover:text-ink-950 font-medium">
+                <input
+                  type="checkbox"
+                  checked={onlyEligible}
+                  onChange={(e) => setOnlyEligible(e.target.checked)}
+                  className="rounded border-ink-300 text-signal-600 focus:ring-signal-500 cursor-pointer"
+                />
+                <span>Eligible for my profile only</span>
+              </label>
+            )}
           </div>
 
-          <div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-3 py-1.5 rounded-lg border border-ink-100 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
-            >
-              <option value="recent">Sort by: Most Recent Posting Date (Default)</option>
-              <option value="match">Sort by: Highest Match Score</option>
-              <option value="salary">Sort by: Compensation (High to Low)</option>
-            </select>
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="flex items-center gap-1.5 text-xs text-ink-500">
+              <span>Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-2 py-1 rounded-md border border-ink-200 bg-white text-xs font-semibold text-ink-800"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="match">Highest Match</option>
+                <option value="salary">Compensation</option>
+              </select>
+            </div>
+
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline transition-colors cursor-pointer"
+              >
+                <RotateCcw size={11} />
+                <span>Reset ({activeFilterCount})</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {isLoading && <SkeletonCard count={4} />}
 
-      {!isLoading && filteredJobs.length === 0 && (
+      {/* Low Inventory Note */}
+      {!isLoading && totalCount > 0 && totalCount <= 3 && !includeBenchmarks && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-3 text-xs text-amber-900 flex items-center justify-between gap-2 flex-wrap">
+          <p>
+            <span className="font-bold">Live Inventory Note:</span> Only {totalCount} live opening{totalCount === 1 ? "" : "s"} currently match this exact filter combination directly on employer ATS portals.
+          </p>
+          <button
+            type="button"
+            onClick={() => setIncludeBenchmarks(true)}
+            className="text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
+          >
+            Toggle Market Benchmark Profiles →
+          </button>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && visibleJobs.length === 0 && (
         <EmptyState
           icon={Briefcase}
-          title="No jobs matching your filter criteria"
-          description="Try adjusting your target role, date posted, or compensation filters, or tailor your resume for an external job posting."
-          actionText="Reset All Filters"
-          onAction={() => {
-            setSelectedRole("ALL");
-            setMinLpa("ALL");
-            setRemoteFilter("ALL");
-            setExperienceFilter("ALL");
-            setDateFilter("ALL");
-            setSortBy("recent");
-            setSearchQuery("");
-          }}
-          secondaryActionText="Tailor for External JD"
+          title={
+            activeFilterCount > 0
+              ? "No opportunities match your selected filters"
+              : "No live postings currently available from connected employers"
+          }
+          description={
+            activeFilterCount > 0
+              ? "Try clearing filters or selecting another role. You can also toggle 'Include Market Benchmark Profiles' to explore reference career paths."
+              : "Connected employer ATS boards currently have no matching active listings. You can enable 'Include Market Benchmark Profiles' to explore target competencies."
+          }
+          actionText={activeFilterCount > 0 ? "Reset Filters" : (!includeBenchmarks ? "Show Career Benchmark Roles" : undefined)}
+          onAction={activeFilterCount > 0 ? resetAllFilters : (!includeBenchmarks ? () => setIncludeBenchmarks(true) : undefined)}
+          secondaryActionText="Paste External Job Description"
           secondaryActionHref="/resume/tailor-custom"
         />
       )}
 
-      {filteredJobs.length > 0 && (
+      {/* Results List */}
+      {visibleJobs.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between px-1 text-xs text-ink-500">
-            <span>Showing <strong>{filteredJobs.length}</strong> openings</span>
-            <span className="text-[11px] font-semibold text-signal-700">
-              {sortBy === "recent" ? "Sorted by Most Recent Posting Date ↓" : sortBy === "match" ? "Sorted by Match Score ↓" : "Sorted by Compensation ↓"}
-            </span>
+          {/* Single Authoritative Count & Status Row */}
+          <div className="flex items-center justify-between px-1 py-1 text-xs text-ink-600 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-ink-900">
+                Showing {visibleJobs.length} of {totalCount} active opening{totalCount === 1 ? "" : "s"}
+              </span>
+              {!includeBenchmarks && (
+                <span className="text-ink-400 hidden sm:inline">
+                  • Verified live from connected employer ATS boards
+                </span>
+              )}
+            </div>
+            {!includeBenchmarks && (
+              <button
+                type="button"
+                onClick={() => setIncludeBenchmarks(true)}
+                className="text-signal-700 hover:text-signal-800 font-medium underline underline-offset-2 text-[11px] cursor-pointer ml-auto"
+              >
+                Explore Market Benchmark Profiles →
+              </button>
+            )}
           </div>
-          {filteredJobs.map((job) => (
-            <JobMatchCard key={job.job_id} job={job} />
+
+          {visibleJobs.map((job) => (
+            <JobMatchCard key={job.job_id} job={job} onViewDetail={handleSaveListState} />
           ))}
+
+          {/* Progressive "Show More" Action */}
+          {visibleJobs.length < totalCount ? (
+            <div className="mt-6 flex flex-col items-center justify-center gap-2 pt-2 pb-4">
+              <button
+                type="button"
+                onClick={handleShowMore}
+                disabled={isLoadingMore}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink-900 hover:bg-ink-950 text-white text-xs font-semibold shadow-xs hover:shadow transition-all disabled:opacity-50 cursor-pointer active:scale-98"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Loading more openings…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Show More Openings</span>
+                    <span className="text-ink-400 font-mono text-[11px]">
+                      ({visibleJobs.length} loaded of {totalCount})
+                    </span>
+                  </>
+                )}
+              </button>
+              <p className="text-[11px] text-ink-400">
+                Showing {visibleJobs.length} of {totalCount} total openings matching your criteria
+              </p>
+            </div>
+          ) : totalCount > 0 ? (
+            <div className="mt-6 text-center py-4 border-t border-ink-100">
+              <p className="text-xs text-ink-500 font-medium">
+                All {totalCount} verified active opportunities matching your filters are loaded.
+              </p>
+            </div>
+          ) : null}
         </div>
       )}
     </div>

@@ -30,6 +30,10 @@ async def get_my_profile(
     if profile is None:
         return None
     profile.pop("_id", None)
+    profile.setdefault("category", "FRESHER")
+    profile.setdefault("consent_text", "Standard candidate registration consent.")
+    if not profile.get("target_roles"):
+        profile["target_roles"] = ["Software Engineer"]
     return ProfileResponse(**profile)
 
 

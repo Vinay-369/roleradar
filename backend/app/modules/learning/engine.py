@@ -37,6 +37,7 @@ class SkillGap:
     tier: str = "CORE"
     status: str = "NO_RESUME_EVIDENCE"
     importance: str = "CORE"
+    priority_group: str = "LEARN_FIRST"
     evidence: list[dict] = field(default_factory=list)
     explanation: str = ""
     evidence_type: str = "NONE"
@@ -102,6 +103,8 @@ PREREQUISITE_DEPENDENCIES: list[tuple[str, str]] = [
     ("python", "django"),
     
     # Data & Querying -> Advanced Analytics & Modeling
+    ("sql", "postgresql"),
+    ("sql", "mysql"),
     ("sql", "data wrangling"),
     ("sql", "database modeling & querying"),
     ("sql", "database modeling"),
@@ -159,13 +162,28 @@ PREREQUISITE_DEPENDENCIES: list[tuple[str, str]] = [
     ("3d cad modeling", "finite element analysis (fea)"),
     ("circuit design & schematic capture", "pcb layout & routing"),
     ("kinematics & dynamics modeling", "motion planning & trajectory generation"),
+
+    # QA & Test Automation
+    ("unit testing", "test automation frameworks"),
+    ("unit testing", "integration testing"),
+    ("python", "test automation"),
+    ("javascript", "end-to-end testing"),
+    ("test automation", "ci/cd pipeline integration"),
+
+    # Mobile Development
+    ("swift", "ios app development"),
+    ("swift", "swiftui"),
+    ("kotlin", "android app development"),
+    ("kotlin", "jetpack compose"),
+    ("react", "react native"),
+    ("dart", "flutter"),
 ]
 
 
 def _order_skills_with_prerequisites(gaps: list[SkillGap]) -> list[str]:
     """
     Sorts learning gap skills by honoring prerequisite dependencies while preserving
-    priority significance (CORE > SECONDARY > BONUS).
+    priority significance (CORE > SECONDARY > BONUS) and priority_group (LEARN_FIRST > STRENGTHEN > LATER_SUPPORTING).
 
     If Skill A is a prerequisite of Skill B, Skill A is guaranteed to be scheduled
     before Skill B, even if Skill A was classified as SECONDARY and Skill B as CORE.
@@ -175,13 +193,26 @@ def _order_skills_with_prerequisites(gaps: list[SkillGap]) -> list[str]:
 
     # Map unique skill name to its best (highest) priority gap
     priority_ranks = {"CORE": 0, "SECONDARY": 1, "BONUS": 2}
+    group_ranks = {"LEARN_FIRST": 0, "STRENGTHEN": 1, "LATER_SUPPORTING": 2, "DEMONSTRATED": 3}
     unique_skills: dict[str, SkillGap] = {}
-    for g in gaps:
+    for item in gaps:
+        if isinstance(item, str):
+            g = SkillGap(
+                skill=item,
+                priority="SECONDARY",
+                reason="",
+                target_job_title="",
+                current_evidence="MARKET_REQUIREMENT",
+            )
+        else:
+            g = item
         if g.skill not in unique_skills:
             unique_skills[g.skill] = g
         else:
             # Keep higher priority
-            if priority_ranks.get(g.priority, 3) < priority_ranks.get(unique_skills[g.skill].priority, 3):
+            curr_rank = priority_ranks.get(g.priority, 3)
+            prev_rank = priority_ranks.get(unique_skills[g.skill].priority, 3)
+            if curr_rank < prev_rank:
                 unique_skills[g.skill] = g
 
     skill_list = list(unique_skills.keys())
@@ -201,15 +232,22 @@ def _order_skills_with_prerequisites(gaps: list[SkillGap]) -> list[str]:
                     dependents[p_match].append(d_match)
                     in_degree[d_match] += 1
 
-    # Topological sort prioritizing CORE > SECONDARY > BONUS, stable by original order
+    # Topological sort prioritizing LEARN_FIRST / CORE > STRENGTHEN / SECONDARY > LATER_SUPPORTING / BONUS
     available = [s for s in skill_list if in_degree[s] == 0]
     ordered: list[str] = []
 
     def sort_key(s: str) -> tuple[int, int, int]:
-        # If this skill is an unmet prerequisite for a CORE skill, its scheduling urgency
-        # is elevated to 0 so foundations precede downstream core methodologies.
-        unlocks_core = any(unique_skills[dep].priority == "CORE" for dep in dependents[s])
-        effective_p_rank = 0 if unlocks_core else priority_ranks.get(unique_skills[s].priority, 2)
+        gap = unique_skills[s]
+        base_p_rank = priority_ranks.get(gap.priority, 2)
+        base_g_rank = group_ranks.get(getattr(gap, "priority_group", "LEARN_FIRST"), 1)
+        composite_rank = min(base_p_rank, base_g_rank)
+
+        # If this skill is an unmet prerequisite for a CORE or LEARN_FIRST skill, elevate urgency
+        unlocks_core = any(
+            unique_skills[dep].priority == "CORE" or getattr(unique_skills[dep], "priority_group", "") == "LEARN_FIRST"
+            for dep in dependents[s]
+        )
+        effective_p_rank = 0 if unlocks_core else composite_rank
         has_deps = len(dependents[s]) > 0
         return (effective_p_rank, 0 if has_deps else 1, skill_list.index(s))
 
@@ -253,7 +291,7 @@ def compute_skill_gaps(
             evidence = "MARKET_REQUIREMENT"
             cand_status = None
         else:
-            reason = f"'{skill}' is a required skill for {job_title} and no evidence of it was found in your resume."
+            reason = f"'{skill}' is expected for {job_title}, but no verified evidence was found in your resume. (This indicates no resume mention yet, not that you lack the capability)."
             evidence = "MISSING"
             cand_status = status_map.get(skill, "MISSING")
 
@@ -274,6 +312,7 @@ def compute_skill_gaps(
             tier="CORE",
             status="NO_RESUME_EVIDENCE",
             importance="CORE",
+            priority_group="LEARN_FIRST",
             evidence=[],
             explanation=reason,
             evidence_type="NONE",
@@ -306,6 +345,7 @@ def compute_skill_gaps(
             tier="CORE",
             status="PARTIALLY_DEMONSTRATED",
             importance="CORE",
+            priority_group="STRENGTHEN",
             evidence=[],
             explanation=reason,
             evidence_type="RELATED_TECHNOLOGY",
@@ -338,6 +378,7 @@ def compute_skill_gaps(
             tier="ADVANCED",
             status="NO_RESUME_EVIDENCE",
             importance="OPTIONAL",
+            priority_group="LATER_SUPPORTING",
             evidence=[],
             explanation=reason,
             evidence_type="NONE",
@@ -414,13 +455,13 @@ def determine_competency_importance(skill: str, profile: Any = None) -> str:
     if getattr(profile, "core_competencies", None) and any(s_low == c.lower() for c in profile.core_competencies):
         return "CORE"
     if getattr(profile, "common_competencies", None) and any(s_low == c.lower() for c in profile.common_competencies):
-        return "COMMON"
+        return "IMPORTANT"
     if getattr(profile, "optional_competencies", None) and any(s_low == o.lower() for o in profile.optional_competencies):
-        return "OPTIONAL"
+        return "SUPPORTING"
     if getattr(profile, "tools_technologies", None) and any(s_low == t.lower() for t in profile.tools_technologies):
-        return "COMMON"
+        return "SUPPORTING"
     if getattr(profile, "knowledge_areas", None) and any(s_low == k.lower() for k in profile.knowledge_areas):
-        return "COMMON"
+        return "IMPORTANT"
     return "CORE"
 
 
@@ -499,11 +540,14 @@ def evaluate_career_competencies(
                 if ed_id:
                     entity_name_lookup[ed_id] = inst
 
-        candidate_skills_set = {
-            s.lower().strip()
-            for s in (getattr(candidate, "skills_explicit", None) or getattr(candidate, "skills", None) or [])
-            if s and s.strip()
-        }
+        if hasattr(candidate, "get_all_demonstrated_skills"):
+            candidate_skills_set = {s.lower().strip() for s in candidate.get_all_demonstrated_skills()}
+        else:
+            candidate_skills_set = {
+                s.lower().strip()
+                for s in (getattr(candidate, "skills_explicit", None) or getattr(candidate, "skills", None) or [])
+                if s and s.strip()
+            }
         for ev in (getattr(candidate, "evidence_units", None) or []):
             sec = (getattr(ev, "section", "") or "").upper()
             claim_val = getattr(getattr(ev, "claim_type", None), "value", "")
@@ -526,6 +570,14 @@ def evaluate_career_competencies(
         priority = "CORE" if importance == "CORE" else ("SECONDARY" if importance == "COMMON" else "BONUS")
         estimated_days = PRIORITY_ESTIMATED_DAYS.get(priority, 5)
 
+        # Determine priority group for Mode A
+        if importance == "CORE" or tier in ("FOUNDATION", "CORE"):
+            priority_group = "LEARN_FIRST"
+        elif importance in ("IMPORTANT", "COMMON"):
+            priority_group = "STRENGTHEN"
+        else:
+            priority_group = "LATER_SUPPORTING"
+
         # ----------------------------------------------------------------------
         # MODE A: NO RESUME AVAILABLE
         # ----------------------------------------------------------------------
@@ -547,6 +599,7 @@ def evaluate_career_competencies(
                 tier=tier,
                 status="NO_RESUME_EVIDENCE",
                 importance=importance,
+                priority_group=priority_group,
                 evidence=[],
                 explanation="Market benchmark requirement for this role.",
                 evidence_type="NONE",
@@ -683,13 +736,31 @@ def evaluate_career_competencies(
                 cand_status = "PARTIAL"
                 current_evidence = "PARTIAL"
 
-        # Build honest human reason
+        # Build honest human reason and assign priority_group
         if status == "DEMONSTRATED":
             reason = f"'{comp}' is demonstrated on your resume ({explanation.lower()})."
+            priority_group = "DEMONSTRATED"
         elif status == "PARTIALLY_DEMONSTRATED":
             reason = f"'{comp}' is partially demonstrated: {explanation}."
+            priority_group = "STRENGTHEN"
         else:
-            reason = f"'{comp}' is expected for {profile.canonical_role}, but no verified evidence was found in your resume."
+            reason = f"'{comp}' is expected for {profile.canonical_role}, but no verified evidence was found in your resume. (This indicates no resume mention yet, not that you lack the capability)."
+            explanation = "No verified evidence found in current resume."
+            is_core = importance == "CORE" or tier in ("FOUNDATION", "CORE")
+            is_core_prereq = any(
+                p_pat in c_low
+                for p_pat, d_pat in PREREQUISITE_DEPENDENCIES
+                if any(d_pat in other.lower() for other in raw_competencies if determine_competency_importance(other, profile) == "CORE")
+            )
+            if is_core or is_core_prereq:
+                priority_group = "LEARN_FIRST"
+            elif importance in ("IMPORTANT", "COMMON"):
+                priority_group = "STRENGTHEN"
+            else:
+                priority_group = "LATER_SUPPORTING"
+
+        if status == "NO_RESUME_EVIDENCE":
+            explanation = "No resume evidence found in current resume."
 
         effective_priority = "SECONDARY" if status == "PARTIALLY_DEMONSTRATED" else priority
         effective_days = PRIORITY_ESTIMATED_DAYS.get(effective_priority, 5)
@@ -711,6 +782,7 @@ def evaluate_career_competencies(
             tier=tier,
             status=status,
             importance=importance,
+            priority_group=priority_group,
             evidence=evidence_list,
             explanation=explanation,
             evidence_type=evidence_type,

@@ -110,16 +110,26 @@ async def ingest_resume(
     validate_upload(sanitized_filename, file_bytes, settings)
 
     extracted = extract_text_and_layout(file_bytes, sanitized_filename)
-    parsed = structure_resume_text(extracted["text"])
+    parsed_raw = structure_resume_text(extracted["text"])
+    from app.modules.resume.models import CandidateProfile
+    cand_profile = CandidateProfile.from_parsed_dict(parsed_raw, extracted["text"])
+    parsed = cand_profile.to_parsed_dict()
     
     # 4-Pillar Deterministic Quality Audit
     parseability = analyze_parseability(
         extracted["text"], extracted["blocks"], extracted["file_type"], extracted["has_tables"]
     )
-    combined_bullets = parsed.get("experience_raw", []) + parsed.get("projects_raw", [])
+    exp_bullets = [b for b in parsed.get("experience_raw", []) if isinstance(b, str)]
+    proj_bullets: list[str] = []
+    for p in parsed.get("projects_raw", []):
+        if isinstance(p, str):
+            proj_bullets.append(p)
+        elif isinstance(p, dict) and "bullets" in p:
+            proj_bullets.extend([b for b in p.get("bullets", []) if isinstance(b, str)])
+    combined_bullets = exp_bullets + proj_bullets
     recruiter_impact = analyze_recruiter_impact(combined_bullets)
     action_verbs = analyze_action_verbs(combined_bullets)
-    skills_depth = analyze_skills_depth(parsed.get("skills", []))
+    skills_depth = analyze_skills_depth(cand_profile.get_all_demonstrated_skills())
 
     has_email = bool(parseability.contact_info_found.get("email"))
     has_phone = bool(parseability.contact_info_found.get("phone"))

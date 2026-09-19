@@ -46,6 +46,8 @@ def build_india_metadata(
         "stipend_currency": stipend_currency,
         "stipend_period": stipend_period,
         "salary_currency": job.get("salary_currency", "INR"),
+        "compensation_type": job.get("compensation_type"),
+        "compensation_text": job.get("compensation_text"),
         "eligibility_text": eligibility.reasons[0] if eligibility.reasons else None,
         "degree_requirements": classification.degree_requirements,
         "graduation_year_requirements": classification.graduation_year_requirements,
@@ -58,6 +60,29 @@ def build_india_metadata(
 
 
 _build_india_metadata = build_india_metadata
+
+
+def _get_role_metadata(job: dict) -> dict:
+    from app.modules.learning.role_taxonomy import ROLE_TAXONOMY, resolve_role
+    title = job.get("title") or ""
+    prof, _, _ = resolve_role(title)
+    if prof:
+        canon_role = prof.canonical_role
+        canon_key = None
+        for k, p in ROLE_TAXONOMY.items():
+            if p.canonical_role == prof.canonical_role:
+                canon_key = k
+                break
+        return {
+            "canonical_role": canon_role,
+            "canonical_role_key": canon_key,
+            "role_domain": prof.domain,
+        }
+    return {
+        "canonical_role": title or None,
+        "canonical_role_key": None,
+        "role_domain": job.get("industry") or "Technology",
+    }
 
 
 async def get_or_compute_matches(
@@ -83,8 +108,12 @@ async def get_or_compute_matches(
     # 1. Fetch existing valid cache entries
     cached_map = await repo.get_cached_matches_for_jobs(db, user_id, resume_version, job_ids)
 
+    from app.modules.resume.models import CandidateProfile
+    cand_profile = CandidateProfile.from_parsed_dict(resume.get("parsed") or {}, resume.get("raw_text", ""))
+    canonical_skills = cand_profile.get_all_demonstrated_skills()
+
     candidate = {
-        "skills": resume["parsed"].get("skills", []),
+        "skills": canonical_skills,
         "target_roles": profile.get("target_roles", []),
         "experience_years": profile.get("experience_years", 0),
         "preferred_locations": profile.get("preferred_locations", []),
@@ -133,6 +162,10 @@ async def get_or_compute_matches(
                 "url_type": job.get("url_type", "UNVERIFIED"),
                 "is_direct_apply": job.get("is_direct_apply", job.get("url_type") == "DIRECT_REQUISITION"),
                 "posted_at": job.get("posted_at"),
+                "quality_tier": job.get("quality_tier", "PRIMARY"),
+                "role_confidence": job.get("role_confidence"),
+                "contextual_requirements": job.get("contextual_requirements", []),
+                **_get_role_metadata(job),
                 **india_meta,
             })
         else:
@@ -196,17 +229,76 @@ async def get_or_compute_matches(
                 "url_type": job.get("url_type", "UNVERIFIED"),
                 "is_direct_apply": job.get("is_direct_apply", job.get("url_type") == "DIRECT_REQUISITION"),
                 "posted_at": job.get("posted_at"),
+                "quality_tier": job.get("quality_tier", "PRIMARY"),
+                "role_confidence": job.get("role_confidence"),
+                "contextual_requirements": job.get("contextual_requirements", []),
+                **_get_role_metadata(job),
                 **india_meta,
             })
 
         # 3. Cache newly computed matches
         await repo.save_cached_matches(db, user_id, resume_version, newly_computed_to_cache)
 
-    from app.modules.jobs.location_normalization import is_india_opportunity
-
-    def _is_india_entry(r: dict) -> bool:
-        return r.get("country") == "India" or is_india_opportunity(r.get("location"))
-
-    # Default ordering: India-first (0 for India, 1 for foreign), then recent, then match score
-    results.sort(key=lambda r: (0 if _is_india_entry(r) else 1, r.get("posted_days_ago", 0), -r.get("overall_score", 0)))
+    results.sort(key=_multi_factor_rank_key)
     return results
+
+
+def _is_india_entry(r: dict) -> bool:
+    from app.modules.jobs.location_normalization import is_india_opportunity
+    return r.get("country") == "India" or is_india_opportunity(r.get("location"))
+
+
+def _multi_factor_rank_key(r: dict):
+    """
+    Deterministic multi-factor opportunity ranking adhering to Phase 17 priorities:
+    1. Geography (India-first)
+    2. Eligibility (Eligible/Likely > Unknown/Check > Ineligible)
+    3. Canonical role relevance (Classified role > unclassified)
+    4. Freshness (posted_days_ago)
+    5. Valid direct application path trust (Direct requisition > other)
+    6. Source/employer trust (Direct ATS > fallback)
+    7. Information richness (PRIMARY tier > SECONDARY tier)
+    8. Candidate technical match score (-overall_score)
+    """
+    geo_rank = 0 if _is_india_entry(r) else 1
+    
+    # Eligibility rank
+    elig = r.get("eligibility")
+    elig_status = elig.get("status") if isinstance(elig, dict) else None
+    if elig_status in ("ELIGIBLE", "LIKELY_ELIGIBLE"):
+        elig_rank = 0
+    elif elig_status in ("OPPORTUNITY_NOT_SUFFICIENTLY_SPECIFIED", "UNKNOWN", None):
+        elig_rank = 1
+    else:
+        elig_rank = 2
+
+    # Role relevance: concrete canonical role prioritized over generic/unclassified
+    c_role = r.get("canonical_role")
+    role_rank = 0 if (c_role and c_role != "Specialized Requisition") else 1
+
+    # Freshness
+    freshness = int(r.get("posted_days_ago", 0))
+
+    # Direct application trust
+    direct_apply_rank = 0 if (r.get("is_direct_apply") or r.get("url_type") == "DIRECT_REQUISITION") else 1
+
+    # Source trust: direct ATS feeds
+    source_trust = 0 if r.get("source") in ("smartrecruiters", "lever", "greenhouse") else 1
+
+    # Information richness / quality tier
+    q_tier_rank = 0 if r.get("quality_tier") == "PRIMARY" else 1
+
+    # Technical match score (higher is better, so negated)
+    tech_match = -float(r.get("overall_score", 0.0))
+
+    return (
+        geo_rank,
+        elig_rank,
+        role_rank,
+        freshness,
+        direct_apply_rank,
+        source_trust,
+        q_tier_rank,
+        tech_match,
+    )
+

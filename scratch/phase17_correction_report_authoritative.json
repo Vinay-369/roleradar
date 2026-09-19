@@ -1,0 +1,1271 @@
+{
+  "authoritative_totals": {
+    "total_raw": 2968,
+    "total_active_india_ingested": 588,
+    "duplicates_removed": 1,
+    "unique_active_india": 587,
+    "full_time": 576,
+    "internships": 11,
+    "primary": 251,
+    "secondary": 335,
+    "rejected": 1
+  },
+  "provider_stats": {
+    "greenhouse": {
+      "raw": 467,
+      "norm": 467,
+      "dedup": 0,
+      "india": 63,
+      "active": 63,
+      "relevant": 63,
+      "valid_apply": 63,
+      "primary": 0,
+      "secondary": 63,
+      "rejected": 0,
+      "direct_apply": 63,
+      "internships": 0,
+      "roles": 17
+    },
+    "smartrecruiters": {
+      "raw": 2016,
+      "norm": 2016,
+      "dedup": 0,
+      "india": 296,
+      "active": 296,
+      "relevant": 296,
+      "valid_apply": 296,
+      "primary": 46,
+      "secondary": 250,
+      "rejected": 0,
+      "direct_apply": 296,
+      "internships": 5,
+      "roles": 35
+    },
+    "lever": {
+      "raw": 264,
+      "norm": 264,
+      "dedup": 0,
+      "india": 228,
+      "active": 228,
+      "relevant": 228,
+      "valid_apply": 228,
+      "primary": 205,
+      "secondary": 22,
+      "rejected": 1,
+      "direct_apply": 228,
+      "internships": 6,
+      "roles": 30
+    }
+  },
+  "role_matrix": {
+    "3D Artist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "AI Engineer": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 1,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "AI Researcher": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Academic Coordinator": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Account Manager": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 1,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Accountant": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Aerospace Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Analytics Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Architect": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Audit Associate": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Automotive Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "BI Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "BIM Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Backend Developer": {
+      "active_india": 13,
+      "relevant": 13,
+      "valid_apply": 13,
+      "primary": 11,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 13
+    },
+    "Biomedical Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Biostatistician": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Business Development Executive": {
+      "active_india": 7,
+      "relevant": 7,
+      "valid_apply": 7,
+      "primary": 2,
+      "secondary": 5,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 7
+    },
+    "Chemical Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Civil Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Clinical Research Associate": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Cloud Architect": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 0,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Cloud Engineer": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 0,
+      "secondary": 3,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Cloud Security Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Compliance Analyst": {
+      "active_india": 4,
+      "relevant": 4,
+      "valid_apply": 4,
+      "primary": 4,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 4
+    },
+    "Computer Vision Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Construction Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Content Creator": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Content Marketing Specialist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Contract Specialist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Copywriter": {
+      "active_india": 6,
+      "relevant": 6,
+      "valid_apply": 6,
+      "primary": 2,
+      "secondary": 4,
+      "rejected": 0,
+      "internships": 1,
+      "full_time": 5
+    },
+    "Creative Director": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 1,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Curriculum Developer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Customer Success Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Cybersecurity Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Data Analyst": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 3,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 5
+    },
+    "Data Engineer": {
+      "active_india": 4,
+      "relevant": 4,
+      "valid_apply": 4,
+      "primary": 1,
+      "secondary": 3,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 4
+    },
+    "Data Scientist": {
+      "active_india": 4,
+      "relevant": 4,
+      "valid_apply": 4,
+      "primary": 4,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 4
+    },
+    "Demand Planner": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "DevOps Engineer": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 2,
+      "secondary": 3,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 5
+    },
+    "Digital Marketing Specialist": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 1,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Electrical Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Electronics Engineer": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Embedded Software Engineer": {
+      "active_india": 7,
+      "relevant": 7,
+      "valid_apply": 7,
+      "primary": 0,
+      "secondary": 7,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 7
+    },
+    "Engineering Manager": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 0,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Event Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Financial Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Financial Controller": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Front Office Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Frontend Developer": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 5,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 5
+    },
+    "Full Stack Developer": {
+      "active_india": 4,
+      "relevant": 4,
+      "valid_apply": 4,
+      "primary": 3,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 4
+    },
+    "GRC Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Graphic Designer": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 4,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 1,
+      "full_time": 4
+    },
+    "HR Business Partner": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 0,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "HR Generalist": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 2,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 1,
+      "full_time": 2
+    },
+    "Healthcare Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Hotel Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Industrial Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Infrastructure Engineer": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 1,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Instructional Designer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Interior Designer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Inventory Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Investment Analyst": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 0,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Laboratory Scientist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Learning and Development Specialist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Legal Associate": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 1,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Machine Learning Engineer": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 1,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Maintenance Engineer": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 0,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Management Consultant": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 1,
+      "secondary": 4,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 5
+    },
+    "Manufacturing Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Mechanical Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Medical Coder": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Mobile Developer": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Motion Designer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "NLP Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Operations Analyst": {
+      "active_india": 5,
+      "relevant": 5,
+      "valid_apply": 5,
+      "primary": 3,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 5
+    },
+    "Penetration Tester": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Pharmaceutical Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Pharmacovigilance Specialist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Photographer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Platform Engineer": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 1,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Process Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Procurement Specialist": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Product Designer": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Product Manager": {
+      "active_india": 23,
+      "relevant": 23,
+      "valid_apply": 23,
+      "primary": 15,
+      "secondary": 8,
+      "rejected": 0,
+      "internships": 1,
+      "full_time": 22
+    },
+    "Product Owner": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 0,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Professor": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Program Manager": {
+      "active_india": 4,
+      "relevant": 4,
+      "valid_apply": 4,
+      "primary": 2,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 4
+    },
+    "Project Manager": {
+      "active_india": 6,
+      "relevant": 6,
+      "valid_apply": 6,
+      "primary": 2,
+      "secondary": 4,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 6
+    },
+    "QA / Test Engineer": {
+      "active_india": 11,
+      "relevant": 11,
+      "valid_apply": 11,
+      "primary": 1,
+      "secondary": 10,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 11
+    },
+    "Quality Engineer": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 0,
+      "secondary": 1,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Quantitative Analyst": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Quantity Surveyor": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Recruiter": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 2,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 2,
+      "full_time": 0
+    },
+    "Registered Nurse": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Regulatory Affairs Associate": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Research Scientist": {
+      "active_india": 31,
+      "relevant": 31,
+      "valid_apply": 31,
+      "primary": 15,
+      "secondary": 16,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 31
+    },
+    "Restaurant Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Risk Analyst": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 3,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Risk Consultant": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "Robotics Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "SEO Specialist": {
+      "active_india": 1,
+      "relevant": 1,
+      "valid_apply": 1,
+      "primary": 1,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 1
+    },
+    "SOC Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Sales Executive": {
+      "active_india": 8,
+      "relevant": 8,
+      "valid_apply": 8,
+      "primary": 4,
+      "secondary": 4,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 8
+    },
+    "Security Consultant": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Security Engineer": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 0,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Site Reliability Engineer": {
+      "active_india": 3,
+      "relevant": 3,
+      "valid_apply": 3,
+      "primary": 1,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 3
+    },
+    "Social Media Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Software Engineer": {
+      "active_india": 13,
+      "relevant": 13,
+      "valid_apply": 13,
+      "primary": 1,
+      "secondary": 12,
+      "rejected": 0,
+      "internships": 1,
+      "full_time": 12
+    },
+    "Solutions Architect": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Supply Chain Analyst": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Systems Engineer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Teacher": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Technical Product Manager": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Technology Consultant": {
+      "active_india": 2,
+      "relevant": 2,
+      "valid_apply": 2,
+      "primary": 0,
+      "secondary": 2,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 2
+    },
+    "Travel Consultant": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "UI Designer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "UX Designer": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "UX Researcher": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Video Editor": {
+      "active_india": 0,
+      "relevant": 0,
+      "valid_apply": 0,
+      "primary": 0,
+      "secondary": 0,
+      "rejected": 0,
+      "internships": 0,
+      "full_time": 0
+    },
+    "Specialized Requisition": {
+      "active_india": 359,
+      "relevant": 359,
+      "valid_apply": 359,
+      "primary": 144,
+      "secondary": 214,
+      "rejected": 1,
+      "internships": 4,
+      "full_time": 355
+    }
+  },
+  "specialized_audit": {
+    "total_original": 383,
+    "genuinely_specialized_category_a": 321,
+    "ambiguous_category_c": 38,
+    "preserved_as_specialized": 359,
+    "remapped_category_b": 21,
+    "remapped_category_d": 3,
+    "total_remapped": 24
+  }
+}

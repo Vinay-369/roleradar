@@ -69,12 +69,14 @@ async def get_ats_score(
 
         final_text = tailored_version["final_text"]
         parsed = structure_resume_text(final_text)
+        from app.modules.resume.models import CandidateProfile
+        tailored_profile = CandidateProfile.from_parsed_dict(parsed, final_text)
         pa = analyze_parseability(final_text, blocks=[], file_type="docx", has_tables=False)
         combined_bullets = parsed.get("experience_raw", []) + parsed.get("projects_raw", [])
         ri = analyze_recruiter_impact(combined_bullets)
 
         tailored_candidate = {
-            "skills": parsed.get("skills", []),
+            "skills": tailored_profile.get_all_demonstrated_skills(),
             "target_roles": profile.get("target_roles", []),
             "experience_years": profile.get("experience_years", 0),
             "preferred_locations": profile.get("preferred_locations", []),

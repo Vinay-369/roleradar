@@ -67,6 +67,31 @@ ALIAS_MAP: dict[str, str] = {
     "ddd": "Domain-Driven Design",
     "rdbms": "Relational Databases",
     "nosql": "NoSQL",
+    "py": "Python",
+    "fast api": "FastAPI",
+    "elastic": "Elasticsearch",
+    "dsa": "Data Structures",
+    "vue.js": "Vue",
+    "react.js": "React",
+    "angular.js": "Angular",
+    "ios sdk": "iOS SDK",
+    "cocoa touch": "Cocoa Touch",
+    "uikit": "UIKit",
+    "dependency injection": "Dependency Injection",
+    "mvvm": "MVVM",
+    "mvc": "MVC",
+    "viper": "VIPER",
+    "figma": "Figma",
+    "sketch": "Sketch",
+    "apache spark": "Spark",
+    "pyspark": "Spark",
+    "apache kafka": "Kafka",
+    "objective-c": "Objective-C",
+    "objective c": "Objective-C",
+    "objc": "Objective-C",
+    "obj-c": "Objective-C",
+    "restful apis": "REST APIs",
+    "restful api": "REST APIs",
 }
 
 # 650+ Curated Industry Skills Lexicon
@@ -109,7 +134,7 @@ KNOWN_SKILLS: list[str] = [
     # DevOps, Containers & CI/CD
     "Docker", "Kubernetes", "Docker Compose", "Terraform", "OpenTofu", "Ansible", "Puppet", "Chef",
     "Helm", "ArgoCD", "GitHub Actions", "GitLab CI/CD", "Jenkins", "CircleCI", "Travis CI", "Bitbucket Pipelines",
-    "Nginx", "Apache HTTP Server", "Traefik", "Envoy Proxy", "Istio", "Linux Administration", "Unix",
+    "Nginx", "Apache HTTP Server", "Traefik", "Envoy Proxy", "Istio", "Linux", "Linux Administration", "Unix",
 
     # Observability & Monitoring
     "Prometheus", "Grafana", "Datadog", "New Relic", "Splunk", "ELK Stack", "OpenTelemetry", "Jaeger",
@@ -124,7 +149,8 @@ KNOWN_SKILLS: list[str] = [
     "ONNX", "MLflow", "Ray", "Weights & Biases", "Prompt Engineering", "Fine-Tuning", "Reinforcement Learning",
 
     # Mobile Development
-    "React Native", "Flutter", "Android Development", "iOS Development", "SwiftUI", "Jetpack Compose",
+    "React Native", "Flutter", "Android Development", "iOS Development", "iOS SDK", "Cocoa Touch", "UIKit",
+    "Core Data", "Android SDK", "SwiftUI", "Jetpack Compose",
     "Expo", "Cordova", "Ionic", "Objective-C", "Mobile UI Design",
 
     # Testing & QA
@@ -141,9 +167,11 @@ KNOWN_SKILLS: list[str] = [
     "Agile Methodologies", "Scrum", "Kanban", "Jira", "Confluence", "Git", "GitHub", "GitLab", "Bitbucket",
     "System Design", "Distributed Systems", "High Availability", "Fault Tolerance", "Scalability",
     "SOLID Principles", "Object-Oriented Programming", "Functional Programming", "Design Patterns",
+    "Dependency Injection", "MVVM", "MVC", "VIPER",
     "Data Structures", "Algorithms", "Code Review", "Technical Documentation",
 
-    # Product & MarTech
+    # Design, Product & MarTech
+    "Figma", "Sketch", "Adobe XD",
     "Marketing Automation", "MarTech", "HubSpot", "Salesforce", "Google Analytics", "Mixpanel", "Amplitude",
     "SEO", "A/B Testing", "Product Management", "Growth Hacking",
 ]
@@ -180,15 +208,41 @@ def extract_skills_from_text(text: str) -> list[str]:
     if not text or not text.strip():
         return []
 
+    # Ensure trailing punctuation attached to words at clause/sentence boundaries
+    # does not prevent single-letter or hyphenated tokens (e.g. "Objective-C.") from matching
+    clean_input = re.sub(r"(?<=[a-zA-Z0-9])([.,;:])(?=\s|$)", r" \1", text)
+
     nlp, matcher = _get_nlp_matcher()
-    doc = nlp(text)
-    matches = matcher(doc)
+    doc = nlp(clean_input)
+    matches = matcher(doc, as_spans=True)
+    from spacy.util import filter_spans
+    filtered_spans = filter_spans(matches)
 
     found_skills: set[str] = set()
 
-    for match_id, start, end in matches:
-        span_text = doc[start:end].text.strip()
+    for span in filtered_spans:
+        span_text = span.text.strip()
         span_lower = span_text.lower()
+
+        # Disambiguate polysemous common English words from technical frameworks
+        if span_lower == "spark":
+            char_start = span.start_char
+            char_end = span.end_char
+            win_start = max(0, char_start - 30)
+            win_end = min(len(text), char_end + 35)
+            window = text[win_start:win_end].lower()
+
+            is_idiom = bool(re.search(
+                r"\b(?:a\s+)?spark\s+of\s+(?:inspiration|creativity|genius|curiosity|hope|joy|passion|entrepreneurship|life|light|imagination)\b"
+                r"|\b(?:to|will|can|must)\s+spark\b"
+                r"|\bspark(?:ed|ing|s)?\s+(?:an?\s+)?(?:interest|change|innovation|growth|conversation|debate|discussion|revolution|joy)\b"
+                r"|\bbright\s+spark\b",
+                window,
+                re.IGNORECASE
+            ))
+            if is_idiom:
+                if not re.search(r"\bapache\s+spark\b|\bpyspark\b|\bspark\s+(?:sql|streaming|core|dataframe|rdd)\b", window, re.IGNORECASE):
+                    continue
 
         if span_lower in ALIAS_MAP:
             found_skills.add(ALIAS_MAP[span_lower])
@@ -218,3 +272,26 @@ def extract_skills_from_text(text: str) -> list[str]:
 
     # Return sorted list for deterministic results
     return sorted(found_skills)
+
+
+_KNOWN_SKILLS_LOWER: dict[str, str] = {s.lower(): s for s in KNOWN_SKILLS}
+
+
+def canonicalize_skill_name(skill: str) -> str:
+    """
+    Authoritative single-skill canonicalization helper.
+    Resolves aliases (e.g. 'mongo' -> 'MongoDB', 'node' -> 'Node.js', 'k8s' -> 'Kubernetes')
+    and case-folds against the curated KNOWN_SKILLS lexicon (e.g. 'python' -> 'Python').
+    Preserves clean original formatting for recognized custom technologies.
+    """
+    if not skill or not isinstance(skill, str):
+        return ""
+    s_clean = skill.strip()
+    if not s_clean:
+        return ""
+    s_lower = s_clean.lower()
+    if s_lower in ALIAS_MAP:
+        return ALIAS_MAP[s_lower]
+    if s_lower in _KNOWN_SKILLS_LOWER:
+        return _KNOWN_SKILLS_LOWER[s_lower]
+    return s_clean

@@ -1,0 +1,3066 @@
+[
+  {
+    "id": "gh_postman_7802294003",
+    "title": "Enterprise Account Executive",
+    "company": "Postman",
+    "category": "B",
+    "target_role": "Sales Executive",
+    "evidence": "Account Executive is industry standard for B2B Sales Executive"
+  },
+  {
+    "id": "gh_inmobi_8028270",
+    "title": "Account Strategist - Microsoft Ads",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_7974670",
+    "title": "Director - Global Revenue Operations",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_7552166",
+    "title": "Director\u2013 Strategic M&A & Value Realisation",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_7907814",
+    "title": "Global Lead \u2013 Compliance (Workspace & Facilities)",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_8047056",
+    "title": "Interactive Art Director",
+    "company": "InMobi ",
+    "category": "B",
+    "target_role": "Creative Director",
+    "evidence": "Art Director is canonical Creative Director / Design Director"
+  },
+  {
+    "id": "gh_inmobi_8045834",
+    "title": "Lead - Account Management - Search Ads",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8028397",
+    "title": "Lead Account Strategist - Microsoft Ads",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8074230",
+    "title": "Lead - Affiliate Manager",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8029937",
+    "title": "Lead - Revenue Operations",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_8076351",
+    "title": "Manager - Advertising Platform Strategy",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_7116456",
+    "title": "Manager- Application Security",
+    "company": "InMobi ",
+    "category": "D",
+    "target_role": "Security Engineer",
+    "evidence": "Title explicitly specifies Application Security; blocked by delimiter 'Manager- Application Security'"
+  },
+  {
+    "id": "gh_inmobi_8081250",
+    "title": "Manager - Brand Sales Planning (Presales )",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8053369",
+    "title": "Manager - Deal desk, Global Revenue Services",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_8095849",
+    "title": "Manager - Executive Assistant",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8158585",
+    "title": "Manager - Strategy & Operations",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8069331",
+    "title": "Senior Publisher Partnerships Manager",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_7995193",
+    "title": "Sr associate - Deal desk, Global Revenue Services",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_inmobi_6703420",
+    "title": "Staff Applied Scientist I",
+    "company": "InMobi ",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_inmobi_8019835",
+    "title": "Staff Engineer 1 \u2013 Salesforce AI",
+    "company": "InMobi ",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "gh_inmobi_7493120",
+    "title": "Staff Engineer I",
+    "company": "InMobi ",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "gh_groww_4880153101",
+    "title": "Associate - Content (Digest)",
+    "company": "Groww",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_groww_4728765101",
+    "title": "Manager - Controllership (NBFC)",
+    "company": "Groww",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_groww_4714065101",
+    "title": "Portfolio Specialist - Wealth",
+    "company": "Groww",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "gh_groww_4714061101",
+    "title": "Product Research Specialist (W from Groww)",
+    "company": "Groww",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_figma_5615966004",
+    "title": "Enterprise Solutions Consultant (Bengaluru, India)",
+    "company": "Figma",
+    "category": "B",
+    "target_role": "Technology Consultant",
+    "evidence": "Enterprise Solutions Consultant is canonical Technology Consultant"
+  },
+  {
+    "id": "gh_airbnb_8009372",
+    "title": "Lead - Advanced Analytics, Gurgaon",
+    "company": "Airbnb",
+    "category": "B",
+    "target_role": "Data Analyst",
+    "evidence": "Advanced Analytics lead is canonical Data Analyst / Advanced Data Analytics"
+  },
+  {
+    "id": "gh_airbnb_8146630",
+    "title": "Market Manager",
+    "company": "Airbnb",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_airbnb_8041080",
+    "title": "Office Manager, Gurugram",
+    "company": "Airbnb",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "gh_airbnb_8053132",
+    "title": "Senior Business Solutions Engineer, BizTech(LegalTech)",
+    "company": "Airbnb",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_airbnb_8154477",
+    "title": "Senior Software Engineer(AI/ML), Trust",
+    "company": "Airbnb",
+    "category": "B",
+    "target_role": "Machine Learning Engineer",
+    "evidence": "Title explicitly specifies Software Engineer(AI/ML) working on machine learning models"
+  },
+  {
+    "id": "gh_airbnb_8090493",
+    "title": "Supervisor, Community Support",
+    "company": "Airbnb",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "gh_airbnb_8015149",
+    "title": "Supervisor, Hosting",
+    "company": "Airbnb",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "gh_airbnb_8102684",
+    "title": "Tech Lead Manager, Oracle ERP",
+    "company": "Airbnb",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "gh_airbnb_8074145",
+    "title": "WFM Analyst",
+    "company": "Airbnb",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147425379",
+    "title": "IN_RBIN_Manager_Manufacturing Operations Group Head_NaP/MFN1",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147416769",
+    "title": "AMS_Senior Associate_Ban",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147414108",
+    "title": "SAP Basis Senior Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147231109",
+    "title": "IN_RBAI_Senior Engineer/Asst. Manager_Complaint Management_IN",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147200234",
+    "title": "ECT3_EmbTesting_3to6yrs_Bang",
+    "company": "Bosch Group",
+    "category": "B",
+    "target_role": "QA / Test Engineer",
+    "evidence": "ECT3_EmbTesting represents Embedded Software Testing QA role"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147194179",
+    "title": "IN_RBIN_Senior Engineer/Assistant Manager_TEF1 Process engineer_NaP/TEF12",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147165275",
+    "title": "Subject Matter Expert - Magnet Localization Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147163098",
+    "title": "Tech Lead \u2013 MASTRO",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147158801",
+    "title": "Dot Net Software Developer for CAD Systems",
+    "company": "Bosch Group",
+    "category": "B",
+    "target_role": "Software Engineer",
+    "evidence": "Title explicitly specifies .NET Software Developer"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147157679",
+    "title": "SO_Service Delivery Manager-Platform",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147154689",
+    "title": "ServiceNow Platform & ITSM Developer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147150855",
+    "title": "IN_RBIN_Sr.Manager - Power Tools_Key User Management",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147148309",
+    "title": "Senior Operations Lead -  Financial Reporting",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147147318",
+    "title": "Senior SharePoint Administrator (Lead)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147147118",
+    "title": "Advanced C++ Senior Developer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000147145179",
+    "title": "DGM - Talent Acquisition and Talent Attraction",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146987084",
+    "title": "Sr.Data Engineering",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146935448",
+    "title": "2026_Java_Eclipse Development_COB",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146934199",
+    "title": "IT Planning & Enablement Leader - SDS",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146904439",
+    "title": "Consulting and Advisory Lead - Data & AI",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146890228",
+    "title": "Selenium C# Automation Test Engineer_L91",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146889439",
+    "title": "Integration Consultant A2A and B2B - SAP/ Axway",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146889419",
+    "title": "MS SQL Senior DBA",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146885899",
+    "title": "SW developer :Java",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146882149",
+    "title": "eAxle system validation engineering_EE",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146789028",
+    "title": "Apriso MES Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146788598",
+    "title": "MES Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146788268",
+    "title": "Azure Infra Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146787968",
+    "title": "Senior Software Engineer \u2013 Industrial IoT & Edge Systems",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146787598",
+    "title": "Adobe Commerce Technical Lead",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146787328",
+    "title": "SAP Project Manager",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146709011",
+    "title": "SAP C4C Technical Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146710840",
+    "title": "Application Specialist (Dotnet) with Cloud and AI experience",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146684279",
+    "title": "EWM Functional Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146680619",
+    "title": "Researcher: AI/ML enhanced Computational Engineering for Scientific AI and Optimization",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146671239",
+    "title": "IN_BD_SW_Software Architect",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146664409",
+    "title": "SAP S/4 HANA - M2S (Manufacture to Stock) Functional Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146659390",
+    "title": "SAP- BW on HANA Support and Maintenance Specialist",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146662959",
+    "title": "S4 HANA Service Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146648759",
+    "title": "Sr. Functional Specialist_SAP SD",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146640025",
+    "title": "2026_CICD_DevOps_Engineer_ProCon_SLA_LGP3",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146638060",
+    "title": "Conga CPQ Solution Architect",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146629618",
+    "title": "Software Factory Architect (Lead Developer) \u2013 Vehicle Motion (VM)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146620387",
+    "title": "Deputy IT Product Owner -SAP EWM",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146621074",
+    "title": "Deputy IT Product Owner (SAP O2C)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146615199",
+    "title": "SAP S/4 HANA - P2F functional Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146614575",
+    "title": "AWS serverless web based Developer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146544979",
+    "title": "Territory Sales Manager (Pro Channel) - Salt Lake City, UT - Diablo Tools",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146525898",
+    "title": "Software System Designer for ESC control unit of Pneumatic Braking",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146497831",
+    "title": "EWM Technical consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146492279",
+    "title": "AMS_Senior Associate_Cob",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146448798",
+    "title": "Technical Project Manager for Comfort Actuator Product",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146447129",
+    "title": "SME - Project Management Office",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146436433",
+    "title": "2026/03: HW Developer (PS-SB Projects)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146430778",
+    "title": "BGSW_SAP_EWM_Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146412449",
+    "title": "SAP Test Automation Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146402624",
+    "title": "Global Category Buyer - Assistant Manager/ Deputy manager",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146395868",
+    "title": "BGSW_2026_IT_Manager_SDM",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146394350",
+    "title": "Assistant Manager/Senior Engineer -Front Line Manager, NHA Assembly_JaP/MFH-M1",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146393239",
+    "title": "ServiceNow Service Portal Developer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146390410",
+    "title": "Autosar Architect (Classic + Adaptive) - AS",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146390249",
+    "title": "IN_RBAI_Process_Planner_IN",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146195539",
+    "title": "Automotive Aftermarket Diagnostic Specialist",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146195629",
+    "title": "Automotive Systems Diagnostic and troubleshooting Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146168329",
+    "title": "eAxle System Architect - Deputy Manager",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146167859",
+    "title": "IN_RBIN_Senior Engineer/Assistant Manager_Fire Safety Officer_NaP/HSE",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146162469",
+    "title": "SAP PS Consultant for Application support and Maintenance",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146161909",
+    "title": "Senior Cybersecurity Incident Response Expert",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146144792",
+    "title": "IN_RBIC_PLC & Industry automation engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146126548",
+    "title": "Cybersecurity development",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000146001769",
+    "title": "Automotive Aftermarket Diagnostic Developer (BAN & PUNE)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145996486",
+    "title": "Vehicle Diagnostic Content Author",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145931019",
+    "title": "AMS_Senior Associate_Pun",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145907468",
+    "title": "Radar Signal Processing System Engineering",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145892128",
+    "title": "Network Security Architect",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145731679",
+    "title": "SAP EWM Senior Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145717218",
+    "title": "Deputy IT Product Owner - SAP Production to Stock ( P2S)",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145711507",
+    "title": "UC Operations Engineer \u2013 MS Teams & Devices",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145712909",
+    "title": "SAP FI Consultant for Application support and Maintenance",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145706370",
+    "title": "Deputy Manager - Key User Manager - Large Users (Power Tools)",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145705685",
+    "title": "SAP HANA Security Consultant",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145705559",
+    "title": "SAP Business Analytics Support Consultant - SAP BW, SAC and Power BI",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145689689",
+    "title": "SAP Business Analytics Support Consultant - SAC and Power BI",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145687121",
+    "title": "ITS_Associate",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145667999",
+    "title": "IN_RBIN_Deputy Manager/Assistant Manager_Process Expert (Grinding Technology)_JaP/TEF",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145660758",
+    "title": "iGPM & BD PLW Consultant for Application support and Maintenance",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145658310",
+    "title": "IN_Bosch Rexroth India_Assistant Manager_Outbound Logistics",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145576818",
+    "title": "Web Application Developer with AI_EAB4    _ EAB4",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145474689",
+    "title": "IN_RBIN_Assistant Manager/Senior Engineer_Process Planner_NaP/MFC22",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145463918",
+    "title": "Sr MATLAB ASW Developer / Architect-EDC3",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145444519",
+    "title": "Model-Based Design (MBD) Engineer_ECT",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145242979",
+    "title": "IN_RBAI_SMT Process Engineer_IN",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145239449",
+    "title": "Software Tool developer_ECT",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145224717",
+    "title": "Senior Customer Custodian - Quality Management Customer  - Deputy Manager",
+    "company": "Bosch Group",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145203324",
+    "title": "Sr. ABAP resource",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145199621",
+    "title": "SO_Cloud_Devops_Engineer_SME_2026",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145195749",
+    "title": "AMS_Associate_Ban",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145189729",
+    "title": "Bosch Production System or Lean Coordinator",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_boschgroup_744000145185264",
+    "title": "MES Application Engineer",
+    "company": "Bosch Group",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000147413130",
+    "title": "Staff Engineer, VLSI Design Engineering",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000146887059",
+    "title": "Senior Product Development Engineer (Semiconductor Device Physics, Semiconductor Fabrication flow and design with 3 to 5 years)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000146886900",
+    "title": "Staff Engineer, ASIC Development Engineering (Emulation, FPGA, Verification) with 8-12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000146391070",
+    "title": "Staff VLSI Design Engineer (Analog Design)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145946659",
+    "title": "Staff Product Validation Engineer",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145656560",
+    "title": "Staff ASIC Digital Engineer (FPGA Prototyping, Emulation, System-Level Debugging) with 8 to 12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145657469",
+    "title": "Staff, VLSI Design Engineering (Verification, NAND, Memory, System Verilog) with 8 to 12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145657419",
+    "title": "Staff ASIC Digital Engineer (SOC Verification, UVM) with 8 to 12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145656804",
+    "title": "Staff ASIC Model Engineer (C++, SystemC) with 8 to 12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145657349",
+    "title": "Senior Staff VLSI Design Engineer (SystemC, Functional Modeling, C++ , Verification)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145419400",
+    "title": "Senior Memory Systems Design Engineer ( FPGA DESIGN) 5-8 years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000145268781",
+    "title": "Staff ASIC Digital Engineer (SOC Verification, PCIe) with 8 to 12 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000144680259",
+    "title": "AI/ML ASIC Architect",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000143983799",
+    "title": "Senior Virtualization Engineer , 9+years, Bangalore",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000143235609",
+    "title": "ASIC Verification & Validation Engineer",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000143093969",
+    "title": "Manager, People Support \u2013 APAC Leader (10+ years of experience)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000143040249",
+    "title": "Staff Memory Systems Design Engineer",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000142056689",
+    "title": "Senior VLSI Design Engineer (IO Design, High Speed DDR)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000142056229",
+    "title": "ASIC Digital Engineer (SOC Validation) with 3 to 5 years of experience",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000142056089",
+    "title": "Senior ASIC Digital Engineer (ASIC SOC Validation with PCIe protocol experience) from 5 to 7 years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000141887784",
+    "title": "Associate Engineer, System Design Engineering ( FPGA Design  2-4 years)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000141888019",
+    "title": "Staff Engineer, Product Validation Engineering ( CPU / GPU / NPU ) Performance & Benchmarking , 9-13 years, Bangalore",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000141648749",
+    "title": "Staff Engineer, System Design Engineering ( NAND FLASH)  8 - 14 years, Bangalore",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000141145119",
+    "title": "Senior Packaging Engineer",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000139199914",
+    "title": "Associate Security Operations Analyst (Physical Security Systems with 2 to 4 years of experience)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000138982969",
+    "title": "Senior Real Estate Associate -( Real Estate Transactions Lead ) , APAC and EMEA (10 -12 years) , Bangalore",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000138981023",
+    "title": "Senior Windows Server Systems Engineer ( 3-6 years) , Bangalore",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137949529",
+    "title": "AI SW Validation Lead , Firmware Verification Engineering 14+years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137947719",
+    "title": "Senior Staff ASIC Digital Engineer ( SystemC / TLM, C++) 14+ years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137941470",
+    "title": "Senior ASIC Digital Engineer (SOC Design)  5-8 years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137944959",
+    "title": "Senior ASIC Digital Engineer \u2013 SoC Verification ( SystemVerilog /UVM)  5-8 Years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137940624",
+    "title": "AI Software Lead \u2013 PyTorch & CUDA Runtime (Next-Gen Accelerator) 10+ years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137940489",
+    "title": "AI SW Stack Deployment Architect (12+ years)",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000137841419",
+    "title": "Senior Network Engineer",
+    "company": "Sandisk",
+    "category": "D",
+    "target_role": "Cloud Engineer",
+    "evidence": "Title explicitly specifies Network Engineer; blocked by seniority prefix or missing exact alias"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000136727856",
+    "title": "Senior Firmware Verification Engineer (Python based scripting - PCIe Protocol Feature Validation) - 5-8 Years",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000132992189",
+    "title": "Functional Analyst - Genesys and OSC",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000132111229",
+    "title": "Staff Storage Engineer",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_sandisk_744000125769781",
+    "title": "Principal, Product Security Engineer HW/FW",
+    "company": "Sandisk",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_743999653866037",
+    "title": "MEAN Stack Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Full Stack Developer",
+    "evidence": "MEAN Stack (MongoDB, Express, Angular, Node) is canonical Full Stack development"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_743999653858855",
+    "title": "MS Office Design Analyst",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_115179000",
+    "title": "Team leader",
+    "company": "Blueberry Labs Private Limited",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_113701252",
+    "title": "PHP Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Backend Developer",
+    "evidence": "PHP server-side language is canonical Backend development"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_112980325",
+    "title": "Chief Technology Officer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_112967040",
+    "title": "Product Delivery  Manager/CTO",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_110839759",
+    "title": "Proof Reader",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_110839561",
+    "title": "Voice and Accent,Communications",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_110370154",
+    "title": "Copy - editor / Proof reader",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_107898226",
+    "title": "Node JS Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Backend Developer",
+    "evidence": "Node.js runtime server-side development is canonical Backend development"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_107898155",
+    "title": "Mango DB Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_107686112",
+    "title": "Content Quality control Specialist",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_107398588",
+    "title": "Angular.js Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_106954400",
+    "title": "Architect Business analyst",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_106954317",
+    "title": "Business analyst Keywords ( Team Lead)",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_106954291",
+    "title": "Keyword Analyst Manager",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_105552516",
+    "title": "Team Leader Operations",
+    "company": "Blueberry Labs Private Limited",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_105551932",
+    "title": "Business Development Team leader",
+    "company": "Blueberry Labs Private Limited",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_105551864",
+    "title": "Business Developer team head",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_105551817",
+    "title": "Operations Business development",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_105390009",
+    "title": "MBA/PGDM 1-4 Years EXP",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_99637314",
+    "title": "Business Development/ Sales Executive",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_98674166",
+    "title": "Content Editor",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95789296",
+    "title": "Content Editor for Successstory.com",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95727603",
+    "title": "Lead Back-end Developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95727549",
+    "title": "Software developer & software programmer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95727502",
+    "title": "IT delivery manager",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95727164",
+    "title": "Front-end developer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_95373546",
+    "title": "CTO",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_93071312",
+    "title": "Content Operations Assistant",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_92865199",
+    "title": "Copy Writer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_92438007",
+    "title": "HTML DEVELOPER",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_92204482",
+    "title": "SMM/DIGITAL MEDIA MARKETING EXECUTIVE",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_91895522",
+    "title": "Media Sales Manager",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_91846460",
+    "title": "Web Content Writer- Intern",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_91785356",
+    "title": "Media Sales Executive/ Add Sales",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_88290191",
+    "title": "CONTENT WRITER",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_85557483",
+    "title": "AWS-Php programmer",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_85441190",
+    "title": "Long Term Quality Content Writers Required",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_85437709",
+    "title": "Trainee Writers for Successstory.com",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_85437593",
+    "title": "Freelancer Writer for Successstroy.com",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_81151393",
+    "title": "Openings for UI Designers",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_81151370",
+    "title": "Openings for PHP Developer- Senior Level- Project Manager",
+    "company": "Blueberry Labs Private Limited",
+    "category": "B",
+    "target_role": "Backend Developer",
+    "evidence": "PHP server-side language is canonical Backend development"
+  },
+  {
+    "id": "smartrecruiters_blueberrylabsprivatelimited_78389318",
+    "title": "Urgent requirement for Graphic Designers (Fresher\u2019s)",
+    "company": "Blueberry Labs Private Limited",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000147413330",
+    "title": "Oracle Fusion Solution Architect",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000147153824",
+    "title": "Senior Executive- Finance",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000146675059",
+    "title": "Finance Controller -US Gaap",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000146639815",
+    "title": "Order Processing (OP) Technical Support",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000145740199",
+    "title": "Manager - Industrial Relations & HR",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000145724709",
+    "title": "Data Entry Officer",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000145718988",
+    "title": "Senior Product Development Executive",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000145717360",
+    "title": "Product Development Executive",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000145655966",
+    "title": "Regional Sales Manager  - Sheet North",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000144293217",
+    "title": "Asst. Manager - Welfare",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000144228659",
+    "title": "GPD Executive",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000143741489",
+    "title": "Territory Sales Manager, Reflectives - Tamil Nadu & Kerala",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000143077562",
+    "title": "Team Lead, GLS",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000141169450",
+    "title": "IT Business Analyst - Oracle Fusion SC Planning",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000140386031",
+    "title": "Finance Controller",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000138258230",
+    "title": "Key Account Manger - Rolls West",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000137383579",
+    "title": "Territory Sales Manager- Sheets",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000134598259",
+    "title": "Territory Sales Manager -Performance Tapes, South India",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000133503129",
+    "title": "Oracle HCM Techno Functional Analyst",
+    "company": "Avery Dennison",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_averydennison_744000132775832",
+    "title": "General Manager \u2013 Apparel Solutions India",
+    "company": "Avery Dennison",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "smartrecruiters_ubisoft2_744000146448279",
+    "title": "R&D Engineer (C++)",
+    "company": "Ubisoft",
+    "category": "B",
+    "target_role": "Software Engineer",
+    "evidence": "R&D Engineer in C++ for gaming engine is canonical systems Software Engineer"
+  },
+  {
+    "id": "smartrecruiters_ubisoft2_744000145416029",
+    "title": "R&D Engineer",
+    "company": "Ubisoft",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "smartrecruiters_ubisoft2_744000144520883",
+    "title": "Technical Architect",
+    "company": "Ubisoft",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_86665c39-2182-4d69-8b8c-33eac104ec2b",
+    "title": "Accounts Payable  Specialist - Mumbai",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_8182f4b5-4dcb-4d3d-87fc-93a0d8730d3d",
+    "title": "Accounts Payable Specialist",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_dbf7f79d-64f8-415f-b0d3-178a39a0b7e0",
+    "title": "Affiliate Marketing (Social PR)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_feb33510-9ea7-4b69-b69d-87a41f7c2c2c",
+    "title": "AM/Manager\u2013 Procurement (Admin, Real Estate & HR)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_0196d8f3-c3dd-40a0-b2d2-ef364c727733",
+    "title": "Area Collections Manager - Manager - Lending Collections",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_5a5868af-2997-499e-9d94-3950485343cc",
+    "title": "Assistant Manager/Deputy Manager - Non IT Procurement",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_20d54134-b6e5-4816-8da9-42e3a3ed8f57",
+    "title": "Associate - Motor Insurance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_0a05295a-5393-4c0d-bb0a-a0e7c97f1287",
+    "title": "Business Analyst- Paytm Ads",
+    "company": "Paytm",
+    "category": "B",
+    "target_role": "Data Analyst",
+    "evidence": "Business Analyst for Ads domain focusing on performance data and analytics"
+  },
+  {
+    "id": "lever_paytm_9afb1ec6-d38e-45ea-b906-7fc7c54ca6dd",
+    "title": "Business Finance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_837c89a3-3598-410c-a0a3-3af4927a42ed",
+    "title": "Business Finance (Lending)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_1a52f430-6881-40e3-84f2-7c2fb5e4c324",
+    "title": "Business Head - Equity",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_00765276-c16d-47cf-99d2-85c8c91ada3c",
+    "title": "Business Head - F&O",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_a39d765c-2623-4b9d-a1a4-7e62a56ec7e2",
+    "title": "Business Head \u2013 Mutual Funds & NFO",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_85666bed-f6cd-4454-9cad-5906ba185cbc",
+    "title": "Business Partnerships - Insurance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_19100ec9-9016-40d1-8ea0-6694a989bfae",
+    "title": "Buyer \u2013 Admin & HR Procurement",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_ff4be077-f801-4d2d-9ea9-4b062a5eb669",
+    "title": "Campaign Management - Sr. Manager - Ads",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_eb6549d8-0e20-4ca1-ac22-c1ca201ee7a0",
+    "title": "Campaign Operations Specialist (DV360) - Paytm",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_d8a35136-a41e-4593-ad67-a9a619de7133",
+    "title": "Category Management- DGM/ GM",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_1f3131e8-6d40-49d3-820e-13b0a5e99444",
+    "title": "Category Manager",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_26869a2d-534e-4aa8-922f-2020a6574cf1",
+    "title": "Client Onboarding Director",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_1bd21732-ce5b-4dc0-937f-c2a57e7007d2",
+    "title": "Client Onboarding Director , Inference and Agentic AI",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_938856de-8b1d-4444-a2d2-f8188cb205bf",
+    "title": "Client Onboarding Manager - Inference and Agentic AI",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_ea2de02e-b33d-44df-af5f-04867b4a59c6",
+    "title": "Collections Manager - Team Lead - Lending Collections",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_196ea019-2b72-4a1a-a976-a3edb2ca5e63",
+    "title": "Compensation & Benefit Specialist",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_8ea991c7-69ba-4e18-9d8f-10165b7586e6",
+    "title": "Consumer Investing Growth Manager - Algo + Partnership - Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_458bc9e2-61fc-411d-93c3-5f4cffcd614a",
+    "title": "Consumer Investing Growth Manager - Intraday & IPO - Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_db20324e-47cf-410a-99de-d1b3a1870f3d",
+    "title": "Consumer Investing Growth Manager - SIP/ETF - Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_0ac3f4a9-e5ff-4477-8e1d-6f3a00289238",
+    "title": "CRM Executive - Paytm Money - Noida",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_715e52dd-0a51-4ff7-be68-855112e56b99",
+    "title": "CST - Associate - Email CST",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_84ffd393-c82b-484c-9a88-9f9ddef1b720",
+    "title": "CST - Associate - Social CST",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_972d12ff-51a3-4196-a96f-62a9e38b7773",
+    "title": "CST - Executive - Paytm Travel (Flights)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_74ce5d90-26b5-41b5-81dc-2ba5b862da60",
+    "title": "CST - Executive/Associate - Paytm Travel (Flights)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_f2b44973-fe3f-46d3-84d7-8266308d949e",
+    "title": "Customer Loyality Manager",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_271d28ce-e61c-4216-b7d4-adddd79eefa6",
+    "title": "Customer Support Agent - Executive - Bill Payments CST",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_cca996fb-c2b7-46a7-8280-c793670aa81f",
+    "title": "Customer Support Associate",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_68813539-af3f-4a26-b61f-61b59d1abd6e",
+    "title": "Employee investigations/Forensics",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_2d4fc409-38b6-4bfc-acd7-81f532a6741c",
+    "title": "Enterprise Account Manager - D2C Brands",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_e5145511-6cbd-4168-a5ad-24bc925487db",
+    "title": "Enterprise GTM Lead, Inference and Agentic AI",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_157e96d2-d7dc-4c84-8b8b-55156466f73a",
+    "title": "Enterprise Risk Manager",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_825b704f-6933-4280-aa75-0f2095078077",
+    "title": "Field Sales - Team Lead - LRM_Mumbai",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_367260be-63cf-4799-92bf-2e68a03c1d2a",
+    "title": "Field Sales - Team Lead - LRM_Pune",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_5a817d1c-0cae-4d72-bac2-2daf6c296a02",
+    "title": "Finance Controls & Governance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_2190585e-f736-4b55-a90c-32a476ac97bc",
+    "title": "Finance Payroll Specialist",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3ba275a6-47e6-4cf6-906a-bfc5052bba69",
+    "title": "GM - IT Audit",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_f3af0e48-ad1e-4bee-bd06-b84fbf45b116",
+    "title": "Govt. Ad Sales -Sr. Manager/DGM-Paytm Ads-Noida/Bangalore",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_861b9aba-b3d5-4c96-8ccb-7f711d3c0ab3",
+    "title": "Growth Affiliates-Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_4c6e737e-0e89-4e06-985f-e7cb6e9481c5",
+    "title": "Growth Management- DGM/ GM- Lending EMI",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_fa5befe1-43f5-417f-a1de-a989264e1871",
+    "title": "Growth Manager - Campaigns & Analytics",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_5f453bde-148d-4098-996e-25bb73fdbaa5",
+    "title": "Growth Manager - Postpaid",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3d396d95-cef6-4a5f-bd07-8b21944533a0",
+    "title": "Growth Operations - Assistant Manager - Travel Business (Bus)",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_c63b74c3-8a95-4126-9464-a2cc1a54eb8a",
+    "title": "Growth Operations -Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3122e836-1e32-46bb-967e-93cc2fa28828",
+    "title": "Growth Operations- Team Lead - User growth",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_0c74128d-b356-4743-8e1d-250bfc13d7ee",
+    "title": "Head of Channel Partnerships - Enterprise Sales (India & GCC Markets)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_d30bed61-c3d3-4c8b-a119-e4b3333d5d20",
+    "title": "Head of Go-To-Market (GTM) - Enterprise Sales",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_2e0d10a7-a185-4f02-8f89-792900c0d592",
+    "title": "HR Payroll-Intern",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_eea11d47-b37b-444f-aed9-ffc972e4c321",
+    "title": "Intern - Admin and Operations",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3f86f13d-14a1-42b6-a36f-b238325c7ff8",
+    "title": "IT Procurement",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_324abad0-0cfa-44bc-bef3-210150b50239",
+    "title": "IT Procurement (Europe/EMEA Market)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_60e0c08c-a1b4-4d12-b0b4-2d9ed94ff79c",
+    "title": "Lead - Offline Partnerships & Cross-Sell",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_2cf26fd0-439d-4425-8d30-e1ff5d7380bf",
+    "title": "Lead-Affiliate Marketing",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_15e212a2-592d-4ded-a79e-8e831dff9b73",
+    "title": "Legal Contracts",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_7fb9f365-2a5e-451b-9d3b-7c12156ba3d8",
+    "title": "Manager/SM\u2013 Procurement (Admin, HR & Insurance)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_e497bfd9-bce5-4b50-aad9-e9687022e1fd",
+    "title": "MySQL - Senior Lead Database Engineer",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_29e9e3b7-9fc2-450a-a13f-1735b3711475",
+    "title": "National Collection Manager- Delhi",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_798f4ae5-4ef7-4073-9bcc-9aa1b3abf835",
+    "title": "Performance Marketing Manager",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_ab329615-2830-468d-a97b-64f014508953",
+    "title": "PPSL - CLM & Growth Management - Associate Vice President - P4B",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_5d6ad294-c8ac-49b6-9142-e7d67cb6af8a",
+    "title": "PPSL - Growth Management - Associate Vice President - P4B",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_37613994-400b-466d-8cc8-55a3b92d6b57",
+    "title": "PPSL- Product Management- Devices",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_e825fb5a-2ede-43ab-84dd-90e00dd9e954",
+    "title": "Pre Sales - AI Solution Architect",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_e20a86ce-bf62-4fac-9d63-24364f69bd43",
+    "title": "Presales Manager - Inference & Agentic AI",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_8db4296d-0864-4d33-857a-41aa03759d24",
+    "title": "Process Trainer - Lending - Manager - Mumbai",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_edb4eabe-f52e-454b-84fd-3bd7468be17e",
+    "title": "Process Trainer - Manager - Lending (West)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_5648edd6-b73b-4156-96f5-343f4d851610",
+    "title": "Product Management - Intern - Telco.",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_00b98697-9b57-442e-9778-fe159769d1ee",
+    "title": "Product Management - Manager- Paytm Insurance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_afab6a29-2a98-4f63-8b45-f4b0aaefc1b4",
+    "title": "Product Management - Manager/ Sr. Manager- Paytm Insurance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3db438be-5917-4f31-96ca-f8e26f0ff5bc",
+    "title": "Product Management - Product Growth Manager - Agent",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_5e3ae6dd-e4a3-4cfc-acb7-ae8b9d030cc1",
+    "title": "Product Management- Paytm Insurance I Exp- 6-8 Years",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_a8a0e9eb-2838-466e-a60f-19f3cff63541",
+    "title": "Product Ops \u2013 LMS (Assistant Manager)",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_5349a015-04af-4ddc-b504-51c1bdd2d805",
+    "title": "Program Management - Deputy General Manager - EDC",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_68a63dac-abc8-467f-8aaf-2a7b6ad11c07",
+    "title": "Program Management - Deputy General Manager - Lending EMI",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_041dc595-2d0b-45d7-9729-f0ac7c0e1764",
+    "title": "Program Management \u2013 Lending(Sales Planning & Distribution Strategy)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_b1ea493d-fc83-4684-920c-6dd8be6f1492",
+    "title": "Reconciliation Specialist",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_0c8e02de-6720-4e2c-9742-aa4f35ec8327",
+    "title": "Relationship Manager - HNI Customers - Paytm Money Ltd",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_77434aa9-51b5-49ac-b8a8-bf27add66336",
+    "title": "Risk Management - Broking",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_ec75c97a-0e6e-4cc5-869e-09deef1d6521",
+    "title": "Sales Excellence(Strategy & Ops) - Paytm - Delhi/NCR",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_e98faea3-26b4-4585-b0bb-7031dff221a0",
+    "title": "Sales/ BD - Team Lead - Paytm (Pi Commerce)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_0a418b0f-6d2f-486f-bbf3-155f09e1fce3",
+    "title": "Sales/BD Executive - Paytm (Pi Commerce)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_021ee805-1a37-48a6-9a01-3e129ae03c3a",
+    "title": "Sales/Services Associate - Health Insurance",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_3c041104-b2e8-4568-9f5e-cc039f24ebac",
+    "title": "Senior Akamai Engineer",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_5a4d9ea3-feea-405d-b36e-ae8def1a9e06",
+    "title": "Senior Manager-ERM - Paytm Money",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_46bad05c-9c01-43e5-9056-a46ae4d24b27",
+    "title": "Senior Network Engineer",
+    "company": "Paytm",
+    "category": "D",
+    "target_role": "Cloud Engineer",
+    "evidence": "Title explicitly specifies Network Engineer; blocked by seniority prefix or missing exact alias"
+  },
+  {
+    "id": "lever_paytm_11bf5c25-3c9c-451f-8844-4f6d9b5817da",
+    "title": "Sr. Executive / Assistant Manager \u2013 IT Procurement",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_d57f6e10-2da4-4072-806c-ca66c1966afb",
+    "title": "TA Enabling- Team Lead",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_3d3ee995-ba39-4d3a-95fd-ef391b7f3b58",
+    "title": "Taxation",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_51f3a9e9-1534-4bd6-8aff-52f134e18ae6",
+    "title": "Team Lead - Lending Sales (LRM) - Jaipur",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_cedbe7de-4a9d-4dad-b6fc-a0e7efefd13a",
+    "title": "Team Leader",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_eaf9d5d9-87ae-4f27-a17d-1b70fe5f403d",
+    "title": "Team Leader - LRM -  Bengaluru",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_cbece8b7-5505-4904-b079-166f18346c88",
+    "title": "Team Leader - LRM -  Chennai",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_c6dc7432-0a77-44db-aa77-83f4ffab1626",
+    "title": "Team Leader - LRM - Gurgaon",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_5607f65c-97d3-444b-ae76-71c4cc4ece1b",
+    "title": "Team Leader - LRM - Hyderabad",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_f39af236-8df5-42f7-9401-53b5a1cc9775",
+    "title": "Team Leader - LRM - Jaipur",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_099f54ff-f447-4bb2-9a9b-7a5f0efbbe82",
+    "title": "Team Leader - LRM - Mumbai",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_8d9bb9c3-cd95-4c97-b4b3-f68f2da10946",
+    "title": "Team Leader-LRM- Chennai",
+    "company": "Paytm",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_paytm_81b25ade-e9f2-486a-a66a-c89279096773",
+    "title": "Telco Sales Manager - LATAM Markets (Spanish Fluent)",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_c9a4ea2d-cf69-467e-9d5b-72685c74097d",
+    "title": "Telco Sales MENA Markets",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_803d8956-72ed-4f3e-aedb-44b59c78b775",
+    "title": "Telco Sales: Africa Markets",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_552ba2c8-ffb8-4342-8d8c-ca1903800a68",
+    "title": "Tele caller - Associate",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_0ad9b153-778e-4ce2-ba6e-6991f8019a28",
+    "title": "Treasury",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_paytm_2693cac4-ad24-4693-894b-93592bf45539",
+    "title": "Vendor Onboarding Helpdesk",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_7511f330-2aa0-4b02-8a92-3f85d8d20882",
+    "title": "Vigilance - Forensics/Ethics",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_346c2575-bfe4-4726-8763-ad24c700ff1c",
+    "title": "VOC Research Executive",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_36a28b5e-2535-4714-9431-ae90d66fe171",
+    "title": "VOC Research Manager",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_dbad6009-061c-41da-a8f4-165982bf7b9e",
+    "title": "Voice Over Artist",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_paytm_a806b142-9770-4361-8e2f-4fe016bff604",
+    "title": "Web Graphic Designer",
+    "company": "Paytm",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_7d9af9b5-c1c7-48ec-bbb5-9b25e49f6596",
+    "title": "AM/ Manager - Risk & Decision Science",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_22c4a7a0-43be-439e-9473-2f8074b3e8d5",
+    "title": "Assistant Manager - Business Finance",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_5afe596f-17a2-4e8b-a498-ca46b2c7a869",
+    "title": "Assistant Manager - Ops",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_1f2462b8-3548-466e-908f-dcae91cfaee1",
+    "title": "Assistant Manager - Performance Marketing",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_3032374b-0010-4d19-8dd1-26c37c396cba",
+    "title": "Assistant Manager Finance \u2013 Logistics Intelligence",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_b7f20190-5e8c-4cbc-901a-44a05bfec9be",
+    "title": "Associate Director - Business Finance",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_meesho_1c610094-fbc4-42b0-b7f2-4b05c5569e9a",
+    "title": "Associate Director - Commerce Platform",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_meesho_5cc451b2-7bb1-44e0-8ae8-85faa50e4711",
+    "title": "Cluster Head  ( Security & Investigation)",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_78b65759-cd43-405e-b3a8-d84d99e30d54",
+    "title": "Cluster Head- Last mile - Kerala",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_meesho_3a60c7e0-bf65-4695-bddc-9f21e68d235d",
+    "title": "Deputy Manager - Business Finance",
+    "company": "Meesho",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_meesho_4974b35d-01a9-45b0-b181-f87d43d6d609",
+    "title": "Director- Business Finance",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_122c2edd-ea44-41fd-a06f-ecc79588f6c6",
+    "title": "GTM & Enterprise Sales Consultant \u2013 Meesho AI Services (MAS)",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_faa90cf7-c5d7-450c-aeeb-142c9954a5b1",
+    "title": "Head of Meesho Foundation",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_cb7c1852-78d9-437c-b9f5-e5653fa0f1b0",
+    "title": "Manager - HR COE",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_e640ec64-9e6b-482a-b21e-82261334bcd0",
+    "title": "Manager - User Experience : F&E",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_d6a0019f-60a6-4c58-9175-3a455f3b1d8c",
+    "title": "Manager HR \u2013 Learning & Development",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_dea44a88-b138-4ef0-87b0-ed8440b0a331",
+    "title": "Senior Business Development Manager (SBDM)",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_meesho_ae2aa625-4bd0-44f0-a43a-87fda957c009",
+    "title": "Senior Manager \u2013 Latent Last Mile",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_meesho_a84c770c-6f20-4093-99fa-5a7f2bad5837",
+    "title": "Senior Manager \u2013 Self Pickup : Last Mile",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_meesho_1690adaa-ec47-4246-a40e-995b859545f2",
+    "title": "Senior Talent Partner ( Non-Tech Hiring)",
+    "company": "Meesho",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_cred_fa6c100a-0fe0-4892-a8a3-8d2169d5005e",
+    "title": "area collections manager bangalore -flows",
+    "company": "Cred",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_cred_8b535f0b-1c68-4982-95b0-91f9edb5945e",
+    "title": "area collections manager hyderabad -flows",
+    "company": "Cred",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_cred_91a5f0f1-b11f-412a-a816-ffc8b08a5617",
+    "title": "area collections manager, pune (recoveries)",
+    "company": "Cred",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Domain-specific specialized role (semiconductor/manufacturing/finance/collections) with no matching canonical profile"
+  },
+  {
+    "id": "lever_cred_09022710-e79a-4cf0-8060-df0e1cd64263",
+    "title": "business development & partnerships",
+    "company": "Cred",
+    "category": "B",
+    "target_role": "Business Development Executive",
+    "evidence": "Business Development and Strategic Partnerships is canonical Business Development Executive"
+  },
+  {
+    "id": "lever_cred_a65bef0e-0f4c-40af-b662-9313f255189e",
+    "title": "business development & strategic partnerships - d2c",
+    "company": "Cred",
+    "category": "B",
+    "target_role": "Business Development Executive",
+    "evidence": "Business Development and Strategic Partnerships is canonical Business Development Executive"
+  },
+  {
+    "id": "lever_cred_5b8e2c1a-06eb-4127-914f-db56b3078158",
+    "title": "capital partnerships",
+    "company": "Cred",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  },
+  {
+    "id": "lever_cred_37f0a1b9-e5a1-45de-ada6-f8363bb877f6",
+    "title": "growth and business - max and wallet",
+    "company": "Cred",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_cred_aa501081-1787-4617-bfa9-9f4ecaf68f30",
+    "title": "lead \u2013 on deck payments",
+    "company": "Cred",
+    "category": "C",
+    "target_role": null,
+    "evidence": "Broad corporate title or level indicator without discriminative role domain keywords"
+  },
+  {
+    "id": "lever_cred_84aa0489-b7e1-4670-bfa9-7a9654197cc3",
+    "title": "long form content writer/editor",
+    "company": "Cred",
+    "category": "B",
+    "target_role": "Copywriter",
+    "evidence": "Content writing, copy editing, and proofreading are canonical Copywriter domain"
+  },
+  {
+    "id": "lever_cred_e7edcd33-9faa-4e2f-8a87-4a88719f94ec",
+    "title": "regional collection manager bangalore - flows",
+    "company": "Cred",
+    "category": "A",
+    "target_role": null,
+    "evidence": "Specialized requisition requiring distinct specialized domain expertise"
+  }
+]

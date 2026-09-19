@@ -41,6 +41,8 @@ TECH_ALIASES: dict[str, str] = {
     "docker": "docker",
 }
 
+from app.modules.jobs.skill_vocabulary import KNOWN_SKILLS, ALIAS_MAP, canonicalize_skill_name
+
 # Build comprehensive set of recognized technical tools and competencies
 ALL_TECH_TERMS: set[str] = set()
 for domain in DOMAIN_DEFINITIONS:
@@ -49,6 +51,11 @@ for domain in DOMAIN_DEFINITIONS:
 for alias, canon in TECH_ALIASES.items():
     ALL_TECH_TERMS.add(alias)
     ALL_TECH_TERMS.add(canon)
+for sk in KNOWN_SKILLS:
+    ALL_TECH_TERMS.add(sk.lower())
+for alias, canon in ALIAS_MAP.items():
+    ALL_TECH_TERMS.add(alias.lower())
+    ALL_TECH_TERMS.add(canon.lower())
 
 PROTECTED_SECTION_NAMES = {
     "EDUCATION",
@@ -67,8 +74,11 @@ _METRIC_CLAIM_RE = re.compile(
 
 
 def _canonicalize_skill(skill: str) -> str:
-    s = skill.strip().lower()
-    return TECH_ALIASES.get(s, s)
+    s = skill.strip()
+    canon = canonicalize_skill_name(s)
+    if canon:
+        return canon.lower()
+    return TECH_ALIASES.get(s.lower(), s.lower())
 
 
 def extract_technical_terms(text: str) -> set[str]:
@@ -889,7 +899,10 @@ def validate_tailored_profile_truth_guard(
         if clean_prop != clean_orig:
             # Bullet was rewritten -> Execute full Truth Guard checks
             # a. Technology Fabrication Check
-            verified_candidate_terms: list[str] = list(getattr(source_profile, "skills", []))
+            if hasattr(source_profile, "get_all_demonstrated_skills"):
+                verified_candidate_terms: list[str] = list(source_profile.get_all_demonstrated_skills(include_inferred=False))
+            else:
+                verified_candidate_terms: list[str] = list(getattr(source_profile, "skills", []))
             if getattr(source_profile, "summary", ""):
                 verified_candidate_terms.append(str(source_profile.summary))
             for exp in getattr(source_profile, "experience", []):

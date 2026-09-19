@@ -18,6 +18,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import html
 import logging
 import re
 from typing import Any
@@ -37,6 +38,7 @@ from app.modules.jobs.location_normalization import (
     is_india_opportunity,
 )
 from app.modules.jobs.skill_vocabulary import extract_skills_from_text
+from app.modules.jobs.compensation_extractor import extract_compensation_from_payload_and_text
 from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
 from app.modules.jobs.verification import OpportunityLifecycleStatus
 
@@ -56,18 +58,58 @@ class SmartRecruitersNetworkError(SmartRecruitersProviderError):
 
 
 def _clean_html_description(html_text: str | None) -> str:
-    """Strips basic HTML tags for plaintext preview while retaining text structure."""
+    """
+    Strips HTML tags, unescapes all character entities, transforms bullet/separator
+    artifacts (such as \u00d8 / 'Ø' / middle dot \u00b7 / replacement characters) into readable markdown bullets,
+    and cleanly partitions embedded subheadings.
+    """
     if not html_text:
         return ""
-    clean = re.sub(r"<[^>]+>", " ", html_text)
-    clean = re.sub(r"&nbsp;", " ", clean)
-    clean = re.sub(r"&amp;", "&", clean)
-    clean = re.sub(r"&lt;", "<", clean)
-    clean = re.sub(r"&gt;", ">", clean)
-    clean = re.sub(r"&quot;", '"', clean)
-    clean = re.sub(r"&#39;", "'", clean)
-    clean = re.sub(r"\s+", " ", clean).strip()
+    t = html.unescape(html_text)
+    # Insert newlines before common inline section headers when embedded in prose
+    t = re.sub(
+        r"(?<=[^\n])\s*(?=\b(?:(?:Tasks\s*(?:\/|&)\s*)?Responsibilities|Expected\s+skill\s*set|Expected\s+skills|Good\s+to\s+have|Nice\s+to\s+have|Key\s+Skills|Required\s+Skills|Qualifications|Requirements)\s*:)",
+        "\n\n",
+        t,
+        flags=re.I,
+    )
+    # Ensure colon after inline header is followed by newline/bullet
+    t = re.sub(
+        r"(\b(?:(?:Tasks\s*(?:\/|&)\s*)?Responsibilities|Expected\s+skill\s*set|Expected\s+skills|Good\s+to\s+have|Nice\s+to\s+have|Key\s+Skills|Required\s+Skills|Qualifications|Requirements)\s*:)\s*(?=[A-Za-z0-9])",
+        r"\1\n- ",
+        t,
+        flags=re.I,
+    )
+    # Convert bullet and separator artifacts (e.g. Ø, \ufffd, •, ·, \u00b7, \uf0b7, \uf0a7, \u25aa, \u25b6, \u25c6) into clean markdown bullets
+    t = re.sub(r"[\s\xa0]*[\u00d8\ufffd•·\u00b7\uf0b7\uf0a7\u25aa\u25b6\u25c6][\s\xa0]*", "\n- ", t)
+    # Convert HTML line breaks and list items to proper newlines
+    t = re.sub(r"<br\s*/?>", "\n", t, flags=re.I)
+    t = re.sub(r"<li>", "\n- ", t, flags=re.I)
+    t = re.sub(r"</li>", "\n", t, flags=re.I)
+    t = re.sub(r"</(?:p|div|tr|h\d)>", "\n\n", t, flags=re.I)
+    t = re.sub(r"<[^>]+>", " ", t)
+    # Normalize spaces per line
+    lines = [re.sub(r"[\t\xa0 ]+", " ", l).strip() for l in t.split("\n")]
+    clean = "\n".join(lines)
+    clean = re.sub(r"\n{3,}", "\n\n", clean).strip()
     return clean
+
+
+def normalize_location_string(loc: str | None) -> str:
+    """Normalizes location strings by collapsing duplicate commas, trimming, and cleaning casing."""
+    if not loc or not loc.strip():
+        return "Not specified"
+    raw_parts = [p.strip() for p in re.split(r",+", loc) if p.strip()]
+    cleaned_parts = []
+    for p in raw_parts:
+        low = p.lower()
+        if low == "india":
+            cleaned_parts.append("India")
+        elif low in ("usa", "us", "uk", "uae"):
+            cleaned_parts.append(p.upper())
+        else:
+            cleaned_parts.append(p.title())
+    return ", ".join(cleaned_parts) if cleaned_parts else "Not specified"
 
 
 def is_internship_opportunity(
@@ -127,10 +169,25 @@ def is_internship_opportunity(
     return any(re.search(p, title_lower) for p in intern_patterns)
 
 
+FORBIDDEN_ATS_METADATA_REGEX = re.compile(
+    r"^\s*(?:tariff\s*area|legal\s*entity(?:\s*\(acronym\))?|global\s*salary(?:\s*level)?|division(?:\s*full\s*name|\s*identifiers)?|local\s*grade|cost\s*center|entity\s*acronym|direct\s*or\s*indirect|working\s*(?:location|country|hours)|position\s*type|brands)\s*[:\-].*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _filter_candidate_facing_text(text: str) -> str:
+    if not text:
+        return ""
+    filtered = FORBIDDEN_ATS_METADATA_REGEX.sub("", text)
+    filtered = re.sub(r"\n{3,}", "\n\n", filtered)
+    return filtered.strip()
+
+
 def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
     """
     Reconstructs complete description text and HTML structure from SmartRecruiters payload.
     Supports both detailed jobAd payload and list item fallback.
+    Filters out internal ATS/HR administration fields (Tariff Area, Legal Entity, Local Grade, etc.).
     """
     job_ad = raw.get("jobAd") or {}
     sections = job_ad.get("sections") if isinstance(job_ad, dict) else {}
@@ -152,8 +209,9 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
                 title = sec.get("title") or default_title
                 if text and isinstance(text, str) and text.strip():
                     cleaned = _clean_html_description(text)
-                    if cleaned:
-                        plain_parts.append(f"## {title}\n{cleaned}")
+                    candidate_clean = _filter_candidate_facing_text(cleaned)
+                    if candidate_clean:
+                        plain_parts.append(f"## {title}\n{candidate_clean}")
                         html_parts.append(f"<h3>{title}</h3><div>{text}</div>")
 
     if plain_parts:
@@ -184,7 +242,10 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
     if isinstance(custom_fields, list):
         for cf in custom_fields:
             if isinstance(cf, dict) and cf.get("fieldLabel") and cf.get("valueLabel"):
-                summary_lines.append(f"{cf['fieldLabel']}: {cf['valueLabel']}")
+                label = str(cf["fieldLabel"])
+                # Exclude internal ATS administration metadata
+                if not re.search(r"tariff\s*area|legal\s*entity|global\s*salary|division|local\s*grade|cost\s*center|entity\s*acronym", label, re.I):
+                    summary_lines.append(f"{label}: {cf['valueLabel']}")
 
     summary = "\n".join(summary_lines)
     html_summary = f"<p>{'<br/>'.join(summary_lines)}</p>"
@@ -348,8 +409,7 @@ class SmartRecruitersJobProvider:
             is_remote_loc = bool(loc_data.get("remote"))
             is_hybrid_loc = bool(loc_data.get("hybrid"))
 
-        if not location:
-            location = "Not specified"
+        location = normalize_location_string(location)
 
         # Workplace mode
         title_lower = title.lower()
@@ -485,8 +545,11 @@ class SmartRecruitersJobProvider:
         function_data = raw.get("function") or {}
         department = function_data.get("label") if isinstance(function_data, dict) else ""
 
-        # Skills extraction
-        extracted_skills = extract_skills_from_text(f"{title}\n{clean_desc}")
+        # Skills extraction via canonical requirement-aware taxonomy
+        from app.modules.jobs.taxonomy import analyze_job_description
+        reqs = analyze_job_description(clean_desc, title)
+        skills_required = list(dict.fromkeys(reqs.must_have_skills or reqs.required_skills))
+        skills_nice_to_have = list(dict.fromkeys(reqs.preferred_skills))
 
         canonical_id = f"smartrecruiters_{board_token.lower()}_{job_id}"
 
@@ -504,6 +567,38 @@ class SmartRecruitersJobProvider:
         student_eligible = is_intern or (exp_level_id == "entry_level")
         fresher_eligible = is_fresher or (exp_level_id == "associate" and not is_senior)
 
+        comp = extract_compensation_from_payload_and_text(
+            text=f"{clean_desc} {raw_html or ''}",
+            raw_payload=raw,
+            is_internship=is_intern,
+        )
+
+        # Completeness evaluation
+        from app.modules.jobs.completeness import evaluate_opportunity_completeness
+        comp_eval = evaluate_opportunity_completeness({
+            "title": title,
+            "company": resolved_company,
+            "location": location,
+            "country": country,
+            "is_india_opportunity": is_india,
+            "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
+            "description": clean_desc,
+            "responsibilities": reqs.responsibilities,
+            "qualifications": reqs.qualifications,
+            "skills_required": skills_required,
+            "skills_nice_to_have": skills_nice_to_have,
+            "verification_status": verification_status,
+            "apply_url": apply_url,
+            "is_direct_apply": is_direct_apply,
+            "salary_min": comp.salary_min,
+            "salary_max": comp.salary_max,
+            "stipend_min": comp.stipend_min,
+            "stipend_max": comp.stipend_max,
+            "compensation_text": comp.compensation_text,
+            "experience_min": int(reqs.min_years_experience) if reqs.min_years_experience is not None else experience_min,
+            "experience_max": int(reqs.max_years_experience) if reqs.max_years_experience is not None else experience_max,
+        })
+
         return {
             "id": canonical_id,
             "source": "smartrecruiters",
@@ -516,11 +611,15 @@ class SmartRecruitersJobProvider:
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
-            "skills_required": extracted_skills[:8],
-            "skills_nice_to_have": extracted_skills[8:16],
-            "responsibilities": [],
-            "experience_min": experience_min,
-            "experience_max": experience_max,
+            "skills_required": skills_required,
+            "skills_nice_to_have": skills_nice_to_have,
+            "responsibilities": reqs.responsibilities,
+            "qualifications": reqs.qualifications,
+            "structured_requirements": reqs.model_dump(mode="json"),
+            "completeness_status": comp_eval.source_completeness.value,
+            "recommendation_quality": comp_eval.recommendation_quality.value,
+            "experience_min": int(reqs.min_years_experience) if reqs.min_years_experience is not None else experience_min,
+            "experience_max": int(reqs.max_years_experience) if reqs.max_years_experience is not None else experience_max,
             "experience_level": exp_level_label or "Undisclosed",
             "type_of_employment": emp_type_label or "Full-time",
             "job_type": job_type,
@@ -531,10 +630,14 @@ class SmartRecruitersJobProvider:
             "is_remote": is_remote,
             "workplace_type": workplace_type,
             "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
-            "salary_min": None,
-            "salary_max": None,
-            "salary_disclosed": False,
-            "stipend_min": None,
+            "salary_min": comp.salary_min,
+            "salary_max": comp.salary_max,
+            "salary_currency": comp.salary_currency,
+            "salary_disclosed": comp.salary_disclosed,
+            "stipend_min": comp.stipend_min,
+            "stipend_max": comp.stipend_max,
+            "compensation_type": comp.compensation_type,
+            "compensation_text": comp.compensation_text,
             "internship_duration_months": 3 if is_intern else None,
             "fresher_friendly": is_fresher,
             "posted_days_ago": posted_days_ago,

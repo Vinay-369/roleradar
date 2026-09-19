@@ -71,9 +71,13 @@ async def build_copilot_context(
     if resume is None:
         notes.append("This candidate hasn't uploaded a resume yet — no skills, ATS score, or intelligence data exists.")
         resume_intelligence = None
+        canonical_skills = []
     else:
+        from app.modules.resume.models import CandidateProfile
+        cand_prof = CandidateProfile.from_parsed_dict(resume.get("parsed") or {}, resume.get("raw_text", ""))
+        canonical_skills = cand_prof.get_all_demonstrated_skills()
         resume_intelligence = {
-            "skills": resume["parsed"].get("skills", []),
+            "skills": canonical_skills,
             "parseability_score": resume["parseability"]["score"],
             "recruiter_impact_score": resume["recruiter_impact"]["score"],
             "parseability_issues": [i["message"] for i in resume["parseability"]["issues"][:3]],
@@ -114,7 +118,7 @@ async def build_copilot_context(
                 active_settings = settings or get_settings()
                 embedder = build_embedding_provider(active_settings)
                 candidate = {
-                    "skills": resume["parsed"].get("skills", []),
+                    "skills": canonical_skills,
                     "target_roles": profile.get("target_roles", []),
                     "experience_years": profile.get("experience_years", 0),
                     "preferred_locations": profile.get("preferred_locations", []),

@@ -1,0 +1,526 @@
+{
+  "total_scanned": 587,
+  "numeric_salary_count": 0,
+  "numeric_stipend_count": 0,
+  "qualitative_count": 38,
+  "genuinely_undisclosed_count": 549,
+  "false_positive_job_count": 14,
+  "false_positive_mention_count": 68,
+  "provider_counts": {
+    "greenhouse": 64,
+    "lever": 228,
+    "smartrecruiters": 295
+  },
+  "type_counts": {
+    "JOB": 576,
+    "INTERNSHIP": 11
+  },
+  "provider_breakdown": {
+    "greenhouse": {
+      "total": 64,
+      "jobs": 64,
+      "internships": 0,
+      "numeric_salary": 0,
+      "numeric_stipend": 0,
+      "qualitative": 0,
+      "undisclosed": 64,
+      "false_positives": 0
+    },
+    "lever": {
+      "total": 228,
+      "jobs": 221,
+      "internships": 7,
+      "numeric_salary": 0,
+      "numeric_stipend": 0,
+      "qualitative": 36,
+      "undisclosed": 192,
+      "false_positives": 50
+    },
+    "smartrecruiters": {
+      "total": 295,
+      "jobs": 291,
+      "internships": 4,
+      "numeric_salary": 0,
+      "numeric_stipend": 0,
+      "qualitative": 2,
+      "undisclosed": 293,
+      "false_positives": 18
+    }
+  },
+  "numeric_salary_matches": [],
+  "numeric_stipend_matches": [],
+  "qualitative_matches": [
+    {
+      "id": "lever_meesho_122c2edd-ea44-41fd-a06f-ecc79588f6c6",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "GTM & Enterprise Sales Consultant – Meesho AI Services (MAS)",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_128cee5f-5e62-43f4-8339-6ead8b5498e7",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Product Manager",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_1690adaa-ec47-4246-a40e-995b859545f2",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Talent Partner ( Non-Tech Hiring)",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_19d34992-cc3d-4066-9de4-69c17f952ba1",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Associate - Performance Marketing",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_1a6888e6-0c37-4611-bcbb-8c2609310c19",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager - Production",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_1c610094-fbc4-42b0-b7f2-4b05c5569e9a",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Associate Director - Commerce Platform",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_1f2462b8-3548-466e-908f-dcae91cfaee1",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Assistant Manager - Performance Marketing",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_22c4a7a0-43be-439e-9473-2f8074b3e8d5",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Assistant Manager - Business Finance",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_2b694ca9-0f0d-4ab5-a4e6-b5531cda59c8",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Brand Associate",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_3032374b-0010-4d19-8dd1-26c37c396cba",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Assistant Manager Finance – Logistics Intelligence",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_35a98774-fbca-4826-93a0-cc2b19bf2354",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Associate / Assistant Manager - Program Ops (Fulfilment & Experience)",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_3a60c7e0-bf65-4695-bddc-9f21e68d235d",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Deputy Manager - Business Finance",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_3a980a2a-6ae4-4738-b06d-9c6483526992",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager - Commerce Platform",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_3d5bf582-493f-4298-b7de-e42a7d58a358",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Principal Data Scientist",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_489fe662-5d28-4305-953e-91ee21e8538c",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Data Scientist III",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_5425e38f-1717-497c-abe1-bcc7f04dd8b0",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Associate - Monetisation",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_5afe596f-17a2-4e8b-a498-ca46b2c7a869",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Assistant Manager - Ops",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_60e0d986-abe8-42ee-b172-0d9aecb307b7",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Software Development Engineer III DevOps",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_65435df1-9a07-416e-9b97-381045f9f970",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Director - Product",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_7bb1de7e-8756-412b-8c71-0ba40863edc8",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Software Development Engineer III Data",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_7d9af9b5-c1c7-48ec-bbb5-9b25e49f6596",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "AM/ Manager - Risk & Decision Science",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_80ab7795-de6b-4dfe-9a66-a8ad5e7b8a83",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Associate Compliance Manager",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_974e9975-c536-4219-bdaa-9cd0f2d4d030",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Creative Manager",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_a84c770c-6f20-4093-99fa-5a7f2bad5837",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager – Self Pickup : Last Mile",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_ae2aa625-4bd0-44f0-a43a-87fda957c009",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager – Latent Last Mile",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_c68ee07f-0e16-455b-bc4a-87848aaf46fa",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Software Development Engineer III -Backend",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_cb16706c-296f-4567-a41f-86206a54ee29",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Engineering Manager -Backend",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_cb7c1852-78d9-437c-b9f5-e5653fa0f1b0",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Manager - HR COE",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_d4c4d777-d41b-4940-9407-e2100fb5dcd1",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager - DAU Growth",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_d6a0019f-60a6-4c58-9175-3a455f3b1d8c",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Manager HR – Learning & Development",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_d7924eb1-301e-4098-ab7b-f3a4c92c210a",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Group Product Manager",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_dea44a88-b138-4ef0-87b0-ed8440b0a331",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Business Development Manager (SBDM)",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_e03deae3-a5f2-428d-b2f3-3c275f8c433b",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Senior Manager - User Experience : F&E",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_e640ec64-9e6b-482a-b21e-82261334bcd0",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Manager - User Experience : F&E",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_faa90cf7-c5d7-450c-aeeb-142c9954a5b1",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Head of Meesho Foundation",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "lever_meesho_fd8b953a-8157-4dda-a2a4-e9bbf4cf7a7f",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Program Manager",
+      "type": "JOB",
+      "comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_text": "Competitive compensation disclosed by employer",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "smartrecruiters_blueberrylabsprivatelimited_101534578",
+      "provider": "smartrecruiters",
+      "company": "Blueberry Labs Private Limited",
+      "title": "PHP Developer 2 years +  Experience",
+      "type": "JOB",
+      "comp_text": "Best in industry salary",
+      "mongo_comp_text": "Best in industry salary",
+      "mongo_comp_type": "QUALITATIVE"
+    },
+    {
+      "id": "smartrecruiters_blueberrylabsprivatelimited_113819707",
+      "provider": "smartrecruiters",
+      "company": "Blueberry Labs Private Limited",
+      "title": "Full Stack Developer",
+      "type": "JOB",
+      "comp_text": "Best in industry salary",
+      "mongo_comp_text": "Best in industry salary",
+      "mongo_comp_type": "QUALITATIVE"
+    }
+  ],
+  "false_positive_examples": [
+    {
+      "id": "lever_meesho_3032374b-0010-4d19-8dd1-26c37c396cba",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Assistant Manager Finance – Logistics Intelligence",
+      "matched_money": "$500",
+      "fp_reason": "\\b(?:active\\s*members?|transacting\\s*members?|subscribers?|users?|customers?)\\b",
+      "snippet": "can enable the scale-up of Supply Chain for Meesho’s overall Marketplace platform by providing value-added finance solutions. Meesho’s Supply Chain quantum is >$500m/annum and we are the biggest custo"
+    },
+    {
+      "id": "lever_cred_5b8e2c1a-06eb-4127-914f-db56b3078158",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "capital partnerships",
+      "matched_money": "₹3,000",
+      "fp_reason": "\\b(?:offerings?\\s*ranging\\s*from|loans?|credit\\s*lines?|credit\\s*limits?|transaction\\s*volume|borrowers?|lending|disburs\\w*)\\b",
+      "snippet": "s, and drive initiatives.</li>  </div> about prefr & role: prefr is a line of business under CRED, operating as a lending service provider (lsp) with an aum of ₹3,000+ cr. we build personal loan portf"
+    },
+    {
+      "id": "lever_cred_7301faf3-d7ec-40d4-b49a-07ed20fc9691",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "data scientist",
+      "matched_money": "₹5",
+      "fp_reason": "\\b(?:sales\\s*of|revenue\\s*of|turnover|crores?|billion|billions?|million|millions?)\\b",
+      "snippet": "operated by creditvidya) is a digital-first lending platform that makes credit accessible to millions across India. With loan offerings ranging from ₹50,000 to ₹5 Lakh, we’re enabling instant personal"
+    },
+    {
+      "id": "lever_meesho_7bb1de7e-8756-412b-8c71-0ba40863edc8",
+      "provider": "lever",
+      "company": "Meesho",
+      "title": "Software Development Engineer III Data",
+      "matched_money": "30K",
+      "fp_reason": "\\b(?:sales\\s*of|revenue\\s*of|turnover|crores?|billion|billions?|million|millions?)\\b",
+      "snippet": "ud-gateway for circuit breaking and parallel processing. ● Our serving microservices handle more than 15K RPS on normal days and during saledays this can go to 30K RPS. Being a consumer app, these sys"
+    },
+    {
+      "id": "lever_cred_7e4d512e-fc89-40fd-9a30-46c5459bbea5",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "machine learning engineer",
+      "matched_money": "₹5,00,000",
+      "fp_reason": "\\b(?:offerings?\\s*ranging\\s*from|loans?|credit\\s*lines?|credit\\s*limits?|transaction\\s*volume|borrowers?|lending|disburs\\w*)\\b",
+      "snippet": ") is a tech-first fintech platform reshaping how India’s digital-first generation experiences credit. we currently offer instant personal loans from ₹50,000 to ₹5,00,000 through a seamless, end-to-end"
+    },
+    {
+      "id": "lever_paytm_85666bed-f6cd-4454-9cad-5906ba185cbc",
+      "provider": "lever",
+      "company": "Paytm",
+      "title": "Business Partnerships - Insurance",
+      "matched_money": "rs 5",
+      "fp_reason": "\\b(?:offerings?\\s*ranging\\s*from|loans?|credit\\s*lines?|credit\\s*limits?|transaction\\s*volume|borrowers?|lending|disburs\\w*)\\b",
+      "snippet": "ntroducing innovative solutions like QR codes to accept payments and Sound-box to recon payments by voice alerts. We are also distributing loans to these partners 5via our ‘Paytm for Business’ App.  K"
+    },
+    {
+      "id": "lever_cred_8b535f0b-1c68-4982-95b0-91f9edb5945e",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "area collections manager hyderabad -flows",
+      "matched_money": "₹5",
+      "fp_reason": "\\b(?:sales\\s*of|revenue\\s*of|turnover|crores?|billion|billions?|million|millions?)\\b",
+      "snippet": "operated by CreditVidya) is a digital-first lending platform that makes credit accessible to millions across India. with loan offerings ranging from ₹50,000 to ₹5 Lakh, we’re enabling instant personal"
+    },
+    {
+      "id": "lever_cred_91a5f0f1-b11f-412a-a816-ffc8b08a5617",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "area collections manager, pune (recoveries)",
+      "matched_money": "₹5",
+      "fp_reason": "\\b(?:sales\\s*of|revenue\\s*of|turnover|crores?|billion|billions?|million|millions?)\\b",
+      "snippet": "operated by CreditVidya) is a digital-first lending platform that makes credit accessible to millions across India. with loan offerings ranging from ₹50,000 to ₹5 Lakh, we’re enabling instant personal"
+    },
+    {
+      "id": "lever_cred_aa501081-1787-4617-bfa9-9f4ecaf68f30",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "lead – on deck payments",
+      "matched_money": "rs 2",
+      "fp_reason": "\\b(?:active\\s*members?|transacting\\s*members?|subscribers?|users?|customers?)\\b",
+      "snippet": "onal payment categories that form the backbone of member habit and retention. this role is responsible for step-change growth — scaling active transacting members 2–3× by making on-deck payment flows "
+    },
+    {
+      "id": "lever_cred_e7edcd33-9faa-4e2f-8a87-4a88719f94ec",
+      "provider": "lever",
+      "company": "Cred",
+      "title": "regional collection manager bangalore - flows",
+      "matched_money": "₹5",
+      "fp_reason": "\\b(?:sales\\s*of|revenue\\s*of|turnover|crores?|billion|billions?|million|millions?)\\b",
+      "snippet": "operated by CreditVidya) is a digital-first lending platform that makes credit accessible to millions across India. with loan offerings ranging from ₹50,000 to ₹5 Lakh, we’re enabling instant personal"
+    }
+  ]
+}

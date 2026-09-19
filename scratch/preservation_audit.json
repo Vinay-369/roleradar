@@ -1,0 +1,92 @@
+{
+  "title": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "company": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "location": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "workplace_type": {
+    "populated_count": 296,
+    "disclosed_rate": "50.4%",
+    "undisclosed_count": 291
+  },
+  "opportunity_type": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "experience_min": {
+    "populated_count": 324,
+    "disclosed_rate": "55.2%",
+    "undisclosed_count": 263
+  },
+  "salary_min": {
+    "populated_count": 0,
+    "disclosed_rate": "0.0%",
+    "undisclosed_count": 587
+  },
+  "stipend_min": {
+    "populated_count": 0,
+    "disclosed_rate": "0.0%",
+    "undisclosed_count": 587
+  },
+  "skills_required": {
+    "populated_count": 117,
+    "disclosed_rate": "19.9%",
+    "undisclosed_count": 470
+  },
+  "skills_nice_to_have": {
+    "populated_count": 30,
+    "disclosed_rate": "5.1%",
+    "undisclosed_count": 557
+  },
+  "qualifications": {
+    "populated_count": 184,
+    "disclosed_rate": "31.3%",
+    "undisclosed_count": 403
+  },
+  "responsibilities": {
+    "populated_count": 200,
+    "disclosed_rate": "34.1%",
+    "undisclosed_count": 387
+  },
+  "description": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "internship_duration_months": {
+    "populated_count": 11,
+    "disclosed_rate": "1.9%",
+    "undisclosed_count": 576
+  },
+  "student_eligible": {
+    "populated_count": 296,
+    "disclosed_rate": "50.4%",
+    "undisclosed_count": 291
+  },
+  "expires_at": {
+    "populated_count": 0,
+    "disclosed_rate": "0.0%",
+    "undisclosed_count": 587
+  },
+  "posted_at": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  },
+  "apply_url": {
+    "populated_count": 587,
+    "disclosed_rate": "100.0%",
+    "undisclosed_count": 0
+  }
+}
