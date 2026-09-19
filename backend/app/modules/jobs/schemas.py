@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class JobOut(BaseModel):
@@ -69,9 +69,9 @@ class JobOut(BaseModel):
 
 
 class CreateCustomJobRequest(BaseModel):
-    company: str | None = None
-    title: str | None = None
-    jd_text: str
+    company: str | None = Field(default=None, max_length=200)
+    title: str | None = Field(default=None, max_length=200)
+    jd_text: str = Field(..., max_length=50_000)
 
 
 class JobFilters(BaseModel):

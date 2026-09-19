@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import Settings, get_settings
+from app.core.rate_limit import rate_limit
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import services
@@ -178,7 +179,10 @@ async def list_jobs(
     return [JobOut(**_strip_for_list(j)) for j in jobs]
 
 
-@router.post("/sync")
+@router.post(
+    "/sync",
+    dependencies=[Depends(rate_limit(max_requests=5, window_seconds=60, key_prefix="jobs_sync"))],
+)
 async def sync_live_jobs(
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -192,7 +196,15 @@ async def sync_live_jobs(
     return {"status": "success", "added_count": added_count}
 
 
+<<<<<<< HEAD
 @router.post("/custom", response_model=JobOut)
+=======
+@router.post(
+    "/custom", 
+    response_model=JobOut,
+    dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60, key_prefix="jobs_custom"))],
+)
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 async def create_custom_job_endpoint(
     payload: CreateCustomJobRequest,
     current_user: dict = Depends(get_current_user),

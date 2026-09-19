@@ -153,7 +153,8 @@ export function JobDetail() {
     return "Not specified by employer";
   })();
 
-  const hasDirectApply = Boolean(isVerifiedActive && job.apply_url && !job.apply_url.includes("example.com"));
+  const isSafeHttpUrl = (url?: string) => Boolean(url && (url.startsWith("https://") || url.startsWith("http://")));
+  const hasDirectApply = Boolean(isVerifiedActive && isSafeHttpUrl(job.apply_url) && !job.apply_url.includes("example.com"));
 
   const postedText = (() => {
     if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {

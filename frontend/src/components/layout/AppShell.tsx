@@ -12,12 +12,13 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/resume/master")) return "Master Resume";
   if (pathname.startsWith("/growth/skill-gaps")) return "Skill Gaps";
   if (pathname.startsWith("/resume/versions")) return "Tailored Versions";
-  if (pathname.startsWith("/resume/tailor-custom")) return "Custom Tailoring";
+  if (pathname.startsWith("/resume/tailor-custom")) return "Paste & Analyze Job Description";
   if (pathname.startsWith("/resume/tailor")) return "Resume Tailor Review";
   if (pathname.match(/^\/opportunities\/(?:job|jobs|internship|internships)\/[^/]+$/)) return "Opportunity Details";
   if (pathname.startsWith("/opportunities/jobs")) return "Jobs For You";
   if (pathname.startsWith("/opportunities/internships")) return "Internships";
-  if (pathname.startsWith("/opportunities/saved")) return "Saved";
+  if (pathname.startsWith("/applications")) return "Applications Tracker";
+  if (pathname.startsWith("/opportunities/saved")) return "Saved Opportunities";
   if (pathname.startsWith("/opportunities/job")) return "Opportunity Details";
   if (pathname.startsWith("/growth/roadmap")) return "Learning Roadmap";
   if (pathname.startsWith("/growth/interview")) return "Interview Preparation";

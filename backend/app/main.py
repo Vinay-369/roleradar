@@ -16,7 +16,9 @@ async def lifespan(app: FastAPI):
     await ensure_seed_loaded(get_db())
 
     from app.modules.auth.services import ensure_demo_user
-    await ensure_demo_user(get_db())
+    settings = get_settings()
+    if settings.ENV.lower() != "production":
+        await ensure_demo_user(get_db())
 
     yield
     await close_mongo_connection()
@@ -35,9 +37,38 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def add_security_headers(request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
+
     @app.get(f"{settings.API_PREFIX}/health")
     async def health():
-        return {"status": "ok", "app": settings.APP_NAME, "env": settings.ENV}
+        from app.db.mongo import get_db
+        db_status = "unknown"
+        try:
+            db = get_db()
+            if db is not None:
+                await db.command("ping")
+                db_status = "connected"
+            else:
+                db_status = "disconnected"
+        except Exception:
+            db_status = "disconnected"
+
+        is_healthy = (db_status == "connected")
+        return {
+            "status": "ok" if is_healthy else "degraded",
+            "app": settings.APP_NAME,
+            "env": settings.ENV,
+            "dependencies": {
+                "database": db_status
+            }
+        }
 
     # Module routers, registered as each phase implements them.
     from app.modules.auth.routes import router as auth_router
@@ -65,6 +96,29 @@ def create_app() -> FastAPI:
     app.include_router(interview_router, prefix=f"{settings.API_PREFIX}/interview", tags=["interview"])
 
     # Phase 8 is UI polish only -- no new backend routers.
+
+    # SPA Static Serving & Route Rewriting (Phase 10 Production Support)
+    import os
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+    if os.path.exists(dist_dir) and os.path.isfile(os.path.join(dist_dir, "index.html")):
+        assets_dir = os.path.join(dist_dir, "assets")
+        if os.path.exists(assets_dir):
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+        @app.get("/{full_path:path}")
+        async def serve_spa(full_path: str):
+            clean_path = full_path.strip("/")
+            # Never hijack /api routes or documentation
+            if clean_path.startswith("api") or clean_path == "api" or clean_path in ("docs", "redoc", "openapi.json"):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=404, detail="Endpoint not found")
+            target = os.path.join(dist_dir, clean_path)
+            if clean_path and os.path.isfile(target):
+                return FileResponse(target)
+            return FileResponse(os.path.join(dist_dir, "index.html"))
 
     return app
 

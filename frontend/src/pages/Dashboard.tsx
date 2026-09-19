@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import {
   Sparkles, Briefcase, Bookmark, ArrowRight, FileText,
   ShieldCheck, Map, MessageCircleQuestion, CheckCircle2,
-  TrendingUp, Compass, Zap,
+  TrendingUp, Compass, Zap, Target,
 } from "lucide-react";
 import { getDashboard } from "../lib/dashboard";
+import { getProfile } from "../lib/profile";
 import { useAuth } from "../context/AuthContext";
 import { ScoreRing } from "../components/ui/ScoreRing";
 
@@ -14,7 +15,7 @@ function CareerLoopHub() {
     { label: "Master Resume", desc: "ATS Audit & Scores", to: "/resume/master", icon: FileText, color: "text-signal-600" },
     { label: "Live Matches", desc: "Real Job Openings", to: "/opportunities/jobs", icon: Briefcase, color: "text-blue-600" },
     { label: "Truth Guard Tailor", desc: "1-Page Tailored PDF", to: "/resume/versions", icon: ShieldCheck, color: "text-purple-600" },
-    { label: "Saved", desc: "Bookmarked Roles", to: "/opportunities/saved", icon: Bookmark, color: "text-amber-600" },
+    { label: "Saved Roles", desc: "Bookmarked Openings", to: "/applications?tab=SAVED", icon: Bookmark, color: "text-amber-600" },
     { label: "Skill Roadmap", desc: "4-Sprint Bridge", to: "/growth/roadmap", icon: Map, color: "text-emerald-600" },
     { label: "Interview Prep", desc: "Top 20 Questions", to: "/growth/interview", icon: MessageCircleQuestion, color: "text-indigo-600" },
   ];
@@ -86,11 +87,13 @@ function DashboardSkeleton() {
 export function Dashboard() {
   const { user } = useAuth();
   const { data, isLoading } = useQuery({ queryKey: ["dashboard"], queryFn: getDashboard });
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
   if (isLoading) return <DashboardSkeleton />;
   if (!data) return null;
 
   const totalApplications = Object.values(data.application_counts).reduce((a, b) => a + b, 0);
+  const targetRole = profile?.target_roles?.[0] || "Software Engineer";
 
   return (
     <div className="max-w-5xl space-y-6 animate-fade-in-up">
@@ -101,17 +104,27 @@ export function Dashboard() {
 
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-signal-300 mb-2.5">
-              <span className="w-2 h-2 rounded-full bg-signal-400 animate-ping" />
-              <span>RoleRadar Intelligence Active</span>
+            <div className="flex items-center gap-2 flex-wrap mb-2.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-signal-300">
+                <span className="w-2 h-2 rounded-full bg-signal-400 animate-ping" />
+                <span>RoleRadar Intelligence Active</span>
+              </div>
+              <Link
+                to="/growth/skill-gaps"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-signal-500/20 hover:bg-signal-500/30 border border-signal-400/30 text-[11px] font-semibold text-signal-200 transition-colors"
+                title="View canonical career skill map and gaps for this role"
+              >
+                <Target size={11} className="text-signal-400" />
+                <span>Targeting: {targetRole}</span>
+              </Link>
             </div>
             <h1 className="font-display text-2xl sm:text-3xl text-white font-bold tracking-tight">
               Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
             </h1>
             <p className="text-ink-300 text-xs sm:text-sm mt-1 max-w-xl">
               {data.resume_uploaded
-                ? "Track your enterprise ATS screening fit, discover verified live job openings, and tailor resumes in seconds."
-                : "Upload your resume to begin ATS analysis, discover live job openings, and tailor your resume in seconds."}
+                ? `Track your ATS screening fit for ${targetRole}, discover verified live job openings, and tailor resumes in seconds.`
+                : `Upload your resume to begin ATS analysis for ${targetRole}, discover live job openings, and tailor your resume in seconds.`}
             </p>
           </div>
 
@@ -262,7 +275,7 @@ export function Dashboard() {
                     Saved Opportunities ({totalApplications})
                   </h3>
                 </div>
-                <Link to="/opportunities/saved" className="text-xs font-semibold text-signal-600 hover:underline">
+                <Link to="/applications?tab=SAVED" className="text-xs font-semibold text-signal-600 hover:underline">
                   View all ↗
                 </Link>
               </div>
@@ -282,7 +295,7 @@ export function Dashboard() {
               </div>
 
               <Link
-                to="/opportunities/saved"
+                to="/applications?tab=SAVED"
                 className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 rounded-xl shadow-xs transition-colors"
               >
                 <span>View Saved Roles</span>

@@ -105,6 +105,21 @@ React 19 + Vite (TypeScript)  ──────►  FastAPI (Python 3.12)  ─�
 - *(Optional)* [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) for local LLM inference
 
 ---
+### 🔐 Secret Management
+
+The project uses environment files (`.env`) to store secrets such as API keys, database credentials, and AI provider tokens.
+
+- **Never commit real `.env` files** – they are listed in `.gitignore` and ignored by Git.
+- **Provide a template**: `backend/.env.example` contains placeholder keys and usage instructions.
+- **Setup**: after cloning, copy the template and fill in your values:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+- **Version control**: only the example file is tracked; the generated `.env` remains local and is excluded from pushes.
+
+---
 
 ### 1. Database (MongoDB)
 
@@ -163,7 +178,35 @@ npm run dev
 
 ---
 
-### 4. ⚡ 1-Click Quick Demo Sign-In
+### 4. 📦 Production Build & Run (Single-Port Unified Serving)
+
+To run RoleRadar in unified production mode where FastAPI serves the compiled React SPA:
+
+```bash
+# 1. Build the frontend bundle
+cd frontend
+npm install
+npm run build
+
+# 2. Configure production secrets in backend/.env
+# Set ENV=production and a strong JWT_SECRET (minimum 16 characters)
+
+# 3. Start the production ASGI server
+cd ../backend
+# Linux / Docker Container Production (Multi-Worker):
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+
+# Windows Local Production-Mode Validation (Single-Worker):
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+- **Unified Production URL**: [http://localhost:8000](http://localhost:8000)
+- **API Endpoints**: [http://localhost:8000/api](http://localhost:8000/api)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+### 5. ⚡ 1-Click Quick Demo Sign-In
 
 1. Open [http://localhost:5173/login](http://localhost:5173/login).
 2. Click **"⚡ 1-Click Sign In as Demo Candidate"** (or enter `demo@example.com` / `Password123!`).

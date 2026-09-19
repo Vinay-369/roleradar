@@ -1,7 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+<<<<<<< HEAD
 import { GraduationCap, Sparkles, Search, FileText, RotateCcw } from "lucide-react";
+=======
+import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X } from "lucide-react";
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 import { getRecommendedMatches, type JobMatch } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -273,13 +277,34 @@ export function Internships() {
         {/* Row 1: Search + Role */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
           <div className="sm:col-span-6 relative">
+<<<<<<< HEAD
+=======
+            <label htmlFor="internship-search-input" className="sr-only">Search internship listings</label>
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
+              id="internship-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search internship title, company, skill…"
+<<<<<<< HEAD
               className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-ink-200 text-xs outline-none focus:border-signal-500 shadow-2xs"
+=======
+              aria-label="Search internships by title, company, or required skill"
+              className="w-full pl-8 pr-8 py-2 rounded-lg border border-ink-200 focus:border-signal-500 focus:ring-2 focus:ring-signal-500/15 text-xs text-ink-900 placeholder:text-ink-400 outline-none transition-all shadow-2xs"
+>>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-ink-400 hover:text-ink-700 hover:bg-ink-100 transition-colors"
+                title="Clear search"
+                aria-label="Clear search input"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
           <div className="sm:col-span-6">

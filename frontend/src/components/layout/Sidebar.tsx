@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Copy, Target,
-  Briefcase, GraduationCap, Bookmark, ClipboardCheck,
+  Briefcase, GraduationCap, ClipboardCheck,
   Map, MessageCircleQuestion, Bot, X,
 } from "lucide-react";
 
@@ -11,27 +11,32 @@ type NavGroup = { label: string; items: NavItem[] };
 const groups: NavGroup[] = [
   { label: "", items: [{ label: "Dashboard", to: "/dashboard", icon: LayoutDashboard }] },
   {
-    label: "Resume",
-    items: [
-      { label: "Master Resume", to: "/resume/master", icon: FileText },
-      { label: "Tailored Versions", to: "/resume/versions", icon: Copy },
-    ],
-  },
-  {
-    label: "Opportunities",
+    label: "Explore",
     items: [
       { label: "Jobs For You", to: "/opportunities/jobs", icon: Briefcase },
       { label: "Internships", to: "/opportunities/internships", icon: GraduationCap },
-      { label: "Applications", to: "/applications", icon: ClipboardCheck },
-      { label: "Saved Roles", to: "/opportunities/saved", icon: Bookmark },
+      { label: "Paste External JD", to: "/resume/tailor-custom", icon: FileText },
     ],
   },
   {
     label: "Career Growth",
     items: [
-      { label: "Skill Gaps", to: "/growth/skill-gaps", icon: Target },
+      { label: "Skill Map & Gaps", to: "/growth/skill-gaps", icon: Target },
       { label: "Learning Roadmap", to: "/growth/roadmap", icon: Map },
       { label: "Interview Preparation", to: "/growth/interview", icon: MessageCircleQuestion },
+    ],
+  },
+  {
+    label: "Resume",
+    items: [
+      { label: "Master Resume", to: "/resume/master", icon: FileText },
+      { label: "Tailored Resumes", to: "/resume/versions", icon: Copy },
+    ],
+  },
+  {
+    label: "Tracking",
+    items: [
+      { label: "Applications Tracker", to: "/applications", icon: ClipboardCheck },
     ],
   },
   {
