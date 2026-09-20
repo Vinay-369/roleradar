@@ -91,14 +91,11 @@ class Settings(BaseSettings):
     SMARTRECRUITERS_COMPANIES: str = "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2"
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
     SMARTRECRUITERS_COUNTRY: str = "in"
-<<<<<<< HEAD
-=======
 
     # --- Direct ATS: Ashby Configuration ---
     ASHBY_ENABLED: bool = True
     ASHBY_COMPANIES: str = "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs"
     ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
