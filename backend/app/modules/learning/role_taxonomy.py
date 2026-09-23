@@ -113,7 +113,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         domain="Software Engineering",
         subdomain="Backend Systems",
         aliases=[
-            "Backend Engineer", "Server-Side Developer", "API Engineer",
+            "Backend", "Backend Engineer", "Server-Side Developer", "API Engineer",
             "Python Developer", "Python Engineer", "Python Backend Developer",
             "Java Developer", "Java Engineer", "Java Backend Developer",
             "Node.js Developer", "Node Developer", "Node JS Developer", "NodeJS Developer",
@@ -133,7 +133,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         domain="Software Engineering",
         subdomain="Web & Client Interfaces",
         aliases=[
-            "Frontend Engineer", "Web Developer", "Client-Side Developer", "UI Engineer",
+            "Frontend", "Frontend Engineer", "Web Developer", "Client-Side Developer", "UI Engineer",
             "React Developer", "UI Developer", "Software Engineer - Frontend", "Frontend Software Engineer", "SDE - Frontend", "SDE Frontend"
         ],
         core_competencies=["Component-Based UI Architecture", "Responsive Web Design", "DOM Manipulation & Events", "State Management", "Web Accessibility (a11y)"],
@@ -148,7 +148,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         domain="Software Engineering",
         subdomain="End-to-End Applications",
         aliases=[
-            "Full Stack Engineer", "Fullstack Developer", "Fullstack Engineer", "Full Stack Software Engineer",
+            "Full Stack", "Fullstack", "Full Stack Engineer", "Fullstack Developer", "Fullstack Engineer", "Full Stack Software Engineer",
             "Software Engineer - Full Stack", "Software Engineer - Fullstack", "SDE - Full Stack", "SDE Full Stack",
             "Full Stack Lead", "Full Stack Web Developer",
             "MEAN Stack Developer", "MERN Stack Developer", "MEAN Stack Engineer", "MERN Stack Engineer"
@@ -181,7 +181,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         domain="Software Engineering",
         subdomain="Quality & Automation",
         aliases=[
-            "QA Engineer", "Software Development Engineer in Test", "SDET", "Test Automation Engineer",
+            "QA", "QA Engineer", "Software Development Engineer in Test", "SDET", "Test Automation Engineer",
             "Quality Assurance Engineer", "QA Automation Engineer", "Test Engineer", "Automation Engineer",
             "QA Automation Engineer Intern", "Software Test Engineer", "QA Automation Intern",
             "Embedded Testing Engineer", "EmbTesting", "Embedded Test Engineer"
@@ -240,7 +240,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Data Scientist",
         domain="Data & Analytics",
         subdomain="Predictive Analytics & Statistics",
-        aliases=["Applied Data Scientist", "Data Science Specialist"],
+        aliases=["Data Science", "Applied Data Scientist", "Data Science Specialist"],
         core_competencies=["Statistical Modeling & Hypothesis Testing", "Predictive Machine Learning", "Feature Engineering", "Data Wrangling", "Experimentation & A/B Testing"],
         common_competencies=["Model Evaluation Metrics", "Data Visualization", "Production Scripting", "Model Validation"],
         optional_competencies=["Deep Learning Basics", "Model Deployment", "Unsupervised Clustering"],
@@ -305,7 +305,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         domain="AI / Machine Learning",
         subdomain="Applied Machine Learning",
         aliases=[
-            "ML Engineer", "Machine Learning Developer", "Applied ML Engineer", "AI / Machine Learning Engineer", "AI/ML Engineer",
+            "Machine Learning", "ML Engineer", "Machine Learning Developer", "Applied ML Engineer", "AI / Machine Learning Engineer", "AI/ML Engineer",
             "Senior Software Engineer(AI/ML)", "Software Engineer(AI/ML)", "Software Engineer - AI/ML", "Staff Applied Scientist"
         ],
         core_competencies=["ML Pipeline Engineering", "Supervised & Unsupervised Modeling", "Feature Store Integration", "Model Serving & Inference APIs", "Model Evaluation & Drift Monitoring"],
@@ -371,7 +371,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="DevOps Engineer",
         domain="Cloud / DevOps / Infrastructure",
         subdomain="Continuous Delivery & Automation",
-        aliases=["CI/CD Engineer", "DevSecOps Engineer", "Build & Release Engineer"],
+        aliases=["DevOps", "CI/CD Engineer", "DevSecOps Engineer", "Build & Release Engineer"],
         core_competencies=["CI/CD Pipeline Automation", "Containerization & Orchestration", "Infrastructure as Code (IaC)", "Linux System Administration", "Cloud Infrastructure Configuration"],
         common_competencies=["Monitoring & Observability", "Secrets Management", "Automated Testing Integration", "Bash Shell Scripting"],
         optional_competencies=["Service Mesh", "GitOps Implementation", "Cost Optimization"],
@@ -438,7 +438,7 @@ ROLE_TAXONOMY: dict[str, RoleCompetencyProfile] = {
         canonical_role="Cybersecurity Analyst",
         domain="Cybersecurity",
         subdomain="Security Operations & Defense",
-        aliases=["Security Analyst", "Information Security Analyst", "InfoSec Analyst", "Cyber Security Analyst"],
+        aliases=["Cybersecurity", "Security Analyst", "Information Security Analyst", "InfoSec Analyst", "Cyber Security Analyst"],
         core_competencies=["Threat Monitoring & Detection", "Security Incident Investigation", "Log Analysis (SIEM)", "Vulnerability Assessment", "Network Traffic & Packet Analysis"],
         common_competencies=["Incident Triage & Containment", "Security Awareness Procedures", "Endpoint Detection & Response (EDR)", "Basic Malware Triage"],
         optional_competencies=["Threat Hunting", "Forensics Basics", "Scripting for Security Automation"],

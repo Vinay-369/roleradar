@@ -403,10 +403,19 @@ async def generate_tailoring(
 
     master_raw_text = resume.get("raw_text", "")
     candidate_profile = None
+    
+    # Safely extract parsed resume dictionary
+    resume_parsed = resume.get("parsed") or {}
+    if isinstance(resume_parsed, str):
+        try:
+            resume_parsed = json.loads(resume_parsed)
+        except json.JSONDecodeError:
+            resume_parsed = {}
+            
     if master_raw_text:
         cached_prof = get_cached_candidate_profile(master_raw_text)
         master_parsed = structure_resume_text(master_raw_text)
-        for k, v in (resume.get("parsed") or {}).items():
+        for k, v in resume_parsed.items():
             if v:
                 master_parsed[k] = copy.deepcopy(v)
         if cached_prof:
@@ -415,16 +424,18 @@ async def generate_tailoring(
             candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, master_raw_text)
             set_cached_candidate_profile(master_raw_text, candidate_profile)
     else:
-        master_parsed = resume.get("parsed") or {}
+        master_parsed = resume_parsed
         candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, "")
     master_skills = candidate_profile.get_all_demonstrated_skills() if hasattr(candidate_profile, "get_all_demonstrated_skills") else master_parsed.get("skills", [])
 
     # Canonical Phase 3 JD Analysis
     jd_reqs = await jobs_services.get_canonical_job_requirements(db, job)
 
+    jd_text = job.get("jd_text") or job.get("description") or ""
+
     # 1. Deterministic Skill Reordering & Gap Analysis
     reordered_skills, matched_skills, unmatched_jd_skills, was_reordered = compute_deterministic_skill_reorder(
-        master_skills, job.get("jd_text") or job.get("description") or ""
+        master_skills, jd_text
     )
 
     # 2. Extract editable sub-object (EXCLUDES Education, Certifications, Contact)
@@ -433,7 +444,7 @@ async def generate_tailoring(
     # 3. Wholesale AI Reasoning Pass
     result: StructuredTailoringResult = await ai_service.generate_resume_rewrite(
         master_resume_json=json.dumps(editable_subobject),
-        jd_text=job["jd_text"],
+        jd_text=jd_text,
         user_id=user_id,
         company=job.get("company", ""),
         role=job.get("title", ""),
@@ -474,7 +485,7 @@ async def generate_tailoring(
             warning = _truth_guard_warning(
                 change_dict.get("original", ""),
                 change_dict.get("proposed", ""),
-                job["jd_text"],
+                jd_text,
                 master_skills,
                 entity_id=change_dict.get("change_id", ""),
                 all_evidence_units=candidate_profile.evidence_units,
@@ -503,7 +514,7 @@ async def generate_tailoring(
                 "confidence": result.summary.confidence,
                 "status": ChangeStatus.PENDING.value if is_changed else ChangeStatus.APPROVED.value,
             }
-            unconfirmed = detect_fabricated_claims(result.summary.original, result.summary.proposed, job["jd_text"], master_skills)
+            unconfirmed = detect_fabricated_claims(result.summary.original, result.summary.proposed, jd_text, master_skills)
             if unconfirmed:
                 sum_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
                 sum_chg["fabrication_warning"] = f"Technical competency ({', '.join(unconfirmed)}) not found in master resume background."
@@ -588,7 +599,7 @@ async def generate_tailoring(
                 warning = _truth_guard_warning(
                     exp_b.original,
                     exp_b.proposed,
-                    job["jd_text"],
+                    jd_text,
                     master_skills,
                     exp_b.source_evidence,
                     require_verbatim_evidence=True,
@@ -621,7 +632,7 @@ async def generate_tailoring(
                 warning = _truth_guard_warning(
                     proj_b.original,
                     proj_b.proposed,
-                    job["jd_text"],
+                    jd_text,
                     master_skills,
                     proj_b.source_evidence,
                     require_verbatim_evidence=True,
@@ -947,7 +958,7 @@ async def finalize_tailoring(
 
     tailored_ats = compute_ats_score(
         resume_text=final_text,
-        jd_text=job["jd_text"] if job else "",
+        jd_text=(job.get("jd_text") or job.get("description") or "") if job else "",
         parseability_score=parseability.score,
         recruiter_impact_score=recruiter_impact.score,
         skill_match_score=tailored_match.skill_score if tailored_match else 0,

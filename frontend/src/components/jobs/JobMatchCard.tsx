@@ -321,11 +321,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
             <span>View Details</span>
             <span>→</span>
           </Link>
-<<<<<<< HEAD
-          {job.is_direct_apply && job.apply_url && (
-=======
           {job.is_direct_apply && job.apply_url && (job.apply_url.startsWith("https://") || job.apply_url.startsWith("http://")) && (
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
             <a
               href={job.apply_url}
               target="_blank"
