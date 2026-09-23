@@ -166,11 +166,12 @@ def generate_structured_tailoring_plan(
     # 3. Targeted Summary Formulation (Based strictly on verified evidence + target role)
     target_role_title = jd.target_role or jd.job_title or "Software Engineering"
     top_verified_skills = ", ".join(matched_skills[:4]) if matched_skills else ", ".join(candidate_skills[:4])
-    exp_yrs = analysis.years_of_experience
-
-    if exp_yrs >= 1.0:
+    exp_yrs = getattr(analysis, "years_of_experience", 0.0)
+    if profile.summary and profile.summary.strip():
+        summary_text = profile.summary.strip()
+    elif exp_yrs >= 1.0:
         summary_text = (
-            f"Results-driven {target_role_title} with {exp_yrs}+ years of experience delivering scalable systems. "
+            f"Results-driven {target_role_title} with {int(exp_yrs)}+ years of experience delivering scalable systems. "
             f"Demonstrated track record in {top_verified_skills} with focus on performance and reliability."
         )
     else:

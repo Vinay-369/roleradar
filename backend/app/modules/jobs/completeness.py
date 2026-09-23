@@ -196,7 +196,7 @@ def evaluate_opportunity_completeness(opportunity: dict[str, Any], require_india
         elif "apply_url" in missing_required:
             rejection_reason = OpportunityRejectionReason.INVALID_OR_MISSING_APPLY_URL.value
         elif ver_status in ("MARKET_BENCHMARK", OpportunityLifecycleStatus.MARKET_BENCHMARK.value):
-            rejection_reason = OpportunityRejectionReason.MARKET_BENCHMARK_NOT_LIVE.value
+            rejection_reason = OpportunityRejectionReason.BENCHMARK_NON_LIVE_CONTAMINATION.value
         elif "verification_status" in missing_required:
             rejection_reason = OpportunityRejectionReason.CLOSED_REQUISITION.value
         else:

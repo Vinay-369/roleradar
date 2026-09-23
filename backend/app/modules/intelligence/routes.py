@@ -87,9 +87,10 @@ async def get_ats_score(
         embedder = build_embedding_provider(settings)
         tailored_match = compute_match(tailored_candidate, job, embedder, category=profile.get("category", "FRESHER"))
 
+        target_jd_text = job.get("jd_text") or job.get("description") or ""
         score = compute_ats_score(
             resume_text=final_text,
-            jd_text=job["jd_text"],
+            jd_text=target_jd_text,
             parseability_score=pa.score,
             recruiter_impact_score=ri.score,
             skill_match_score=tailored_match.skill_score,
@@ -107,9 +108,10 @@ async def get_ats_score(
         matches = await matching_services.get_or_compute_matches(db, user_id, resume, profile, [job], settings)
         match = matches[0] if matches else {}
 
+        target_jd_text = job.get("jd_text") or job.get("description") or ""
         score = compute_ats_score(
             resume_text=resume["raw_text"],
-            jd_text=job["jd_text"],
+            jd_text=target_jd_text,
             parseability_score=resume["parseability"]["score"],
             recruiter_impact_score=resume["recruiter_impact"]["score"],
             skill_match_score=match.get("skill_score", 0),

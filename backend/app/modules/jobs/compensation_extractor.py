@@ -122,8 +122,6 @@ def extract_compensation_from_payload_and_text(
             result.salary_disclosed = True
             result.compensation_type = "NUMERIC"
 
-<<<<<<< HEAD
-=======
     # Ashby: compensation = {'summaryComponents': [{'compensationType': 'Salary', 'minValue': ..., 'maxValue': ..., 'currencyCode': 'INR'}]}
     ashby_comp = payload.get("compensation")
     if isinstance(ashby_comp, dict):
@@ -147,8 +145,6 @@ def extract_compensation_from_payload_and_text(
                 if tier_summary and isinstance(tier_summary, str):
                     result.compensation_text = tier_summary.strip()
                 break
-
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
     # If structured numeric compensation already found, format text and return
     if result.compensation_type == "NUMERIC":
         if result.salary_min and result.salary_max:

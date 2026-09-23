@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Sparkles, Briefcase, Bookmark, ArrowRight, FileText,
   ShieldCheck, Map, MessageCircleQuestion, CheckCircle2,
-  TrendingUp, Compass, Zap, Target,
+  TrendingUp, Compass, Zap, Target, FileEdit,
 } from "lucide-react";
 import { getDashboard } from "../lib/dashboard";
 import { getProfile } from "../lib/profile";
@@ -242,26 +242,36 @@ export function Dashboard() {
                   <p className="text-xs text-ink-500 py-3 text-center">Complete onboarding to see matched job listings.</p>
                 )}
                 {data.top_matches.slice(0, 4).map((m) => (
-                  <Link
+                  <div
                     key={m.job_id}
-                    to={`/opportunities/job/${m.job_id}`}
-                    className="p-3 rounded-xl border border-ink-100 bg-ink-50/40 hover:bg-white hover:border-signal-500/50 hover:shadow-xs transition-all flex items-center justify-between group"
+                    className="p-3 rounded-xl border border-ink-100 bg-ink-50/40 hover:bg-white hover:border-signal-500/50 hover:shadow-xs transition-all flex items-center justify-between gap-2 group"
                   >
-                    <div className="flex items-center gap-3">
+                    <Link
+                      to={`/opportunities/job/${m.job_id}`}
+                      className="flex items-center gap-3 flex-1 min-w-0"
+                    >
                       <div className="w-8 h-8 rounded-lg bg-ink-100 text-ink-700 flex items-center justify-center font-bold text-xs uppercase shrink-0 group-hover:bg-signal-500/10 group-hover:text-signal-700 transition-colors">
                         {m.company.slice(0, 2)}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-ink-900 group-hover:text-signal-700 leading-tight">{m.job_title}</p>
-                        <p className="text-[11px] text-ink-500 mt-0.5">{m.company}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-ink-900 group-hover:text-signal-700 leading-tight truncate">{m.job_title}</p>
+                        <p className="text-[11px] text-ink-500 mt-0.5 truncate">{m.company}</p>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-signal-500/10 text-signal-700 font-display">
+                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-signal-500/10 text-signal-700 font-display whitespace-nowrap">
                         {m.overall_score}% match
                       </span>
+                      <Link
+                        to={`/resume/tailor/${m.job_id}`}
+                        title={`Tailor resume for ${m.job_title} at ${m.company}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ink-950 hover:bg-signal-600 text-white text-[11px] font-semibold transition-all active:scale-95 whitespace-nowrap shadow-xs"
+                      >
+                        <FileEdit size={11} />
+                        <span>Tailor</span>
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>

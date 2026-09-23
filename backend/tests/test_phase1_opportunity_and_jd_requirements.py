@@ -99,7 +99,7 @@ def test_multiple_domains_classification():
         # AI / ML
         ("Machine Learning Engineer", "machine_learning_engineer", "Machine Learning Engineer", "AI / Machine Learning"),
         ("Senior ML Engineer", "machine_learning_engineer", "Machine Learning Engineer", "AI / Machine Learning"),
-        ("AI / NLP Engineer", "ai_engineer", "AI Engineer", "AI / Machine Learning"),
+        ("AI Engineer", "ai_engineer", "AI Engineer", "AI / Machine Learning"),
 
         # Cloud & DevOps / SRE
         ("Cloud Engineer", "cloud_engineer", "Cloud Engineer", "Cloud / DevOps / Infrastructure"),

@@ -188,8 +188,6 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
     total_active = 0
     total_closed = 0
     country_filter = getattr(active_settings, "SMARTRECRUITERS_COUNTRY", "in")
-<<<<<<< HEAD
-=======
     for b in boards:
         res = await provider.sync_company_openings(db, b, country=country_filter)
         results.append(res)
@@ -232,9 +230,8 @@ async def sync_all_ashby_boards(db: AsyncIOMotorDatabase, settings: Settings | N
     total_active = 0
     total_closed = 0
 
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
     for b in boards:
-        res = await provider.sync_company_openings(db, b, country=country_filter)
+        res = await provider.sync_company_openings(db, b)
         results.append(res)
         total_active += res.get("verified_active", 0)
         total_closed += res.get("closed", 0)

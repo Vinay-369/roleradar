@@ -196,15 +196,11 @@ async def sync_live_jobs(
     return {"status": "success", "added_count": added_count}
 
 
-<<<<<<< HEAD
-@router.post("/custom", response_model=JobOut)
-=======
 @router.post(
     "/custom", 
     response_model=JobOut,
     dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60, key_prefix="jobs_custom"))],
 )
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 async def create_custom_job_endpoint(
     payload: CreateCustomJobRequest,
     current_user: dict = Depends(get_current_user),

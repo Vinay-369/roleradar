@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -43,10 +43,95 @@ const TEMPLATES = [
   { id: "harvard", label: "Harvard Academic", desc: "Classic ivy-league serif styling with clean dividers." },
 ];
 
+const TAILORING_STEPS = [
+  { icon: "📄", label: "Parsing job description & extracting requirements" },
+  { icon: "🔍", label: "Matching your experience to employer criteria" },
+  { icon: "🧠", label: "AI evidence alignment & bullet rewriting" },
+  { icon: "🛡️", label: "Truth Guard anti-fabrication validation" },
+  { icon: "✅", label: "ATS scoring & one-page fit verification" },
+];
+
+function TailoringProgressScreen({ isGenerating }: { isGenerating: boolean }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!isGenerating) return;
+    intervalRef.current = setInterval(() => {
+      setActiveStep((s) => (s < TAILORING_STEPS.length - 1 ? s + 1 : s));
+    }, 2800);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isGenerating]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
+      {/* Pulsing ring */}
+      <div className="relative flex items-center justify-center">
+        <span className="absolute w-20 h-20 rounded-full bg-signal-500/20 animate-ping" />
+        <span className="absolute w-14 h-14 rounded-full bg-signal-500/30 animate-pulse" />
+        <div className="relative z-10 w-12 h-12 rounded-full bg-signal-500 flex items-center justify-center shadow-lg">
+          <RefreshCw className="w-5 h-5 text-white animate-spin" />
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="text-center max-w-md">
+        <h2 className="text-lg font-bold text-ink-900 mb-1">
+          {isGenerating ? "Crafting Your Tailored Resume" : "Loading Your Tailored Resume…"}
+        </h2>
+        <p className="text-xs text-ink-500 leading-relaxed">
+          {isGenerating
+            ? "RoleRadar's Truth Guard AI is aligning your verified experience to this role's exact requirements — no hallucinations, no fabricated claims."
+            : "Fetching your saved tailored resume draft…"}
+        </p>
+      </div>
+
+      {/* Step progress */}
+      {isGenerating && (
+        <div className="w-full max-w-sm space-y-2">
+          {TAILORING_STEPS.map((step, idx) => {
+            const isDone = idx < activeStep;
+            const isActive = idx === activeStep;
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-500 ${
+                  isActive
+                    ? "bg-signal-500/10 border border-signal-500/30"
+                    : isDone
+                    ? "opacity-50"
+                    : "opacity-30"
+                }`}
+              >
+                <span className="text-base shrink-0">{step.icon}</span>
+                <span className={`text-xs flex-1 ${isActive ? "font-semibold text-signal-800" : "text-ink-600"}`}>
+                  {step.label}
+                </span>
+                {isDone && <span className="text-emerald-500 text-xs font-bold shrink-0">✓</span>}
+                {isActive && (
+                  <span className="w-3 h-3 rounded-full border-2 border-signal-500 border-t-transparent animate-spin shrink-0" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-[11px] text-ink-400 text-center max-w-xs">
+        This typically takes 15–30 seconds depending on resume length and job complexity.
+      </p>
+    </div>
+  );
+}
+
+
 export function TailorReview() {
   const { jobId, versionId: routeVersionId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
   const queryClient = useQueryClient();
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
 
@@ -260,17 +345,7 @@ export function TailorReview() {
   };
 
   if (isLoading || generateMutation.isPending) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <RefreshCw className="w-8 h-8 text-signal-500 animate-spin" />
-        <div className="text-center">
-          <h2 className="text-lg font-bold text-ink-900">Tailoring Your Resume for This Role</h2>
-          <p className="text-xs text-ink-500 max-w-sm mt-1">
-            Analyzing job requirements, aligning your verified experience, and checking that proposed content stays grounded in your experience…
-          </p>
-        </div>
-      </div>
-    );
+    return <TailoringProgressScreen isGenerating={generateMutation.isPending} />;
   }
 
   if (!version) {
