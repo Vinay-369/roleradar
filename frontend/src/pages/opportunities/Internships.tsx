@@ -1,8 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+<<<<<<< HEAD
 import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X, RefreshCw } from "lucide-react";
 import { getRecommendedMatches, syncLiveJobs, type JobMatch } from "../../lib/jobs";
+=======
+import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X } from "lucide-react";
+import { getRecommendedMatches, type JobMatch } from "../../lib/jobs";
+>>>>>>> 70804571dc73c928037d4e20acf18351cd6a9b18
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
