@@ -283,7 +283,10 @@ def _merge_structured_tailoring(
                     if isinstance(merged_exp[b_idx], str):
                         merged_exp[b_idx] = prop_str
                 elif not matched and prop_str and not any(prop_str in _flatten_texts(m_b) for m_b in merged_exp):
-                    merged_exp.append(prop_str)
+                    if merged_exp and isinstance(merged_exp[-1], dict) and "bullets" in merged_exp[-1]:
+                        merged_exp[-1]["bullets"].append(prop_str)
+                    else:
+                        merged_exp.append(prop_str)
         merged["experience_raw"] = merged_exp
     else:
         merged["experience_raw"] = copy.deepcopy(master_exp)
@@ -349,7 +352,10 @@ def _merge_structured_tailoring(
                     if isinstance(merged_proj[b_idx], str):
                         merged_proj[b_idx] = prop_str
                 elif not matched and prop_str and not any(prop_str in _flatten_texts(m_p) for m_p in merged_proj):
-                    merged_proj.append(prop_str)
+                    if merged_proj and isinstance(merged_proj[-1], dict) and "bullets" in merged_proj[-1]:
+                        merged_proj[-1]["bullets"].append(prop_str)
+                    else:
+                        merged_proj.append(prop_str)
         merged["projects_raw"] = merged_proj
     else:
         merged["projects_raw"] = copy.deepcopy(master_proj)

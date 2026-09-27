@@ -1,0 +1,821 @@
+<title>Provider Salary Disclosure Analysis</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --navy: #1E3A5F;
+    --green: #10B981;
+    --amber: #F59E0B;
+    --red: #EF4444;
+    --white: #F9FAFB;
+    --gray: #6B7280;
+    --gray-light: #D1D5DB;
+    --gray-dark: #374151;
+    --border: #E5E7EB;
+    --bg-card: #FFFFFF;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --code-bg: #F3F4F6;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy: #60A5FA;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --white: #111827;
+      --gray: #9CA3AF;
+      --gray-light: #4B5563;
+      --gray-dark: #D1D5DB;
+      --border: #374151;
+      --bg-card: #1F2937;
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --code-bg: #111827;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --navy: #60A5FA;
+    --green: #10B981;
+    --amber: #F59E0B;
+    --red: #EF4444;
+    --white: #111827;
+    --gray: #9CA3AF;
+    --gray-light: #4B5563;
+    --gray-dark: #D1D5DB;
+    --border: #374151;
+    --bg-card: #1F2937;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --code-bg: #111827;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--text-primary);
+    font-family: Inter, -apple-system, sans-serif;
+    margin: 0;
+    padding: 24px;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+  }
+
+  .question-box {
+    background: linear-gradient(135deg, var(--navy) 0%, #2563EB 100%);
+    color: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+  }
+
+  .question-box h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+
+  .question-box p {
+    margin: 0;
+    opacity: 0.95;
+    line-height: 1.7;
+  }
+
+  .provider-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab:hover {
+    border-color: var(--navy);
+  }
+
+  .tab.active {
+    background: var(--navy);
+    color: white;
+    border-color: var(--navy);
+  }
+
+  .tab .count {
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.7;
+    font-size: 13px;
+    margin-left: 6px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .summary-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin: 0 0 8px;
+  }
+
+  .summary-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary-card.disclosed .summary-value { color: var(--green); }
+  .summary-card.partial .summary-value { color: var(--amber); }
+  .summary-card.withheld .summary-value { color: var(--red); }
+
+  .summary-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .analysis-grid {
+    display: grid;
+    gap: 24px;
+  }
+
+  .job-analysis {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .job-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .job-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+  }
+
+  .job-meta {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .split-view {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .panel {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .panel-header.provider {
+    background: #DBEAFE;
+    color: #1E40AF;
+  }
+
+  .panel-header.extractor {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+
+  [data-theme="dark"] .panel-header.provider,
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .panel-header.provider {
+      background: #1E3A8A;
+      color: #BFDBFE;
+    }
+  }
+
+  [data-theme="dark"] .panel-header.extractor,
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .panel-header.extractor {
+      background: #065F46;
+      color: #A7F3D0;
+    }
+  }
+
+  .panel-content {
+    padding: 16px;
+    background: var(--code-bg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .field-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .field-value {
+    color: var(--text-primary);
+  }
+
+  .field-value.found {
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .field-value.missing {
+    color: var(--gray);
+    font-style: italic;
+  }
+
+  .verdict {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .verdict.disclosed {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .verdict.extraction-gap {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--amber);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .verdict.withheld {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--red);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .verdict-icon {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+
+  .jd-preview {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    max-height: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .jd-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, var(--bg-card));
+  }
+
+  .solution-box {
+    background: var(--bg-card);
+    border: 2px solid var(--navy);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 32px;
+  }
+
+  .solution-box h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--navy);
+    margin: 0 0 16px;
+  }
+
+  .solution-box ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .solution-box li {
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 900px) {
+    .split-view {
+      grid-template-columns: 1fr;
+    }
+
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    body {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .field-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+</style>
+
+<div class="container">
+  <header>
+    <h1>Provider Salary Disclosure Analysis</h1>
+    <p class="subtitle">Forensic examination of what ATS providers send vs what our extraction captures</p>
+  </header>
+
+  <div class="question-box">
+    <h2>The Core Question</h2>
+    <p>Are ATS providers (Ashby, Greenhouse, Lever, SmartRecruiters) actually sending salary data in their API responses, or are they withholding it? And if they're sending it, is our extraction logic finding it?</p>
+  </div>
+
+  <div class="provider-tabs" id="provider-tabs">
+    <button class="tab active" data-provider="all">All Providers <span class="count">—</span></button>
+    <button class="tab" data-provider="ashby">Ashby <span class="count">—</span></button>
+    <button class="tab" data-provider="greenhouse">Greenhouse <span class="count">—</span></button>
+    <button class="tab" data-provider="lever">Lever <span class="count">—</span></button>
+    <button class="tab" data-provider="smartrecruiters">SmartRecruiters <span class="count">—</span></button>
+    <button class="tab" data-provider="curated_benchmark">Curated <span class="count">—</span></button>
+  </div>
+
+  <div class="summary-grid" id="summary-grid">
+    <div class="summary-card disclosed">
+      <p class="summary-label">Provider Disclosed</p>
+      <p class="summary-value">—</p>
+      <p class="summary-detail">Structured data found</p>
+    </div>
+    <div class="summary-card partial">
+      <p class="summary-label">Text-Only Patterns</p>
+      <p class="summary-value">—</p>
+      <p class="summary-detail">In JD, not structured</p>
+    </div>
+    <div class="summary-card withheld">
+      <p class="summary-label">Provider Withheld</p>
+      <p class="summary-value">—</p>
+      <p class="summary-detail">No data anywhere</p>
+    </div>
+    <div class="summary-card">
+      <p class="summary-label">Disclosure Rate</p>
+      <p class="summary-value">—</p>
+      <p class="summary-detail">Overall coverage</p>
+    </div>
+  </div>
+
+  <div class="analysis-grid" id="analysis-grid">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading job data from API...</p>
+      <p style="font-size: 14px; margin-top: 8px;">Make sure backend is running on http://localhost:8000</p>
+    </div>
+  </div>
+
+  <div class="solution-box" id="solution-box" hidden>
+    <h3>📋 What We Found & How to Fix It</h3>
+    <div id="solution-content"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api';
+let currentProvider = 'all';
+let allJobs = [];
+
+async function init() {
+  setupTabs();
+  await loadJobs();
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentProvider = tab.dataset.provider;
+      analyzeJobs();
+    });
+  });
+}
+
+async function loadJobs() {
+  try {
+    const response = await fetch(`${API_BASE}/jobs/matches?limit=100`);
+    if (!response.ok) throw new Error('API error');
+
+    const data = await response.json();
+    allJobs = data.items || [];
+
+    updateTabCounts();
+    analyzeJobs();
+  } catch (e) {
+    document.getElementById('analysis-grid').innerHTML = `
+      <div class="loading">
+        <p style="color: var(--red);">❌ Failed to load jobs: ${e.message}</p>
+        <p style="font-size: 14px; margin-top: 12px;">Make sure the backend server is running on http://localhost:8000</p>
+      </div>
+    `;
+  }
+}
+
+function updateTabCounts() {
+  const providers = ['all', 'ashby', 'greenhouse', 'lever', 'smartrecruiters', 'curated_benchmark'];
+
+  providers.forEach(provider => {
+    const count = provider === 'all'
+      ? allJobs.length
+      : allJobs.filter(j => j.source === provider).length;
+
+    const tab = document.querySelector(`[data-provider="${provider}"]`);
+    if (tab) {
+      tab.querySelector('.count').textContent = count;
+    }
+  });
+}
+
+function analyzeJobs() {
+  const jobs = currentProvider === 'all'
+    ? allJobs
+    : allJobs.filter(j => j.source === currentProvider);
+
+  if (jobs.length === 0) {
+    document.getElementById('analysis-grid').innerHTML = `
+      <div class="loading">
+        <p>No jobs found from this provider</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Calculate statistics
+  let disclosed = 0;
+  let textOnly = 0;
+  let withheld = 0;
+
+  jobs.forEach(job => {
+    const hasStructured = hasStructuredCompensation(job);
+    const hasTextPattern = hasCompensationInText(job);
+    const hasExtracted = job.salary_min || job.salary_max || job.compensation_text;
+
+    if (hasStructured) {
+      disclosed++;
+    } else if (hasTextPattern || hasExtracted) {
+      textOnly++;
+    } else {
+      withheld++;
+    }
+  });
+
+  updateSummaryCards(disclosed, textOnly, withheld, jobs.length);
+  renderJobAnalysis(jobs.slice(0, 10)); // Show first 10
+  showSolution(disclosed, textOnly, withheld, jobs.length);
+}
+
+function hasStructuredCompensation(job) {
+  const payload = job.raw_payload;
+  if (!payload) return false;
+
+  return !!(
+    payload.compensation?.summaryComponents ||
+    payload.pay?.min_value ||
+    payload.pay?.max_value ||
+    payload.salaryRange?.min ||
+    payload.salaryRange?.max
+  );
+}
+
+function hasCompensationInText(job) {
+  const text = job.jd_text || job.description || '';
+  if (!text) return false;
+
+  const patterns = [
+    /(?:₹|INR|Rs\.?\s*)?\d+(?:\.\d+)?\s*(?:-|to)\s*(?:₹|INR|Rs\.?\s*)?\d+(?:\.\d+)?\s*(?:lpa|lakhs?|per\s*annum)/i,
+    /(?:stipend|salary)\s*[:\-]?\s*(?:₹|INR|Rs\.?)\s*\d[\d,]{3,}\s*(?:\/|\s*per\s*)(?:month|pm)/i,
+    /best\s*in\s*industry|competitive\s*(?:salary|compensation)|commensurate\s*with/i
+  ];
+
+  return patterns.some(p => p.test(text));
+}
+
+function updateSummaryCards(disclosed, textOnly, withheld, total) {
+  const cards = document.querySelectorAll('.summary-card');
+
+  cards[0].querySelector('.summary-value').textContent = disclosed;
+  cards[0].querySelector('.summary-detail').textContent =
+    `${(disclosed/total*100).toFixed(1)}% of jobs`;
+
+  cards[1].querySelector('.summary-value').textContent = textOnly;
+  cards[1].querySelector('.summary-detail').textContent =
+    `${(textOnly/total*100).toFixed(1)}% of jobs`;
+
+  cards[2].querySelector('.summary-value').textContent = withheld;
+  cards[2].querySelector('.summary-detail').textContent =
+    `${(withheld/total*100).toFixed(1)}% of jobs`;
+
+  const rate = ((disclosed + textOnly) / total * 100).toFixed(1);
+  cards[3].querySelector('.summary-value').textContent = `${rate}%`;
+  cards[3].querySelector('.summary-detail').textContent =
+    `${disclosed + textOnly} of ${total} jobs`;
+}
+
+function renderJobAnalysis(jobs) {
+  const grid = document.getElementById('analysis-grid');
+
+  grid.innerHTML = jobs.map(job => {
+    const hasStructured = hasStructuredCompensation(job);
+    const hasTextPattern = hasCompensationInText(job);
+    const extracted = job.salary_min || job.salary_max || job.compensation_text;
+
+    let verdict, verdictClass, verdictIcon;
+
+    if (hasStructured && extracted) {
+      verdict = 'Provider disclosed & extracted successfully';
+      verdictClass = 'disclosed';
+      verdictIcon = '✓';
+    } else if (hasStructured && !extracted) {
+      verdict = 'Provider disclosed but extraction failed (bug in our code)';
+      verdictClass = 'extraction-gap';
+      verdictIcon = '⚠';
+    } else if (hasTextPattern && extracted) {
+      verdict = 'Found in job description text, extracted successfully';
+      verdictClass = 'disclosed';
+      verdictIcon = '✓';
+    } else if (hasTextPattern && !extracted) {
+      verdict = 'Pattern exists in text but extraction missed it';
+      verdictClass = 'extraction-gap';
+      verdictIcon = '⚠';
+    } else {
+      verdict = 'Provider withheld salary data (not in API or JD text)';
+      verdictClass = 'withheld';
+      verdictIcon = '✗';
+    }
+
+    return `
+      <div class="job-analysis">
+        <div class="job-header">
+          <p class="job-title">${escapeHtml(job.title || 'Unknown')}</p>
+          <p class="job-meta">${escapeHtml(job.company || 'Unknown')} · ${job.source}</p>
+        </div>
+
+        <div class="split-view">
+          <div class="panel">
+            <div class="panel-header provider">Provider API Data</div>
+            <div class="panel-content">
+              ${renderProviderData(job)}
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header extractor">Extracted Values</div>
+            <div class="panel-content">
+              ${renderExtractedData(job)}
+            </div>
+          </div>
+        </div>
+
+        <div class="verdict ${verdictClass}">
+          <span class="verdict-icon">${verdictIcon}</span>
+          ${verdict}
+        </div>
+
+        ${renderJDPreview(job)}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderProviderData(job) {
+  const payload = job.raw_payload || {};
+  let html = '';
+
+  if (payload.compensation) {
+    const comp = payload.compensation;
+    html += `<div class="field-row">
+      <span class="field-label">Ashby compensation:</span>
+      <span class="field-value found">Found</span>
+    </div>`;
+
+    if (comp.summaryComponents) {
+      comp.summaryComponents.forEach((c, i) => {
+        html += `<div class="field-row">
+          <span class="field-label">  Component ${i+1}:</span>
+          <span class="field-value found">${c.compensationType}: ${c.minValue}-${c.maxValue} ${c.currencyCode}</span>
+        </div>`;
+      });
+    }
+
+    if (comp.scrapeableCompensationSalarySummary) {
+      html += `<div class="field-row">
+        <span class="field-label">  Summary:</span>
+        <span class="field-value found">${comp.scrapeableCompensationSalarySummary}</span>
+      </div>`;
+    }
+  }
+
+  if (payload.pay) {
+    html += `<div class="field-row">
+      <span class="field-label">Greenhouse pay.min:</span>
+      <span class="field-value found">${payload.pay.min_value || 'null'}</span>
+    </div>`;
+    html += `<div class="field-row">
+      <span class="field-label">Greenhouse pay.max:</span>
+      <span class="field-value found">${payload.pay.max_value || 'null'}</span>
+    </div>`;
+  }
+
+  if (payload.salaryRange) {
+    html += `<div class="field-row">
+      <span class="field-label">Lever salary.min:</span>
+      <span class="field-value found">${payload.salaryRange.min || 'null'}</span>
+    </div>`;
+    html += `<div class="field-row">
+      <span class="field-label">Lever salary.max:</span>
+      <span class="field-value found">${payload.salaryRange.max || 'null'}</span>
+    </div>`;
+  }
+
+  if (!html) {
+    html = `<div class="field-row">
+      <span class="field-label">Structured data:</span>
+      <span class="field-value missing">None provided</span>
+    </div>`;
+  }
+
+  return html;
+}
+
+function renderExtractedData(job) {
+  return `
+    <div class="field-row">
+      <span class="field-label">salary_min:</span>
+      <span class="field-value ${job.salary_min ? 'found' : 'missing'}">${job.salary_min || 'null'}</span>
+    </div>
+    <div class="field-row">
+      <span class="field-label">salary_max:</span>
+      <span class="field-value ${job.salary_max ? 'found' : 'missing'}">${job.salary_max || 'null'}</span>
+    </div>
+    <div class="field-row">
+      <span class="field-label">stipend_min:</span>
+      <span class="field-value ${job.stipend_min ? 'found' : 'missing'}">${job.stipend_min || 'null'}</span>
+    </div>
+    <div class="field-row">
+      <span class="field-label">compensation_text:</span>
+      <span class="field-value ${job.compensation_text ? 'found' : 'missing'}">${job.compensation_text || 'null'}</span>
+    </div>
+    <div class="field-row">
+      <span class="field-label">compensation_type:</span>
+      <span class="field-value ${job.compensation_type !== 'UNDISCLOSED' ? 'found' : 'missing'}">${job.compensation_type || 'UNDISCLOSED'}</span>
+    </div>
+  `;
+}
+
+function renderJDPreview(job) {
+  const text = job.jd_text || job.description || '';
+  if (!text || text.length < 100) return '';
+
+  return `<div class="jd-preview">${escapeHtml(text.slice(0, 300))}</div>`;
+}
+
+function showSolution(disclosed, textOnly, withheld, total) {
+  const box = document.getElementById('solution-box');
+  const content = document.getElementById('solution-content');
+
+  box.hidden = false;
+
+  const disclosureRate = ((disclosed + textOnly) / total * 100).toFixed(1);
+
+  let html = '<ul>';
+
+  if (disclosed === 0 && textOnly === 0) {
+    html += '<li><strong>Finding:</strong> No salary data found in any provider responses or job descriptions. This indicates that <strong>providers are withholding salary information</strong>, not an extraction bug.</li>';
+    html += '<li><strong>Solution:</strong> Since providers don\'t disclose salary, you have two options:<ul>';
+    html += '<li>Contact employers directly to request salary disclosure</li>';
+    html += '<li>Add manual salary data entry for jobs where you know the compensation</li>';
+    html += '<li>Show qualitative tags like "Competitive compensation" where applicable</li>';
+    html += '</ul></li>';
+  } else if (disclosed > textOnly * 2) {
+    html += `<li><strong>Finding:</strong> ${disclosureRate}% disclosure rate. Most compensation data comes from <strong>structured API fields</strong>. Your extraction is working well.</li>`;
+    html += '<li><strong>Action:</strong> Run the backfill script to populate missing data: <code>python scratch/run_backfill_simple.py</code></li>';
+  } else {
+    html += `<li><strong>Finding:</strong> Mixed disclosure. ${disclosed} jobs have structured data, ${textOnly} have text patterns only, ${withheld} have nothing.</li>`;
+    if (textOnly > 0) {
+      html += '<li><strong>Opportunity:</strong> There are compensation patterns in job descriptions that could be extracted. Run the backfill to capture them.</li>';
+    }
+    html += '<li><strong>Action:</strong> Run: <code>cd backend && python ../scratch/run_backfill_simple.py</code></li>';
+  }
+
+  html += `<li><strong>Expected Coverage:</strong> Based on this analysis, you should reach ${disclosureRate}% compensation coverage after backfill.</li>`;
+  html += '</ul>';
+
+  content.innerHTML = html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+init();
+</script>

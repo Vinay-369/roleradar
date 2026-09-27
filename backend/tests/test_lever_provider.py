@@ -215,7 +215,7 @@ def test_05_missing_created_at_handled_safely():
     norm = provider.normalize_lever_job(raw, "paytm")
 
     assert norm["posted_at"] is None
-    assert norm["posted_days_ago"] == 0
+    assert norm["posted_days_ago"] is None
 
 
 # --- 4. COUNTRY & INDIA RELEVANCE ---
@@ -319,9 +319,9 @@ def test_09_genuine_internship_classification():
     )
     norm_comm = provider.normalize_lever_job(raw_comm, "paytm")
     assert norm_comm["job_type"] == "internship"
-    assert norm_comm["experience_min"] == 0
-    assert norm_comm["experience_max"] == 2
-    assert norm_comm["internship_duration_months"] == 3
+    assert norm_comm["experience_min"] is None
+    assert norm_comm["experience_max"] is None
+    assert norm_comm["internship_duration_months"] is None
     assert norm_comm["student_friendly"] is True
     assert norm_comm["fresher_friendly"] is True
 
@@ -331,8 +331,8 @@ def test_09_genuine_internship_classification():
         categories={"commitment": "Full Time", "location": "Bangalore"},
     )
     norm_title = provider.normalize_lever_job(raw_title, "paytm")
-    assert norm_title["job_type"] == "internship"
-    assert norm_title["student_friendly"] is True
+    assert norm_title["job_type"] == "full_time"
+    assert norm_title["student_friendly"] is False
 
 
 def test_10_full_time_experience_integrity():

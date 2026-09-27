@@ -95,21 +95,7 @@ def _clean_html_description(html_text: str | None) -> str:
     return clean
 
 
-def normalize_location_string(loc: str | None) -> str:
-    """Normalizes location strings by collapsing duplicate commas, trimming, and cleaning casing."""
-    if not loc or not loc.strip():
-        return "Not specified"
-    raw_parts = [p.strip() for p in re.split(r",+", loc) if p.strip()]
-    cleaned_parts = []
-    for p in raw_parts:
-        low = p.lower()
-        if low == "india":
-            cleaned_parts.append("India")
-        elif low in ("usa", "us", "uk", "uae"):
-            cleaned_parts.append(p.upper())
-        else:
-            cleaned_parts.append(p.title())
-    return ", ".join(cleaned_parts) if cleaned_parts else "Not specified"
+from app.modules.jobs.location_normalization import normalize_location_string
 
 
 def is_internship_opportunity(
@@ -125,6 +111,19 @@ def is_internship_opportunity(
     3. Explicit title markers (e.g. 'Intern', 'Internship', 'Trainee', 'Apprentice')
     4. Guards against Senior/Lead/Manager roles.
     """
+    if isinstance(type_of_employment, dict):
+        emp_id = str(type_of_employment.get("id") or "").lower()
+        emp_label = str(type_of_employment.get("label") or "").lower()
+        return emp_id == "internship" or "intern" in emp_label
+    if isinstance(type_of_employment, str) and type_of_employment.strip():
+        return "intern" in type_of_employment.lower()
+
+    if isinstance(experience_level, dict):
+        if str(experience_level.get("id") or "").lower() == "internship":
+            return True
+    elif isinstance(experience_level, str) and "intern" in experience_level.lower():
+        return True
+
     title_lower = title.lower().strip()
 
     # Disqualify senior / leadership roles from being marked as internships
@@ -135,26 +134,7 @@ def is_internship_opportunity(
     if any(re.search(rf"\b{re.escape(sm)}\b", title_lower) for sm in senior_markers):
         return False
 
-    # 1. Check structured employment type
-    if isinstance(type_of_employment, dict):
-        emp_id = str(type_of_employment.get("id") or "").lower()
-        emp_label = str(type_of_employment.get("label") or "").lower()
-        if emp_id == "internship" or "intern" in emp_label:
-            return True
-    elif isinstance(type_of_employment, str):
-        if "intern" in type_of_employment.lower():
-            return True
-
-    # 2. Check structured experience level
-    if isinstance(experience_level, dict):
-        exp_id = str(experience_level.get("id") or "").lower()
-        if exp_id == "internship":
-            return True
-    elif isinstance(experience_level, str):
-        if "intern" in experience_level.lower():
-            return True
-
-    # 3. Explicit title markers
+    # Use title markers only when structured employment and experience types are absent.
     intern_patterns = [
         r"\bintern\b",
         r"\binternship\b",
@@ -225,8 +205,6 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
     function_label = function_dict.get("label") if isinstance(function_dict, dict) else ""
     industry_dict = raw.get("industry") or {}
     industry_label = industry_dict.get("label") if isinstance(industry_dict, dict) else ""
-    exp_dict = raw.get("experienceLevel") or {}
-    exp_label = exp_dict.get("label") if isinstance(exp_dict, dict) else ""
     emp_dict = raw.get("typeOfEmployment") or {}
     emp_label = emp_dict.get("label") if isinstance(emp_dict, dict) else ""
 
@@ -235,7 +213,6 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
         f"Role Function: {function_label or 'Not specified'}.",
         f"Industry: {industry_label or 'Technology'}.",
         f"Employment Type: {emp_label or 'Full-time'}.",
-        f"Experience Level: {exp_label or 'Undisclosed'}.",
     ]
 
     custom_fields = raw.get("customField")
@@ -388,7 +365,7 @@ class SmartRecruitersJobProvider:
         # Company resolution
         raw_company = raw.get("company") or {}
         comp_from_raw = raw_company.get("name") if isinstance(raw_company, dict) else None
-        resolved_company = company_name or comp_from_raw or board_token.title()
+        resolved_company = company_name or comp_from_raw
 
         # Location extraction
         loc_data = raw.get("location") or {}
@@ -409,27 +386,16 @@ class SmartRecruitersJobProvider:
             is_remote_loc = bool(loc_data.get("remote"))
             is_hybrid_loc = bool(loc_data.get("hybrid"))
 
-        location = normalize_location_string(location)
+        location = normalize_location_string(location) if location else None
 
         # Workplace mode
         title_lower = title.lower()
-        location_lower = location.lower()
-        is_remote = (
-            is_remote_loc
-            or "remote" in location_lower
-            or "remote" in title_lower
-        )
-        is_hybrid = (
-            is_hybrid_loc
-            or "hybrid" in location_lower
-            or "hybrid" in title_lower
-        )
-        workplace_type = "REMOTE" if is_remote else ("HYBRID" if is_hybrid else "ON_SITE")
+        is_remote = is_remote_loc if isinstance(loc_data, dict) and isinstance(loc_data.get("remote"), bool) else None
+        is_hybrid = is_hybrid_loc if isinstance(loc_data, dict) and isinstance(loc_data.get("hybrid"), bool) else None
+        workplace_type = "REMOTE" if is_remote else ("HYBRID" if is_hybrid else ("ON_SITE" if is_remote is False and is_hybrid is False else None))
 
         # Description construction
         clean_desc, raw_html = _build_smartrecruiters_description(raw)
-        if not clean_desc:
-            clean_desc = title
 
         # Direct Application URL Safety:
         # Standard SmartRecruiters requisition patterns:
@@ -437,11 +403,6 @@ class SmartRecruitersJobProvider:
         # applyUrl: https://jobs.smartrecruiters.com/{company}/{job_id}/apply
         raw_apply = (raw.get("applyUrl") or "").strip()
         raw_posting = (raw.get("postingUrl") or "").strip()
-
-        if not raw_apply and clean_token_identifier(board_token) and job_id:
-            raw_apply = f"https://jobs.smartrecruiters.com/{board_token}/{job_id}/apply"
-        if not raw_posting and clean_token_identifier(board_token) and job_id:
-            raw_posting = f"https://jobs.smartrecruiters.com/{board_token}/{job_id}"
 
         chosen_url = ""
         url_type = ApplicationUrlType.INVALID
@@ -487,7 +448,7 @@ class SmartRecruitersJobProvider:
         # Timestamps: Zero Date Fabrication
         released_date = raw.get("releasedDate")
         posted_at_iso: str | None = None
-        posted_days_ago = 0
+        posted_days_ago = None
 
         if released_date and isinstance(released_date, str):
             try:
@@ -500,13 +461,14 @@ class SmartRecruitersJobProvider:
         # Metadata parsing
         type_of_emp = raw.get("typeOfEmployment")
         exp_level = raw.get("experienceLevel")
-        exp_level_id = (exp_level.get("id") if isinstance(exp_level, dict) else str(exp_level or "")).lower()
+        exp_level_id = str(exp_level.get("id") if isinstance(exp_level, dict) else exp_level or "").lower()
         exp_level_label = exp_level.get("label") if isinstance(exp_level, dict) else str(exp_level or "")
         emp_type_label = type_of_emp.get("label") if isinstance(type_of_emp, dict) else str(type_of_emp or "")
 
         # Internship classification
         is_intern = is_internship_opportunity(title, type_of_emp, exp_level)
-        job_type = "internship" if is_intern else "full_time"
+        from app.modules.jobs.taxonomy import normalize_employment_type
+        job_type = normalize_employment_type(type_of_emp, title, classified_internship=is_intern)
 
         # Seniority markers
         senior_markers = [
@@ -523,12 +485,6 @@ class SmartRecruitersJobProvider:
         # RULE: Never classify undisclosed experience as fresher!
         is_grad = any(k in title_lower for k in ["graduate engineer", "trainee", "get", "campus", "junior"]) and not is_senior
         is_fresher = is_intern or (exp_level_id == "entry_level" and not is_senior) or is_grad
-
-        # Experience bounds:
-        # Internships get 0 to 2 years.
-        # Full-time roles get None unless explicit numeric range is extracted.
-        experience_min = 0 if is_intern else (0 if (exp_level_id == "entry_level" and not is_senior) else None)
-        experience_max = 2 if is_intern else (1 if (exp_level_id == "entry_level" and not is_senior) else None)
 
         # Country extraction and India relevance
         # If country_code == 'in', country is India
@@ -581,7 +537,7 @@ class SmartRecruitersJobProvider:
             "location": location,
             "country": country,
             "is_india_opportunity": is_india,
-            "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
+            "opportunity_type": job_type.upper() if job_type else None,
             "description": clean_desc,
             "responsibilities": reqs.responsibilities,
             "qualifications": reqs.qualifications,
@@ -595,13 +551,15 @@ class SmartRecruitersJobProvider:
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
             "compensation_text": comp.compensation_text,
-            "experience_min": int(reqs.min_years_experience) if reqs.min_years_experience is not None else experience_min,
-            "experience_max": int(reqs.max_years_experience) if reqs.max_years_experience is not None else experience_max,
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
         })
 
         return {
             "id": canonical_id,
             "source": "smartrecruiters",
+            "source_id": job_id,
+            "internal_source": "smartrecruiters",
             "source_job_id": job_id,
             "company_board": board_token.lower(),
             "title": title,
@@ -618,10 +576,12 @@ class SmartRecruitersJobProvider:
             "structured_requirements": reqs.model_dump(mode="json"),
             "completeness_status": comp_eval.source_completeness.value,
             "recommendation_quality": comp_eval.recommendation_quality.value,
-            "experience_min": int(reqs.min_years_experience) if reqs.min_years_experience is not None else experience_min,
-            "experience_max": int(reqs.max_years_experience) if reqs.max_years_experience is not None else experience_max,
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
+            "experience_text": reqs.experience_requirements,
             "experience_level": exp_level_label or "Undisclosed",
-            "type_of_employment": emp_type_label or "Full-time",
+            "type_of_employment": emp_type_label or None,
+            "employment_type": emp_type_label or None,
             "job_type": job_type,
             "country": country,
             "is_india_opportunity": is_india,
@@ -633,12 +593,17 @@ class SmartRecruitersJobProvider:
             "salary_min": comp.salary_min,
             "salary_max": comp.salary_max,
             "salary_currency": comp.salary_currency,
+            "salary_period": comp.salary_period,
+            "salary_unit": comp.salary_unit,
             "salary_disclosed": comp.salary_disclosed,
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
+            "stipend_currency": comp.stipend_currency,
+            "stipend_period": comp.stipend_period,
+            "stipend_unit": comp.stipend_unit,
             "compensation_type": comp.compensation_type,
             "compensation_text": comp.compensation_text,
-            "internship_duration_months": 3 if is_intern else None,
+            "internship_duration_months": raw.get("internshipDurationMonths"),
             "fresher_friendly": is_fresher,
             "posted_days_ago": posted_days_ago,
             "posted_at": posted_at_iso,

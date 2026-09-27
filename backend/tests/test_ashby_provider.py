@@ -103,8 +103,10 @@ def test_01_ashby_response_normalization():
     assert norm["is_direct_apply"] is True
     assert norm["verification_status"] == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value
     assert norm["verification_method"] == "ashby_api_direct"
-    assert norm["salary_min"] == 30.0
-    assert norm["salary_max"] == 50.0
+    assert norm["salary_min"] == 3000000.0
+    assert norm["salary_max"] == 5000000.0
+    assert norm["salary_currency"] == "INR"
+    assert norm["salary_period"] == "YEAR"
     assert norm["salary_disclosed"] is True
 
 
@@ -246,7 +248,7 @@ def test_07_freshness_zero_date_fabrication():
     raw_no_date = make_raw_ashby_job(publishedAt=None)
     norm_no_date = provider.normalize_ashby_job(raw_no_date, "temporal", now=fixed_now)
     assert norm_no_date["posted_at"] is None
-    assert norm_no_date["posted_days_ago"] == 0
+    assert norm_no_date["posted_days_ago"] is None
 
 
 # --- 8. ROLE MAPPING ---
@@ -298,15 +300,15 @@ def test_10_experience_extraction():
     norm_ft = provider.normalize_ashby_job(raw_ft, "kong")
     assert norm_ft["experience_min"] == 3
 
-    # Internship experience default
+    # Internship eligibility does not invent experience bounds
     raw_intern = make_raw_ashby_job(
         title="Software Engineering Intern",
         employmentType="Intern",
         descriptionPlain="Open to current students in computer science.",
     )
     norm_intern = provider.normalize_ashby_job(raw_intern, "kong")
-    assert norm_intern["experience_min"] == 0
-    assert norm_intern["experience_max"] == 2
+    assert norm_intern["experience_min"] is None
+    assert norm_intern["experience_max"] is None
 
 
 # --- 11. APPLY URL VALIDATION ---

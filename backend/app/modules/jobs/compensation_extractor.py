@@ -37,7 +37,7 @@ INTERNSHIP_QUALITATIVE_PATTERNS = [
 
 # Strict numeric salary patterns for Indian context
 NUMERIC_LPA_RANGE_RE = re.compile(
-    r"(?:(?:₹|INR|Rs\.?)\s*)?([0-9]+(?:\.[0-9]+)?)\s*(?:-|–|to)\s*(?:(?:₹|INR|Rs\.?)\s*)?([0-9]+(?:\.[0-9]+)?)\s*(?:lpa|lacs?|lakhs?|per\s*annum|p\.?a\.?)\b",
+    r"(?:(?:₹|INR|Rs\.?)\s*)?([0-9]+(?:\.[0-9]+)?)\s*(?:-|–|to)\s*(?:(?:₹|INR|Rs\.?)\s*)?([0-9]+(?:\.[0-9]+)?)\s*(lpa|lacs?|lakhs?(?:\s+per\s+annum)?|per\s*annum|p\.?a\.?)\b",
     re.I,
 )
 NUMERIC_LPA_SINGLE_RE = re.compile(
@@ -53,7 +53,31 @@ NUMERIC_INR_FULL_RANGE_RE = re.compile(
     re.I,
 )
 NUMERIC_STIPEND_RE = re.compile(
-    r"(?:(?:stipend|salary)\s*[:\-]?\s*)?(?:₹|INR|Rs\.?)\s*([0-9][0-9,]{3,})\s*(?:/|\s*per\s*)?(?:month|pm|mo)\b",
+    r"\b(?:monthly\s+)?stipend\s*(?:of\s*)?[:\-]?\s*(₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:/|\s*per\s*)?(month|pm|mo)\b",
+    re.I,
+)
+NUMERIC_STIPEND_SUFFIX_RE = re.compile(
+    r"(?P<currency>₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)\s*(?P<amount>[0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:/|\s*per\s*)(?P<period>month|pm|mo)\s+stipend\b",
+    re.I,
+)
+NUMERIC_STIPEND_RANGE_RE = re.compile(
+    r"\bstipend\s*(?:of\s*)?[:\-]?\s*(₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:-|–|to)\s*(₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)?\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:/|\s*per\s*)?(month|pm|mo)\b",
+    re.I,
+)
+NUMERIC_CURRENCY_RANGE_RE = re.compile(
+    r"(?P<currency>₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)\s*(?P<min>[0-9][0-9,]*(?:\.[0-9]+)?)\s*(?:-|–|to)\s*(?:(?P<currency_max>₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)\s*)?(?P<max>[0-9][0-9,]*(?:\.[0-9]+)?)(?:\s*(?P<currency_suffix>INR|USD|EUR|GBP))?(?:\s*/?\s*(?P<period>per\s+year|yearly|annually|annual|per\s+month|monthly|per\s+hour|hourly|per\s+week|weekly|year|month|hour|week))?\b",
+    re.I,
+)
+NUMERIC_CURRENCY_SINGLE_RE = re.compile(
+    r"(?P<currency>₹|INR|Rs\.?|\$|USD|€|EUR|£|GBP)\s*(?P<amount>[0-9][0-9,]*(?:\.[0-9]+)?)(?:\s*(?P<period>per\s+year|yearly|annually|annual|per\s+month|monthly|per\s+hour|hourly|per\s+week|weekly))?\b",
+    re.I,
+)
+NUMERIC_LAKH_RANGE_RE = re.compile(
+    r"(?:(?P<currency>₹|INR|Rs\.?)\s*)?(?P<min>[0-9]+(?:\.[0-9]+)?)\s*L(?P<unit_min>PA)?\s*(?:-|–|to)\s*(?:(?P<currency_max>₹|INR|Rs\.?)\s*)?(?P<max>[0-9]+(?:\.[0-9]+)?)\s*L(?P<unit_max>PA)?\b",
+    re.I,
+)
+NUMERIC_LAKH_SINGLE_RE = re.compile(
+    r"(?:(?P<currency>₹|INR|Rs\.?)\s*)?(?P<amount>[0-9]+(?:\.[0-9]+)?)\s*L(?P<unit>PA)?\b",
     re.I,
 )
 
@@ -70,12 +94,67 @@ QUALITATIVE_PATTERNS = [
 class CompensationDetails:
     salary_min: float | None = None
     salary_max: float | None = None
-    salary_currency: str | None = "INR"
+    salary_currency: str | None = None
+    salary_period: str | None = None
+    salary_unit: str | None = None
     salary_disclosed: bool = False
     stipend_min: float | None = None
     stipend_max: float | None = None
-    compensation_type: str = "UNDISCLOSED"  # "NUMERIC" | "QUALITATIVE" | "UNDISCLOSED"
+    stipend_currency: str | None = None
+    stipend_period: str | None = None
+    stipend_unit: str | None = None
+    compensation_type: str = "UNDISCLOSED"  # SALARY | STIPEND | MIXED | QUALITATIVE | UNDISCLOSED
     compensation_text: str | None = None
+
+    @property
+    def stipend(self) -> float | None:
+        return self.stipend_min
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
+
+
+def _normalize_period(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip().lower().replace("_", " ")
+    for token, period in (
+        ("year", "YEAR"),
+        ("annual", "YEAR"),
+        ("annum", "YEAR"),
+        ("month", "MONTH"),
+        ("week", "WEEK"),
+        ("day", "DAY"),
+        ("hour", "HOUR"),
+    ):
+        if token in text:
+            return period
+    return None
+
+
+def _normalize_currency(value: str | None) -> str | None:
+    if not value:
+        return None
+    token = value.strip().upper()
+    return {"₹": "INR", "RS": "INR", "RS.": "INR", "$": "USD", "€": "EUR", "£": "GBP"}.get(token, token)
+
+
+def _format_provider_amount(amount: float, currency: str | None) -> str:
+    amount = float(amount)
+    code = _normalize_currency(currency)
+    symbol = {"INR": "₹", "USD": "$", "EUR": "€", "GBP": "£"}.get(code)
+    number = f"{amount:,.2f}".rstrip("0").rstrip(".") if not amount.is_integer() else f"{amount:,.0f}"
+    return f"{symbol}{number}" if symbol else (f"{code} {number}" if code else number)
+
+
+def _format_range(minimum: float | None, maximum: float | None, currency: str | None, period: str | None) -> str | None:
+    if minimum is None:
+        return None
+    low = _format_provider_amount(minimum, currency)
+    high = _format_provider_amount(maximum, currency) if maximum is not None else None
+    value = f"{low}–{high}" if high is not None and high != low else low
+    suffix = {"YEAR": "/year", "MONTH": "/month", "WEEK": "/week", "DAY": "/day", "HOUR": "/hour"}.get(period)
+    return f"{value} {suffix}" if suffix else value
 
 
 def extract_compensation_from_payload_and_text(
@@ -89,172 +168,288 @@ def extract_compensation_from_payload_and_text(
     result = CompensationDetails()
     payload = raw_payload or {}
 
-    # 1. Structured ATS fields inspection
-    # Lever: salaryRange = {'min': ..., 'max': ..., 'currency': 'INR'}
+    # 1. Structured provider fields are authoritative; preserve their amounts and units.
     s_range = payload.get("salaryRange")
     if isinstance(s_range, dict):
         min_val = s_range.get("min")
         max_val = s_range.get("max")
-        curr = s_range.get("currency") or "INR"
-        # Only accept if values are non-zero numbers
+        curr = _normalize_currency(s_range.get("currency"))
+        period = _normalize_period(s_range.get("interval"))
         if isinstance(min_val, (int, float)) and min_val > 0:
-            result.salary_min = min_val / 100000.0 if min_val > 1000 else float(min_val)
+            result.salary_min = float(min_val)
             result.salary_disclosed = True
             result.salary_currency = curr
-            result.compensation_type = "NUMERIC"
+            result.compensation_type = "SALARY"
         if isinstance(max_val, (int, float)) and max_val > 0:
-            result.salary_max = max_val / 100000.0 if max_val > 1000 else float(max_val)
+            result.salary_max = float(max_val)
             result.salary_disclosed = True
             result.salary_currency = curr
-            result.compensation_type = "NUMERIC"
+            result.compensation_type = "SALARY"
+        result.salary_period = period
+        result.salary_unit = "CURRENCY"
 
-    # Greenhouse: pay = {'min_value': ..., 'max_value': ..., 'unit': ...}
+    # Greenhouse: pay = {'min_value': ..., 'max_value': ..., 'currency': ..., 'unit': ...}
     pay_obj = payload.get("pay")
     if isinstance(pay_obj, dict):
         min_val = pay_obj.get("min_value")
         max_val = pay_obj.get("max_value")
+        curr = _normalize_currency(pay_obj.get("currency") or pay_obj.get("currency_code"))
         if isinstance(min_val, (int, float)) and min_val > 0:
-            result.salary_min = min_val / 100000.0 if min_val > 1000 else float(min_val)
+            result.salary_min = float(min_val)
             result.salary_disclosed = True
-            result.compensation_type = "NUMERIC"
+            result.salary_currency = curr
+            result.compensation_type = "SALARY"
         if isinstance(max_val, (int, float)) and max_val > 0:
-            result.salary_max = max_val / 100000.0 if max_val > 1000 else float(max_val)
+            result.salary_max = float(max_val)
             result.salary_disclosed = True
-            result.compensation_type = "NUMERIC"
+            result.salary_currency = curr
+            result.compensation_type = "SALARY"
+        result.salary_period = _normalize_period(pay_obj.get("unit"))
+        result.salary_unit = "CURRENCY"
 
-<<<<<<< HEAD
-=======
-    # Ashby: compensation = {'summaryComponents': [{'compensationType': 'Salary', 'minValue': ..., 'maxValue': ..., 'currencyCode': 'INR'}]}
+    # Ashby explicitly distinguishes salary and stipend components and supplies interval/currency.
     ashby_comp = payload.get("compensation")
     if isinstance(ashby_comp, dict):
         components = ashby_comp.get("summaryComponents") or []
         for comp in components:
-            if isinstance(comp, dict) and comp.get("compensationType") == "Salary":
-                c_curr = comp.get("currencyCode")
-                c_min = comp.get("minValue")
-                c_max = comp.get("maxValue")
+            if not isinstance(comp, dict):
+                continue
+            kind = str(comp.get("compensationType") or "").strip().lower()
+            c_curr = _normalize_currency(comp.get("currencyCode"))
+            c_min = comp.get("minValue")
+            c_max = comp.get("maxValue")
+            c_period = _normalize_period(comp.get("interval"))
+            if kind == "salary":
                 if isinstance(c_min, (int, float)) and c_min > 0:
-                    result.salary_min = c_min / 100000.0 if (c_min > 1000 and c_curr == "INR") else float(c_min)
+                    result.salary_min = float(c_min)
                     result.salary_disclosed = True
-                    result.salary_currency = c_curr or result.salary_currency
-                    result.compensation_type = "NUMERIC"
+                    result.salary_currency = c_curr
                 if isinstance(c_max, (int, float)) and c_max > 0:
-                    result.salary_max = c_max / 100000.0 if (c_max > 1000 and c_curr == "INR") else float(c_max)
+                    result.salary_max = float(c_max)
                     result.salary_disclosed = True
-                    result.salary_currency = c_curr or result.salary_currency
-                    result.compensation_type = "NUMERIC"
-                tier_summary = ashby_comp.get("scrapeableCompensationSalarySummary") or ashby_comp.get("compensationTierSummary")
-                if tier_summary and isinstance(tier_summary, str):
-                    result.compensation_text = tier_summary.strip()
-                break
+                    result.salary_currency = c_curr
+                result.salary_period = c_period
+                result.salary_unit = "CURRENCY"
+                result.compensation_type = "SALARY"
+            elif kind == "stipend":
+                if isinstance(c_min, (int, float)) and c_min > 0:
+                    result.stipend_min = float(c_min)
+                    result.stipend_currency = c_curr
+                    result.salary_disclosed = True
+                if isinstance(c_max, (int, float)) and c_max > 0:
+                    result.stipend_max = float(c_max)
+                    result.stipend_currency = c_curr
+                    result.salary_disclosed = True
+                result.stipend_period = c_period
+                result.stipend_unit = "CURRENCY"
+                if result.stipend_min is not None:
+                    result.compensation_type = "STIPEND" if result.salary_min is None else "MIXED"
 
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
-    # If structured numeric compensation already found, format text and return
-    if result.compensation_type == "NUMERIC":
-        if result.salary_min and result.salary_max:
-            result.compensation_text = f"₹{result.salary_min}–{result.salary_max} LPA"
-        elif result.salary_min:
-            result.compensation_text = f"₹{result.salary_min} LPA"
+        tier_summary = ashby_comp.get("scrapeableCompensationSalarySummary") or ashby_comp.get("compensationTierSummary")
+        if tier_summary and isinstance(tier_summary, str) and result.salary_disclosed:
+            result.compensation_text = tier_summary.strip()
+
+    # Structured amounts take precedence over text parsing. Render only with source currency/unit.
+    if result.salary_min is not None or result.salary_max is not None or result.stipend_min is not None:
+        if result.compensation_text is None:
+            if result.compensation_type == "STIPEND":
+                result.compensation_text = _format_range(
+                    result.stipend_min, result.stipend_max, result.stipend_currency, result.stipend_period
+                )
+            else:
+                result.compensation_text = _format_range(
+                    result.salary_min, result.salary_max, result.salary_currency, result.salary_period
+                )
         return result
 
     if not text:
         return result
 
-    # 2. Text-based Numeric Extraction
-    CONTEXT_WINDOW = 160
-
-    # Check for Stipend first if internship or stipend keyword present
-    stipend_m = NUMERIC_STIPEND_RE.search(text)
-    if stipend_m:
-        raw_context = text[max(0, stipend_m.start() - CONTEXT_WINDOW):min(len(text), stipend_m.end() + CONTEXT_WINDOW)]
-        if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
-            val_str = stipend_m.group(1).replace(",", "")
-            try:
-                stip_val = float(val_str)
-                if 2000 <= stip_val <= 200000:
-                    result.stipend_min = stip_val
-                    result.salary_disclosed = True
-                    result.compensation_type = "NUMERIC"
-                    result.compensation_text = f"₹{stip_val:,.0f}/month"
-                    return result
-            except ValueError:
-                pass
-
-    # Check for LPA range (e.g., ₹8–12 LPA or 6 to 9 LPA)
-    lpa_range_m = NUMERIC_LPA_RANGE_RE.search(text)
-    if lpa_range_m:
-        raw_context = text[max(0, lpa_range_m.start() - CONTEXT_WINDOW):min(len(text), lpa_range_m.end() + CONTEXT_WINDOW)]
+    # 2. Text-based numeric extraction. Pay type, currency, scale, and period
+    # are set only when the posting states them explicitly.
+    context_window = 160
+    stipend_range = NUMERIC_STIPEND_RANGE_RE.search(text)
+    stipend_single = NUMERIC_STIPEND_RE.search(text) if not stipend_range else None
+    stipend_suffix = NUMERIC_STIPEND_SUFFIX_RE.search(text) if not stipend_range and not stipend_single else None
+    stipend_match = stipend_range or stipend_single or stipend_suffix
+    if stipend_match:
+        raw_context = text[max(0, stipend_match.start() - context_window):min(len(text), stipend_match.end() + context_window)]
         if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
             try:
-                s_min = float(lpa_range_m.group(1))
-                s_max = float(lpa_range_m.group(2))
-                if 1.0 <= s_min <= 150.0 and 1.0 <= s_max <= 200.0:
-                    result.salary_min = s_min
-                    result.salary_max = s_max
+                if stipend_range:
+                    stipend_min = float(stipend_range.group(2).replace(",", ""))
+                    stipend_max = float(stipend_range.group(4).replace(",", ""))
+                    currency = _normalize_currency(stipend_range.group(1) or stipend_range.group(3))
+                    period = _normalize_period(stipend_range.group(5))
+                elif stipend_suffix:
+                    stipend_min = float(stipend_suffix.group("amount").replace(",", ""))
+                    stipend_max = None
+                    currency = _normalize_currency(stipend_suffix.group("currency"))
+                    period = _normalize_period(stipend_suffix.group("period"))
+                else:
+                    stipend_min = float(stipend_single.group(2).replace(",", ""))
+                    stipend_max = None
+                    currency = _normalize_currency(stipend_single.group(1))
+                    period = _normalize_period(stipend_single.group(3))
+                if stipend_min > 0 and (stipend_max is None or stipend_max > 0):
+                    result.stipend_min = stipend_min
+                    result.stipend_max = stipend_max
+                    result.stipend_currency = currency
+                    result.stipend_period = period
+                    result.stipend_unit = "CURRENCY"
                     result.salary_disclosed = True
-                    result.compensation_type = "NUMERIC"
-                    result.compensation_text = f"₹{s_min}–{s_max} LPA"
+                    result.compensation_type = "STIPEND"
+                    result.compensation_text = _format_range(stipend_min, stipend_max, currency, period)
                     return result
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
 
-    # Check for full INR range (e.g., INR 600000 to 1000000)
-    inr_range_m = NUMERIC_INR_FULL_RANGE_RE.search(text)
-    if inr_range_m:
-        raw_context = text[max(0, inr_range_m.start() - CONTEXT_WINDOW):min(len(text), inr_range_m.end() + CONTEXT_WINDOW)]
+    lakh_range = NUMERIC_LAKH_RANGE_RE.search(text)
+    if lakh_range:
+        raw_context = text[max(0, lakh_range.start() - context_window):min(len(text), lakh_range.end() + context_window)]
+        if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
+            result.salary_min = float(lakh_range.group("min"))
+            result.salary_max = float(lakh_range.group("max"))
+            result.salary_currency = _normalize_currency(lakh_range.group("currency") or lakh_range.group("currency_max")) or "INR"
+            is_lpa = bool(lakh_range.group("unit_min") or lakh_range.group("unit_max"))
+            result.salary_period = "YEAR" if is_lpa else None
+            result.salary_unit = "LPA" if is_lpa else "LAKH"
+            result.salary_disclosed = True
+            result.compensation_type = "SALARY"
+            if re.search(r"\bstipend\b", raw_context, re.I):
+                result.stipend_min = result.salary_min
+                result.stipend_max = result.salary_max
+                result.stipend_currency = result.salary_currency
+                result.stipend_period = result.salary_period
+                result.stipend_unit = result.salary_unit
+                result.salary_min = None
+                result.salary_max = None
+                result.compensation_type = "STIPEND"
+                result.compensation_text = f"₹{result.stipend_min:g}–{result.stipend_max:g} {result.stipend_unit} stipend"
+            else:
+                unit_text = "LPA" if is_lpa else "lakh"
+                result.compensation_text = f"₹{result.salary_min:g}–{result.salary_max:g} {unit_text}"
+            return result
+
+    currency_range = NUMERIC_CURRENCY_RANGE_RE.search(text)
+    if currency_range and re.match(r"\s*(?:lpa|lacs?|lakhs?|l(?:pa)?|per\s+annum|p\.?a\.?)\b", text[currency_range.end():], re.I):
+        currency_range = None
+    if currency_range:
+        raw_context = text[max(0, currency_range.start() - context_window):min(len(text), currency_range.end() + context_window)]
         if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
             try:
-                s_min = float(inr_range_m.group(1).replace(",", "")) / 100000.0
-                s_max = float(inr_range_m.group(2).replace(",", "")) / 100000.0
-                if 1.0 <= s_min <= 150.0 and 1.0 <= s_max <= 200.0:
-                    result.salary_min = s_min
-                    result.salary_max = s_max
-                    result.salary_disclosed = True
-                    result.compensation_type = "NUMERIC"
-                    result.compensation_text = f"₹{s_min:g}–{s_max:g} LPA"
-                    return result
-            except ValueError:
+                result.salary_min = float(currency_range.group("min").replace(",", ""))
+                result.salary_max = float(currency_range.group("max").replace(",", ""))
+                result.salary_currency = _normalize_currency(currency_range.group("currency") or currency_range.group("currency_max") or currency_range.group("currency_suffix"))
+                result.salary_period = _normalize_period(currency_range.group("period"))
+                result.salary_unit = "CURRENCY"
+                result.salary_disclosed = True
+                result.compensation_type = "SALARY"
+                result.compensation_text = _format_range(
+                    result.salary_min, result.salary_max, result.salary_currency, result.salary_period
+                )
+                return result
+            except (ValueError, TypeError):
                 pass
 
-    # Check for single LPA (e.g., 10 LPA)
-    lpa_single_m = NUMERIC_LPA_SINGLE_RE.search(text)
-    if lpa_single_m:
-        raw_context = text[max(0, lpa_single_m.start() - CONTEXT_WINDOW):min(len(text), lpa_single_m.end() + CONTEXT_WINDOW)]
+    lpa_range = NUMERIC_LPA_RANGE_RE.search(text)
+    if lpa_range:
+        raw_context = text[max(0, lpa_range.start() - context_window):min(len(text), lpa_range.end() + context_window)]
         if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
             try:
-                s_val = float(lpa_single_m.group(1))
-                if 1.0 <= s_val <= 150.0:
-                    result.salary_min = s_val
-                    result.salary_disclosed = True
-                    result.compensation_type = "NUMERIC"
-                    result.compensation_text = f"₹{s_val} LPA"
-                    return result
-            except ValueError:
+                result.salary_min = float(lpa_range.group(1))
+                result.salary_max = float(lpa_range.group(2))
+                suffix = lpa_range.group(3).lower()
+                is_lpa = "lpa" in suffix or "annum" in suffix or "p.a" in suffix
+                result.salary_currency = "INR"
+                result.salary_period = "YEAR" if is_lpa else None
+                result.salary_unit = "LPA" if is_lpa else "LAKH"
+                result.salary_disclosed = True
+                result.compensation_type = "SALARY"
+                unit_text = "LPA" if is_lpa else "lakh"
+                result.compensation_text = f"₹{result.salary_min:g}–{result.salary_max:g} {unit_text}"
+                return result
+            except (ValueError, TypeError):
                 pass
 
-    # Check for single Lakhs with explicit salary context
-    lakhs_single_m = NUMERIC_LAKHS_SINGLE_RE.search(text)
-    if lakhs_single_m:
-        raw_context = text[max(0, lakhs_single_m.start() - CONTEXT_WINDOW):min(len(text), lakhs_single_m.end() + CONTEXT_WINDOW)]
+    currency_single = NUMERIC_CURRENCY_SINGLE_RE.search(text)
+    if currency_single and re.match(r"\s*(?:lpa|lacs?|lakhs?|l(?:pa)?|per\s+annum|p\.?a\.?)\b", text[currency_single.end():], re.I):
+        currency_single = None
+    if currency_single:
+        raw_context = text[max(0, currency_single.start() - context_window):min(len(text), currency_single.end() + context_window)]
+        if re.search(r"\b(?:salary|compensation|pay|remuneration|stipend|range|ctc)\b", raw_context, re.I) and not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
+            try:
+                result.salary_min = float(currency_single.group("amount").replace(",", ""))
+                result.salary_currency = _normalize_currency(currency_single.group("currency"))
+                result.salary_period = _normalize_period(currency_single.group("period"))
+                result.salary_unit = "CURRENCY"
+                result.salary_disclosed = True
+                result.compensation_type = "SALARY"
+                result.compensation_text = f"₹{result.salary_min:g} LPA"
+                return result
+            except (ValueError, TypeError):
+                pass
+
+    lakh_single = NUMERIC_LAKH_SINGLE_RE.search(text)
+    if lakh_single:
+        raw_context = text[max(0, lakh_single.start() - context_window):min(len(text), lakh_single.end() + context_window)]
+        if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS) and re.search(r"\b(?:salary|ctc|compensation|remuneration|package|pay|stipend)\b", raw_context, re.I):
+            result.salary_min = float(lakh_single.group("amount"))
+            result.salary_currency = _normalize_currency(lakh_single.group("currency")) or "INR"
+            result.salary_period = "YEAR" if lakh_single.group("unit") else None
+            result.salary_unit = "LPA" if lakh_single.group("unit") else "LAKH"
+            result.salary_disclosed = True
+            result.compensation_type = "SALARY"
+            if re.search(r"\bstipend\b", raw_context, re.I):
+                result.stipend_min = result.salary_min
+                result.stipend_currency = result.salary_currency
+                result.stipend_period = result.salary_period
+                result.stipend_unit = result.salary_unit
+                result.salary_min = None
+                result.compensation_type = "STIPEND"
+            amount = result.stipend_min if result.compensation_type == "STIPEND" else result.salary_min
+            unit_text = result.stipend_unit if result.compensation_type == "STIPEND" else result.salary_unit
+            result.compensation_text = f"₹{amount:g} {unit_text}"
+            return result
+
+    lpa_single = NUMERIC_LPA_SINGLE_RE.search(text)
+    if lpa_single:
+        raw_context = text[max(0, lpa_single.start() - context_window):min(len(text), lpa_single.end() + context_window)]
         if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
-            if re.search(r"\b(?:salary|ctc|compensation|remuneration|package|pay)\b", raw_context, re.I):
-                try:
-                    s_val = float(lakhs_single_m.group(1))
-                    if 1.0 <= s_val <= 150.0:
-                        result.salary_min = s_val
-                        result.salary_disclosed = True
-                        result.compensation_type = "NUMERIC"
-                        result.compensation_text = f"₹{s_val} Lakhs"
-                        return result
-                except ValueError:
-                    pass
+            try:
+                result.salary_min = float(lpa_single.group(1))
+                result.salary_currency = "INR"
+                result.salary_period = "YEAR"
+                result.salary_unit = "LPA"
+                result.salary_disclosed = True
+                result.compensation_type = "SALARY"
+                result.compensation_text = f"₹{result.salary_min:g} LPA"
+                return result
+            except (ValueError, TypeError):
+                pass
+
+    lakhs_single = NUMERIC_LAKHS_SINGLE_RE.search(text)
+    if lakhs_single:
+        raw_context = text[max(0, lakhs_single.start() - context_window):min(len(text), lakhs_single.end() + context_window)]
+        if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS) and re.search(r"\b(?:salary|ctc|compensation|remuneration|package|pay)\b", raw_context, re.I):
+            try:
+                result.salary_min = float(lakhs_single.group(1))
+                result.salary_currency = "INR"
+                result.salary_unit = "LAKH"
+                result.salary_period = "YEAR" if re.search(r"\b(?:per\s+annum|annual|yearly|p\.?a\.?)\b", raw_context, re.I) else None
+                result.salary_disclosed = True
+                result.compensation_type = "SALARY"
+                result.compensation_text = f"₹{result.salary_min:g} lakh"
+                return result
+            except (ValueError, TypeError):
+                pass
 
     # 3. Internship-specific qualitative statements (paid/unpaid)
     if is_internship or "intern" in (text[:200].lower()):
         for pat, label in INTERNSHIP_QUALITATIVE_PATTERNS:
             m = pat.search(text)
             if m:
-                raw_context = text[max(0, m.start() - CONTEXT_WINDOW):min(len(text), m.end() + CONTEXT_WINDOW)]
+                raw_context = text[max(0, m.start() - context_window):min(len(text), m.end() + context_window)]
                 if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
                     result.compensation_text = label
                     result.salary_disclosed = True
@@ -265,7 +460,7 @@ def extract_compensation_from_payload_and_text(
     for pat, label in QUALITATIVE_PATTERNS:
         m = pat.search(text)
         if m:
-            raw_context = text[max(0, m.start() - CONTEXT_WINDOW):min(len(text), m.end() + CONTEXT_WINDOW)]
+            raw_context = text[max(0, m.start() - context_window):min(len(text), m.end() + context_window)]
             if not any(fp.search(raw_context) for fp in FALSE_POSITIVE_PATTERNS):
                 # Preserve the exact phrase if it is "Best in industry salary"
                 matched_phrase = m.group(0).strip()
@@ -280,3 +475,11 @@ def extract_compensation_from_payload_and_text(
                 return result
 
     return result
+
+
+def extract_compensation_details(
+    text: str | None = None,
+    is_internship: bool = False,
+) -> CompensationDetails:
+    """Convenience wrapper for extracting compensation details directly from text."""
+    return extract_compensation_from_payload_and_text(text=text, is_internship=is_internship)

@@ -1,4 +1,6 @@
+import asyncio
 import json
+import logging
 import os
 import uuid
 
@@ -22,6 +24,7 @@ from app.modules.jobs.verification import (
 )
 
 SEED_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "seeds", "jobs_seed.json")
+logger = logging.getLogger("roleradar.jobs.sync")
 
 
 async def ensure_seed_loaded(db: AsyncIOMotorDatabase) -> int:
@@ -75,248 +78,94 @@ async def count_jobs(db: AsyncIOMotorDatabase, filters: dict, user_id: str | Non
     return await provider.count(search_filters)
 
 
-async def sync_all_greenhouse_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
-    """Synchronizes all configured Greenhouse company boards into MongoDB."""
-    active_settings = settings or get_settings()
-    if not getattr(active_settings, "GREENHOUSE_ENABLED", True):
-        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
-
-    from app.modules.jobs.greenhouse_provider import GreenhouseJobProvider
-    provider = GreenhouseJobProvider(active_settings)
-
-    raw_boards = getattr(active_settings, "GREENHOUSE_COMPANIES", "postman,inmobi,groww")
-    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
-
-    results = []
-    total_active = 0
-    total_closed = 0
-
-    for b in boards:
-        res = await provider.sync_company_openings(db, b)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
-
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
+def _configured_board_tokens(settings: Settings, attribute: str) -> list[str]:
+    configured = getattr(settings, attribute, "")
+    if isinstance(configured, str):
+        tokens = configured.split(",")
+    elif isinstance(configured, (list, tuple, set)):
+        tokens = configured
+    else:
+        return []
+    return list(dict.fromkeys(token.strip() for token in tokens if isinstance(token, str) and token.strip()))
 
 
-async def sync_greenhouse_board(
+async def _sync_configured_boards(
     db: AsyncIOMotorDatabase,
-    board_token: str,
-    company_name: str | None = None,
-    settings: Settings | None = None,
-) -> dict:
-    """Synchronizes a single Greenhouse board token."""
-    from app.modules.jobs.greenhouse_provider import GreenhouseJobProvider
-    provider = GreenhouseJobProvider(settings or get_settings())
-    return await provider.sync_company_openings(db, board_token, company_name=company_name)
-
-
-async def sync_lever_board(
-    db: AsyncIOMotorDatabase,
-    board_token: str,
-    company_name: str | None = None,
-    settings: Settings | None = None,
-) -> dict:
-    """Synchronizes a single Lever board token."""
-    from app.modules.jobs.lever_provider import LeverJobProvider
-    provider = LeverJobProvider(settings or get_settings())
-    return await provider.sync_company_openings(db, board_token, company_name=company_name)
-
-
-async def sync_all_lever_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
-    """Synchronizes all configured Lever company boards into MongoDB."""
-    active_settings = settings or get_settings()
-    if not getattr(active_settings, "LEVER_ENABLED", False):
-        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
-
-    from app.modules.jobs.lever_provider import LeverJobProvider
-    provider = LeverJobProvider(active_settings)
-
-    raw_boards = getattr(active_settings, "LEVER_COMPANIES", "paytm,meesho,cred,fi")
-    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
-
-    results = []
-    total_active = 0
-    total_closed = 0
-
-    for b in boards:
-        res = await provider.sync_company_openings(db, b)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
-
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
-
-
-async def sync_smartrecruiters_board(
-    db: AsyncIOMotorDatabase,
-    board_token: str,
-    company_name: str | None = None,
+    settings: Settings,
+    provider_class: type,
+    companies_attribute: str,
+    enabled_attribute: str,
     country: str | None = None,
-    settings: Settings | None = None,
 ) -> dict:
-    """Synchronizes a single SmartRecruiters board token."""
-    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
-    provider = SmartRecruitersJobProvider(settings or get_settings())
-    return await provider.sync_company_openings(db, board_token, company_name=company_name, country=country)
+    boards = _configured_board_tokens(settings, companies_attribute)
+    summary = {"total_boards": len(boards), "fetched": 0, "verified_active": 0, "closed": 0, "internships": 0, "errors": [], "results": []}
+    if not getattr(settings, enabled_attribute, False) or not boards:
+        return summary
+
+    provider = provider_class(settings)
+    semaphore = asyncio.Semaphore(5)
+
+    async def sync_board(board: str):
+        async with semaphore:
+            try:
+                kwargs = {"country": country} if country else {}
+                return await provider.sync_company_openings(db, board, **kwargs)
+            except Exception as exc:
+                logger.warning("Provider sync failed for configured board %s: %s", board, exc)
+                return {"board": board, "errors": [str(exc)]}
+
+    results = await asyncio.gather(*(sync_board(board) for board in boards))
+    summary["results"] = results
+    for result in results:
+        for key in ("fetched", "verified_active", "closed", "internships"):
+            summary[key] += int(result.get(key) or 0)
+        summary["errors"].extend(result.get("errors") or [])
+        if result.get("error"):
+            summary["errors"].append(result["error"])
+        if result.get("network_error"):
+            summary["errors"].append(f"{result.get('board')}: network error")
+    return summary
 
 
-async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
-    """Synchronizes all configured SmartRecruiters company boards into MongoDB."""
-    active_settings = settings or get_settings()
-    if not getattr(active_settings, "SMARTRECRUITERS_ENABLED", False):
-        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
-
-    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
-    provider = SmartRecruitersJobProvider(active_settings)
-
-    raw_boards = getattr(active_settings, "SMARTRECRUITERS_COMPANIES", "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2")
-    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
-
-    results = []
-    total_active = 0
-    total_closed = 0
-    country_filter = getattr(active_settings, "SMARTRECRUITERS_COUNTRY", "in")
-<<<<<<< HEAD
-=======
-    for b in boards:
-        res = await provider.sync_company_openings(db, b, country=country_filter)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
-
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
-
-
-async def sync_ashby_board(
-    db: AsyncIOMotorDatabase,
-    board_token: str,
-    company_name: str | None = None,
-    settings: Settings | None = None,
-) -> dict:
-    """Synchronizes a single Ashby board token."""
+async def sync_all_ashby_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
     from app.modules.jobs.ashby_provider import AshbyJobProvider
-    provider = AshbyJobProvider(settings or get_settings())
-    return await provider.sync_company_openings(db, board_token, company_name=company_name)
+    return await _sync_configured_boards(db, settings, AshbyJobProvider, "ASHBY_COMPANIES", "ASHBY_ENABLED")
 
 
-async def sync_all_ashby_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
-    """Synchronizes all configured Ashby company boards into MongoDB."""
-    active_settings = settings or get_settings()
-    if not getattr(active_settings, "ASHBY_ENABLED", False):
-        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
+async def sync_all_greenhouse_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
+    from app.modules.jobs.greenhouse_provider import GreenhouseJobProvider
+    return await _sync_configured_boards(db, settings, GreenhouseJobProvider, "GREENHOUSE_COMPANIES", "GREENHOUSE_ENABLED")
 
-    from app.modules.jobs.ashby_provider import AshbyJobProvider
-    provider = AshbyJobProvider(active_settings)
 
-    raw_boards = getattr(active_settings, "ASHBY_COMPANIES", "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs")
-    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
+async def sync_all_lever_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
+    from app.modules.jobs.lever_provider import LeverJobProvider
+    return await _sync_configured_boards(db, settings, LeverJobProvider, "LEVER_COMPANIES", "LEVER_ENABLED")
 
-    results = []
-    total_active = 0
-    total_closed = 0
 
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
-    for b in boards:
-        res = await provider.sync_company_openings(db, b, country=country_filter)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
-
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
+async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
+    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
+    return await _sync_configured_boards(
+        db,
+        settings,
+        SmartRecruitersJobProvider,
+        "SMARTRECRUITERS_COMPANIES",
+        "SMARTRECRUITERS_ENABLED",
+        country=getattr(settings, "SMARTRECRUITERS_COUNTRY", None),
+    )
 
 
 async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict) -> int:
-    """
-    Refreshes opportunities from active live providers:
-    1. Greenhouse Direct ATS Provider (if enabled).
-    2. Lever Direct ATS Provider (if enabled).
-    3. SmartRecruiters Direct ATS Provider (if enabled).
-    4. Ashby Direct ATS Provider (if enabled).
-    5. Adzuna Provider (if configured in hybrid mode).
-    Normalizes, verifies, deduplicates, and upserts into MongoDB.
-    """
-    added_count = 0
+    """Synchronize only explicitly configured, direct employer ATS boards."""
+    if getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats":
+        return 0
 
-    # 1. Greenhouse Direct ATS Provider
-    if getattr(settings, "GREENHOUSE_ENABLED", False):
-        try:
-            gh_res = await sync_all_greenhouse_boards(db, settings)
-            added_count += gh_res.get("verified_active", 0)
-        except Exception:
-            pass
-
-    # 2. Lever Direct ATS Provider
-    if getattr(settings, "LEVER_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
-        try:
-            lever_res = await sync_all_lever_boards(db, settings)
-            added_count += lever_res.get("verified_active", 0)
-        except Exception:
-            pass
-
-    # 3. SmartRecruiters Direct ATS Provider
-    if getattr(settings, "SMARTRECRUITERS_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
-        try:
-            sr_res = await sync_all_smartrecruiters_boards(db, settings)
-            added_count += sr_res.get("verified_active", 0)
-        except Exception:
-            pass
-
-    # 4. Ashby Direct ATS Provider
-    if getattr(settings, "ASHBY_ENABLED", False) and getattr(settings, "GREENHOUSE_ENABLED", True):
-        try:
-            ashby_res = await sync_all_ashby_boards(db, settings)
-            added_count += ashby_res.get("verified_active", 0)
-        except Exception:
-            pass
-
-    # 5. Adzuna Provider (if configured in hybrid mode)
-    if settings.JOB_SOURCE_MODE == "hybrid":
-        from app.modules.jobs.live_provider import AdzunaConfigError, AdzunaJobProvider
-        try:
-            provider = AdzunaJobProvider(settings)
-            live_jobs = await provider.search(filters)
-            if live_jobs:
-                verified_live_jobs = []
-                for job in live_jobs:
-                    vres = verify_opportunity_sync(job)
-                    job_copy = dict(job)
-                    job_copy["verification_status"] = vres.status.value
-                    job_copy["verified_at"] = vres.verified_at
-                    job_copy["verification_reason"] = vres.reason
-                    job_copy["verification_method"] = "live_provider_verified"
-                    if vres.status == OpportunityLifecycleStatus.VERIFIED_ACTIVE:
-                        verified_live_jobs.append(job_copy)
-
-                if verified_live_jobs:
-                    deduped = deduplicate_opportunities(verified_live_jobs)
-                    await repo.upsert_jobs(db, deduped)
-                    added_count += len(deduped)
-        except AdzunaConfigError:
-            pass
-
-    return added_count
+    sync_results = await asyncio.gather(
+        sync_all_ashby_boards(db, settings),
+        sync_all_greenhouse_boards(db, settings),
+        sync_all_lever_boards(db, settings),
+        sync_all_smartrecruiters_boards(db, settings),
+    )
+    return sum(result["verified_active"] for result in sync_results)
 
 
 async def reverify_active_opportunities(db: AsyncIOMotorDatabase, now: datetime | None = None) -> dict:
@@ -339,7 +188,9 @@ async def reverify_active_opportunities(db: AsyncIOMotorDatabase, now: datetime 
 
     for job in all_jobs:
         prev_status = job.get("verification_status", OpportunityLifecycleStatus.VERIFIED_ACTIVE.value)
-        vres = verify_opportunity_sync(job, now=now)
+        source = job.get("source")
+        is_aggregator = source in ("adzuna", "jooble", "remotive", "arbeitnow", "jsearch")
+        vres = verify_opportunity_sync(job, now=now, enforce_direct_apply=not is_aggregator)
         new_status = vres.status.value
 
         update_fields = {

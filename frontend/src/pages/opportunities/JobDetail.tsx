@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getJobDetail } from "../../lib/jobDetail";
+import { formatCompensation } from "../../lib/compensation";
 import { normalizeJobDescriptionPresentation } from "../../lib/descriptionNormalization";
 import { 
   AlertTriangle, 
@@ -15,7 +16,8 @@ import {
   Sparkles, 
   ArrowLeft,
   ShieldCheck,
-  Bookmark
+  Bookmark,
+  Calendar
 } from "lucide-react";
 
 export function JobDetail() {
@@ -115,21 +117,7 @@ export function JobDetail() {
     );
   }
 
-  const salaryText = (() => {
-    if (job.salary_disclosed && job.salary_min != null) {
-      if (job.salary_max != null && job.salary_max !== job.salary_min) {
-        return `₹${job.salary_min}–${job.salary_max} LPA`;
-      }
-      return `₹${job.salary_min} LPA`;
-    }
-    if (job.stipend_min != null) {
-      return `₹${job.stipend_min.toLocaleString("en-IN")}/month`;
-    }
-    if (job.compensation_text) {
-      return job.compensation_text;
-    }
-    return "Compensation not disclosed by employer";
-  })();
+  const salaryText = formatCompensation(job);
 
   const isVerifiedActive = job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply;
   const isBenchmark = job.verification_status === "MARKET_BENCHMARK";
@@ -155,6 +143,8 @@ export function JobDetail() {
 
   const isSafeHttpUrl = (url?: string) => Boolean(url && (url.startsWith("https://") || url.startsWith("http://")));
   const hasDirectApply = Boolean(isVerifiedActive && isSafeHttpUrl(job.apply_url) && !job.apply_url.includes("example.com"));
+  const isAggregatorListing = ["adzuna", "jsearch", "jooble"].includes(job.source);
+  const hasProviderApply = Boolean(isVerifiedActive && isAggregatorListing && isSafeHttpUrl(job.apply_url));
 
   const postedText = (() => {
     if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {
@@ -166,6 +156,20 @@ export function JobDetail() {
     }
     if (isVerifiedActive) return "Verified active today";
     return "Active listing";
+  })();
+
+  const deadlineText = (() => {
+    const dl = job.registration_closing_date || job.application_deadline || job.end_date;
+    if (!dl) return null;
+    try {
+      const d = new Date(dl);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
+      }
+    } catch {
+      // ignore
+    }
+    return dl;
   })();
 
   const backLink = job.job_type === "internship" ? "/opportunities/internships" : "/opportunities/jobs";
@@ -212,6 +216,12 @@ export function JobDetail() {
                   {job.role_domain}
                 </span>
               )}
+              {deadlineText && (
+                <span className="rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
+                  <Calendar size={12} className="text-rose-500" />
+                  <span>Closes: {deadlineText}</span>
+                </span>
+              )}
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink-950 mb-1">
@@ -240,14 +250,14 @@ export function JobDetail() {
 
           {/* Primary Action Buttons */}
           <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 md:min-w-[180px]">
-            {hasDirectApply ? (
+            {hasDirectApply || hasProviderApply ? (
               <a
                 href={job.apply_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-signal-600 hover:bg-signal-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-sm active:scale-95 text-center"
               >
-                <span>Apply on Official Portal</span>
+                <span>{hasDirectApply ? "Apply on Official Portal" : "Continue to Application"}</span>
                 <ExternalLink size={13} />
               </a>
             ) : isBenchmark ? (
@@ -340,7 +350,7 @@ export function JobDetail() {
       </div>
 
       {/* Metadata Key Statistics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4 text-sm">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4 text-sm">
         <div className="rounded-xl border border-ink-100 bg-white p-3.5 shadow-2xs">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-400 mb-1 flex items-center gap-1">
             <Coins size={12} />
@@ -382,6 +392,16 @@ export function JobDetail() {
           </p>
           <p className="font-semibold text-ink-900 text-xs sm:text-sm">
             {job.workplace_type ? job.workplace_type.replace("_", " ") : job.is_remote ? "Remote" : "On-site"}
+          </p>
+        </div>
+
+        <div className={`rounded-xl border p-3.5 shadow-2xs ${deadlineText ? "border-rose-200/80 bg-rose-50/40" : "border-ink-100 bg-white"}`}>
+          <p className={`text-[11px] font-semibold uppercase tracking-wider mb-1 flex items-center gap-1 ${deadlineText ? "text-rose-600" : "text-ink-400"}`}>
+            <Calendar size={12} />
+            Registration Closing
+          </p>
+          <p className={`font-semibold text-xs sm:text-sm ${deadlineText ? "text-rose-900" : "text-ink-500"}`}>
+            {deadlineText || "Not disclosed"}
           </p>
         </div>
       </div>

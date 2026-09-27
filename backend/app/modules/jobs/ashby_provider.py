@@ -33,7 +33,7 @@ from app.modules.jobs.location_normalization import (
     normalize_india_location,
 )
 from app.modules.jobs.classification import classify_opportunity
-from app.modules.jobs.taxonomy import analyze_job_description
+from app.modules.jobs.taxonomy import analyze_job_description, normalize_employment_type
 from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
 from app.modules.jobs.verification import OpportunityLifecycleStatus
 
@@ -72,16 +72,13 @@ def is_internship_opportunity(
     Uses title detection and structured employmentType/department.
     STRICT RULE: Never classifies based merely on description substrings.
     """
-    title_lower = title.lower()
-    # Explicit internship markers in title
-    if re.search(r"\b(?:intern|internship|co-?op|trainee|apprentice)\b", title_lower):
-        return True
-
-    # Structured employmentType classification
     if employment_type:
         emp_clean = employment_type.strip().lower()
-        if emp_clean in ("intern", "internship", "coop", "co-op", "trainee", "apprentice"):
-            return True
+        return bool(re.search(r"\b(?:intern|internship|coop|co-op|trainee|apprentice)\b", emp_clean))
+
+    title_lower = title.lower()
+    if re.search(r"\b(?:intern|internship|co-?op|trainee|apprentice)\b", title_lower):
+        return True
 
     # Department classification
     if department:
@@ -202,25 +199,25 @@ class AshbyJobProvider:
         elif addr_locality or addr_region or addr_country:
             loc_display_parts.append(", ".join(p for p in [addr_locality, addr_region, addr_country] if p))
 
-        display_location = "; ".join(loc_display_parts) if loc_display_parts else "Not specified"
+        display_location = "; ".join(loc_display_parts) if loc_display_parts else None
 
         # Remote / Workplace Mode
         is_remote_flag = bool(raw.get("isRemote"))
         workplace_raw = (raw.get("workplaceType") or "").strip().lower()
-        is_remote = is_remote_flag or workplace_raw == "remote" or "remote" in display_location.lower() or "remote" in title.lower()
+        is_remote = is_remote_flag if isinstance(raw.get("isRemote"), bool) else (workplace_raw == "remote" if workplace_raw else None)
 
         if is_remote or workplace_raw == "remote":
             workplace_type = "REMOTE"
         elif workplace_raw == "hybrid":
             workplace_type = "HYBRID"
-        elif display_location != "Not specified":
+        elif workplace_raw in ("onsite", "on-site", "office"):
             workplace_type = "ON_SITE"
         else:
-            workplace_type = "UNKNOWN"
+            workplace_type = None
 
         # Country Extraction and India Filtering
         # 1. Determine country
-        country = extract_country_from_location(display_location)
+        country = extract_country_from_location(display_location) if display_location else None
         if not country and addr_country:
             country = extract_country_from_location(addr_country) or (
                 "India" if addr_country.strip().lower() in ("india", "in") else addr_country.strip()
@@ -238,7 +235,7 @@ class AshbyJobProvider:
         if desc_plain and desc_plain.strip():
             clean_desc = desc_plain.strip()
         else:
-            clean_desc = _clean_html_description(raw_html) or title
+            clean_desc = _clean_html_description(raw_html)
 
         # Application URL Classification
         apply_url_raw = (raw.get("applyUrl") or "").strip()
@@ -270,7 +267,7 @@ class AshbyJobProvider:
         # Dates: NO FABRICATION RULE
         published_at_raw = raw.get("publishedAt")
         posted_at_iso = None
-        posted_days_ago = 0
+        posted_days_ago = None
         if published_at_raw:
             try:
                 dt = datetime.fromisoformat(str(published_at_raw).replace("Z", "+00:00"))
@@ -278,7 +275,7 @@ class AshbyJobProvider:
                 posted_days_ago = max(0, (now - dt).days)
             except Exception:
                 posted_at_iso = str(published_at_raw)
-                posted_days_ago = 0
+                posted_days_ago = None
 
         updated_at_iso = None
 
@@ -286,8 +283,8 @@ class AshbyJobProvider:
         emp_type = raw.get("employmentType")
         dept = raw.get("department")
         is_intern = is_internship_opportunity(title=title, employment_type=emp_type, department=dept)
-        job_type = "internship" if is_intern else "full_time"
-        opportunity_type = "INTERNSHIP" if is_intern else "FULL_TIME"
+        job_type = normalize_employment_type(emp_type, title, classified_internship=is_intern)
+        opportunity_type = job_type.upper() if job_type else None
 
         classification = classify_opportunity(
             title=title,
@@ -332,26 +329,20 @@ class AshbyJobProvider:
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
             "compensation_text": comp.compensation_text,
-            "experience_min": (
-                int(reqs.min_years_experience)
-                if reqs.min_years_experience is not None
-                else (0 if is_intern else None)
-            ),
-            "experience_max": (
-                int(reqs.max_years_experience)
-                if reqs.max_years_experience is not None
-                else (2 if is_intern else None)
-            ),
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
         })
 
         return {
             "id": canonical_id,
             "source": "ashby",
+            "source_id": job_id,
+            "internal_source": "ashby",
             "source_job_id": job_id,
             "company_board": board_token.lower(),
             "title": title,
             "company": resolved_company,
-            "industry": "Technology",
+            "industry": raw.get("industry"),
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
@@ -360,17 +351,11 @@ class AshbyJobProvider:
             "responsibilities": reqs.responsibilities,
             "qualifications": reqs.qualifications,
             "structured_requirements": reqs.model_dump(mode="json"),
-            "experience_min": (
-                int(reqs.min_years_experience)
-                if reqs.min_years_experience is not None
-                else (0 if is_intern else None)
-            ),
-            "experience_max": (
-                int(reqs.max_years_experience)
-                if reqs.max_years_experience is not None
-                else (2 if is_intern else None)
-            ),
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
+            "experience_text": reqs.experience_requirements,
             "job_type": job_type,
+            "employment_type": emp_type,
             "opportunity_type": opportunity_type,
             "country": country,
             "location": display_location,
@@ -382,12 +367,18 @@ class AshbyJobProvider:
             "salary_min": comp.salary_min,
             "salary_max": comp.salary_max,
             "salary_currency": comp.salary_currency,
+            "salary_period": comp.salary_period,
+            "salary_unit": comp.salary_unit,
             "salary_disclosed": comp.salary_disclosed,
+            "stipend": comp.stipend,
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
+            "stipend_currency": comp.stipend_currency,
+            "stipend_period": comp.stipend_period,
+            "stipend_unit": comp.stipend_unit,
             "compensation_type": comp.compensation_type,
             "compensation_text": comp.compensation_text,
-            "internship_duration_months": 3 if is_intern else None,
+            "internship_duration_months": raw.get("internshipDurationMonths"),
             "fresher_friendly": classification.fresher_eligible,
             "student_friendly": classification.student_eligible,
             "suitability_signal": classification.suitability.value,

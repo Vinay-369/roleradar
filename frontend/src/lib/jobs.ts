@@ -51,11 +51,17 @@ export type JobMatch = {
   is_remote?: boolean;
   salary_min?: number | null;
   salary_max?: number | null;
+  salary_disclosed?: boolean;
+  salary_currency?: string | null;
+  salary_period?: string | null;
+  salary_unit?: string | null;
   stipend_min?: number | null;
   stipend_max?: number | null;
+  stipend_unit?: string | null;
   posted_days_ago?: number;
   experience_min?: number | null;
   experience_max?: number | null;
+  experience_text?: string | null;
   industry?: string | null;
   created_at?: string;
   has_match?: boolean;
@@ -78,6 +84,7 @@ export type JobMatch = {
   salary_currency?: string | null;
   compensation_type?: string | null;
   compensation_text?: string | null;
+  compensation_type?: string | null;
   eligibility_text?: string | null;
   degree_requirements?: string[];
   graduation_year_requirements?: number[];
@@ -98,6 +105,9 @@ export type JobMatch = {
   recommendation_quality?: string | null;
   seniority?: string | null;
   fresher_friendly?: boolean;
+  registration_closing_date?: string | null;
+  application_deadline?: string | null;
+  end_date?: string | null;
 };
 
 export type JobQueryFilters = {
@@ -123,6 +133,11 @@ export type RecommendedMatchesResult = {
   items: JobMatch[];
   total: number;
 };
+
+export async function syncLiveJobs(): Promise<{ status: string; added_count: number }> {
+  const res = await apiClient.post<{ status: string; added_count: number }>("/jobs/sync");
+  return res.data;
+}
 
 export async function getRecommendedMatches(
   jobType?: "full_time" | "internship",

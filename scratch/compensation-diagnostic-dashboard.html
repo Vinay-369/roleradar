@@ -1,0 +1,675 @@
+<title>Compensation Data Diagnostic</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --navy-deep: #0A2540;
+    --navy-mid: #1a3a5f;
+    --mint: #00D4AA;
+    --orange: #FF6B35;
+    --amber: #FFD23F;
+    --offwhite: #F8F9FA;
+    --slate: #64748B;
+    --slate-light: #94A3B8;
+    --border: #E2E8F0;
+    --bg-tile: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --code-bg: #F1F5F9;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy-deep: #F8F9FA;
+      --navy-mid: #E2E8F0;
+      --mint: #00D4AA;
+      --orange: #FF6B35;
+      --amber: #FFD23F;
+      --offwhite: #0F172A;
+      --slate: #94A3B8;
+      --slate-light: #64748B;
+      --border: #334155;
+      --bg-tile: #1E293B;
+      --text-primary: #F8FAFC;
+      --text-secondary: #CBD5E1;
+      --code-bg: #0F172A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --navy-deep: #F8F9FA;
+    --navy-mid: #E2E8F0;
+    --mint: #00D4AA;
+    --orange: #FF6B35;
+    --amber: #FFD23F;
+    --offwhite: #0F172A;
+    --slate: #94A3B8;
+    --slate-light: #64748B;
+    --border: #334155;
+    --bg-tile: #1E293B;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --code-bg: #0F172A;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--offwhite);
+    color: var(--text-primary);
+    font-family: Inter, -apple-system, sans-serif;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  .header {
+    max-width: 1200px;
+    margin: 0 auto 32px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy-deep);
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .status-tile {
+    background: var(--bg-tile);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .status-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px;
+  }
+
+  .status-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--navy-deep);
+    margin: 0 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .status-detail {
+    font-size: 14px;
+    color: var(--slate);
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .status-tile.good .status-value { color: var(--mint); }
+  .status-tile.warning .status-value { color: var(--amber); }
+  .status-tile.alert .status-value { color: var(--orange); }
+
+  .section {
+    background: var(--bg-tile);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--navy-deep);
+    margin: 0;
+  }
+
+  .action-button {
+    background: var(--mint);
+    color: var(--offwhite);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .action-button:hover {
+    opacity: 0.85;
+  }
+
+  .action-button:disabled {
+    background: var(--slate-light);
+    cursor: not-allowed;
+  }
+
+  .action-button.secondary {
+    background: var(--navy-mid);
+  }
+
+  .job-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .job-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+  }
+
+  .job-company {
+    font-size: 13px;
+    color: var(--slate);
+    margin: 0 0 12px;
+  }
+
+  .data-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  .data-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .data-value {
+    color: var(--text-primary);
+  }
+
+  .data-value.empty {
+    color: var(--slate-light);
+    font-style: italic;
+  }
+
+  .data-value.success {
+    color: var(--mint);
+  }
+
+  .display-preview {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--code-bg);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .display-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .display-result {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .display-result.missing {
+    color: var(--orange);
+  }
+
+  .console {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+
+  .console-line {
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .console-line.success { color: var(--mint); }
+  .console-line.warning { color: var(--amber); }
+  .console-line.error { color: var(--orange); }
+
+  .instructions {
+    background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy-deep) 100%);
+    color: var(--offwhite);
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+  }
+
+  .instructions h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .instructions p {
+    margin: 0 0 16px;
+    line-height: 1.6;
+    opacity: 0.9;
+  }
+
+  .instructions code {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .instructions ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .instructions li {
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge.numeric {
+    background: rgba(0, 212, 170, 0.15);
+    color: var(--mint);
+  }
+
+  .badge.qualitative {
+    background: rgba(255, 210, 63, 0.15);
+    color: var(--amber);
+  }
+
+  .badge.undisclosed {
+    background: rgba(100, 116, 139, 0.15);
+    color: var(--slate);
+  }
+
+  .loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--mint);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 600px) {
+    body {
+      padding: 16px;
+    }
+
+    .status-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .data-grid {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .section {
+      padding: 16px;
+    }
+  }
+</style>
+
+<div class="container">
+  <div class="header">
+    <h1>Compensation Data Diagnostic</h1>
+    <p class="subtitle">Database status, extraction test, and backfill control for RoleRadar jobs & internships</p>
+  </div>
+
+  <div class="instructions">
+    <h3>Quick Start</h3>
+    <p>This dashboard helps you diagnose and fix missing salary/stipend data on your website.</p>
+    <ol>
+      <li>Check the status tiles below to see current compensation coverage</li>
+      <li>Review sample jobs to understand what's in the database vs. what displays</li>
+      <li>Click "Run Diagnostic" to test extraction on sample jobs</li>
+      <li>Click "Run Backfill" to extract and update missing compensation data</li>
+    </ol>
+  </div>
+
+  <div class="status-grid">
+    <div class="status-tile" id="tile-total">
+      <p class="status-label">Total Jobs</p>
+      <p class="status-value">—</p>
+      <p class="status-detail">Loading...</p>
+    </div>
+    <div class="status-tile" id="tile-numeric">
+      <p class="status-label">With Salary Data</p>
+      <p class="status-value">—</p>
+      <p class="status-detail">Numeric compensation</p>
+    </div>
+    <div class="status-tile" id="tile-qualitative">
+      <p class="status-label">With Text Only</p>
+      <p class="status-value">—</p>
+      <p class="status-detail">Qualitative phrases</p>
+    </div>
+    <div class="status-tile" id="tile-coverage">
+      <p class="status-label">Coverage</p>
+      <p class="status-value">—</p>
+      <p class="status-detail">Total disclosed</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Sample Jobs Analysis</h2>
+      <button class="action-button secondary" onclick="loadSampleJobs()">Refresh Samples</button>
+    </div>
+    <div id="sample-jobs">
+      <p style="color: var(--slate)">Click "Refresh Samples" to load data from your database...</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Compensation Extraction Test</h2>
+      <button class="action-button secondary" onclick="runDiagnostic()" id="btn-diagnostic">Run Diagnostic</button>
+    </div>
+    <div class="console" id="diagnostic-console">
+      <p class="console-line" style="color: var(--slate)">Click "Run Diagnostic" to test extraction logic on sample jobs...</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Backfill Missing Compensation</h2>
+      <button class="action-button" onclick="runBackfill()" id="btn-backfill">Run Backfill</button>
+    </div>
+    <div class="console" id="backfill-console">
+      <p class="console-line" style="color: var(--slate)">Ready to extract compensation data from all jobs in the database.</p>
+      <p class="console-line" style="color: var(--slate)">This will update jobs missing salary/stipend information.</p>
+      <p class="console-line" style="color: var(--slate); margin-top: 8px;">Click "Run Backfill" when ready.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api';
+
+// Initialize dashboard
+async function init() {
+  try {
+    await loadStats();
+  } catch (e) {
+    console.error('Init error:', e);
+    document.getElementById('tile-total').querySelector('.status-detail').textContent =
+      'Error connecting to API';
+  }
+}
+
+// Load statistics
+async function loadStats() {
+  try {
+    const response = await fetch(`${API_BASE}/jobs/stats`);
+    if (!response.ok) throw new Error('API error');
+
+    const stats = await response.json();
+
+    updateTile('tile-total', stats.total || 0, 'In database', null);
+    updateTile('tile-numeric', stats.with_numeric || 0,
+      `${((stats.with_numeric || 0) / (stats.total || 1) * 100).toFixed(1)}%`,
+      stats.with_numeric > 0 ? 'good' : 'warning');
+    updateTile('tile-qualitative', stats.with_qualitative || 0,
+      `${((stats.with_qualitative || 0) / (stats.total || 1) * 100).toFixed(1)}%`,
+      stats.with_qualitative > 0 ? 'good' : null);
+
+    const coverage = ((stats.with_numeric || 0) + (stats.with_qualitative || 0)) / (stats.total || 1) * 100;
+    updateTile('tile-coverage', `${coverage.toFixed(1)}%`,
+      `${(stats.with_numeric || 0) + (stats.with_qualitative || 0)} jobs`,
+      coverage > 60 ? 'good' : coverage > 30 ? 'warning' : 'alert');
+
+  } catch (e) {
+    console.error('Stats error:', e);
+    updateTile('tile-total', '—', 'Connection failed', 'alert');
+  }
+}
+
+function updateTile(tileId, value, detail, status) {
+  const tile = document.getElementById(tileId);
+  tile.querySelector('.status-value').textContent = value;
+  tile.querySelector('.status-detail').textContent = detail;
+  tile.className = 'status-tile' + (status ? ' ' + status : '');
+}
+
+// Load sample jobs
+async function loadSampleJobs() {
+  const container = document.getElementById('sample-jobs');
+  container.innerHTML = '<p style="color: var(--slate)">Loading sample jobs...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE}/jobs/matches?limit=5`);
+    if (!response.ok) throw new Error('API error');
+
+    const data = await response.json();
+    const jobs = data.items || [];
+
+    if (jobs.length === 0) {
+      container.innerHTML = '<p style="color: var(--orange)">No jobs found in database</p>';
+      return;
+    }
+
+    container.innerHTML = jobs.map(job => renderJobCard(job)).join('');
+
+  } catch (e) {
+    console.error('Sample jobs error:', e);
+    container.innerHTML = `<p style="color: var(--orange)">Error loading jobs: ${e.message}</p>`;
+  }
+}
+
+function renderJobCard(job) {
+  const hasNumeric = job.salary_min || job.salary_max || job.stipend_min;
+  const hasQualitative = job.compensation_text && !hasNumeric;
+  const hasNone = !hasNumeric && !hasQualitative;
+
+  let displayText = 'NOT VISIBLE (no data)';
+  if (job.salary_min && job.salary_max) {
+    displayText = `₹${job.salary_min}–${job.salary_max} LPA`;
+  } else if (job.salary_min) {
+    displayText = `₹${job.salary_min}+ LPA`;
+  } else if (job.stipend_min && job.stipend_max) {
+    displayText = `₹${job.stipend_min.toLocaleString()}–${job.stipend_max.toLocaleString()} / mo`;
+  } else if (job.stipend_min) {
+    displayText = `₹${job.stipend_min.toLocaleString()} / mo`;
+  } else if (job.compensation_text) {
+    if (job.compensation_text.toLowerCase().includes('best in industry')) {
+      displayText = 'Best in industry';
+    } else if (job.compensation_text.toLowerCase().includes('commensurate')) {
+      displayText = 'Commensurate';
+    } else if (job.compensation_text.toLowerCase().includes('paid')) {
+      displayText = 'Paid';
+    } else {
+      displayText = 'Competitive';
+    }
+  }
+
+  const badgeClass = hasNumeric ? 'numeric' : hasQualitative ? 'qualitative' : 'undisclosed';
+  const badgeText = hasNumeric ? 'NUMERIC' : hasQualitative ? 'QUALITATIVE' : 'UNDISCLOSED';
+
+  return `
+    <div class="job-card">
+      <p class="job-title">${escapeHtml(job.title || 'Unknown')}</p>
+      <p class="job-company">${escapeHtml(job.company || 'Unknown')} · ${job.source || 'unknown'} <span class="badge ${badgeClass}">${badgeText}</span></p>
+
+      <div class="data-grid">
+        <span class="data-label">salary_min:</span>
+        <span class="data-value ${job.salary_min ? 'success' : 'empty'}">${job.salary_min || 'null'}</span>
+
+        <span class="data-label">salary_max:</span>
+        <span class="data-value ${job.salary_max ? 'success' : 'empty'}">${job.salary_max || 'null'}</span>
+
+        <span class="data-label">stipend_min:</span>
+        <span class="data-value ${job.stipend_min ? 'success' : 'empty'}">${job.stipend_min || 'null'}</span>
+
+        <span class="data-label">compensation_text:</span>
+        <span class="data-value ${job.compensation_text ? 'success' : 'empty'}">${job.compensation_text || 'null'}</span>
+      </div>
+
+      <div class="display-preview">
+        <div class="display-label">FRONTEND DISPLAY:</div>
+        <div class="display-result ${hasNone ? 'missing' : ''}">${displayText}</div>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Run diagnostic
+async function runDiagnostic() {
+  const btn = document.getElementById('btn-diagnostic');
+  const console = document.getElementById('diagnostic-console');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span> Running...';
+  console.innerHTML = '<p class="console-line">Starting diagnostic...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE}/jobs/diagnostic`);
+    if (!response.ok) throw new Error('API error');
+
+    const result = await response.json();
+
+    let output = '<p class="console-line success">✓ Diagnostic complete</p>';
+    output += `<p class="console-line">Tested ${result.tested || 0} jobs</p>`;
+    output += `<p class="console-line">Found numeric compensation: ${result.found_numeric || 0}</p>`;
+    output += `<p class="console-line">Found qualitative compensation: ${result.found_qualitative || 0}</p>`;
+    output += `<p class="console-line">Still undisclosed: ${result.still_undisclosed || 0}</p>`;
+
+    if (result.examples && result.examples.length > 0) {
+      output += '<p class="console-line" style="margin-top: 12px;">Sample extractions:</p>';
+      result.examples.forEach(ex => {
+        const status = ex.found ? 'success' : 'warning';
+        output += `<p class="console-line ${status}">  ${ex.title}: ${ex.result}</p>`;
+      });
+    }
+
+    console.innerHTML = output;
+
+  } catch (e) {
+    console.innerHTML = `<p class="console-line error">✗ Diagnostic failed: ${e.message}</p>`;
+    console.innerHTML += '<p class="console-line">Make sure the backend server is running on http://localhost:8000</p>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Diagnostic';
+  }
+}
+
+// Run backfill
+async function runBackfill() {
+  const btn = document.getElementById('btn-backfill');
+  const console = document.getElementById('backfill-console');
+
+  if (!confirm('This will extract compensation from all jobs and update the database. Continue?')) {
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span> Running backfill...';
+  console.innerHTML = '<p class="console-line">Starting backfill process...</p>';
+
+  try {
+    const response = await fetch(`${API_BASE}/jobs/backfill-compensation`, {
+      method: 'POST'
+    });
+
+    if (!response.ok) throw new Error('API error');
+
+    const result = await response.json();
+
+    let output = '<p class="console-line success">✓ Backfill complete</p>';
+    output += '<p class="console-line" style="margin-top: 8px;">Results:</p>';
+    output += `<p class="console-line">Total processed: ${result.total_processed || 0}</p>`;
+    output += `<p class="console-line success">Updated (numeric): ${result.newly_extracted_numeric || 0}</p>`;
+    output += `<p class="console-line success">Updated (qualitative): ${result.newly_extracted_qualitative || 0}</p>`;
+    output += `<p class="console-line">Already had data: ${result.already_had_data || 0}</p>`;
+    output += `<p class="console-line warning">Still undisclosed: ${result.still_undisclosed || 0}</p>`;
+
+    if (result.errors && result.errors > 0) {
+      output += `<p class="console-line error">Errors: ${result.errors}</p>`;
+    }
+
+    const coverage = ((result.already_had_data || 0) + (result.newly_extracted_numeric || 0) +
+                     (result.newly_extracted_qualitative || 0)) / (result.total_processed || 1) * 100;
+    output += `<p class="console-line" style="margin-top: 8px;">Final coverage: ${coverage.toFixed(1)}%</p>`;
+
+    console.innerHTML = output;
+
+    // Refresh stats
+    await loadStats();
+
+  } catch (e) {
+    console.innerHTML = `<p class="console-line error">✗ Backfill failed: ${e.message}</p>`;
+    console.innerHTML += '<p class="console-line">Backend endpoints needed:</p>';
+    console.innerHTML += '<p class="console-line">  POST /api/jobs/backfill-compensation</p>';
+    console.innerHTML += '<p class="console-line">  GET /api/jobs/stats</p>';
+    console.innerHTML += '<p class="console-line">  GET /api/jobs/diagnostic</p>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Backfill';
+  }
+}
+
+// Initialize on load
+init();
+</script>

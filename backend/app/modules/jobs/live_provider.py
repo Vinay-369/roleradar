@@ -25,7 +25,9 @@ from datetime import datetime, timezone
 import httpx
 
 from app.core.config import Settings
+from app.modules.jobs.compensation_extractor import extract_compensation_details
 from app.modules.jobs.skill_vocabulary import extract_skills_from_text
+from app.modules.jobs.taxonomy import extract_experience_bounds
 
 logger = logging.getLogger("roleradar.jobs.adzuna")
 
@@ -112,18 +114,58 @@ class AdzunaJobProvider:
         skills = extract_skills_from_text(f"{title} {description}")
         title_lower = title.lower()
         job_type = "internship" if "intern" in title_lower else "full_time"
+        experience_min, experience_max = extract_experience_bounds(description, title)
         is_remote = "remote" in description.lower() or "remote" in location.lower()
         fresher_friendly = any(kw in title_lower or kw in description.lower() for kw in FRESHER_KEYWORDS)
 
         salary_min_raw = result.get("salary_min")
         salary_max_raw = result.get("salary_max")
-        salary_disclosed = salary_min_raw is not None
+        compensation = extract_compensation_details(
+            f"{title}\n{description}",
+            is_internship=job_type == "internship",
+        )
+        salary_disclosed = False
         # Adzuna returns annual salary in the local currency's smallest
         # unit convention for the country; for India this is annual INR,
         # so we convert to LPA (lakhs per annum) to match this project's
         # existing LPA-based filtering.
-        salary_min = round(salary_min_raw / 100_000, 1) if salary_min_raw else None
-        salary_max = round(salary_max_raw / 100_000, 1) if salary_max_raw else None
+        salary_min = None
+        salary_max = None
+        stipend_min = None
+        stipend_max = None
+        stipend = None
+        stipend_period = None
+        compensation_type = None
+        compensation_text = None
+
+        if job_type == "internship" and compensation.stipend_min is not None:
+            stipend_min = compensation.stipend_min
+            stipend_max = compensation.stipend_max
+            stipend = compensation.stipend
+            stipend_period = compensation.stipend_period
+            compensation_type = compensation.compensation_type
+            compensation_text = compensation.compensation_text
+            salary_disclosed = compensation.salary_disclosed
+        elif salary_min_raw is not None:
+            salary_min = round(salary_min_raw / 100_000, 1) if salary_min_raw else None
+            salary_max = round(salary_max_raw / 100_000, 1) if salary_max_raw else salary_min
+            salary_disclosed = True
+            compensation_type = "NUMERIC"
+            compensation_text = (
+                f"₹{salary_min:g}–{salary_max:g} LPA"
+                if salary_max is not None and salary_max != salary_min
+                else f"₹{salary_min:g} LPA"
+            ) if salary_min is not None else None
+        elif compensation.salary_disclosed:
+            salary_min = compensation.salary_min
+            salary_max = compensation.salary_max
+            stipend_min = compensation.stipend_min
+            stipend_max = compensation.stipend_max
+            stipend = compensation.stipend
+            stipend_period = compensation.stipend_period if stipend is not None else None
+            compensation_type = compensation.compensation_type
+            compensation_text = compensation.compensation_text
+            salary_disclosed = compensation.salary_disclosed
 
         posted_days_ago = 0
         created = result.get("created")
@@ -133,6 +175,9 @@ class AdzunaJobProvider:
                 posted_days_ago = max(0, (datetime.now(timezone.utc) - created_dt).days)
             except ValueError:
                 pass
+
+        from app.modules.jobs.public_aggregators import extract_deadline_from_text
+        application_deadline = extract_deadline_from_text(description)
 
         apply_url = result.get("redirect_url", "")
 
@@ -157,19 +202,29 @@ class AdzunaJobProvider:
             "skills_required": skills[:6],
             "skills_nice_to_have": skills[6:12],
             "responsibilities": [],
-            "experience_min": 0,
-            "experience_max": 99,
+            "experience_min": experience_min,
+            "experience_max": experience_max,
             "job_type": job_type,
             "location": location,
             "is_remote": is_remote,
             "salary_min": salary_min,
             "salary_max": salary_max,
             "salary_disclosed": salary_disclosed,
-            "stipend_min": None,
+            "salary_currency": compensation.salary_currency or "INR",
+            "stipend": stipend,
+            "stipend_min": stipend_min,
+            "stipend_max": stipend_max,
+            "stipend_currency": "INR" if stipend is not None else None,
+            "stipend_period": stipend_period,
+            "compensation_type": compensation_type,
+            "compensation_text": compensation_text,
             "internship_duration_months": None,
             "fresher_friendly": fresher_friendly,
             "posted_days_ago": posted_days_ago,
             "posted_at": created if created else None,
+            "registration_closing_date": application_deadline,
+            "application_deadline": application_deadline,
+            "end_date": application_deadline,
             "first_seen_at": datetime.now(timezone.utc).isoformat(),
             "last_seen_at": datetime.now(timezone.utc).isoformat(),
             "source_job_id": str(result.get("id", "")),

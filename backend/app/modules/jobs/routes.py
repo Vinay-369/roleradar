@@ -52,12 +52,22 @@ def _attach_compensation_meta(job: dict) -> None:
         )
         job["compensation_type"] = comp.compensation_type
         job["compensation_text"] = comp.compensation_text
+        job["salary_currency"] = comp.salary_currency
+        job["salary_period"] = comp.salary_period
+        job["salary_unit"] = comp.salary_unit
+        job["stipend_currency"] = comp.stipend_currency
+        job["stipend_period"] = comp.stipend_period
+        job["stipend_unit"] = comp.stipend_unit
         if comp.salary_min is not None and job.get("salary_min") is None:
             job["salary_min"] = comp.salary_min
         if comp.salary_max is not None and job.get("salary_max") is None:
             job["salary_max"] = comp.salary_max
         if comp.stipend_min is not None and job.get("stipend_min") is None:
             job["stipend_min"] = comp.stipend_min
+        if comp.stipend_max is not None and job.get("stipend_max") is None:
+            job["stipend_max"] = comp.stipend_max
+        if comp.stipend is not None and job.get("stipend") is None:
+            job["stipend"] = comp.stipend
         if comp.salary_disclosed and not job.get("salary_disclosed"):
             job["salary_disclosed"] = True
 
@@ -82,12 +92,20 @@ def _strip_for_list(job: dict) -> dict:
     job.pop("jd_text", None)
     job.pop("responsibilities", None)
     job.pop("qualifications", None)
+    job.setdefault("source_id", job.get("source_job_id"))
+    job.setdefault("internal_source", job.get("source"))
     job.setdefault("url_type", "UNVERIFIED")
     job.setdefault("is_direct_apply", job.get("url_type") == "DIRECT_REQUISITION")
     job.setdefault("verification_status", "VERIFIED_ACTIVE")
     job.setdefault("country", extract_country_from_location(job.get("location")))
     job.setdefault("contextual_requirements", [])
     job.setdefault("posted_days_ago", 0)
+    from app.modules.jobs.taxonomy import normalize_provider_experience
+    normalize_provider_experience(job)
+    closing_date = job.get("registration_closing_date") or job.get("application_deadline") or job.get("end_date")
+    job["registration_closing_date"] = closing_date
+    job["application_deadline"] = closing_date
+    job["end_date"] = closing_date
     _attach_canonical_role_meta(job)
     _attach_compensation_meta(job)
     _attach_completeness_meta(job)
@@ -100,6 +118,8 @@ def _strip_for_detail(job: dict) -> dict:
     job = {**job}
     job.pop("_id", None)
     job.pop("jd_text", None)
+    job.setdefault("source_id", job.get("source_job_id"))
+    job.setdefault("internal_source", job.get("source"))
     job.setdefault("responsibilities", [])
     job.setdefault("qualifications", [])
     job.setdefault("url_type", "UNVERIFIED")
@@ -108,6 +128,12 @@ def _strip_for_detail(job: dict) -> dict:
     job.setdefault("country", extract_country_from_location(job.get("location")))
     job.setdefault("contextual_requirements", [])
     job.setdefault("posted_days_ago", 0)
+    from app.modules.jobs.taxonomy import normalize_provider_experience
+    normalize_provider_experience(job)
+    closing_date = job.get("registration_closing_date") or job.get("application_deadline") or job.get("end_date")
+    job["registration_closing_date"] = closing_date
+    job["application_deadline"] = closing_date
+    job["end_date"] = closing_date
     _attach_canonical_role_meta(job)
     _attach_compensation_meta(job)
     _attach_completeness_meta(job)
@@ -189,22 +215,17 @@ async def sync_live_jobs(
     settings: Settings = Depends(get_settings),
 ):
     """
-    Explicit background/on-demand synchronization of active live opportunities
-    from ATS providers (Greenhouse, Lever, SmartRecruiters, Adzuna). Decoupled from user read requests.
+    Explicit on-demand synchronization of configured direct employer ATS boards.
     """
-    added_count = await services.refresh_live_jobs(db, settings, {})
-    return {"status": "success", "added_count": added_count}
+    synced_count = await services.refresh_live_jobs(db, settings, {})
+    return {"status": "success", "added_count": synced_count}
 
 
-<<<<<<< HEAD
-@router.post("/custom", response_model=JobOut)
-=======
 @router.post(
-    "/custom", 
+    "/custom",
     response_model=JobOut,
     dependencies=[Depends(rate_limit(max_requests=20, window_seconds=60, key_prefix="jobs_custom"))],
 )
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
 async def create_custom_job_endpoint(
     payload: CreateCustomJobRequest,
     current_user: dict = Depends(get_current_user),
@@ -254,10 +275,10 @@ async def get_job(
                 job["qualifications"] = [html.unescape(q).strip() for q in reqs.qualifications]
 
             if reqs.min_years_experience is not None:
-                job["experience_min"] = int(reqs.min_years_experience)
+                job["experience_min"] = reqs.min_years_experience
 
             if reqs.max_years_experience is not None:
-                job["experience_max"] = int(reqs.max_years_experience)
+                job["experience_max"] = reqs.max_years_experience
 
             contextual = [
                 html.unescape(k).strip() for k in (list(reqs.technologies) + reqs.domain_keywords + reqs.tools + reqs.keywords)
@@ -268,7 +289,7 @@ async def get_job(
         pass
 
     if job.get("location"):
-        from app.modules.jobs.smartrecruiters_provider import normalize_location_string
+        from app.modules.jobs.location_normalization import normalize_location_string
         job["location"] = normalize_location_string(job["location"])
 
     try:

@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Bookmark, Check, Sparkles } from "lucide-react";
+import { MapPin, Bookmark, Check, Sparkles, Calendar } from "lucide-react";
 import type { JobMatch } from "../../lib/jobs";
+import { formatCompensation } from "../../lib/compensation";
 import { saveApplication } from "../../lib/applications";
 import { WhyScoreModal } from "../common/WhyScoreModal";
 import { useToast } from "../../context/ToastContext";
@@ -87,21 +88,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
     EXPERIENCE_GAP: { label: "Experience Gap", className: "bg-alert-600/10 text-alert-600 border border-alert-600/30" },
   };
 
-  const compensationDisplay = (() => {
-    if (job.salary_min && job.salary_max) return `₹${job.salary_min}–${job.salary_max} LPA`;
-    if (job.salary_min) return `₹${job.salary_min}+ LPA`;
-    if (job.stipend) return `₹${job.stipend.toLocaleString()} / mo`;
-    if (job.stipend_min && job.stipend_max) return `₹${job.stipend_min.toLocaleString()}–${job.stipend_max.toLocaleString()} / mo`;
-    if (job.stipend_min) return `₹${job.stipend_min.toLocaleString()} / mo`;
-    if (job.compensation_text) {
-      if (job.compensation_text.toLowerCase().includes("best in industry")) return "Best in industry";
-      if (job.compensation_text.toLowerCase().includes("commensurate")) return "Commensurate";
-      if (job.compensation_text.toLowerCase().includes("paid")) return "Paid";
-      if (job.compensation_text.toLowerCase().includes("unpaid")) return "Unpaid";
-      return "Competitive";
-    }
-    return null;
-  })();
+  const compensationDisplay = formatCompensation(job);
 
   const experienceDisplay = (() => {
     const hasMin = job.experience_min !== null && job.experience_min !== undefined;
@@ -113,8 +100,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
       return `${job.experience_min}–${job.experience_max} yrs`;
     }
     if (hasMin) return `${job.experience_min}+ yrs`;
-    if (job.fresher_friendly || job.fresher_eligible) return "Fresher (0–1 yr)";
-    return null;
+    return "Not specified";
   })();
 
   const locationDisplay = job.is_remote
@@ -122,6 +108,22 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
     : job.location
     ? job.location
     : "On-site / Hybrid";
+  const isAggregatorListing = ["adzuna", "jsearch", "jooble"].includes(job.source);
+  const hasSafeApplyUrl = Boolean(job.apply_url && (job.apply_url.startsWith("https://") || job.apply_url.startsWith("http://")));
+
+  const deadlineDisplay = (() => {
+    const dl = job.registration_closing_date || job.application_deadline || job.end_date;
+    if (!dl) return null;
+    try {
+      const d = new Date(dl);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
+      }
+    } catch {
+      // ignore
+    }
+    return dl.length > 25 ? dl.slice(0, 25) + "…" : dl;
+  })();
 
   return (
     <div className={`rounded-xl border ${isExpMismatch ? "border-amber-200 bg-amber-50/20" : "border-ink-100 bg-white"} p-5 transition-all duration-200 hover:shadow-md`}>
@@ -135,6 +137,10 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold tracking-tight">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Verified Direct
+              </span>
+            ) : job.verification_status === "VERIFIED_ACTIVE" && isAggregatorListing ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 text-[10px] font-semibold">
+                Live Listing
               </span>
             ) : job.verification_status === "MARKET_BENCHMARK" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-medium">
@@ -152,11 +158,9 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
               <MapPin size={12} className="text-ink-400" />
               <span>{locationDisplay}</span>
             </span>
-            {compensationDisplay && (
-              <span className="font-semibold text-ink-700">
-                {compensationDisplay}
-              </span>
-            )}
+            <span className={`font-semibold ${compensationDisplay === "Not disclosed" ? "text-ink-400" : "text-ink-700"}`}>
+              {compensationDisplay}
+            </span>
             <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
               {job.job_type === "internship" || job.opportunity_type === "INTERNSHIP" ? "Internship" : "Full-time"}
             </span>
@@ -173,6 +177,12 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
             {job.workplace_type && job.workplace_type !== "UNKNOWN" && (
               <span className="rounded bg-ink-100/70 text-ink-700 px-1.5 py-0.5 text-[10px] font-medium">
                 {job.workplace_type.replace("_", " ")}
+              </span>
+            )}
+            {deadlineDisplay && (
+              <span className="flex items-center gap-1 rounded bg-rose-50 text-rose-700 border border-rose-200/70 px-1.5 py-0.5 text-[10px] font-medium" title={`Application Deadline: ${job.application_deadline || job.end_date}`}>
+                <Calendar size={11} className="text-rose-500" />
+                <span>Closes: {deadlineDisplay}</span>
               </span>
             )}
           </div>
@@ -321,19 +331,15 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
             <span>View Details</span>
             <span>→</span>
           </Link>
-<<<<<<< HEAD
-          {job.is_direct_apply && job.apply_url && (
-=======
-          {job.is_direct_apply && job.apply_url && (job.apply_url.startsWith("https://") || job.apply_url.startsWith("http://")) && (
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
+          {(job.is_direct_apply || (isAggregatorListing && job.verification_status === "VERIFIED_ACTIVE")) && hasSafeApplyUrl && (
             <a
               href={job.apply_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-lg bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 border border-signal-500/20 px-3 py-1.5 text-xs font-semibold transition-all active:scale-95"
-              title={`Apply directly on official portal for ${job.company}`}
+              title={job.is_direct_apply ? `Apply directly on official portal for ${job.company}` : `Continue to the listing for ${job.company}`}
             >
-              Apply ↗
+              {job.is_direct_apply ? "Apply ↗" : "Continue ↗"}
             </a>
           )}
         </div>

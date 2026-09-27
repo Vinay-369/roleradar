@@ -128,47 +128,73 @@ def render_text_from_structured(parsed_data: dict) -> str:
     exp = parsed_data.get("experience_raw", []) or parsed_data.get("experience", []) or parsed_data.get("work_experience", [])
     if exp:
         lines.append("PROFESSIONAL EXPERIENCE")
-        if isinstance(exp, list) and exp and isinstance(exp[0], dict) and "company" in exp[0] and "bullets" in exp[0]:
+        if isinstance(exp, list) and exp and all(isinstance(x, dict) and "company" in x and "bullets" in x for x in exp):
             exp_entities = exp
         else:
             exp_entities = parse_experience_section(exp)
 
         for ent in exp_entities:
-            comp = ent.company if hasattr(ent, "company") else ent.get("company", "")
-            loc = ent.location if hasattr(ent, "location") else ent.get("location", "")
+            if isinstance(ent, str):
+                clean_ent = re.sub(r"^[•\-\*\s]+", "", ent).strip()
+                if clean_ent:
+                    lines.append(f"• {clean_ent}")
+                continue
+
+            if isinstance(ent, dict):
+                comp = ent.get("company", "")
+                loc = ent.get("location", "")
+                prog = ent.get("progression", [])
+                role = ent.get("role", "")
+                dates = ent.get("dates", "")
+                r_groups = ent.get("responsibility_groups", [])
+                e_bullets = ent.get("bullets", [])
+            else:
+                comp = getattr(ent, "company", "")
+                loc = getattr(ent, "location", "")
+                prog = getattr(ent, "progression", [])
+                role = getattr(ent, "role", "") if not callable(getattr(ent, "role", None)) else ""
+                dates = getattr(ent, "dates", "")
+                r_groups = getattr(ent, "responsibility_groups", [])
+                e_bullets = getattr(ent, "bullets", [])
+
             comp_header = f"{comp} — {loc}" if comp and loc else (comp or "")
             if comp_header and comp_header.lower() not in ("work experience", "experience"):
                 lines.append(comp_header)
 
-            prog = ent.progression if hasattr(ent, "progression") else ent.get("progression", [])
             if prog:
                 for p in prog:
-                    p_title = p.title if hasattr(p, "title") else p.get("title", "")
-                    p_dates = p.dates if hasattr(p, "dates") else p.get("dates", "")
+                    if isinstance(p, str):
+                        clean_p = re.sub(r"^[•\-\*\s]+", "", p).strip()
+                        if clean_p:
+                            lines.append(f"• {clean_p}")
+                        continue
+                    p_title = p.get("title", "") if isinstance(p, dict) else (getattr(p, "title", "") if not callable(getattr(p, "title", None)) else "")
+                    p_dates = p.get("dates", "") if isinstance(p, dict) else getattr(p, "dates", "")
                     p_line = f"{p_title} ({p_dates})" if p_title and p_dates else (p_title or "")
                     if p_line:
                         lines.append(p_line)
-            elif (hasattr(ent, "role") and ent.role) or (isinstance(ent, dict) and ent.get("role")):
-                r_title = ent.role if hasattr(ent, "role") else ent.get("role", "")
-                r_dates = ent.dates if hasattr(ent, "dates") else ent.get("dates", "")
-                r_line = f"{r_title} ({r_dates})" if r_title and r_dates else (r_title or "")
+            elif role or dates:
+                r_line = f"{role} ({dates})" if role and dates else (role or "")
                 if r_line:
                     lines.append(r_line)
 
-            r_groups = ent.responsibility_groups if hasattr(ent, "responsibility_groups") else ent.get("responsibility_groups", [])
             if r_groups:
                 for grp in r_groups:
-                    g_heading = grp.heading if hasattr(grp, "heading") else grp.get("heading", "")
+                    if isinstance(grp, str):
+                        clean_g = re.sub(r"^[•\-\*\s]+", "", grp).strip()
+                        if clean_g:
+                            lines.append(f"• {clean_g}")
+                        continue
+                    g_heading = grp.get("heading", "") if isinstance(grp, dict) else getattr(grp, "heading", "")
                     if g_heading:
                         lines.append(g_heading)
-                    g_bullets = grp.bullets if hasattr(grp, "bullets") else grp.get("bullets", [])
+                    g_bullets = grp.get("bullets", []) if isinstance(grp, dict) else getattr(grp, "bullets", [])
                     for b in g_bullets:
                         b_clean = re.sub(r"^[•\-\*\s]+", "", str(b)).strip()
                         if b_clean:
                             lines.append(f"• {b_clean}")
             else:
-                e_bullets = ent.bullets if hasattr(ent, "bullets") else ent.get("bullets", [])
-                for b in e_bullets:
+                for b in (e_bullets or []):
                     b_clean = re.sub(r"^[•\-\*\s]+", "", str(b)).strip()
                     if b_clean:
                         lines.append(f"• {b_clean}")
@@ -178,15 +204,28 @@ def render_text_from_structured(parsed_data: dict) -> str:
     proj = parsed_data.get("projects_raw", []) or parsed_data.get("projects", [])
     if proj:
         lines.append("TECHNICAL PROJECTS")
-        if isinstance(proj, list) and proj and isinstance(proj[0], dict) and "title" in proj[0] and "bullets" in proj[0]:
+        if isinstance(proj, list) and proj and all(isinstance(x, dict) and "title" in x and "bullets" in x for x in proj):
             proj_entities = proj
         else:
             proj_entities = parse_projects_section(proj)
 
         for p in proj_entities:
-            p_title = p.title if hasattr(p, "title") else p.get("title", "")
-            p_tech = p.tech_stack if hasattr(p, "tech_stack") else (p.get("tech_stack") or p.get("technologies"))
-            p_dates = p.dates if hasattr(p, "dates") else p.get("dates")
+            if isinstance(p, str):
+                b_clean = re.sub(r"^[•\-\*\s]+", "", p).strip()
+                if b_clean:
+                    lines.append(f"• {b_clean}")
+                continue
+
+            if isinstance(p, dict):
+                p_title = p.get("title", "")
+                p_tech = p.get("tech_stack") or p.get("technologies")
+                p_dates = p.get("dates")
+                p_bullets = p.get("bullets", [])
+            else:
+                p_title = getattr(p, "title", "") if not callable(getattr(p, "title", None)) else ""
+                p_tech = getattr(p, "tech_stack", None) or getattr(p, "technologies", None)
+                p_dates = getattr(p, "dates", None)
+                p_bullets = getattr(p, "bullets", [])
 
             t_line = f"{p_title} ({p_dates})" if p_title and p_dates else (p_title or "")
             if t_line:
@@ -195,8 +234,7 @@ def render_text_from_structured(parsed_data: dict) -> str:
                 p_tech_str = ", ".join(p_tech) if isinstance(p_tech, list) else str(p_tech)
                 lines.append(f"Technologies: {p_tech_str}")
 
-            p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
-            for b in p_bullets:
+            for b in (p_bullets or []):
                 b_clean = re.sub(r"^[•\-\*\s]+", "", str(b)).strip()
                 if b_clean:
                     lines.append(f"• {b_clean}")
@@ -662,14 +700,34 @@ def render_pdf_from_structured(
             if exp:
                 heading_title = std_headings.get("experience", "PROFESSIONAL EXPERIENCE")
                 add_section_header(heading_title)
-                if isinstance(exp, list) and exp and isinstance(exp[0], dict) and "company" in exp[0] and ("bullets" in exp[0] or "progression" in exp[0]):
+                if isinstance(exp, list) and exp and all(isinstance(x, dict) and "company" in x and ("bullets" in x or "progression" in x) for x in exp):
                     exp_entities = exp
                 else:
                     exp_entities = parse_experience_section(exp)
 
                 for ent in exp_entities:
-                    comp = ent.company if hasattr(ent, "company") else ent.get("company", "")
-                    loc = ent.location if hasattr(ent, "location") else ent.get("location", "")
+                    if isinstance(ent, str):
+                        clean_b = _BULLET_PREFIX_RE.sub("", str(ent)).strip()
+                        if clean_b:
+                            story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
+                        continue
+
+                    if isinstance(ent, dict):
+                        comp = ent.get("company", "")
+                        loc = ent.get("location", "")
+                        prog = ent.get("progression", [])
+                        role = ent.get("role", "")
+                        dates = ent.get("dates", "")
+                        r_groups = ent.get("responsibility_groups", [])
+                        e_bullets = ent.get("bullets", [])
+                    else:
+                        comp = getattr(ent, "company", "")
+                        loc = getattr(ent, "location", "")
+                        prog = getattr(ent, "progression", [])
+                        role = getattr(ent, "role", "") if not callable(getattr(ent, "role", None)) else ""
+                        dates = getattr(ent, "dates", "")
+                        r_groups = getattr(ent, "responsibility_groups", [])
+                        e_bullets = getattr(ent, "bullets", [])
 
                     # Company Header with Location
                     if comp and comp.lower() not in ("work experience", "experience"):
@@ -691,11 +749,16 @@ def render_pdf_from_structured(
                         else:
                             story.append(Paragraph(esc(comp), subhead_left))
 
-                    prog = ent.progression if hasattr(ent, "progression") else ent.get("progression", [])
                     if prog:
                         for p in prog:
-                            p_title = p.title if hasattr(p, "title") else p.get("title", "")
-                            p_dates = p.dates if hasattr(p, "dates") else p.get("dates", "")
+                            if isinstance(p, str):
+                                clean_b = _BULLET_PREFIX_RE.sub("", str(p)).strip()
+                                if clean_b:
+                                    story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
+                                continue
+
+                            p_title = p.get("title", "") if isinstance(p, dict) else (getattr(p, "title", "") if not callable(getattr(p, "title", None)) else "")
+                            p_dates = p.get("dates", "") if isinstance(p, dict) else getattr(p, "dates", "")
                             if p_title and p_dates:
                                 tbl = Table(
                                     [[Paragraph(esc(p_title), body_style), Paragraph(esc(p_dates), subhead_right)]],
@@ -714,18 +777,16 @@ def render_pdf_from_structured(
                             elif p_title:
                                 story.append(Paragraph(esc(p_title), body_style))
 
-                            p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
-                            for b in p_bullets:
+                            p_bullets = p.get("bullets", []) if isinstance(p, dict) else getattr(p, "bullets", [])
+                            for b in (p_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
 
-                    elif (hasattr(ent, "role") and ent.role) or (isinstance(ent, dict) and ent.get("role")):
-                        r_title = ent.role if hasattr(ent, "role") else ent.get("role", "")
-                        r_dates = ent.dates if hasattr(ent, "dates") else ent.get("dates", "")
-                        if r_title and r_dates:
+                    elif role or dates:
+                        if role and dates:
                             tbl = Table(
-                                [[Paragraph(esc(r_title), body_style), Paragraph(esc(r_dates), subhead_right)]],
+                                [[Paragraph(esc(role), body_style), Paragraph(esc(dates), subhead_right)]],
                                 colWidths=[usable_width * 0.72, usable_width * 0.28],
                                 hAlign='LEFT',
                             )
@@ -738,24 +799,27 @@ def render_pdf_from_structured(
                                 ("BOTTOMPADDING", (0, 0), (-1, -1), 0.5),
                             ]))
                             story.append(tbl)
-                        elif r_title:
-                            story.append(Paragraph(esc(r_title), body_style))
+                        elif role:
+                            story.append(Paragraph(esc(role), body_style))
 
-                    r_groups = ent.responsibility_groups if hasattr(ent, "responsibility_groups") else ent.get("responsibility_groups", [])
                     if r_groups:
                         for grp in r_groups:
-                            g_heading = grp.heading if hasattr(grp, "heading") else grp.get("heading", "")
+                            if isinstance(grp, str):
+                                clean_b = _BULLET_PREFIX_RE.sub("", str(grp)).strip()
+                                if clean_b:
+                                    story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
+                                continue
+                            g_heading = grp.get("heading", "") if isinstance(grp, dict) else getattr(grp, "heading", "")
                             if g_heading:
                                 story.append(Paragraph(f"<b>{esc(g_heading)}</b>", body_style))
-                            g_bullets = grp.bullets if hasattr(grp, "bullets") else grp.get("bullets", [])
-                            for b in g_bullets:
+                            g_bullets = grp.get("bullets", []) if isinstance(grp, dict) else getattr(grp, "bullets", [])
+                            for b in (g_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
                     else:
-                        e_bullets = ent.bullets if hasattr(ent, "bullets") else ent.get("bullets", [])
-                        if not prog or not any(p.bullets if hasattr(p, "bullets") else p.get("bullets") for p in prog):
-                            for b in e_bullets:
+                        if not prog:
+                            for b in (e_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
@@ -831,15 +895,28 @@ def render_pdf_from_structured(
             if proj:
                 heading_title = std_headings.get("projects", "PROJECTS")
                 add_section_header(heading_title)
-                if isinstance(proj, list) and proj and isinstance(proj[0], dict) and "title" in proj[0] and "bullets" in proj[0]:
+                if isinstance(proj, list) and proj and all(isinstance(x, dict) and "title" in x and "bullets" in x for x in proj):
                     proj_entities = proj
                 else:
                     proj_entities = parse_projects_section(proj)
 
                 for p in proj_entities:
-                    p_title = p.title if hasattr(p, "title") else p.get("title", "")
-                    p_tech = p.tech_stack if hasattr(p, "tech_stack") else (p.get("tech_stack") or p.get("technologies"))
-                    p_dates = p.dates if hasattr(p, "dates") else p.get("dates")
+                    if isinstance(p, str):
+                        clean_b = _BULLET_PREFIX_RE.sub("", str(p)).strip()
+                        if clean_b:
+                            story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
+                        continue
+
+                    if isinstance(p, dict):
+                        p_title = p.get("title", "")
+                        p_tech = p.get("tech_stack") or p.get("technologies")
+                        p_dates = p.get("dates")
+                        p_bullets = p.get("bullets", [])
+                    else:
+                        p_title = getattr(p, "title", "") if not callable(getattr(p, "title", None)) else ""
+                        p_tech = getattr(p, "tech_stack", None) or getattr(p, "technologies", None)
+                        p_dates = getattr(p, "dates", None)
+                        p_bullets = getattr(p, "bullets", [])
 
                     if p_title and p_dates:
                         tbl = Table(
@@ -863,8 +940,7 @@ def render_pdf_from_structured(
                         p_tech_str = ", ".join(p_tech) if isinstance(p_tech, list) else str(p_tech)
                         story.append(Paragraph(esc(f"Technologies: {p_tech_str}"), tech_stack_style))
 
-                    p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
-                    for b in p_bullets:
+                    for b in (p_bullets or []):
                         clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                         if clean_b:
                             story.append(Paragraph(f"&bull;&nbsp;&nbsp;{esc(clean_b)}", bullet_style))
@@ -1312,14 +1388,40 @@ def render_docx_from_structured(
             exp = parsed_data.get("experience", []) or parsed_data.get("experience_raw", []) or parsed_data.get("work_experience", [])
             if exp:
                 add_section_header(std_headings.get("experience", "PROFESSIONAL EXPERIENCE"))
-                if isinstance(exp, list) and exp and isinstance(exp[0], dict) and "company" in exp[0] and ("bullets" in exp[0] or "progression" in exp[0]):
+                if isinstance(exp, list) and exp and all(isinstance(x, dict) and "company" in x and ("bullets" in x or "progression" in x) for x in exp):
                     exp_entities = exp
                 else:
                     exp_entities = parse_experience_section(exp)
 
                 for ent in exp_entities:
-                    comp = ent.company if hasattr(ent, "company") else ent.get("company", "")
-                    loc = ent.location if hasattr(ent, "location") else ent.get("location", "")
+                    if isinstance(ent, str):
+                        clean_b = _BULLET_PREFIX_RE.sub("", str(ent)).strip()
+                        if clean_b:
+                            p_b = document.add_paragraph(style="List Bullet")
+                            p_b.paragraph_format.space_before = Pt(0)
+                            p_b.paragraph_format.space_after = Pt(1)
+                            p_b.paragraph_format.left_indent = Inches(0.2)
+                            r_b = p_b.add_run(clean_b)
+                            r_b.font.size = body_font_pt
+                            _set_run_color(r_b, INK_900)
+                        continue
+
+                    if isinstance(ent, dict):
+                        comp = ent.get("company", "")
+                        loc = ent.get("location", "")
+                        prog = ent.get("progression", [])
+                        role = ent.get("role", "")
+                        dates = ent.get("dates", "")
+                        r_groups = ent.get("responsibility_groups", [])
+                        e_bullets = ent.get("bullets", [])
+                    else:
+                        comp = getattr(ent, "company", "")
+                        loc = getattr(ent, "location", "")
+                        prog = getattr(ent, "progression", [])
+                        role = getattr(ent, "role", "") if not callable(getattr(ent, "role", None)) else ""
+                        dates = getattr(ent, "dates", "")
+                        r_groups = getattr(ent, "responsibility_groups", [])
+                        e_bullets = getattr(ent, "bullets", [])
 
                     if comp and comp.lower() not in ("work experience", "experience"):
                         p_comp = document.add_paragraph()
@@ -1341,11 +1443,22 @@ def render_docx_from_structured(
                             r_c.font.size = Pt(9.5)
                             _set_run_color(r_c, INK_900)
 
-                    prog = ent.progression if hasattr(ent, "progression") else ent.get("progression", [])
                     if prog:
                         for p in prog:
-                            p_title = p.title if hasattr(p, "title") else p.get("title", "")
-                            p_dates = p.dates if hasattr(p, "dates") else p.get("dates", "")
+                            if isinstance(p, str):
+                                clean_b = _BULLET_PREFIX_RE.sub("", str(p)).strip()
+                                if clean_b:
+                                    p_b = document.add_paragraph(style="List Bullet")
+                                    p_b.paragraph_format.space_before = Pt(0)
+                                    p_b.paragraph_format.space_after = Pt(1)
+                                    p_b.paragraph_format.left_indent = Inches(0.2)
+                                    r_b = p_b.add_run(clean_b)
+                                    r_b.font.size = body_font_pt
+                                    _set_run_color(r_b, INK_900)
+                                continue
+
+                            p_title = p.get("title", "") if isinstance(p, dict) else (getattr(p, "title", "") if not callable(getattr(p, "title", None)) else "")
+                            p_dates = p.get("dates", "") if isinstance(p, dict) else getattr(p, "dates", "")
                             p_tit = document.add_paragraph()
                             p_tit.paragraph_format.space_before = Pt(1)
                             p_tit.paragraph_format.space_after = Pt(1)
@@ -1365,8 +1478,8 @@ def render_docx_from_structured(
                                 r1.font.size = body_font_pt
                                 _set_run_color(r1, INK_900)
 
-                            p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
-                            for b in p_bullets:
+                            p_bullets = p.get("bullets", []) if isinstance(p, dict) else getattr(p, "bullets", [])
+                            for b in (p_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     p_b = document.add_paragraph(style="List Bullet")
@@ -1376,32 +1489,40 @@ def render_docx_from_structured(
                                     r_b = p_b.add_run(clean_b)
                                     r_b.font.size = body_font_pt
                                     _set_run_color(r_b, INK_900)
-                    elif (hasattr(ent, "role") and ent.role) or (isinstance(ent, dict) and ent.get("role")):
-                        r_title = ent.role if hasattr(ent, "role") else ent.get("role", "")
-                        r_dates = ent.dates if hasattr(ent, "dates") else ent.get("dates", "")
+                    elif role or dates:
                         p_tit = document.add_paragraph()
                         p_tit.paragraph_format.space_before = Pt(1)
                         p_tit.paragraph_format.space_after = Pt(1)
                         p_tit.paragraph_format.keep_with_next = True
-                        if r_dates:
+                        if dates:
                             p_tit.paragraph_format.tab_stops.add_tab_stop(right_tab_stop, WD_TAB_ALIGNMENT.RIGHT)
-                            r1 = p_tit.add_run(r_title)
+                            r1 = p_tit.add_run(role)
                             r1.bold = True
                             r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
-                            r2 = p_tit.add_run(f"\t{r_dates}")
+                            r2 = p_tit.add_run(f"\t{dates}")
                             r2.font.size = body_font_pt
                             _set_run_color(r2, INK_700)
                         else:
-                            r1 = p_tit.add_run(r_title)
+                            r1 = p_tit.add_run(role)
                             r1.bold = True
                             r1.font.size = body_font_pt
                             _set_run_color(r1, INK_900)
 
-                    r_groups = ent.responsibility_groups if hasattr(ent, "responsibility_groups") else ent.get("responsibility_groups", [])
                     if r_groups:
                         for grp in r_groups:
-                            g_heading = grp.heading if hasattr(grp, "heading") else grp.get("heading", "")
+                            if isinstance(grp, str):
+                                clean_b = _BULLET_PREFIX_RE.sub("", str(grp)).strip()
+                                if clean_b:
+                                    p_b = document.add_paragraph(style="List Bullet")
+                                    p_b.paragraph_format.space_before = Pt(0)
+                                    p_b.paragraph_format.space_after = Pt(1)
+                                    p_b.paragraph_format.left_indent = Inches(0.2)
+                                    r_b = p_b.add_run(clean_b)
+                                    r_b.font.size = body_font_pt
+                                    _set_run_color(r_b, INK_900)
+                                continue
+                            g_heading = grp.get("heading", "") if isinstance(grp, dict) else getattr(grp, "heading", "")
                             if g_heading:
                                 p_grp = document.add_paragraph()
                                 p_grp.paragraph_format.space_before = Pt(2)
@@ -1411,8 +1532,8 @@ def render_docx_from_structured(
                                 r_grp.bold = True
                                 r_grp.font.size = body_font_pt
                                 _set_run_color(r_grp, INK_900)
-                            g_bullets = grp.bullets if hasattr(grp, "bullets") else grp.get("bullets", [])
-                            for b in g_bullets:
+                            g_bullets = grp.get("bullets", []) if isinstance(grp, dict) else getattr(grp, "bullets", [])
+                            for b in (g_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     p_b = document.add_paragraph(style="List Bullet")
@@ -1423,9 +1544,8 @@ def render_docx_from_structured(
                                     r_b.font.size = body_font_pt
                                     _set_run_color(r_b, INK_900)
                     else:
-                        e_bullets = ent.bullets if hasattr(ent, "bullets") else ent.get("bullets", [])
-                        if not prog or not any(p.bullets if hasattr(p, "bullets") else p.get("bullets") for p in prog):
-                            for b in e_bullets:
+                        if not prog:
+                            for b in (e_bullets or []):
                                 clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                                 if clean_b:
                                     p_b = document.add_paragraph(style="List Bullet")
@@ -1512,15 +1632,34 @@ def render_docx_from_structured(
             proj = parsed_data.get("projects_raw", []) or parsed_data.get("projects", [])
             if proj:
                 add_section_header(std_headings.get("projects", "PROJECTS"))
-                if isinstance(proj, list) and proj and isinstance(proj[0], dict) and "title" in proj[0] and "bullets" in proj[0]:
+                if isinstance(proj, list) and proj and all(isinstance(x, dict) and "title" in x and "bullets" in x for x in proj):
                     proj_entities = proj
                 else:
                     proj_entities = parse_projects_section(proj)
 
                 for p in proj_entities:
-                    p_title = p.title if hasattr(p, "title") else p.get("title", "")
-                    p_tech = p.tech_stack if hasattr(p, "tech_stack") else (p.get("tech_stack") or p.get("technologies"))
-                    p_dates = p.dates if hasattr(p, "dates") else p.get("dates")
+                    if isinstance(p, str):
+                        clean_b = _BULLET_PREFIX_RE.sub("", str(p)).strip()
+                        if clean_b:
+                            p_b = document.add_paragraph(style="List Bullet")
+                            p_b.paragraph_format.space_before = Pt(0)
+                            p_b.paragraph_format.space_after = Pt(1)
+                            p_b.paragraph_format.left_indent = Inches(0.2)
+                            r_b = p_b.add_run(clean_b)
+                            r_b.font.size = body_font_pt
+                            _set_run_color(r_b, INK_900)
+                        continue
+
+                    if isinstance(p, dict):
+                        p_title = p.get("title", "")
+                        p_tech = p.get("tech_stack") or p.get("technologies")
+                        p_dates = p.get("dates")
+                        p_bullets = p.get("bullets", [])
+                    else:
+                        p_title = getattr(p, "title", "") if not callable(getattr(p, "title", None)) else ""
+                        p_tech = getattr(p, "tech_stack", None) or getattr(p, "technologies", None)
+                        p_dates = getattr(p, "dates", None)
+                        p_bullets = getattr(p, "bullets", [])
 
                     if p_title:
                         p_tit = document.add_paragraph()
@@ -1552,8 +1691,7 @@ def render_docx_from_structured(
                         r_tech.font.size = Pt(8.5)
                         _set_run_color(r_tech, INK_700)
 
-                    p_bullets = p.bullets if hasattr(p, "bullets") else p.get("bullets", [])
-                    for b in p_bullets:
+                    for b in (p_bullets or []):
                         clean_b = _BULLET_PREFIX_RE.sub("", str(b)).strip()
                         if clean_b:
                             p_b = document.add_paragraph(style="List Bullet")

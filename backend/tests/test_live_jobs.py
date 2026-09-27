@@ -99,6 +99,66 @@ def test_transform_detects_internship_from_title(configured_settings):
     assert job["salary_min"] is None
 
 
+def test_transform_extracts_salary_from_description_when_adzuna_has_no_salary(configured_settings):
+    provider = AdzunaJobProvider(configured_settings)
+    job = provider._transform({
+        **ADZUNA_FIXTURE_RESPONSE["results"][0],
+        "salary_min": None,
+        "salary_max": None,
+        "description": "Backend Developer. Compensation: ₹8–12 LPA based on experience.",
+    })
+    assert job["salary_min"] == 8
+    assert job["salary_max"] == 12
+    assert job["salary_disclosed"] is True
+    assert job["compensation_text"] == "₹8.0–12.0 LPA"
+
+
+def test_transform_extracts_monthly_internship_stipend(configured_settings):
+    provider = AdzunaJobProvider(configured_settings)
+    job = provider._transform({
+        **ADZUNA_FIXTURE_RESPONSE["results"][1],
+        "description": "Remote internship. Stipend: ₹25,000/month.",
+    })
+    assert job["stipend_min"] == 25000
+    assert job["stipend"] == 25000
+    assert job["stipend_period"] == "MONTH"
+    assert job["salary_disclosed"] is True
+
+
+def test_transform_keeps_missing_compensation_undisclosed(configured_settings):
+    provider = AdzunaJobProvider(configured_settings)
+    job = provider._transform({
+        **ADZUNA_FIXTURE_RESPONSE["results"][0],
+        "salary_min": None,
+        "salary_max": None,
+        "description": "Backend Developer. Work with a growing engineering team.",
+    })
+    assert job["salary_min"] is None
+    assert job["stipend_min"] is None
+    assert job["salary_disclosed"] is False
+    assert job["compensation_text"] is None
+
+
+def test_transform_extracts_experience_from_description_and_does_not_use_99(configured_settings):
+    provider = AdzunaJobProvider(configured_settings)
+    job = provider._transform({
+        **ADZUNA_FIXTURE_RESPONSE["results"][0],
+        "description": "Requirements: 5+ years of experience with Python.",
+    })
+    assert job["experience_min"] == 5
+    assert job["experience_max"] is None
+
+
+def test_transform_leaves_experience_unspecified_when_description_has_no_requirement(configured_settings):
+    provider = AdzunaJobProvider(configured_settings)
+    job = provider._transform({
+        **ADZUNA_FIXTURE_RESPONSE["results"][0],
+        "description": "Build backend services with Python.",
+    })
+    assert job["experience_min"] is None
+    assert job["experience_max"] is None
+
+
 def test_transform_never_fabricates_apply_url_if_adzuna_omits_it(configured_settings):
     provider = AdzunaJobProvider(configured_settings)
     result_without_url = {**ADZUNA_FIXTURE_RESPONSE["results"][0]}
@@ -133,7 +193,7 @@ async def test_search_returns_empty_list_on_http_failure(configured_settings, mo
 async def test_refresh_live_jobs_is_a_safe_noop_in_curated_only_mode(db):
     """Default mode (JOB_SOURCE_MODE="curated") must never attempt an
     external call at all -- zero-config-required demo path."""
-    settings = Settings(JWT_SECRET="test", GREENHOUSE_ENABLED=False)  # JOB_SOURCE_MODE defaults to "curated"
+    settings = Settings(JWT_SECRET="test", JOB_SOURCE_MODE="curated", GREENHOUSE_ENABLED=False)
     count = await jobs_services.refresh_live_jobs(db, settings, {})
     assert count == 0
 
@@ -142,7 +202,15 @@ async def test_refresh_live_jobs_is_a_safe_noop_in_curated_only_mode(db):
 async def test_refresh_live_jobs_is_a_safe_noop_when_hybrid_but_unconfigured(db):
     """hybrid mode without real credentials must degrade gracefully,
     not throw and break the jobs page."""
-    settings = Settings(JWT_SECRET="test", JOB_SOURCE_MODE="hybrid", GREENHOUSE_ENABLED=False)  # no keys set
+    settings = Settings(
+        JWT_SECRET="test",
+        JOB_SOURCE_MODE="hybrid",
+        ADZUNA_APP_ID="",
+        ADZUNA_APP_KEY="",
+        JSEARCH_RAPIDAPI_KEY="",
+        JOOBLE_API_KEY="",
+        GREENHOUSE_ENABLED=False,
+    )
     count = await jobs_services.refresh_live_jobs(db, settings, {})
     assert count == 0
 

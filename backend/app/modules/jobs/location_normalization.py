@@ -399,3 +399,21 @@ def is_india_opportunity(location: str | None, description: str | None = "", cur
                 return True
 
     return False
+
+
+def normalize_location_string(loc: str | None) -> str:
+    """Normalizes location strings by collapsing duplicate commas, trimming, and cleaning casing."""
+    if not loc or not loc.strip():
+        return "Not specified"
+    raw_parts = [p.strip() for p in re.split(r",+", loc) if p.strip()]
+    cleaned_parts = []
+    for p in raw_parts:
+        low = p.lower()
+        if low == "india":
+            cleaned_parts.append("India")
+        elif low in ("usa", "us", "uk", "uae"):
+            cleaned_parts.append(p.upper())
+        else:
+            cleaned_parts.append(p.title())
+    return ", ".join(cleaned_parts) if cleaned_parts else "Not specified"
+

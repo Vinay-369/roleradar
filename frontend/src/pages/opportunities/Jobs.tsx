@@ -1,12 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-<<<<<<< HEAD
-import { Briefcase, Sparkles, Search, FileText, RotateCcw } from "lucide-react";
-=======
-import { Briefcase, Sparkles, Search, FileText, RotateCcw, X } from "lucide-react";
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
-import { getRecommendedMatches, type JobMatch } from "../../lib/jobs";
+import { Briefcase, Sparkles, Search, FileText, RotateCcw, X, RefreshCw } from "lucide-react";
+import { getRecommendedMatches, syncLiveJobs, type JobMatch } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
@@ -24,6 +20,11 @@ import {
 const PAGE_SIZE = 20;
 
 export function Jobs() {
+  const queryClient = useQueryClient();
+  const liveSync = useMutation({
+    mutationFn: syncLiveJobs,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["matches"] }),
+  });
   // Check if returning from detail navigation
   const restoredState = useMemo(() => {
     if (consumeNavigatedToDetail("jobs")) {
@@ -43,7 +44,7 @@ export function Jobs() {
   const [workplaceFilter, setWorkplaceFilter] = useState<string>(restoredState?.workplaceFilter ?? "ALL");
   const [onlyEligible, setOnlyEligible] = useState<boolean>(restoredState?.onlyEligible ?? false);
   const [sortBy, setSortBy] = useState<"recent" | "match" | "salary">(
-    (restoredState?.sortBy as any) ?? "recent"
+    (restoredState?.sortBy === "recent" ? "salary" : restoredState?.sortBy as any) ?? "salary"
   );
 
   // Progressive Loading State
@@ -218,7 +219,17 @@ export function Jobs() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center justify-end gap-2 flex-wrap shrink-0">
+          <button
+            type="button"
+            onClick={() => liveSync.mutate()}
+            disabled={liveSync.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-signal-200 bg-signal-50 hover:bg-signal-100 text-signal-800 text-xs font-semibold transition-colors disabled:opacity-60"
+            title={liveSync.error ? "Live listing refresh failed" : "Fetch the latest job listings"}
+          >
+            <RefreshCw size={13} className={liveSync.isPending ? "animate-spin" : ""} />
+            <span>{liveSync.isPending ? "Refreshing…" : "Refresh live listings"}</span>
+          </button>
           <Link
             to="/resume/tailor-custom"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold transition-colors shadow-2xs"
@@ -226,6 +237,8 @@ export function Jobs() {
             <FileText size={13} className="text-signal-600" />
             <span>Paste External JD</span>
           </Link>
+          {liveSync.data && <span className="text-[11px] text-ink-500">Synced {liveSync.data.added_count}</span>}
+          {liveSync.error && <span className="text-[11px] text-rose-700">Refresh failed</span>}
 
           {/* India-First vs Global Scope Explorer */}
           <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
@@ -278,22 +291,15 @@ export function Jobs() {
         {/* Row 1: Search + Role */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
           <div className="sm:col-span-6 relative">
-<<<<<<< HEAD
-=======
             <label htmlFor="job-search-input" className="sr-only">Search job listings</label>
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               id="job-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search title, company, skill…"
-<<<<<<< HEAD
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-ink-200 text-xs outline-none focus:border-signal-500 shadow-2xs"
-=======
               aria-label="Search jobs by title, company, or required skill"
               className="w-full pl-8 pr-8 py-2 rounded-lg border border-ink-200 focus:border-signal-500 focus:ring-2 focus:ring-signal-500/15 text-xs text-ink-900 placeholder:text-ink-400 outline-none transition-all shadow-2xs"
->>>>>>> 1161debb0d86395e8540a9a7b4d6f96f1278b97b
             />
             {searchQuery && (
               <button

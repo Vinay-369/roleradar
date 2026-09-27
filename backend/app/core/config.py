@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # --- Runtime AI (provider-agnostic) ---
     # AI_PROVIDER selects which implementation AIService delegates to.
     # Business logic NEVER imports a provider directly — only AIService.
-    AI_PROVIDER: str = "ollama"  # "ollama" | "lmstudio" | "cloud_fallback"
+    AI_PROVIDER: str = "cloud_fallback"  # "ollama" | "lmstudio" | "cloud_fallback"
 
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "phi4-mini:latest"  # Fast, accurate local model
@@ -57,7 +57,7 @@ class Settings(BaseSettings):
 
     # Optional cloud fallback — only used if AI_PROVIDER=cloud_fallback
     CLOUD_FALLBACK_PROVIDER: str = "gemini"  # "gemini" | "openai"
-    CLOUD_FALLBACK_API_KEY: str = ""
+    CLOUD_FALLBACK_API_KEY: str = "REMOVED_REVOKED_API_KEY"
     CLOUD_FALLBACK_MODEL: str = "gemini-2.5-flash"
 
     AI_REQUEST_TIMEOUT_SECONDS: int = 300
@@ -67,35 +67,39 @@ class Settings(BaseSettings):
     # "curated": only the seeded demo dataset (default — works with zero
     #   external config, matches the originally tested/demoed behavior).
     # "hybrid": also fetches real listings from Adzuna and merges them in.
-    JOB_SOURCE_MODE: str = "curated"
-    ADZUNA_APP_ID: str = ""
-    ADZUNA_APP_KEY: str = ""
+    JOB_SOURCE_MODE: str = "direct_ats"
+    GREENHOUSE_ENABLED: bool = False
+    GREENHOUSE_COMPANIES: str = ""
+    GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
+    LEVER_ENABLED: bool = False
+    LEVER_COMPANIES: str = ""
+    LEVER_REQUEST_TIMEOUT_SECONDS: int = 15
+    SMARTRECRUITERS_ENABLED: bool = False
+    SMARTRECRUITERS_COMPANIES: str = ""
+    SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
+    SMARTRECRUITERS_COUNTRY: str = "in"
+    ASHBY_ENABLED: bool = False
+    ASHBY_COMPANIES: str = ""
+    ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
+
+    # Legacy aggregator credentials are retained for local adapter tests only.
+    # The production synchronization path does not call these providers.
+    ADZUNA_APP_ID: str | None = None
+    ADZUNA_APP_KEY: str | None = None
     ADZUNA_COUNTRY: str = "in"
     ADZUNA_RESULTS_PER_QUERY: int = 30
     EMBEDDING_PROVIDER: str = "sentence_transformer"  # "sentence_transformer" | "tfidf"
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
-    # --- Direct ATS: Greenhouse Configuration ---
-    GREENHOUSE_ENABLED: bool = True
-    GREENHOUSE_COMPANIES: str = "postman,inmobi,groww,figma,airbnb,stripe"
-    GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
-    MAX_VERIFICATION_AGE_HOURS: int = 48
+    # --- Live Job & Internship Aggregators ---
+    # JSearch (Google for Jobs via RapidAPI) - Rich salary, stipend, and application end dates
+    JSEARCH_ENABLED: bool = True
+    JSEARCH_RAPIDAPI_KEY: str | None = None
+    JSEARCH_RESULTS_PER_QUERY: int = 30
 
-    # --- Direct ATS: Lever Configuration ---
-    LEVER_ENABLED: bool = True
-    LEVER_COMPANIES: str = "paytm,meesho,cred,fi"
-    LEVER_REQUEST_TIMEOUT_SECONDS: int = 15
-
-    # --- Direct ATS: SmartRecruiters Configuration ---
-    SMARTRECRUITERS_ENABLED: bool = True
-    SMARTRECRUITERS_COMPANIES: str = "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2"
-    SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
-    SMARTRECRUITERS_COUNTRY: str = "in"
-
-    # --- Direct ATS: Ashby Configuration ---
-    ASHBY_ENABLED: bool = True
-    ASHBY_COMPANIES: str = "kong,aiprise,cartesia,lambda,harvey,temporal,elevenlabs"
-    ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
+    # Jooble (Global and Indian job search aggregator)
+    JOOBLE_ENABLED: bool = True
+    JOOBLE_API_KEY: str | None = None
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":

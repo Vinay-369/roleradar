@@ -137,8 +137,8 @@ async def recommended_matches(
         norm_loc = normalize_india_location(j.get("location"))
 
         stipend_val = j.get("stipend") or j.get("stipend_min")
-        stipend_curr = j.get("stipend_currency") or ("INR" if stipend_val else None)
-        stipend_per = j.get("stipend_period") or ("per_month" if stipend_val else None)
+        stipend_curr = j.get("stipend_currency")
+        stipend_per = j.get("stipend_period")
 
         intrinsic_eligibility = {
             "status": "ELIGIBLE" if (classification.fresher_eligible or classification.student_eligible) else "UNKNOWN",
@@ -157,6 +157,8 @@ async def recommended_matches(
             job_id=j["id"],
             job_title=j["title"],
             company=j["company"],
+            source_id=j.get("source_id") or j.get("source_job_id"),
+            internal_source=j.get("internal_source") or j.get("source"),
             overall_score=None,
             skill_score=None,
             role_score=None,
@@ -176,8 +178,22 @@ async def recommended_matches(
             is_remote=j.get("is_remote", False),
             salary_min=j.get("salary_min"),
             salary_max=j.get("salary_max"),
+            experience_min=j.get("experience_min"),
+            experience_max=j.get("experience_max"),
+            experience_text=j.get("experience_text"),
             stipend_min=j.get("stipend_min"),
             stipend_max=j.get("stipend_max"),
+            stipend=stipend_val,
+            stipend_currency=stipend_curr,
+            stipend_period=stipend_per,
+            stipend_unit=j.get("stipend_unit"),
+            salary_disclosed=j.get("salary_disclosed", False),
+            salary_currency=j.get("salary_currency"),
+            salary_period=j.get("salary_period"),
+            salary_unit=j.get("salary_unit"),
+            registration_closing_date=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
+            application_deadline=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
+            end_date=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
             posted_days_ago=j.get("posted_days_ago", 0),
             created_at=created_str,
             has_match=False,
@@ -196,10 +212,6 @@ async def recommended_matches(
             candidate_suitability=classification.suitability.value,
             student_eligible=classification.student_eligible,
             fresher_eligible=classification.fresher_eligible,
-            stipend=stipend_val,
-            stipend_currency=stipend_curr,
-            stipend_period=stipend_per,
-            salary_currency=j.get("salary_currency", "INR"),
             compensation_type=j.get("compensation_type"),
             compensation_text=j.get("compensation_text"),
             eligibility_text=intrinsic_eligibility["reasons"][0],

@@ -29,65 +29,100 @@ from app.modules.jobs.routes import _strip_for_detail, _strip_for_list
 
 
 class TestNumericCompensationExtraction:
+    def test_usd_annual_range_preserves_currency_amount_and_period(self):
+        comp = extract_compensation_from_payload_and_text(
+            "Compensation range: $231,000 - $340,000 USD/year."
+        )
+        assert comp.compensation_type == "SALARY"
+        assert comp.salary_min == 231000
+        assert comp.salary_max == 340000
+        assert comp.salary_currency == "USD"
+        assert comp.salary_period == "YEAR"
+        assert comp.compensation_text == "$231,000–$340,000 /year"
+
     def test_lpa_range_hyphen(self):
         text = "Role: Backend Developer. Compensation: ₹8–12 LPA based on skills."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_disclosed is True
         assert comp.salary_min == 8.0
         assert comp.salary_max == 12.0
-        assert comp.compensation_text == "₹8.0–12.0 LPA"
+        assert comp.compensation_text == "₹8–12 LPA"
 
     def test_lpa_range_ascii_dash(self):
         text = "Expected salary: INR 6 - 9.5 LPA."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_min == 6.0
         assert comp.salary_max == 9.5
 
     def test_lpa_range_to_word(self):
         text = "We offer 10 to 15 lakhs per annum for senior engineers."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_min == 10.0
         assert comp.salary_max == 15.0
 
     def test_inr_full_number_range(self):
         text = "Remuneration: ₹600,000 - ₹1,200,000 annually."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
-        assert comp.salary_min == 6.0
-        assert comp.salary_max == 12.0
+        assert comp.compensation_type == "SALARY"
+        assert comp.salary_min == 600000
+        assert comp.salary_max == 1200000
+        assert comp.salary_currency == "INR"
+        assert comp.salary_period == "YEAR"
+        assert comp.compensation_text == "₹600,000–₹1,200,000 /year"
 
     def test_single_lpa(self):
         text = "Annual CTC: ₹14 LPA fixed."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_min == 14.0
         assert comp.salary_max is None
-        assert comp.compensation_text == "₹14.0 LPA"
+        assert comp.compensation_text == "₹14 LPA"
 
     def test_single_lakhs_with_salary_keyword(self):
         text = "Fixed salary of 12 Lakhs with performance bonus."
         comp = extract_compensation_from_payload_and_text(text)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_min == 12.0
-        assert "12.0 Lakhs" in comp.compensation_text
+        assert comp.compensation_text == "₹12 lakh"
 
 
 class TestNumericStipendExtraction:
+    def test_monthly_stipend_range_preserves_currency_and_period(self):
+        comp = extract_compensation_from_payload_and_text(
+            "Internship stipend: ₹20,000 - ₹25,000 per month.", is_internship=True
+        )
+        assert comp.compensation_type == "STIPEND"
+        assert comp.salary_min is None
+        assert comp.stipend_min == 20000
+        assert comp.stipend_max == 25000
+        assert comp.stipend_currency == "INR"
+        assert comp.stipend_period == "MONTH"
+
+    def test_monthly_salary_is_not_reclassified_as_stipend(self):
+        comp = extract_compensation_from_payload_and_text(
+            "Salary: $3,000 per month.", is_internship=True
+        )
+        assert comp.compensation_type == "SALARY"
+        assert comp.salary_min == 3000
+        assert comp.salary_currency == "USD"
+        assert comp.salary_period == "MONTH"
+        assert comp.stipend_min is None
+
     def test_monthly_stipend_rupees(self):
         text = "Full Stack Internship. Stipend: ₹25,000/month. Duration: 6 months."
         comp = extract_compensation_from_payload_and_text(text, is_internship=True)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "STIPEND"
         assert comp.salary_disclosed is True
         assert comp.stipend_min == 25000.0
-        assert comp.compensation_text == "₹25,000/month"
+        assert comp.compensation_text == "₹25,000 /month"
 
     def test_monthly_stipend_pm(self):
         text = "Software Engineer Intern. Monthly stipend of ₹15,000 pm."
         comp = extract_compensation_from_payload_and_text(text, is_internship=True)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "STIPEND"
         assert comp.stipend_min == 15000.0
 
 
@@ -199,11 +234,13 @@ class TestStructuredProviderPayloads:
             }
         }
         comp = extract_compensation_from_payload_and_text("", raw_payload=raw_payload)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_disclosed is True
-        assert comp.salary_min == 12.0
-        assert comp.salary_max == 18.0
-        assert comp.compensation_text == "₹12.0–18.0 LPA"
+        assert comp.salary_min == 1200000
+        assert comp.salary_max == 1800000
+        assert comp.salary_currency == "INR"
+        assert comp.salary_period == "YEAR"
+        assert comp.compensation_text == "₹1,200,000–₹1,800,000 /year"
 
     def test_greenhouse_structured_pay(self):
         raw_payload = {
@@ -214,10 +251,29 @@ class TestStructuredProviderPayloads:
             }
         }
         comp = extract_compensation_from_payload_and_text("", raw_payload=raw_payload)
-        assert comp.compensation_type == "NUMERIC"
+        assert comp.compensation_type == "SALARY"
         assert comp.salary_disclosed is True
-        assert comp.salary_min == 8.0
-        assert comp.salary_max == 14.0
+        assert comp.salary_min == 800000
+        assert comp.salary_max == 1400000
+        assert comp.salary_currency is None
+        assert comp.salary_period == "YEAR"
+
+    def test_ashby_stipend_component_is_not_salary(self):
+        comp = extract_compensation_from_payload_and_text(
+            raw_payload={"compensation": {"summaryComponents": [{
+                "compensationType": "Stipend",
+                "interval": "1 MONTH",
+                "currencyCode": "INR",
+                "minValue": 20000,
+                "maxValue": 25000,
+            }]}}
+        )
+        assert comp.compensation_type == "STIPEND"
+        assert comp.salary_min is None
+        assert comp.stipend_min == 20000
+        assert comp.stipend_max == 25000
+        assert comp.stipend_currency == "INR"
+        assert comp.stipend_period == "MONTH"
 
     def test_dummy_zero_range_treated_as_undisclosed(self):
         raw_payload = {

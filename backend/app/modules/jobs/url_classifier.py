@@ -32,6 +32,12 @@ KNOWN_ATS_DOMAINS = [
     "workable.com",
     "breezy.hr",
     "rippling-ats.com",
+    "remotive.com",
+    "arbeitnow.com",
+    "jooble.org",
+    "jooble.com",
+    "adzuna.com",
+    "adzuna.in",
 ]
 
 KNOWN_AGGREGATOR_REDIRECTS = [

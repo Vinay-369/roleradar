@@ -338,8 +338,8 @@ def test_smartrecruiters_internship_and_entry_level_classification():
     assert intern_job["job_type"] == "internship"
     assert intern_job["opportunity_type"] == "INTERNSHIP"
     assert intern_job["fresher_friendly"] is True
-    assert intern_job["experience_min"] == 0
-    assert intern_job["experience_max"] == 2
+    assert intern_job["experience_min"] is None
+    assert intern_job["experience_max"] is None
     assert intern_job["student_eligible"] is True
 
     # Entry level engineering
@@ -347,8 +347,8 @@ def test_smartrecruiters_internship_and_entry_level_classification():
     raw_entry["experienceLevel"] = {"id": "entry_level", "label": "Entry Level"}
     entry_job = provider.normalize_smartrecruiters_job(raw_entry, "BoschGroup")
     assert entry_job["fresher_friendly"] is True
-    assert entry_job["experience_min"] == 0
-    assert entry_job["experience_max"] == 1
+    assert entry_job["experience_min"] is None
+    assert entry_job["experience_max"] is None
 
 
 # --- 13. Undisclosed Experience Remains Undisclosed ---

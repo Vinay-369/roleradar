@@ -58,14 +58,20 @@ def _clean_html_description(html_text: str | None) -> str:
     return clean
 
 
-def is_internship_opportunity(title: str, departments: list[dict] | None = None) -> bool:
+def is_internship_opportunity(
+    title: str,
+    departments: list[dict] | None = None,
+    employment_type: str | None = None,
+) -> bool:
     """
     Classifies whether a Greenhouse listing is an internship.
     Uses title detection and structured department names.
     STRICT RULE: Never classifies based merely on description substrings.
     """
+    if employment_type:
+        return bool(re.search(r"\b(?:intern|internship|co-?op|trainee|apprentice)\b", employment_type.lower()))
+
     title_lower = title.lower()
-    # Explicit internship markers in title
     if re.search(r"\b(?:intern|internship|co-?op|trainee|apprentice)\b", title_lower):
         return True
 
@@ -172,13 +178,18 @@ class GreenhouseJobProvider:
 
         loc_obj = raw.get("location") or {}
         location = loc_obj.get("name") if isinstance(loc_obj, dict) else str(loc_obj)
-        location = (location or "Not specified").strip()
-        is_remote = "remote" in location.lower() or "remote" in title.lower()
+        location = (location or "").strip() or None
+        remote_field = raw.get("remote")
+        is_remote = remote_field if isinstance(remote_field, bool) else None
+        raw_workplace = str(raw.get("workplace_type") or raw.get("workplaceType") or "").strip().lower()
+        workplace_type = {"remote": "REMOTE", "hybrid": "HYBRID", "on_site": "ON_SITE", "onsite": "ON_SITE"}.get(raw_workplace)
+        if workplace_type == "REMOTE":
+            is_remote = True
 
         # HTML and clean description: unescape HTML entities (&lt;p&gt; etc.) before stripping tags
         raw_html = raw.get("content") or ""
         unescaped_html = html.unescape(raw_html)
-        clean_desc = _clean_html_description(unescaped_html) or title
+        clean_desc = _clean_html_description(unescaped_html)
 
         # Application URL classification
         apply_url = (raw.get("absolute_url") or "").strip()
@@ -207,19 +218,21 @@ class GreenhouseJobProvider:
                 updated_at_iso = updated_at
 
         # Calculate posted_days_ago if posted_at available
-        posted_days_ago = 0
+        posted_days_ago = None
         if posted_at_iso:
             try:
                 dt = datetime.fromisoformat(posted_at_iso.replace("Z", "+00:00"))
                 posted_days_ago = max(0, (now - dt).days)
             except Exception:
-                posted_days_ago = 0
+                posted_days_ago = None
 
         # Department / internship detection
         departments = raw.get("departments") or []
-        is_intern = is_internship_opportunity(title, departments)
-        job_type = "internship" if is_intern else "full_time"
-        opportunity_type = "INTERNSHIP" if is_intern else "FULL_TIME"
+        employment_type = raw.get("employment_type")
+        is_intern = is_internship_opportunity(title, departments, employment_type)
+        from app.modules.jobs.taxonomy import normalize_employment_type
+        job_type = normalize_employment_type(employment_type, title, classified_internship=is_intern)
+        opportunity_type = job_type.upper() if job_type else None
         workplace_type = "remote" if is_remote else "on_site"
 
         # Skills extraction via canonical requirement-aware taxonomy
@@ -239,11 +252,13 @@ class GreenhouseJobProvider:
         job_doc = {
             "id": canonical_id,
             "source": "greenhouse",
+            "source_id": job_id,
+            "internal_source": "greenhouse",
             "source_job_id": job_id,
             "company_board": board_token.lower(),
             "title": title,
             "company": resolved_company,
-            "industry": "Technology",
+            "industry": raw.get("industry"),
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
@@ -253,16 +268,14 @@ class GreenhouseJobProvider:
             "qualifications": reqs.qualifications,
             "structured_requirements": reqs.model_dump(mode="json"),
             "experience_min": (
-                int(reqs.min_years_experience)
-                if reqs.min_years_experience is not None
-                else (0 if is_intern else None)
+                reqs.min_years_experience
             ),
             "experience_max": (
-                int(reqs.max_years_experience)
-                if reqs.max_years_experience is not None
-                else (2 if is_intern else None)
+                reqs.max_years_experience
             ),
+            "experience_text": reqs.experience_requirements,
             "job_type": job_type,
+            "employment_type": employment_type,
             "opportunity_type": opportunity_type,
             "country": extract_country_from_location(location),
             "location": location,
@@ -271,12 +284,17 @@ class GreenhouseJobProvider:
             "salary_min": comp.salary_min,
             "salary_max": comp.salary_max,
             "salary_currency": comp.salary_currency,
+            "salary_period": comp.salary_period,
+            "salary_unit": comp.salary_unit,
             "salary_disclosed": comp.salary_disclosed,
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
+            "stipend_currency": comp.stipend_currency,
+            "stipend_period": comp.stipend_period,
+            "stipend_unit": comp.stipend_unit,
             "compensation_type": comp.compensation_type,
             "compensation_text": comp.compensation_text,
-            "internship_duration_months": 3 if is_intern else None,
+            "internship_duration_months": raw.get("internship_duration_months"),
             "fresher_friendly": is_intern or ("junior" in title.lower()) or ("graduate" in title.lower()),
             "posted_days_ago": posted_days_ago,
             "posted_at": posted_at_iso,

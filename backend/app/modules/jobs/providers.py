@@ -16,6 +16,8 @@ from app.modules.jobs import repositories as repo
 from app.modules.jobs.url_classifier import ApplicationUrlType
 from app.modules.jobs.verification import OpportunityLifecycleStatus
 
+DIRECT_ATS_SOURCES = ("ashby", "greenhouse", "lever", "smartrecruiters")
+
 
 class OpportunityProvider(Protocol):
     name: str
@@ -52,12 +54,14 @@ class CuratedJobProvider:
                         OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
                         OpportunityLifecycleStatus.MARKET_BENCHMARK.value,
                     ]
-                }
+                },
+                "source": {"$in": [*DIRECT_ATS_SOURCES, "curated_benchmark"]},
             }
         elif filters.get("active_discovery_only") or filters.get("direct_apply_only"):
             status_clause = {
                 "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
                 "url_type": ApplicationUrlType.DIRECT_REQUISITION.value,
+                "source": {"$in": DIRECT_ATS_SOURCES},
             }
         else:
             status_clause = {
@@ -250,13 +254,17 @@ class CuratedJobProvider:
 
         sort_by = filters.get("sort_by", "recent")
         if sort_by == "salary":
-            sort_spec = [("salary_max", -1), ("salary_min", -1), ("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
+            sort_spec = [("salary_disclosed", -1), ("salary_max", -1), ("salary_min", -1), ("compensation_text", -1), ("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
         elif sort_by == "stipend":
-            sort_spec = [("stipend", -1), ("stipend_min", -1), ("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
+            sort_spec = [("stipend", -1), ("stipend_min", -1), ("salary_disclosed", -1), ("compensation_text", -1), ("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
         else:
             sort_spec = [("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
 
-        return await repo.find_jobs(self._db, mongo_filter, limit=limit, skip=skip, sort=sort_spec)
+        jobs = await repo.find_jobs(self._db, mongo_filter, limit=limit, skip=skip, sort=sort_spec)
+        from app.modules.jobs.taxonomy import normalize_provider_experience
+        for job in jobs:
+            normalize_provider_experience(job)
+        return jobs
 
     async def count(self, filters: dict) -> int:
         mongo_filter = self._build_mongo_query(filters)

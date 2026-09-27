@@ -9,8 +9,9 @@ export type JobDetail = {
   description: string;
   skills_required: string[];
   skills_nice_to_have: string[];
-  experience_min: number;
-  experience_max: number;
+  experience_min: number | null;
+  experience_max: number | null;
+  experience_text?: string | null;
   job_type: string;
   location: string;
   is_remote: boolean;
@@ -18,6 +19,14 @@ export type JobDetail = {
   salary_max: number | null;
   salary_disclosed: boolean;
   stipend_min: number | null;
+  stipend_max?: number | null;
+  stipend?: number | null;
+  stipend_currency?: string | null;
+  stipend_period?: string | null;
+  stipend_unit?: string | null;
+  salary_currency?: string | null;
+  salary_period?: string | null;
+  salary_unit?: string | null;
   compensation_type?: string | null;
   compensation_text?: string | null;
   internship_duration_months: number | null;
@@ -60,6 +69,9 @@ export type JobDetail = {
   completeness_status?: string | null;
   recommendation_quality?: string | null;
   seniority?: string | null;
+  registration_closing_date?: string | null;
+  application_deadline?: string | null;
+  end_date?: string | null;
 };
 
 export async function getJobDetail(jobId: string): Promise<JobDetail> {

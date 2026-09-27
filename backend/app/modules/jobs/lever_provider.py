@@ -75,15 +75,13 @@ def is_internship_opportunity(
     Uses title detection and structured metadata (commitment, department, team).
     STRICT RULE: Never classifies based merely on description substrings.
     """
+    if commitment:
+        comm_lower = commitment.lower()
+        return bool(re.search(r"\b(?:intern|internship|co-?op|trainee|student|apprentice)\b", comm_lower))
+
     title_lower = (title or "").lower()
     if re.search(r"\b(?:intern|internship|co-?op|trainee|apprentice)\b", title_lower):
         return True
-
-    # Structured commitment check (e.g. 'Intern', 'Internship', 'Student')
-    if commitment:
-        comm_lower = commitment.lower()
-        if re.search(r"\b(?:intern|internship|co-?op|trainee|student|apprentice)\b", comm_lower):
-            return True
 
     # Structured department or team check
     for field_val in (department, team):
@@ -248,7 +246,7 @@ class LeverJobProvider:
 
         job_id = str(raw.get("id") or "").strip()
         title = (raw.get("text") or "").strip()
-        resolved_company = company_name or board_token.title()
+        resolved_company = company_name or raw.get("company")
 
         categories = raw.get("categories") or {}
         commitment = categories.get("commitment") if isinstance(categories, dict) else None
@@ -265,20 +263,14 @@ class LeverJobProvider:
                     location = "; ".join(str(l).strip() for l in all_locs if str(l).strip())
 
         if not location:
-            location = "Not specified"
+            location = None
 
         # Remote check
         workplace_type = str(raw.get("workplaceType") or "").lower()
-        is_remote = (
-            workplace_type == "remote"
-            or "remote" in location.lower()
-            or "remote" in title.lower()
-        )
+        is_remote = workplace_type == "remote" if workplace_type else None
 
         # Reconstruct description
         clean_desc, raw_html = _build_lever_description(raw)
-        if not clean_desc:
-            clean_desc = title
 
         # Direct Application URL Safety:
         # Evaluate applyUrl first. If absent or non-direct, check hostedUrl explicitly.
@@ -336,7 +328,7 @@ class LeverJobProvider:
         # Lever provides createdAt as an epoch timestamp in milliseconds
         created_at_ms = raw.get("createdAt")
         posted_at_iso = None
-        posted_days_ago = 0
+        posted_days_ago = None
         if created_at_ms and isinstance(created_at_ms, (int, float)) and created_at_ms > 0:
             try:
                 dt = datetime.fromtimestamp(created_at_ms / 1000.0, tz=timezone.utc)
@@ -344,7 +336,7 @@ class LeverJobProvider:
                 posted_days_ago = max(0, (now - dt).days)
             except Exception:
                 posted_at_iso = None
-                posted_days_ago = 0
+                posted_days_ago = None
 
         # Lever does not provide an updated_at field; leave None to avoid date fabrication
         updated_at_iso = None
@@ -356,7 +348,9 @@ class LeverJobProvider:
             department=department,
             team=team,
         )
-        job_type = "internship" if is_intern else "full_time"
+        job_type = "internship" if is_intern else ("full_time" if commitment else None)
+        from app.modules.jobs.taxonomy import normalize_employment_type
+        job_type = normalize_employment_type(commitment, title, classified_internship=is_intern)
 
         classification = classify_opportunity(
             title=title,
@@ -392,7 +386,7 @@ class LeverJobProvider:
             "location": location,
             "country": country,
             "is_india_opportunity": is_india,
-            "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
+            "opportunity_type": job_type.upper() if job_type else None,
             "description": clean_desc,
             "responsibilities": reqs.responsibilities,
             "qualifications": reqs.qualifications,
@@ -406,26 +400,20 @@ class LeverJobProvider:
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
             "compensation_text": comp.compensation_text,
-            "experience_min": (
-                int(reqs.min_years_experience)
-                if reqs.min_years_experience is not None
-                else (0 if is_intern else None)
-            ),
-            "experience_max": (
-                int(reqs.max_years_experience)
-                if reqs.max_years_experience is not None
-                else (2 if is_intern else None)
-            ),
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
         })
 
         return {
             "id": canonical_id,
             "source": "lever",
+            "source_id": job_id,
+            "internal_source": "lever",
             "source_job_id": job_id,
             "company_board": board_token.lower(),
             "title": title,
             "company": resolved_company,
-            "industry": "Technology",
+            "industry": raw.get("categories", {}).get("department") if isinstance(raw.get("categories"), dict) else None,
             "description": clean_desc,
             "jd_text": clean_desc,
             "raw_html": raw_html,
@@ -434,17 +422,11 @@ class LeverJobProvider:
             "responsibilities": reqs.responsibilities,
             "qualifications": reqs.qualifications,
             "structured_requirements": reqs.model_dump(mode="json"),
-            "experience_min": (
-                int(reqs.min_years_experience)
-                if reqs.min_years_experience is not None
-                else (0 if is_intern else None)
-            ),
-            "experience_max": (
-                int(reqs.max_years_experience)
-                if reqs.max_years_experience is not None
-                else (2 if is_intern else None)
-            ),
+            "experience_min": reqs.min_years_experience,
+            "experience_max": reqs.max_years_experience,
+            "experience_text": reqs.experience_requirements,
             "job_type": job_type,
+            "employment_type": commitment,
             "opportunity_type": "INTERNSHIP" if is_intern else "FULL_TIME",
             "country": country,
             "location": location,
@@ -456,12 +438,18 @@ class LeverJobProvider:
             "salary_min": comp.salary_min,
             "salary_max": comp.salary_max,
             "salary_currency": comp.salary_currency,
+            "salary_period": comp.salary_period,
+            "salary_unit": comp.salary_unit,
             "salary_disclosed": comp.salary_disclosed,
+            "stipend": comp.stipend,
             "stipend_min": comp.stipend_min,
             "stipend_max": comp.stipend_max,
+            "stipend_currency": comp.stipend_currency,
+            "stipend_period": comp.stipend_period,
+            "stipend_unit": comp.stipend_unit,
             "compensation_type": comp.compensation_type,
             "compensation_text": comp.compensation_text,
-            "internship_duration_months": 3 if is_intern else None,
+            "internship_duration_months": raw.get("internshipDurationMonths"),
             "fresher_friendly": classification.fresher_eligible,
             "student_friendly": classification.student_eligible,
             "suitability_signal": classification.suitability.value,

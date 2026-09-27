@@ -272,9 +272,9 @@ def _extract_experience_from_text(text: str) -> tuple[float | None, float | None
             except (ValueError, TypeError):
                 pass
 
-    # 10. Freshers / Entry level explicit text
+    # Eligibility text is kept separate from numeric experience bounds.
     if re.search(r"\b(?:freshers?(?:\s+can\s+apply)?|entry\s*level|fresh\s+graduates?|no\s+prior\s+experience\s+required)\b", text, re.IGNORECASE):
-        return 0.0, 1.0, "Entry level / Freshers"
+        return None, None, "Fresher / Entry level"
 
     return None, None, None
 
@@ -899,4 +899,65 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
 
 
 # Canonical alias
+def extract_experience_bounds(jd_text: str | None, title: str = "") -> tuple[float | None, float | None]:
+    """Return only experience bounds explicitly supported by job text."""
+    minimum, maximum, _ = _extract_experience_from_text(jd_text or "")
+    return minimum, maximum
+
+
+def normalize_employment_type(source_value: Any, title: str = "", classified_internship: bool = False) -> str | None:
+    """Map explicit provider employment metadata to canonical values; never default to full-time."""
+    if source_value is not None:
+        if isinstance(source_value, dict):
+            source_value = source_value.get("label") or source_value.get("name") or source_value.get("id")
+        label = re.sub(r"[_\-]+", " ", str(source_value)).strip().lower()
+        if not label:
+            return None
+        if any(marker in label for marker in ("intern", "co op", "coop", "apprentice", "trainee")):
+            return "internship"
+        if "part time" in label or "parttime" in label:
+            return "part_time"
+        if "contract" in label:
+            return "contract"
+        if "freelance" in label:
+            return "freelance"
+        if "temporary" in label or "seasonal" in label:
+            return "temporary"
+        if "full time" in label or "fulltime" in label or "permanent" in label or "regular" in label:
+            return "full_time"
+        return None
+
+    if classified_internship or re.search(r"\b(?:intern|internship|co-?op|apprentice|trainee)\b", title, re.I):
+        return "internship"
+    return None
+
+
+def normalize_provider_experience(job: dict[str, Any]) -> None:
+    """Replace legacy provider placeholders with JD-derived experience bounds."""
+    source = job.get("source")
+    aggregator_sources = {"adzuna", "jsearch", "jooble", "remotive", "arbeitnow"}
+    ats_sources = {"ashby", "greenhouse", "lever", "smartrecruiters"}
+    if source not in aggregator_sources | ats_sources:
+        return
+
+    minimum = job.get("experience_min")
+    maximum = job.get("experience_max")
+    has_legacy_upper_bound = maximum is not None and maximum >= 99
+    has_internship_placeholder = source in ats_sources and minimum in (None, 0, 1) and maximum in (None, 1, 2)
+    has_adzuna_placeholder = source == "adzuna" and minimum == 0
+    if not (has_legacy_upper_bound or has_internship_placeholder or has_adzuna_placeholder):
+        return
+
+    parsed_minimum, parsed_maximum = extract_experience_bounds(job.get("description"), job.get("title", ""))
+    if parsed_minimum is not None or parsed_maximum is not None:
+        job["experience_min"] = parsed_minimum
+        job["experience_max"] = parsed_maximum
+    elif has_legacy_upper_bound:
+        job["experience_min"] = minimum if minimum not in (0, 1) else None
+        job["experience_max"] = None
+    elif has_internship_placeholder or has_adzuna_placeholder:
+        job["experience_min"] = None
+        job["experience_max"] = None
+
+
 analyze_jd_requirements = analyze_job_description
