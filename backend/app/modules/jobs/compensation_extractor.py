@@ -207,11 +207,7 @@ def extract_compensation_from_payload_and_text(
         result.salary_period = _normalize_period(pay_obj.get("unit"))
         result.salary_unit = "CURRENCY"
 
-<<<<<<< HEAD
     # Ashby explicitly distinguishes salary and stipend components and supplies interval/currency.
-=======
-    # Ashby: compensation = {'summaryComponents': [{'compensationType': 'Salary', 'minValue': ..., 'maxValue': ..., 'currencyCode': 'INR'}]}
->>>>>>> 70804571dc73c928037d4e20acf18351cd6a9b18
     ashby_comp = payload.get("compensation")
     if isinstance(ashby_comp, dict):
         components = ashby_comp.get("summaryComponents") or []
@@ -231,7 +227,6 @@ def extract_compensation_from_payload_and_text(
                 if isinstance(c_max, (int, float)) and c_max > 0:
                     result.salary_max = float(c_max)
                     result.salary_disclosed = True
-<<<<<<< HEAD
                     result.salary_currency = c_curr
                 result.salary_period = c_period
                 result.salary_unit = "CURRENCY"
@@ -265,20 +260,6 @@ def extract_compensation_from_payload_and_text(
                 result.compensation_text = _format_range(
                     result.salary_min, result.salary_max, result.salary_currency, result.salary_period
                 )
-=======
-                    result.salary_currency = c_curr or result.salary_currency
-                    result.compensation_type = "NUMERIC"
-                tier_summary = ashby_comp.get("scrapeableCompensationSalarySummary") or ashby_comp.get("compensationTierSummary")
-                if tier_summary and isinstance(tier_summary, str):
-                    result.compensation_text = tier_summary.strip()
-                break
-    # If structured numeric compensation already found, format text and return
-    if result.compensation_type == "NUMERIC":
-        if result.salary_min and result.salary_max:
-            result.compensation_text = f"₹{result.salary_min}–{result.salary_max} LPA"
-        elif result.salary_min:
-            result.compensation_text = f"₹{result.salary_min} LPA"
->>>>>>> 70804571dc73c928037d4e20acf18351cd6a9b18
         return result
 
     if not text:

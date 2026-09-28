@@ -181,11 +181,22 @@ class AIService:
             )
 
         # 2. Experience Bullets
-        exp_bullets = master_data.get("experience_bullets", master_data.get("experience_raw", []))
+        # experience_raw can be a mix of strings (bullets) or dicts ({"company": ..., "bullets": [...]})
+        # We only process flat string bullets here; dict section entries are handled by _merge_structured_tailoring.
+        exp_bullets_raw = master_data.get("experience_bullets", master_data.get("experience_raw", []))
+        # Flatten: collect (flat_index, original_string) pairs, skipping dict entries
+        exp_flat: list[tuple[int, str]] = []
+        for entry in exp_bullets_raw:
+            if isinstance(entry, str):
+                exp_flat.append((len(exp_flat), entry))
+            elif isinstance(entry, dict):
+                # Emit each sub-bullet as a flat entry so bullet_index is consistent with AI output
+                for sub_bullet in entry.get("bullets", []):
+                    exp_flat.append((len(exp_flat), str(sub_bullet)))
+
         exp_rewrites_map = {r.bullet_index: r for r in getattr(compact_plan, "experience_rewrites", [])}
         reconstructed_exp = []
-        for b_idx, b_text in enumerate(exp_bullets):
-            orig_b = str(b_text)
+        for b_idx, orig_b in exp_flat:
             if b_idx in exp_rewrites_map:
                 rw = exp_rewrites_map[b_idx]
                 reconstructed_exp.append(BulletRewrite(
@@ -211,11 +222,19 @@ class AIService:
                 ))
 
         # 3. Project Bullets
-        proj_bullets = master_data.get("project_bullets", master_data.get("projects_raw", []))
+        # projects_raw can be a mix of strings or dicts ({"title": ..., "bullets": [...]})
+        proj_bullets_raw = master_data.get("project_bullets", master_data.get("projects_raw", []))
+        proj_flat: list[tuple[int, str]] = []
+        for entry in proj_bullets_raw:
+            if isinstance(entry, str):
+                proj_flat.append((len(proj_flat), entry))
+            elif isinstance(entry, dict):
+                for sub_bullet in entry.get("bullets", []):
+                    proj_flat.append((len(proj_flat), str(sub_bullet)))
+
         proj_rewrites_map = {r.bullet_index: r for r in getattr(compact_plan, "project_rewrites", [])}
         reconstructed_proj = []
-        for b_idx, p_text in enumerate(proj_bullets):
-            orig_p = str(p_text)
+        for b_idx, orig_p in proj_flat:
             if b_idx in proj_rewrites_map:
                 rw = proj_rewrites_map[b_idx]
                 reconstructed_proj.append(BulletRewrite(
@@ -309,14 +328,39 @@ class AIService:
 
         exp_results = []
         strong_verbs = ["Developed", "Engineered", "Implemented", "Built"]
-        for idx, bullet in enumerate(experience):
-            orig_b = bullet.strip()
+        flat_exp_idx = 0
+        for entry in experience:
+            # Handle dict entries (structured experience section with sub-bullets)
+            if isinstance(entry, dict):
+                for sub_bullet in entry.get("bullets", []):
+                    orig_b = str(sub_bullet).strip()
+                    if not orig_b:
+                        flat_exp_idx += 1
+                        continue
+                    chosen_verb = strong_verbs[flat_exp_idx % len(strong_verbs)]
+                    refined_b, was_chg = strengthen_bullet_verb(orig_b, default_verb=chosen_verb)
+                    exp_results.append(BulletRewrite(
+                        bullet_index=flat_exp_idx,
+                        original=orig_b,
+                        proposed=refined_b,
+                        action="REWRITE" if was_chg else "KEEP",
+                        reason=f"Enhances opening action verb for {target_role} while strictly preserving all source metrics and technologies.",
+                        source_evidence=orig_b,
+                        confidence=0.95,
+                        status=ChangeStatus.PENDING if was_chg else ChangeStatus.APPROVED,
+                        change_id=f"chg_exp_{flat_exp_idx}",
+                    ))
+                    flat_exp_idx += 1
+                continue
+
+            orig_b = str(entry).strip()
             if not orig_b:
+                flat_exp_idx += 1
                 continue
 
             if orig_b.endswith(":") or (re.search(r"\b(?:\d{4}|present)\b", orig_b, re.IGNORECASE) and len(orig_b.split()) <= 12 and not orig_b.endswith((".", ";", "!"))):
                 exp_results.append(BulletRewrite(
-                    bullet_index=idx,
+                    bullet_index=flat_exp_idx,
                     original=orig_b,
                     proposed=orig_b,
                     action="KEEP",
@@ -324,15 +368,16 @@ class AIService:
                     source_evidence=orig_b,
                     confidence=1.0,
                     status=ChangeStatus.APPROVED,
-                    change_id=f"chg_exp_{idx}",
+                    change_id=f"chg_exp_{flat_exp_idx}",
                 ))
+                flat_exp_idx += 1
                 continue
 
-            chosen_verb = strong_verbs[idx % len(strong_verbs)]
+            chosen_verb = strong_verbs[flat_exp_idx % len(strong_verbs)]
             refined_b, was_chg = strengthen_bullet_verb(orig_b, default_verb=chosen_verb)
 
             exp_results.append(BulletRewrite(
-                bullet_index=idx,
+                bullet_index=flat_exp_idx,
                 original=orig_b,
                 proposed=refined_b,
                 action="REWRITE" if was_chg else "KEEP",
@@ -340,8 +385,9 @@ class AIService:
                 source_evidence=orig_b,
                 confidence=0.95,
                 status=ChangeStatus.PENDING if was_chg else ChangeStatus.APPROVED,
-                change_id=f"chg_exp_{idx}",
+                change_id=f"chg_exp_{flat_exp_idx}",
             ))
+            flat_exp_idx += 1
 
         # 4. Exhaustive Project Bullet Decisions (Grounding & Metric Preserving)
         # Project TITLES and Tech Stacks are structurally protected from verb-injection

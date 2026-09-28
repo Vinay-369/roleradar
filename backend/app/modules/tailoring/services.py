@@ -166,12 +166,29 @@ def _validate_and_apply_change(text: str, original: str, proposed: str, change_i
 
 
 def _build_editable_subobject(parsed_resume: dict) -> dict:
-    """Extracts ONLY the editable portions of the resume for the AI request."""
+    """Extracts ONLY the editable portions of the resume for the AI request.
+
+    Normalizes experience_raw and projects_raw from their native mixed format
+    (list of strings and/or dicts with 'bullets' keys) into a flat indexed list
+    of plain bullet strings. This ensures the AI's returned bullet_index values
+    map unambiguously to individual bullets, never to dict section entries.
+    """
+    def _flatten_bullets(raw: list) -> list[str]:
+        flat: list[str] = []
+        for entry in (raw or []):
+            if isinstance(entry, str):
+                flat.append(entry)
+            elif isinstance(entry, dict):
+                # Emit each sub-bullet; skip the dict wrapper itself
+                for sub in entry.get("bullets", []):
+                    flat.append(str(sub))
+        return flat
+
     return {
         "summary": parsed_resume.get("summary") or "",
         "skills": parsed_resume.get("skills") or [],
-        "experience_bullets": parsed_resume.get("experience_raw") or [],
-        "project_bullets": parsed_resume.get("projects_raw") or [],
+        "experience_bullets": _flatten_bullets(parsed_resume.get("experience_raw") or []),
+        "project_bullets": _flatten_bullets(parsed_resume.get("projects_raw") or []),
     }
 
 

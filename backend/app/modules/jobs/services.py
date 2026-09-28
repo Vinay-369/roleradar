@@ -127,47 +127,7 @@ async def _sync_configured_boards(
     return summary
 
 
-<<<<<<< HEAD
 async def sync_all_ashby_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
-=======
-async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Settings | None = None) -> dict:
-    """Synchronizes all configured SmartRecruiters company boards into MongoDB."""
-    active_settings = settings or get_settings()
-    if not getattr(active_settings, "SMARTRECRUITERS_ENABLED", False):
-        return {"total_boards": 0, "verified_active": 0, "closed": 0, "results": []}
-
-    from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
-    provider = SmartRecruitersJobProvider(active_settings)
-
-    raw_boards = getattr(active_settings, "SMARTRECRUITERS_COMPANIES", "BoschGroup,Sandisk,AveryDennison,BlueberryLabsPrivateLimited,Ubisoft2")
-    boards = [b.strip() for b in raw_boards.split(",") if b.strip()]
-
-    results = []
-    total_active = 0
-    total_closed = 0
-    country_filter = getattr(active_settings, "SMARTRECRUITERS_COUNTRY", "in")
-    for b in boards:
-        res = await provider.sync_company_openings(db, b, country=country_filter)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
-
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
-
-
-async def sync_ashby_board(
-    db: AsyncIOMotorDatabase,
-    board_token: str,
-    company_name: str | None = None,
-    settings: Settings | None = None,
-) -> dict:
-    """Synchronizes a single Ashby board token."""
->>>>>>> 70804571dc73c928037d4e20acf18351cd6a9b18
     from app.modules.jobs.ashby_provider import AshbyJobProvider
     return await _sync_configured_boards(db, settings, AshbyJobProvider, "ASHBY_COMPANIES", "ASHBY_ENABLED")
 
@@ -182,7 +142,6 @@ async def sync_all_lever_boards(db: AsyncIOMotorDatabase, settings: Settings) ->
     return await _sync_configured_boards(db, settings, LeverJobProvider, "LEVER_COMPANIES", "LEVER_ENABLED")
 
 
-<<<<<<< HEAD
 async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
     from app.modules.jobs.smartrecruiters_provider import SmartRecruitersJobProvider
     return await _sync_configured_boards(
@@ -193,20 +152,7 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
         "SMARTRECRUITERS_ENABLED",
         country=getattr(settings, "SMARTRECRUITERS_COUNTRY", None),
     )
-=======
-    for b in boards:
-        res = await provider.sync_company_openings(db, b)
-        results.append(res)
-        total_active += res.get("verified_active", 0)
-        total_closed += res.get("closed", 0)
 
-    return {
-        "total_boards": len(boards),
-        "verified_active": total_active,
-        "closed": total_closed,
-        "results": results,
-    }
->>>>>>> 70804571dc73c928037d4e20acf18351cd6a9b18
 
 
 async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict) -> int:
