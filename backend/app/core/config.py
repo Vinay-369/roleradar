@@ -56,9 +56,9 @@ class Settings(BaseSettings):
     LMSTUDIO_MODEL: str = "local-model"
 
     # Optional cloud fallback — only used if AI_PROVIDER=cloud_fallback
-    CLOUD_FALLBACK_PROVIDER: str = "gemini"  # "gemini" | "openai"
-    CLOUD_FALLBACK_API_KEY: str = "REMOVED_REVOKED_API_KEY"
-    CLOUD_FALLBACK_MODEL: str = "gemini-2.5-flash"
+    CLOUD_FALLBACK_PROVIDER: str | None = None  # "gemini" | "openai"
+    CLOUD_FALLBACK_API_KEY: str | None = None
+    CLOUD_FALLBACK_MODEL: str | None = None
 
     AI_REQUEST_TIMEOUT_SECONDS: int = 300
     AI_MAX_RETRIES: int = 2  # for JSON-repair retry loop
@@ -68,17 +68,17 @@ class Settings(BaseSettings):
     #   external config, matches the originally tested/demoed behavior).
     # "hybrid": also fetches real listings from Adzuna and merges them in.
     JOB_SOURCE_MODE: str = "direct_ats"
-    GREENHOUSE_ENABLED: bool = False
+    GREENHOUSE_ENABLED: bool = True
     GREENHOUSE_COMPANIES: str = ""
     GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
-    LEVER_ENABLED: bool = False
+    LEVER_ENABLED: bool = True
     LEVER_COMPANIES: str = ""
     LEVER_REQUEST_TIMEOUT_SECONDS: int = 15
-    SMARTRECRUITERS_ENABLED: bool = False
+    SMARTRECRUITERS_ENABLED: bool = True
     SMARTRECRUITERS_COMPANIES: str = ""
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
     SMARTRECRUITERS_COUNTRY: str = "in"
-    ASHBY_ENABLED: bool = False
+    ASHBY_ENABLED: bool = True
     ASHBY_COMPANIES: str = ""
     ASHBY_REQUEST_TIMEOUT_SECONDS: int = 15
 

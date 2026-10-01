@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Target, Check, ArrowRight, AlertCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../lib/apiClient";
 import { useAuth } from "../context/AuthContext";
+import { getCanonicalRoles, type CanonicalRole } from "../lib/learning";
+import { ALL_JOB_ROLES } from "../lib/roleConstants";
 
 const CATEGORIES = [
   { value: "FRESHER", label: "Fresher / New Graduate" },
@@ -11,20 +14,19 @@ const CATEGORIES = [
   { value: "INTERNSHIP_SEEKER", label: "Internship Seeker" },
 ];
 
-const SUGGESTED_ROLES = [
-  "Full Stack Developer",
-  "Backend Developer",
-  "Frontend Developer",
-  "Data Scientist",
-  "DevOps Engineer",
-  "Machine Learning Engineer",
-  "Software Engineer",
-  "Cloud Architect",
-];
-
 export function Onboarding() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
+  const { data: canonicalRoles } = useQuery({
+    queryKey: ["canonical-roles"],
+    queryFn: getCanonicalRoles,
+  });
+  const roleOptions = useMemo<CanonicalRole[]>(
+    () => canonicalRoles?.length
+      ? canonicalRoles
+      : ALL_JOB_ROLES.map((role) => ({ role, domain: "", subdomain: "", aliases: [] })),
+    [canonicalRoles],
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +42,19 @@ export function Onboarding() {
   const [internshipInterested, setInternshipInterested] = useState(false);
   const [careerBrief, setCareerBrief] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
+  const filteredRoles = useMemo(() => {
+    const terms = roleInput.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+    if (!terms.length) return roleOptions;
+    return roleOptions.filter((option) => {
+      const searchText = [
+        option.role,
+        option.domain,
+        option.subdomain,
+        ...(option.aliases ?? []),
+      ].filter(Boolean).join(" ").toLocaleLowerCase();
+      return terms.every((term) => searchText.includes(term));
+    });
+  }, [roleInput, roleOptions]);
 
   const consentText =
     "I understand RoleRadar will analyze my resume and job data to generate " +
@@ -57,8 +72,13 @@ export function Onboarding() {
 
   function handleAddCustomRole() {
     const trimmed = roleInput.trim();
-    if (trimmed && !targetRoles.includes(trimmed)) {
-      setTargetRoles([...targetRoles, trimmed]);
+    const normalized = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    const canonicalRole = roleOptions.find((option) =>
+      [option.role, ...(option.aliases ?? [])].some((name) => normalized(name) === normalized(trimmed)),
+    )?.role;
+    const roleToAdd = canonicalRole ?? trimmed;
+    if (roleToAdd && !targetRoles.some((role) => normalized(role) === normalized(roleToAdd))) {
+      setTargetRoles([...targetRoles, roleToAdd]);
       setRoleInput("");
     }
   }
@@ -156,41 +176,59 @@ export function Onboarding() {
             <span className="text-[11px] text-ink-400">Select one or more</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mb-2.5">
-            {SUGGESTED_ROLES.map((role) => {
+            {targetRoles.map((role) => (
+              <button
+                type="button"
+                key={role}
+                onClick={() => toggleRole(role)}
+                aria-label={`Deselect ${role}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-ink-950 text-white shadow-xs"
+              >
+                <Check size={12} className="text-signal-400" />
+                {role}
+              </button>
+            ))}
+          </div>
+
+          <input
+            value={roleInput}
+            onChange={(e) => setRoleInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomRole())}
+            placeholder={`Search ${roleOptions.length} supported roles or add a custom role…`}
+            aria-label="Search target roles"
+            className="w-full rounded-md border border-ink-100 px-3 py-2 text-xs outline-none focus:border-signal-500"
+          />
+          <div className="mt-1 max-h-44 overflow-y-auto rounded-md border border-ink-100 bg-white">
+            {filteredRoles.map(({ role, domain, subdomain }) => {
               const isSelected = targetRoles.includes(role);
               return (
                 <button
                   type="button"
                   key={role}
                   onClick={() => toggleRole(role)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    isSelected
-                      ? "bg-ink-950 text-white shadow-xs"
-                      : "bg-ink-50 text-ink-700 hover:bg-ink-100"
-                  }`}
+                  aria-pressed={isSelected}
+                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-ink-50 ${isSelected ? "bg-signal-500/10" : ""}`}
                 >
-                  {isSelected && <Check size={12} className="text-signal-400" />}
-                  {role}
+                  <span className="font-medium text-ink-800">{role}</span>
+                  <span className="shrink-0 text-[10px] text-ink-400">
+                    {[domain, subdomain].filter(Boolean).join(" · ")}
+                    {isSelected && <Check size={12} className="ml-1 inline text-signal-600" />}
+                  </span>
                 </button>
               );
             })}
+            {!filteredRoles.length && (
+              <p className="px-3 py-2 text-xs text-ink-500">No supported role matches. Add it as a custom role below.</p>
+            )}
           </div>
-
-          <div className="flex gap-2">
-            <input
-              value={roleInput}
-              onChange={(e) => setRoleInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomRole())}
-              placeholder="Add other target role (e.g. DevOps Engineer)…"
-              className="flex-1 rounded-md border border-ink-100 px-3 py-2 text-xs outline-none focus:border-signal-500"
-            />
+          <div className="mt-2 flex justify-end">
             <button
               type="button"
               onClick={handleAddCustomRole}
               disabled={!roleInput.trim()}
               className="rounded-md bg-ink-100 hover:bg-ink-200 text-ink-800 px-3 py-2 text-xs font-medium disabled:opacity-50"
             >
-              Add
+              Add role
             </button>
           </div>
         </div>

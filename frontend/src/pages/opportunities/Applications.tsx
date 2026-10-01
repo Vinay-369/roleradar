@@ -172,7 +172,7 @@ export function Applications() {
             </h1>
           </div>
           <p className="text-sm text-ink-600">
-            Track your verified career pipeline across the complete application lifecycle.
+            Track your applications manually. RoleRadar cannot access status updates from employer websites, so update each card when your application progresses.
           </p>
         </div>
 
@@ -366,7 +366,7 @@ export function Applications() {
                   <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2.5 shrink-0">
                     {/* Status Dropdown */}
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-ink-500 font-medium">Stage:</span>
+                      <span className="text-[11px] text-ink-500 font-medium">Your stage:</span>
                       <select
                         value={app.status}
                         onChange={(e) =>
@@ -376,7 +376,8 @@ export function Applications() {
                           })
                         }
                         disabled={updateMutation.isPending}
-                        aria-label={`Update application stage for ${app.job_title}`}
+                        aria-label={`Manually update application stage for ${app.job_title}`}
+                        title="Update this stage yourself; employer website activity is not synced."
                         className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-ink-900 shadow-2xs outline-none focus:border-signal-500 cursor-pointer"
                       >
                         {ALL_STATUSES.map((s) => (
@@ -386,6 +387,9 @@ export function Applications() {
                         ))}
                       </select>
                     </div>
+                    <p className="text-[10px] text-ink-400 sm:text-right md:text-right">
+                      Update manually; employer activity is not synced.
+                    </p>
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-1.5 flex-wrap">

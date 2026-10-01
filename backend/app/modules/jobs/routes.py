@@ -37,27 +37,34 @@ def _attach_canonical_role_meta(job: dict) -> None:
 
 
 def _attach_compensation_meta(job: dict) -> None:
-    if job.get("compensation_type") is None:
+    is_intern = (
+        job.get("opportunity_type") == "INTERNSHIP"
+        or job.get("job_type") == "internship"
+        or "intern" in (job.get("title") or "").lower()
+    )
+    comp = None
+    if job.get("compensation_type") in (None, "UNDISCLOSED") or not job.get("compensation_text"):
         from app.modules.jobs.compensation_extractor import extract_compensation_from_payload_and_text
         text = f"{job.get('description') or ''} {job.get('raw_html') or ''}"
-        is_intern = (
-            job.get("opportunity_type") == "INTERNSHIP"
-            or job.get("job_type") == "internship"
-            or "intern" in (job.get("title") or "").lower()
-        )
         comp = extract_compensation_from_payload_and_text(
             text=text,
             raw_payload=job.get("raw_payload") or {},
             is_internship=is_intern,
         )
-        job["compensation_type"] = comp.compensation_type
-        job["compensation_text"] = comp.compensation_text
-        job["salary_currency"] = comp.salary_currency
-        job["salary_period"] = comp.salary_period
-        job["salary_unit"] = comp.salary_unit
-        job["stipend_currency"] = comp.stipend_currency
-        job["stipend_period"] = comp.stipend_period
-        job["stipend_unit"] = comp.stipend_unit
+        if job.get("compensation_type") in (None, "UNDISCLOSED"):
+            job["compensation_type"] = comp.compensation_type
+        if not job.get("compensation_text"):
+            job["compensation_text"] = comp.compensation_text
+        for field in (
+            "salary_currency",
+            "salary_period",
+            "salary_unit",
+            "stipend_currency",
+            "stipend_period",
+            "stipend_unit",
+        ):
+            if job.get(field) is None:
+                job[field] = getattr(comp, field)
         if comp.salary_min is not None and job.get("salary_min") is None:
             job["salary_min"] = comp.salary_min
         if comp.salary_max is not None and job.get("salary_max") is None:
@@ -70,6 +77,65 @@ def _attach_compensation_meta(job: dict) -> None:
             job["stipend"] = comp.stipend
         if comp.salary_disclosed and not job.get("salary_disclosed"):
             job["salary_disclosed"] = True
+
+        # Infer defaults for pre-existing seed values that lack unit/currency/period metadata.
+        # When the extractor found nothing (UNDISCLOSED) but the job already has numeric
+        # salary/stipend values, infer sensible defaults so the frontend can render properly.
+        _has_seed_salary = job.get("salary_min") is not None or job.get("salary_max") is not None
+        _has_seed_stipend = job.get("stipend_min") is not None or job.get("stipend") is not None
+        _extractor_found_nothing = comp is None or (
+            comp.compensation_type in (None, "UNDISCLOSED")
+            and comp.salary_min is None
+            and comp.salary_max is None
+            and comp.stipend_min is None
+            and comp.stipend_max is None
+        )
+
+        if (is_intern and _has_seed_stipend) or (_has_seed_salary and not is_intern):
+            if is_intern:
+                if job.get("stipend_currency") is None:
+                    job["stipend_currency"] = comp.stipend_currency or "INR"
+                if job.get("stipend_period") is None:
+                    job["stipend_period"] = "MONTH"
+                if job.get("stipend_unit") is None:
+                    job["stipend_unit"] = "CURRENCY"
+            else:
+                if job.get("salary_currency") is None:
+                    job["salary_currency"] = "INR"
+                if job.get("salary_period") is None:
+                    job["salary_period"] = "YEAR"
+                if job.get("salary_unit") is None:
+                    job["salary_unit"] = "LPA"
+            if _extractor_found_nothing:
+                job["compensation_type"] = "STIPEND" if is_intern and _has_seed_stipend else "SALARY"
+                if _has_seed_stipend:
+                    if job.get("salary_disclosed") is not True:
+                        job["salary_disclosed"] = True
+                elif _has_seed_salary:
+                    if job.get("salary_disclosed") is not True:
+                        job["salary_disclosed"] = True
+            if job.get("compensation_text") is None:
+                from app.modules.jobs.compensation_extractor import _format_range
+                if is_intern and _has_seed_stipend:
+                    _min = job.get("stipend_min")
+                    _max = job.get("stipend_max")
+                    _cur = job.get("stipend_currency")
+                    _period = job.get("stipend_period")
+                else:
+                    _min = job.get("salary_min")
+                    _max = job.get("salary_max")
+                    _cur = job.get("salary_currency")
+                    _period = job.get("salary_period")
+                if _min is not None:
+                    _txt = _format_range(_min, _max, _cur, _period)
+                    if _txt:
+                        job["compensation_text"] = _txt
+                    elif is_intern:
+                        job["compensation_text"] = f"{_min:g}/month"
+                    else:
+                        unit = job.get("salary_unit") or "LPA"
+                        symbol = "₹" if _cur == "INR" else (_cur or "")
+                        job["compensation_text"] = f"{symbol}{_min:g}–{_max:g} {unit}" if _max is not None else f"{symbol}{_min:g} {unit}"
 
 
 def _attach_completeness_meta(job: dict) -> None:
@@ -156,7 +222,6 @@ async def list_jobs(
     search: str | None = None,
     sort_by: str | None = None,
     max_posted_days: int | None = None,
-    include_benchmarks: bool = False,
     page: int = 1,
     page_size: int = 50,
     current_user: dict = Depends(get_current_user),
@@ -182,11 +247,10 @@ async def list_jobs(
         "sort_by": sort_by,
         "region": region,
         "max_posted_days": max_posted_days,
-        "include_benchmarks": include_benchmarks,
         "skip": skip,
         "limit": safe_page_size,
-        "active_discovery_only": not include_benchmarks,
-        "direct_apply_only": not include_benchmarks,
+        "active_discovery_only": True,
+        "direct_apply_only": True,
     }
 
     # Opportunity discovery queries persisted MongoDB opportunities directly without

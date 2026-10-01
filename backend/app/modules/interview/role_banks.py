@@ -301,7 +301,116 @@ ROLE_QUESTION_BANKS: dict[str, list[dict]] = {
 }
 
 
-def get_curated_role_questions(role_name: str, count: int = 20) -> list[dict]:
+def _additional_role_questions(role_name: str) -> list[dict]:
+    """Add a larger set of cross-domain questions anchored to the selected role."""
+    templates = [
+        {
+            "category": "technical",
+            "question": "Walk me through a typical {target_role} workflow from the initial request to a verified outcome.",
+            "star_hint": "Explain the objective, key steps, tools or methods, quality checks, and final result.",
+            "strategy": "Clarify the goal -> outline the workflow -> explain decisions and checks -> share the measurable outcome.",
+            "sample_answer": "I first clarify the expected outcome and constraints, then break the work into clear stages. I use the tools and standards required for the task, validate the result at important checkpoints, and communicate the outcome with evidence.",
+            "pitfalls": "Listing tasks without explaining why you chose the approach or how you verified the result.",
+        },
+        {
+            "category": "technical",
+            "question": "Describe a difficult problem you could encounter as a {target_role}. How would you investigate and resolve it?",
+            "star_hint": "Show a structured diagnosis, evidence gathering, options, and validation.",
+            "strategy": "Define the impact -> gather facts -> isolate likely causes -> compare solutions -> validate and document.",
+            "sample_answer": "I would first establish the impact and gather reliable evidence. I would test the most likely causes in a controlled order, choose a solution that meets the requirements, and confirm the result against the original success criteria.",
+            "pitfalls": "Jumping to a solution before checking evidence or skipping the final validation.",
+        },
+        {
+            "category": "technical",
+            "question": "How do you make sure your work as a {target_role} is accurate, safe, and aligned with professional standards?",
+            "star_hint": "Name relevant review steps, standards, documentation, or controls for the role.",
+            "strategy": "Identify the applicable standard -> build checks into the workflow -> review evidence -> record exceptions and decisions.",
+            "sample_answer": "I identify the standards and risks that apply before starting. I use appropriate checks throughout the work, keep an audit trail of important decisions, and raise exceptions early instead of assuming an uncertain result is correct.",
+            "pitfalls": "Treating quality as a final check only or claiming standards that do not apply to the role.",
+        },
+        {
+            "category": "technical",
+            "question": "Tell me about a method, tool, or domain concept important to a {target_role} and when you would choose an alternative.",
+            "star_hint": "Compare use cases, trade-offs, and limitations using an example from the profession.",
+            "strategy": "Define the method -> give a realistic use case -> compare an alternative -> explain the trade-off.",
+            "sample_answer": "I choose a method based on the desired outcome, constraints, and risks rather than habit. I explain the trade-offs, confirm it fits the context, and change approach when the evidence or requirements call for it.",
+            "pitfalls": "Describing a tool without demonstrating when it is appropriate or where it falls short.",
+        },
+        {
+            "category": "managerial",
+            "question": "As a {target_role}, how would you prioritize several urgent requests with competing deadlines?",
+            "star_hint": "Balance impact, risk, effort, dependencies, and stakeholder expectations.",
+            "strategy": "Assess urgency and impact -> identify dependencies -> agree priorities -> communicate trade-offs -> revisit as facts change.",
+            "sample_answer": "I compare the impact and risk of each request, surface dependencies, and align priorities with the people affected. I communicate what can be delivered by when and revisit the plan if new evidence changes the trade-offs.",
+            "pitfalls": "Promising everything at once or prioritizing only by who asked most recently.",
+        },
+        {
+            "category": "managerial",
+            "question": "Describe how you would handle a disagreement with a stakeholder about the best approach to a {target_role} assignment.",
+            "star_hint": "Demonstrate listening, evidence-based options, and clear agreement on next steps.",
+            "strategy": "Understand the concern -> establish shared goals -> compare options with evidence -> agree a decision and review point.",
+            "sample_answer": "I would first understand the stakeholder's concern and the outcome they need. I would lay out the available options, risks, and evidence, then agree on a decision, owner, and point to review whether it is working.",
+            "pitfalls": "Turning a work disagreement into a personal conflict or withholding risks to gain agreement.",
+        },
+        {
+            "category": "managerial",
+            "question": "How would you respond if a key deliverable in your {target_role} work were at risk of being late?",
+            "star_hint": "Show early escalation, impact assessment, recovery options, and transparent updates.",
+            "strategy": "Confirm the cause and impact -> identify recovery choices -> notify stakeholders early -> track the revised plan.",
+            "sample_answer": "I would confirm what is blocking delivery and which outcomes are affected, then prepare realistic recovery options. I would alert stakeholders early, agree any scope or schedule changes, and provide updates until the risk is resolved.",
+            "pitfalls": "Waiting until the deadline to report the risk or hiding a quality problem to appear on time.",
+        },
+        {
+            "category": "managerial",
+            "question": "What would you measure to know whether your work as a {target_role} is successful?",
+            "star_hint": "Choose role-relevant outcome and quality measures, not activity alone.",
+            "strategy": "Start from the intended outcome -> select quality and impact indicators -> set a baseline -> use results to improve.",
+            "sample_answer": "I would agree on the intended outcome first, then track a small set of measures tied to quality, timeliness, and impact. I would compare results with a baseline and use gaps to improve the process rather than treating the metric as the goal itself.",
+            "pitfalls": "Measuring activity volume alone or using a metric without considering context.",
+        },
+        {
+            "category": "hr",
+            "question": "Why are you pursuing a {target_role} role, and what experience has prepared you for it?",
+            "star_hint": "Connect genuine motivation with relevant evidence and a clear next step.",
+            "strategy": "Explain the motivation -> connect it to relevant experience -> show what you learned -> relate it to this role.",
+            "sample_answer": "I am interested in this role because it lets me apply strengths I have developed through relevant work and learning. A specific example is where I used those strengths to achieve an outcome, and I am now looking to deepen that contribution in this position.",
+            "pitfalls": "Giving a generic answer or claiming experience you cannot support with an example.",
+        },
+        {
+            "category": "hr",
+            "question": "Tell me about feedback that changed how you approached your work as a {target_role}.",
+            "star_hint": "Show openness, a concrete change, and the outcome.",
+            "strategy": "Describe the feedback -> explain your response -> name the change -> share the result.",
+            "sample_answer": "I received feedback that a part of my approach could be clearer and more reliable. I asked questions to understand the concern, changed how I planned and checked the work, and followed up to see whether the improvement addressed it.",
+            "pitfalls": "Rejecting the feedback or describing a change without showing what improved.",
+        },
+        {
+            "category": "hr",
+            "question": "Describe a time you had to learn an unfamiliar tool or process relevant to a {target_role}.",
+            "star_hint": "Explain how you learned, applied, and verified your understanding.",
+            "strategy": "Set the learning goal -> use credible resources -> practice on a real task -> seek feedback -> assess progress.",
+            "sample_answer": "I defined what I needed to do with the unfamiliar tool, used reliable documentation and guidance, and practiced on a bounded task. I asked for feedback and checked that I could apply it correctly before relying on it for more critical work.",
+            "pitfalls": "Claiming mastery after only introductory exposure or failing to verify your work.",
+        },
+        {
+            "category": "hr",
+            "question": "Tell me about a time you made a mistake in your work and how you handled it.",
+            "star_hint": "Own the mistake, address impact, communicate, and explain prevention.",
+            "strategy": "State what happened -> take responsibility -> describe the correction -> explain what you changed afterward.",
+            "sample_answer": "When I noticed an error, I assessed its impact, informed the relevant people, and corrected it as quickly as I could. I then looked at why my checks missed it and added a practical step to reduce the chance of recurrence.",
+            "pitfalls": "Blaming others, minimizing the impact, or claiming you have never made a mistake.",
+        },
+    ]
+    return [
+        {
+            **question,
+            "question": question["question"].replace("{target_role}", role_name),
+        }
+        for question in templates
+    ]
+
+
+def get_curated_role_questions(role_name: str, count: int = 24) -> list[dict]:
     """
     Intelligently matches a candidate's target role string to the most relevant
     curated discipline question bank.
@@ -322,4 +431,4 @@ def get_curated_role_questions(role_name: str, count: int = 20) -> list[dict]:
         # Default to core software engineering / general SWE
         selected = ROLE_QUESTION_BANKS["core_swe"]
 
-    return selected[:count]
+    return (selected + _additional_role_questions(role_name))[:count]

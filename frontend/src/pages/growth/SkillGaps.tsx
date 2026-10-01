@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Sparkles,
   BookOpen,
+  ExternalLink,
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { getProfile } from "../../lib/profile";
@@ -110,6 +111,7 @@ function getEvidenceBadge(evidenceType?: string): { label: string; className: st
 export function SkillGaps() {
   const [searchParams] = useSearchParams();
   const targetJobId = searchParams.get("jobId") || searchParams.get("targetJobId");
+  const requestedRole = searchParams.get("role");
 
   const { data: targetJob } = useQuery({
     queryKey: ["job-detail", targetJobId],
@@ -119,10 +121,14 @@ export function SkillGaps() {
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
-  const defaultRole = targetJob?.title || profile?.target_roles?.[0] || "Full Stack Developer";
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const defaultRole = targetJob?.title || requestedRole || profile?.target_roles?.[0] || "Full Stack Developer";
+  const [selectedRole, setSelectedRole] = useState<string>(requestedRole || "");
+  useEffect(() => {
+    setSelectedRole(requestedRole || "");
+  }, [requestedRole]);
 
   const activeRole = selectedRole || defaultRole;
+  const useJobContext = Boolean(targetJobId && !selectedRole);
 
   const { data: canonicalRoles } = useQuery({
     queryKey: ["canonical-roles"],
@@ -131,24 +137,29 @@ export function SkillGaps() {
 
   const roleOptions =
     canonicalRoles && canonicalRoles.length > 0
-      ? canonicalRoles.map((r) => r.role)
+      ? canonicalRoles
       : ALL_JOB_ROLES;
 
   const { data: roadmap, isLoading: roadmapLoading } = useQuery({
-    queryKey: ["roadmap-role", activeRole],
-    queryFn: () => getRoadmap({ role: activeRole }),
+    queryKey: ["roadmap-skill-gaps", useJobContext ? targetJobId : null, activeRole],
+    queryFn: () =>
+      useJobContext
+        ? getRoadmap({ jobId: targetJobId! })
+        : getRoadmap({ role: activeRole }),
     enabled: !!activeRole,
   });
 
   const { data: alignment, isLoading: gapsLoading, error } = useQuery({
-    queryKey: ["career-alignment-role", activeRole, targetJobId],
+    queryKey: ["career-alignment-role", activeRole, useJobContext ? targetJobId : null],
     queryFn: () =>
-      getCareerAlignment(targetJobId ? { jobId: targetJobId } : { role: activeRole }),
+      useJobContext
+        ? getCareerAlignment({ jobId: targetJobId! })
+        : getCareerAlignment({ role: activeRole }),
     enabled: !!activeRole,
   });
 
   const isLoading = gapsLoading || roadmapLoading;
-  const gaps = alignment?.competencies || [];
+  const gaps = useMemo(() => alignment?.competencies || [], [alignment?.competencies]);
   const hasResume = alignment?.has_resume ?? false;
 
   const isMarketBenchmark =
@@ -659,6 +670,40 @@ export function SkillGaps() {
                       <p className="text-ink-600 leading-snug">{gap.project_suggestion}</p>
                     </div>
                   )}
+                  {gap.resources.length > 0 ? (
+                    <div className="p-2.5 rounded-lg bg-white border border-ink-100">
+                      <span className="font-semibold text-ink-900 flex items-center gap-1.5 mb-1.5">
+                        <BookOpen size={13} className="text-signal-600" />
+                        Learning resources for {gap.skill}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {gap.resources.map((url) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-md bg-ink-50 hover:bg-signal-500/10 border border-ink-100 px-2 py-1 text-[11px] font-medium text-ink-700 hover:text-signal-700 transition-colors"
+                          >
+                            {url.replace(/^https?:\/\/(?:www\.)?/, "").split("/")[0]}
+                            <ExternalLink size={10} />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-ink-500">
+                      No curated resource is available for this skill yet. Use the practice suggestion and role roadmap to guide your study.
+                    </p>
+                  )}
+                  <div className="p-2.5 rounded-lg bg-ink-50 border border-ink-100">
+                    <span className="font-semibold text-ink-900 block mb-0.5">
+                      Step 3 · Show what you learned
+                    </span>
+                    <p className="text-ink-600 leading-snug">
+                      Save a concrete example or result from your practice, then add it to your project or work-history evidence.
+                    </p>
+                  </div>
                   {isNoEvidence && (
                     <p className="text-[11px] text-ink-400 italic">
                       Tip: If you have experience with {gap.skill}, ensure it is explicitly listed in your work history or project highlights.
@@ -674,7 +719,11 @@ export function SkillGaps() {
                     Step-by-step roadmap available in learning progression
                   </span>
                   <Link
-                    to="/growth/roadmap"
+                    to={
+                      useJobContext
+                        ? `/growth/roadmap/${encodeURIComponent(targetJobId!)}?role=${encodeURIComponent(activeRole)}`
+                        : `/growth/roadmap?role=${encodeURIComponent(activeRole)}`
+                    }
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-[11px] font-semibold transition-colors shrink-0"
                   >
                     <MapIcon size={11} className="text-signal-600" />

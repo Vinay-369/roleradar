@@ -36,6 +36,8 @@ from app.modules.matching.evidence_mapping import (
 )
 from app.modules.learning.role_taxonomy import (
     ROLE_TAXONOMY,
+    ROLE_SPECIALIZATIONS,
+    _compose_specialized_profile,
     match_canonical_role,
     resolve_role,
     _normalize_role_input,
@@ -578,6 +580,25 @@ async def get_canonical_roles():
             domain=prof.domain,
             subdomain=prof.subdomain,
             aliases=prof.aliases,
+        ))
+    role_names = {role.role.casefold() for role in roles}
+    for spec in ROLE_SPECIALIZATIONS.values():
+        base_profile = ROLE_TAXONOMY.get(spec.target_role_family)
+        if base_profile is None:
+            continue
+        specialized = _compose_specialized_profile(
+            base_profile,
+            spec,
+            spec.canonical_role or spec.specialization_id.replace("_", " "),
+        )
+        if specialized.canonical_role.casefold() in role_names:
+            continue
+        role_names.add(specialized.canonical_role.casefold())
+        roles.append(CanonicalRoleOut(
+            role=specialized.canonical_role,
+            domain=specialized.domain,
+            subdomain=specialized.subdomain,
+            aliases=specialized.aliases,
         ))
     return roles
 

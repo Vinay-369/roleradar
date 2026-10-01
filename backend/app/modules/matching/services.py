@@ -31,8 +31,38 @@ def build_india_metadata(
     eligibility = evaluate_eligibility(profile, resume, job, skill_score=skill_score)
 
     stipend_val = job.get("stipend") or job.get("stipend_min")
-    stipend_currency = job.get("stipend_currency")
-    stipend_period = job.get("stipend_period")
+    is_intern = (
+        job.get("job_type") == "internship"
+        or job.get("opportunity_type") == "INTERNSHIP"
+        or "intern" in (job.get("title", "")).lower()
+    )
+
+    # Infer compensation defaults when numeric values are present but
+    # currency/unit/period metadata is missing (e.g. seed data).
+    if is_intern and stipend_val is not None:
+        stipend_currency = job.get("stipend_currency") or "INR"
+        stipend_period = job.get("stipend_period") or "MONTH"
+        stipend_unit = job.get("stipend_unit") or "CURRENCY"
+        salary_disclosed = job.get("salary_disclosed") or True
+        compensation_type = job.get("compensation_type") or "STIPEND"
+    elif not is_intern and (job.get("salary_min") is not None or job.get("salary_max") is not None):
+        stipend_currency = job.get("stipend_currency")
+        stipend_period = job.get("stipend_period")
+        stipend_unit = job.get("stipend_unit")
+        salary_disclosed = job.get("salary_disclosed") or True
+        compensation_type = job.get("compensation_type") or "SALARY"
+        if job.get("salary_currency") is None:
+            job["salary_currency"] = "INR"
+        if job.get("salary_period") is None:
+            job["salary_period"] = "YEAR"
+        if job.get("salary_unit") is None:
+            job["salary_unit"] = "LPA"
+    else:
+        stipend_currency = job.get("stipend_currency")
+        stipend_period = job.get("stipend_period")
+        stipend_unit = job.get("stipend_unit")
+        salary_disclosed = job.get("salary_disclosed", False)
+        compensation_type = job.get("compensation_type")
 
     derived_country = job.get("country") or extract_country_from_location(location)
 
@@ -45,12 +75,12 @@ def build_india_metadata(
         "stipend": stipend_val,
         "stipend_currency": stipend_currency,
         "stipend_period": stipend_period,
-        "stipend_unit": job.get("stipend_unit"),
+        "stipend_unit": stipend_unit,
         "salary_currency": job.get("salary_currency"),
         "salary_period": job.get("salary_period"),
         "salary_unit": job.get("salary_unit"),
-        "salary_disclosed": job.get("salary_disclosed", False),
-        "compensation_type": job.get("compensation_type"),
+        "salary_disclosed": salary_disclosed,
+        "compensation_type": compensation_type,
         "compensation_text": job.get("compensation_text"),
         "eligibility_text": eligibility.reasons[0] if eligibility.reasons else None,
         "degree_requirements": classification.degree_requirements,

@@ -1,16 +1,53 @@
-import React, { useState, useEffect } from "react";
-import { Target, PenLine } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { ChevronDown, PenLine, Search, Target } from "lucide-react";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
+
+export type RoleOption = {
+  role: string;
+  domain?: string;
+  subdomain?: string;
+  aliases?: string[];
+};
+
+type RoleOptionInput = string | RoleOption;
 
 interface RoleDropdownSelectorProps {
   label?: string;
-  selectedRole: string; // The active effective role string ("ALL", "Backend Developer", or custom)
+  selectedRole: string;
   onRoleChange: (newRole: string) => void;
-  roles?: string[]; // Predefined roles list
-  includeAllOption?: boolean; // Whether to include "All Openings"
+  roles?: RoleOptionInput[];
+  includeAllOption?: boolean;
   allOptionLabel?: string;
   className?: string;
   helperText?: string;
+}
+
+function normalizeRole(value: string): string {
+  return value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function getRoleRelevance(option: RoleOption, query: string): number {
+  const normalizedQuery = normalizeRole(query);
+  if (!normalizedQuery) return 1;
+
+  const roleName = normalizeRole(option.role);
+  const searchableText = normalizeRole([
+    option.role,
+    option.domain,
+    option.subdomain,
+    ...(option.aliases ?? []),
+  ].join(" "));
+  if (roleName === normalizedQuery) return 1000;
+  if (roleName.startsWith(normalizedQuery)) return 800;
+  if (roleName.includes(normalizedQuery)) return 600;
+
+  const aliasNames = (option.aliases ?? []).map(normalizeRole);
+  if (aliasNames.includes(normalizedQuery)) return 550;
+  if (aliasNames.some((alias) => alias.startsWith(normalizedQuery))) return 450;
+  if (aliasNames.some((alias) => alias.includes(normalizedQuery))) return 350;
+
+  const tokens = normalizedQuery.split(/\s+/);
+  return tokens.every((token) => searchableText.includes(token)) ? 200 : 0;
 }
 
 export function RoleDropdownSelector({
@@ -23,126 +60,206 @@ export function RoleDropdownSelector({
   className = "",
   helperText,
 }: RoleDropdownSelectorProps) {
-  const isPredefined = includeAllOption
-    ? selectedRole === "ALL" || roles.includes(selectedRole)
-    : roles.includes(selectedRole);
+  const listboxId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(-1);
 
-  const [dropdownSelection, setDropdownSelection] = useState<string>(() => {
-    if (includeAllOption && (selectedRole === "ALL" || !selectedRole)) return "ALL";
-    if (roles.includes(selectedRole)) return selectedRole;
-    return "OTHER";
-  });
-
-  const [customRoleText, setCustomRoleText] = useState<string>(() => {
-    if (!isPredefined && selectedRole !== "ALL") return selectedRole;
-    return "";
-  });
-
-  // Keep internal state synchronized if external selectedRole changes
-  useEffect(() => {
-    if (includeAllOption && selectedRole === "ALL") {
-      setDropdownSelection("ALL");
-      setCustomRoleText("");
-    } else if (roles.includes(selectedRole)) {
-      setDropdownSelection(selectedRole);
-      setCustomRoleText("");
-    } else if (selectedRole) {
-      setDropdownSelection("OTHER");
-      setCustomRoleText(selectedRole);
+  const roleOptions = useMemo<RoleOption[]>(() => {
+    const uniqueRoles = new Map<string, RoleOption>();
+    for (const item of roles) {
+      const option = typeof item === "string" ? { role: item } : item;
+      const key = option.role.trim().toLocaleLowerCase();
+      if (key && !uniqueRoles.has(key)) uniqueRoles.set(key, option);
     }
-  }, [selectedRole, roles, includeAllOption]);
+    return [...uniqueRoles.values()];
+  }, [roles]);
 
-  // Debounce custom-role input to avoid sending API queries on every keystroke
+  const filteredRoles = useMemo(() => {
+    return roleOptions
+      .map((option) => ({ option, relevance: getRoleRelevance(option, searchQuery) }))
+      .filter(({ relevance }) => relevance > 0)
+      .sort((a, b) => b.relevance - a.relevance || a.option.role.localeCompare(b.option.role))
+      .map(({ option }) => option);
+  }, [roleOptions, searchQuery]);
+
+  const selectedOption = roleOptions.find(
+    (option) => option.role.toLocaleLowerCase() === selectedRole.toLocaleLowerCase(),
+  );
+  const isCustomRole = Boolean(selectedRole && selectedRole !== "ALL" && !selectedOption);
+  const exactSearchMatch = roleOptions.some((option) =>
+    [option.role, ...(option.aliases ?? [])].some(
+      (name) => normalizeRole(name) === normalizeRole(searchQuery),
+    ),
+  );
+  const showCustomOption = Boolean(searchQuery.trim()) && !exactSearchMatch;
+
   useEffect(() => {
-    if (dropdownSelection !== "OTHER") return;
-    const timer = setTimeout(() => {
-      onRoleChange(customRoleText);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [customRoleText, dropdownSelection]);
+    if (!isOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isOpen]);
 
-  const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newVal = e.target.value;
-    setDropdownSelection(newVal);
-
-    if (newVal === "ALL") {
-      setCustomRoleText("");
-      onRoleChange("ALL");
-    } else if (newVal === "OTHER") {
-      onRoleChange(customRoleText || "");
-    } else {
-      setCustomRoleText("");
-      onRoleChange(newVal);
-    }
+  const selectRole = (role: string) => {
+    onRoleChange(role);
+    setSearchQuery("");
+    setIsOpen(false);
   };
 
-  const handleCustomTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomRoleText(e.target.value);
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      setSearchQuery("");
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setIsOpen(true);
+      const optionCount = filteredRoles.length + Number(showCustomOption);
+      if (optionCount) {
+        setActiveIndex((index) => (index + 1) % optionCount);
+      }
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const optionCount = filteredRoles.length + Number(showCustomOption);
+      if (optionCount) {
+        setActiveIndex((index) => (index <= 0 ? optionCount - 1 : index - 1));
+      }
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (activeIndex < 0 && filteredRoles[0]) {
+        selectRole(filteredRoles[0].role);
+      } else if (activeIndex >= 0 && activeIndex < filteredRoles.length) {
+        selectRole(filteredRoles[activeIndex].role);
+      } else if (showCustomOption) {
+        selectRole(searchQuery.trim());
+      }
+    }
   };
-
-  const isOtherActive = dropdownSelection === "OTHER";
 
   return (
-    <div className={`space-y-2.5 ${className}`}>
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-ink-700 flex items-center gap-1.5">
-          <Target size={13} className="text-signal-600 shrink-0" />
+    <div className={`space-y-1.5 ${className}`} ref={rootRef}>
+      <div className="flex h-[14px] items-center justify-between flex-wrap gap-2">
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-600">
+          <Target size={11} className="text-signal-600 shrink-0" />
           <span>{label}</span>
         </label>
-        {isOtherActive && (
+        {isCustomRole && (
           <span className="text-[11px] font-semibold text-signal-700 bg-signal-500/10 px-2 py-0.5 rounded-md border border-signal-500/20">
-            Custom Role Mode
+            Custom Role
           </span>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-        {/* Role Dropdown Select */}
-        <div className="relative flex-1">
-          <select
-            value={dropdownSelection}
-            onChange={handleDropdownChange}
-            className="w-full px-3.5 py-2 rounded-lg border border-ink-200 bg-white text-xs font-semibold text-ink-900 outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/10 transition-all shadow-2xs cursor-pointer appearance-none pr-8"
+      <div className="relative">
+        <Search size={14} className="pointer-events-none absolute left-3 top-[calc(50%+1px)] -translate-y-1/2 text-ink-400" />
+        <input
+          role="combobox"
+          aria-label={label}
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls={listboxId}
+          aria-activedescendant={
+            isOpen && activeIndex >= 0
+              ? activeIndex < filteredRoles.length
+                ? `${listboxId}-${activeIndex}`
+                : `${listboxId}-custom`
+              : undefined
+          }
+          value={isOpen ? searchQuery : selectedRole === "ALL" ? allOptionLabel : selectedRole}
+          onFocus={() => {
+            setSearchQuery("");
+            setActiveIndex(-1);
+            setIsOpen(true);
+          }}
+          onChange={(event) => {
+            setSearchQuery(event.target.value);
+            setActiveIndex(-1);
+            setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={`Search ${roleOptions.length} roles or type a custom role…`}
+          className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-ink-200 bg-white text-sm font-semibold text-ink-900 outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/10 transition-all shadow-2xs"
+        />
+        <ChevronDown
+          size={14}
+          className={`absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
+
+        {isOpen && (
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label="Matching career roles"
+            className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-white py-1 shadow-lg"
           >
             {includeAllOption && (
-              <option value="ALL" className="font-semibold text-ink-900">
+              <button
+                type="button"
+                role="option"
+                id={`${listboxId}-all`}
+                aria-selected={selectedRole === "ALL"}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => selectRole("ALL")}
+                className={`w-full px-3 py-2 text-left text-xs font-semibold hover:bg-signal-500/10 ${selectedRole === "ALL" ? "bg-signal-500/10 text-signal-800" : "text-ink-800"}`}
+              >
                 {allOptionLabel}
-              </option>
+              </button>
             )}
 
-            <optgroup label="Standard Tech & Engineering Roles">
-              {roles.map((r) => (
-                <option key={r} value={r} className="text-ink-800">
-                  {r}
-                </option>
-              ))}
-            </optgroup>
+            {filteredRoles.map((option, index) => (
+              <button
+                type="button"
+                role="option"
+                id={`${listboxId}-${index}`}
+                aria-selected={selectedRole.toLocaleLowerCase() === option.role.toLocaleLowerCase()}
+                key={option.role}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => selectRole(option.role)}
+                className={`w-full px-3 py-2 text-left hover:bg-signal-500/10 ${activeIndex === index ? "bg-ink-50" : ""}`}
+              >
+                <span className="block text-xs font-semibold text-ink-800">{option.role}</span>
+                {(option.domain || option.subdomain) && (
+                  <span className="block mt-0.5 text-[10px] text-ink-400">
+                    {[option.domain, option.subdomain].filter(Boolean).join(" · ")}
+                  </span>
+                )}
+              </button>
+            ))}
 
-            <option value="OTHER" className="font-bold text-signal-700">
-              ✍️ Other (Specify Custom Role)…
-            </option>
-          </select>
+            {showCustomOption && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={false}
+                id={`${listboxId}-custom`}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(filteredRoles.length)}
+                onClick={() => selectRole(searchQuery.trim())}
+                className={`w-full border-t border-ink-100 px-3 py-2.5 text-left text-xs font-semibold text-signal-700 hover:bg-signal-500/10 ${activeIndex === filteredRoles.length ? "bg-ink-50" : ""}`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <PenLine size={12} />
+                  Use “{searchQuery.trim()}” as a custom role
+                </span>
+              </button>
+            )}
 
-          {/* Custom Chevron Indicator */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-ink-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Custom Role Text Input when "Other" is selected */}
-        {isOtherActive && (
-          <div className="relative flex-1 animate-in fade-in slide-in-from-top-1 duration-200">
-            <PenLine size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-signal-600" />
-            <input
-              type="text"
-              autoFocus
-              value={customRoleText}
-              onChange={handleCustomTextChange}
-              placeholder="Write your custom job role (e.g. Rust Systems Engineer)…"
-              className="w-full pl-8 pr-3 py-2 rounded-lg border border-signal-300 bg-signal-50/40 text-xs font-medium text-ink-900 outline-none focus:border-signal-600 focus:ring-2 focus:ring-signal-500/15 shadow-2xs placeholder:text-ink-400"
-            />
+            {!filteredRoles.length && !showCustomOption && !includeAllOption && (
+              <p className="px-3 py-3 text-xs text-ink-500">No roles found. Try another search.</p>
+            )}
           </div>
         )}
       </div>

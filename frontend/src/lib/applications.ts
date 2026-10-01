@@ -67,6 +67,9 @@ export async function recordApplicationSubmission(jobId: string, tailoredResumeI
   const apps = await listApplications();
   const existing = apps.find((a) => a.job_id === jobId);
   if (existing) {
+    if (!["SAVED", "TAILORED", "QUEUED", "APPLIED"].includes(existing.status)) {
+      return existing;
+    }
     return await updateApplication(existing.id, {
       status: "APPLIED",
     });

@@ -32,14 +32,16 @@ def is_likely_resume_text(text: str) -> bool:
 def extract_image_text(file_bytes: bytes, filename: str) -> tuple[str, bool]:
     """
     Extracts text from images (screenshots, problem statements, job descriptions) via PyMuPDF OCR.
-    If OCR engine is not configured on the host system, returns a clear, transparent message.
+    If OCR engine is not configured on the host system, returns a clear, transparent message
+    that does NOT mention 'image' in a way that could trigger vision-model responses from
+    text-only LLMs — instead describing the OCR technical limitation.
     """
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "png"
     try:
         doc = fitz.open(stream=file_bytes, filetype=ext)
         pdf_bytes = doc.convert_to_pdf()
         pdf_doc = fitz.open("pdf", pdf_bytes)
-        
+
         extracted_pages = []
         for page in pdf_doc:
             try:
@@ -48,7 +50,6 @@ def extract_image_text(file_bytes: bytes, filename: str) -> tuple[str, bool]:
                 if text:
                     extracted_pages.append(text)
             except Exception:
-                # If OCR fails or Tesseract is not configured
                 pass
 
         doc.close()
@@ -61,8 +62,10 @@ def extract_image_text(file_bytes: bytes, filename: str) -> tuple[str, bool]:
         pass
 
     return (
-        f"[Image attached: {filename}. Note: Image text extraction requires standard OCR support. "
-        f"Career Copilot is text-based and cannot interpret visual diagrams or photos without readable text.]",
+        f"[OCR_UNAVAILABLE: Text extraction from attached file '{filename}' could not "
+        f"be performed. The OCR engine (Tesseract) is not installed or not configured on "
+        f"this server. To view text in images or scanned documents, please install "
+        f"Tesseract OCR, or paste the text content directly in your message instead.]",
         False,
     )
 

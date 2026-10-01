@@ -11,6 +11,10 @@ CHAT_PROMPT_VERSION = "v4"
 
 COPILOT_SYSTEM_PROMPT = """You are RoleRadar's Career Copilot, an expert AI Software Engineering Mentor and Career Strategist.
 
+IMPORTANT ATTACHMENT HANDLING:
+- Attached documents are provided as extracted TEXT, not as images. If you see an OCR_UNAVAILABLE notice, it means text extraction failed — tell the user to paste the text directly or install Tesseract OCR.
+- If the attachment mentions an image file but contains no extractable text, do NOT claim you "can't read images" — instead, explain that image text extraction was unavailable and suggest pasting text directly.
+
 CRITICAL DIRECTIVES:
 1. PRIMARY DIRECTIVE — ANSWER THE USER'S EXACT QUESTION:
    - Your highest priority is to directly, accurately, and thoroughly answer whatever the user asked.
@@ -103,8 +107,11 @@ def build_copilot_user_prompt(
             if is_resume_attachment
             else ""
         )
+        ocr_unavailable_note = ""
+        if attachment_text.startswith("[OCR_UNAVAILABLE:"):
+            ocr_unavailable_note = "\n[NOTE: Text extraction from this attachment failed - see the OCR_UNAVAILABLE notice below for details. Do NOT claim you cannot read images; instead explain that text extraction was unavailable.]"
         attachment_section = f"""
-ATTACHED DOCUMENT CONTENT (File: {fname}){resume_note}:
+ATTACHED DOCUMENT CONTENT (File: {fname}){resume_note}{ocr_unavailable_note}:
 {attachment_text}
 """
 

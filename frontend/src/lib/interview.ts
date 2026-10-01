@@ -29,3 +29,13 @@ export async function getInterviewQuestions(params?: string | { jobId?: string; 
   const res = await apiClient.get<InterviewPrep>(`/interview/questions${qs ? `?${qs}` : ""}`);
   return res.data;
 }
+
+export async function getCuratedInterviewQuestions(role: string, company?: string): Promise<InterviewPrep> {
+  const query = new URLSearchParams();
+  if (company) query.set("company", company);
+  const qs = query.toString();
+  const res = await apiClient.get<InterviewPrep>(
+    `/interview/curated/${encodeURIComponent(role)}${qs ? `?${qs}` : ""}`,
+  );
+  return res.data;
+}

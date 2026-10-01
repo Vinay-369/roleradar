@@ -285,6 +285,30 @@ class TestStructuredProviderPayloads:
 
 
 class TestRouteSerializationAndStrip:
+    def test_route_strip_recovers_explicit_salary_from_undisclosed_legacy_record(self):
+        job = {
+            "id": "gh_example_123",
+            "source": "greenhouse",
+            "title": "Backend Engineer",
+            "company": "Example Co",
+            "description": "Compensation: ₹12–18 LPA based on experience.",
+            "location": "Bengaluru, India",
+            "job_type": "full_time",
+            "compensation_type": "UNDISCLOSED",
+            "compensation_text": None,
+            "salary_min": None,
+            "salary_max": None,
+            "salary_disclosed": False,
+        }
+
+        job_out = JobOut(**_strip_for_detail(job))
+
+        assert job_out.compensation_type == "SALARY"
+        assert job_out.compensation_text == "₹12–18 LPA"
+        assert job_out.salary_min == 12
+        assert job_out.salary_max == 18
+        assert job_out.salary_disclosed is True
+
     def test_route_strip_attaches_qualitative_compensation(self):
         job = {
             "id": "sr_blueberry_123",

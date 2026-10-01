@@ -645,6 +645,28 @@ class AIService:
                     user_prompt=user_prompt,
                     json_mode=False,
                 )
+            # Guard: if the model returns a response that mentions being unable to
+            # read an image (which can happen with vision-capable models that reject
+            # base64 payloads in text), rephrase it into a user-friendly message.
+            _image_error_patterns = [
+                "does not support image input",
+                "cannot read",
+                "unable to read image",
+                "can't view images",
+                "cannot interpret images",
+                "not support image",
+            ]
+            reply_lower = reply.lower()
+            if any(p in reply_lower for p in _image_error_patterns) and attachment_filename:
+                ext = (attachment_filename or "").rsplit(".", 1)[-1].lower()
+                if ext in ("png", "jpg", "jpeg", "webp"):
+                    reply = (
+                        "I wasn't able to extract text from the attached image "
+                        f"({attachment_filename}). This can happen when the local OCR engine "
+                        "(Tesseract) isn't installed or the model doesn't handle image input. "
+                        "**You can work around this by pasting the text content directly into the chat, "
+                        "or installing Tesseract OCR and restarting the server.**"
+                    )
             await self._log_operation(
                 operation="chat",
                 user_id=context.user_id,

@@ -8,6 +8,7 @@ class JobOut(BaseModel):
     internal_source: str | None = None
     title: str
     company: str
+    company_description: str | None = None
     industry: str | None = None
     description: str | None = None
     skills_required: list[str] = []

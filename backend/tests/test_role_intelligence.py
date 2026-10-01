@@ -13,12 +13,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.core.config import Settings
 from app.modules.learning.role_taxonomy import (
     ROLE_TAXONOMY,
+    ROLE_SPECIALIZATIONS,
     resolve_role,
 )
 from app.modules.learning.routes import (
     _aggregate_role_requirements,
     _compute_gaps,
     _provenance_to_roadmap_fields,
+    get_canonical_roles,
 )
 from app.modules.learning.schemas import RoadmapOut, SkillGapOut
 
@@ -138,6 +140,56 @@ def test_generic_tokens_alone_cannot_determine_role():
         profile, conf, _ = resolve_role(token)
         assert profile is None, f"Generic token '{token}' should not resolve to a canonical role"
         assert conf == "LOW"
+
+
+@pytest.mark.parametrize(
+    ("role", "expected_canonical", "required_competency"),
+    [
+        ("Java Full Stack Developer", "Java Full Stack Developer", "Spring Boot API Development"),
+        ("Python Full Stack Developer", "Python Full Stack Developer", "Django or FastAPI Backend Development"),
+        ("MERN Full Stack Developer", "MERN Full Stack Developer", "MongoDB Document Modeling"),
+        ("Python Backend Developer", "Python Backend Developer", "FastAPI or Django API Design"),
+        ("React Frontend Developer", "React Frontend Developer", "React Component and Hook Design"),
+        ("Kotlin Android Developer", "Kotlin Android Developer", "Jetpack Compose UI Architecture"),
+        ("AWS Cloud Engineer", "AWS Cloud Engineer", "AWS VPC and Network Design"),
+        ("Power BI Analyst", "Power BI Analyst", "DAX Measures and Filter Context"),
+    ],
+)
+def test_stack_specializations_resolve_to_distinct_role_competencies(
+    role, expected_canonical, required_competency
+):
+    profile, confidence, reason = resolve_role(role)
+
+    assert profile is not None
+    assert confidence == "HIGH"
+    assert "CONTROLLED_SPECIALIZATION" in reason
+    assert profile.canonical_role == expected_canonical
+    assert required_competency in profile.core_competencies
+
+
+def test_specialization_catalog_roles_are_all_resolvable():
+    for spec in ROLE_SPECIALIZATIONS.values():
+        assert spec.canonical_role, spec.specialization_id
+        profile, confidence, _ = resolve_role(spec.canonical_role)
+        assert profile is not None, spec.canonical_role
+        assert confidence == "HIGH", spec.canonical_role
+        assert profile.canonical_role == spec.canonical_role
+
+
+@pytest.mark.asyncio
+async def test_role_selector_catalog_includes_specialized_roles():
+    roles = await get_canonical_roles()
+    role_names = {role.role for role in roles}
+
+    assert len(role_names) == len(roles)
+    assert {
+        "Java Full Stack Developer",
+        "Python Full Stack Developer",
+        "MERN Full Stack Developer",
+        "AWS Cloud Engineer",
+        "Power BI Analyst",
+        "Application Security Engineer",
+    }.issubset(role_names)
 
 
 # ==============================================================================

@@ -1,17 +1,54 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Bookmark, Check, Sparkles, Calendar } from "lucide-react";
+import { MapPin, Bookmark, Check, Sparkles, Calendar, ArrowRight } from "lucide-react";
 import type { JobMatch } from "../../lib/jobs";
 import { formatCompensation } from "../../lib/compensation";
 import { saveApplication } from "../../lib/applications";
 import { WhyScoreModal } from "../common/WhyScoreModal";
 import { useToast } from "../../context/ToastContext";
 
-const READINESS_LABEL: Record<string, { label: string; className: string }> = {
-  ready: { label: "Ready to apply", className: "bg-signal-500/10 text-signal-700 border border-signal-500/20" },
-  fix_gaps: { label: "Fix gaps first", className: "bg-amber-500/10 text-amber-700 border border-amber-500/20" },
-  learn_first: { label: "Learn first", className: "bg-alert-600/10 text-alert-600 border border-alert-600/20" },
-};
+function getScoreRecommendation(score: number): {
+  label: string;
+  action: string;
+  destination: "tailor" | "skill-gaps" | "roadmap";
+  className: string;
+  guidance: string;
+} {
+  if (score >= 90) {
+    return {
+      label: "Your experience aligns well",
+      action: "Tailor resume",
+      destination: "tailor",
+      className: "bg-signal-500/10 text-signal-700 border border-signal-500/20",
+      guidance: "Your experience aligns well with this role. Tailor your resume to highlight the strongest evidence, then review eligibility and apply.",
+    };
+  }
+  if (score >= 70) {
+    return {
+      label: "Highlight your relevant experience",
+      action: "Tailor resume",
+      destination: "tailor",
+      className: "bg-teal-500/10 text-teal-700 border border-teal-500/20",
+      guidance: "Emphasize the experience and skills that best fit this role with a tailored resume.",
+    };
+  }
+  if (score >= 40) {
+    return {
+      label: "Close the most relevant skill gaps",
+      action: "Review skill gaps",
+      destination: "skill-gaps",
+      className: "bg-amber-500/10 text-amber-700 border border-amber-500/20",
+      guidance: "Review the role-specific skill gaps and focus on the requirements most relevant to your goals.",
+    };
+  }
+  return {
+    label: "Build skills for this career path",
+    action: "Explore learning roadmap",
+    destination: "roadmap",
+    className: "bg-alert-600/10 text-alert-600 border border-alert-600/20",
+    guidance: "Explore a learning roadmap for this role, build core skills, and revisit similar opportunities as your experience grows.",
+  };
+}
 
 export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetail?: () => void }) {
   const queryClient = useQueryClient();
@@ -28,43 +65,16 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
   const eligibility = job.eligibility;
   const isExpMismatch = eligibility?.status === "EXPERIENCE_MISMATCH";
   const isDegreeMismatch = eligibility?.status === "DEGREE_MISMATCH";
-  const isLocMismatch = eligibility?.status === "LOCATION_MISMATCH";
-  const isGradMismatch = eligibility?.status === "GRADUATION_MISMATCH";
-  const isIneligible = isExpMismatch || isDegreeMismatch || isLocMismatch || isGradMismatch;
   const isLikelyEligible = eligibility?.status === "LIKELY_ELIGIBLE";
   const isEligible = eligibility?.status === "ELIGIBLE" || isLikelyEligible;
-
-  // Truthful Readiness Badge (Part 4): Never claim "Ready to apply" when hard constraints fail!
-  const effectiveReadiness = (() => {
-    if (isIneligible) {
-      return {
-        label: "Not eligible",
-        className: "bg-alert-600/10 text-alert-700 border border-alert-600/30 font-bold",
-      };
-    }
-    if (eligibility?.status === "OPPORTUNITY_NOT_SUFFICIENTLY_SPECIFIED" || eligibility?.status === "UNKNOWN") {
-      return {
-        label: "Check requirement",
-        className: "bg-amber-500/10 text-amber-800 border border-amber-500/30 font-medium",
-      };
-    }
-    if (isLikelyEligible) {
-      if (job.overall_score !== null && job.overall_score !== undefined && job.overall_score >= 75) {
-        return {
-          label: "Ready to apply · Likely eligible",
-          className: "bg-signal-500/10 text-signal-700 border border-signal-500/30 font-semibold",
-        };
-      }
-      return {
-        label: "Likely eligible",
-        className: "bg-signal-500/10 text-signal-700 border border-signal-500/30 font-semibold",
-      };
-    }
-    if (job.apply_readiness) {
-      return READINESS_LABEL[job.apply_readiness];
-    }
-    return null;
-  })();
+  const scoreRecommendation = job.overall_score == null ? null : getScoreRecommendation(job.overall_score);
+  const recommendationPath = scoreRecommendation
+    ? scoreRecommendation.destination === "tailor"
+      ? `/resume/tailor/${job.job_id}`
+      : scoreRecommendation.destination === "skill-gaps"
+        ? `/growth/skill-gaps?jobId=${encodeURIComponent(job.job_id)}`
+        : `/growth/roadmap/${encodeURIComponent(job.job_id)}?role=${encodeURIComponent(job.job_title)}`
+    : null;
 
   // Honest Freshness Presentation (Part 5): Distinguish recent vs. evergreen active
   const freshnessLabel = (() => {
@@ -231,10 +241,25 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
           {job.has_match && job.overall_score !== null && job.overall_score !== undefined ? (
             <>
               <p className="text-2xl font-display font-bold text-ink-900">{job.overall_score}%</p>
-              {effectiveReadiness && (
-                <span className={`inline-block mt-1 rounded-full px-2.5 py-0.5 text-[11px] ${effectiveReadiness.className}`}>
-                  {effectiveReadiness.label}
-                </span>
+              {scoreRecommendation && (
+                <>
+                  <span
+                    className={`inline-block mt-1 rounded-full px-2.5 py-0.5 text-[11px] ${scoreRecommendation.className}`}
+                    title={`${scoreRecommendation.guidance} Eligibility checks are shown separately.`}
+                  >
+                    {scoreRecommendation.label}
+                  </span>
+                  {recommendationPath && scoreRecommendation.destination !== "tailor" && (
+                    <Link
+                      to={recommendationPath}
+                      className="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold text-signal-700 hover:text-signal-900 hover:underline"
+                      title={scoreRecommendation.guidance}
+                    >
+                      {scoreRecommendation.action}
+                      <ArrowRight size={11} />
+                    </Link>
+                  )}
+                </>
               )}
               <div className="mt-1">
                 <WhyScoreModal job={job} />

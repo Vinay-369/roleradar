@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2, Info, ArrowRight } from "lucide-react";
 import { getProfile } from "../../lib/profile";
@@ -56,19 +56,35 @@ function GapDetail({ gap }: { gap: SkillGap }) {
           {gap.priority}
         </span>
       </div>
-      <p className="text-[11px] text-ink-600 mb-2 leading-relaxed">{gap.reason}</p>
-      
+      <p className="text-[10px] text-ink-500 mb-1.5">
+        {gap.target_job_title}{gap.subdomain ? ` · ${gap.subdomain}` : ""}
+      </p>
+      <p className="text-[10px] text-ink-400 mb-1.5">
+        Suggested study time: about {gap.estimated_days} days
+      </p>
+      <div className="mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">Step 1 · Learn</p>
+        <p className="text-[11px] text-ink-600 leading-relaxed">{gap.reason}</p>
+      </div>
+
       <div className="bg-white/80 p-2.5 rounded-md border border-ink-100 mb-2.5">
         <p className="text-[11px] font-semibold text-ink-800 flex items-center gap-1 mb-0.5">
-          💡 Recommended Practice Project:
+          <span>Step 2 · Practice</span>
         </p>
         <p className="text-[11px] text-ink-600 leading-snug">{gap.project_suggestion}</p>
+      </div>
+
+      <div className="mb-2.5">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">Step 3 · Prove this skill for your target role</p>
+        <p className="text-[11px] text-ink-600 leading-relaxed">
+          Record the {gap.skill} deliverable, the decisions you made, and a measurable outcome. Add that role-relevant evidence to a project or your work history.
+        </p>
       </div>
 
       {gap.resources && gap.resources.length > 0 ? (
         <div>
           <p className="text-[10px] uppercase font-bold tracking-wider text-ink-400 mb-1.5 flex items-center gap-1">
-            <BookOpen size={11} className="text-signal-600" /> Recommended Study Resources:
+            <BookOpen size={11} className="text-signal-600" /> Curated resources for {gap.skill}:
           </p>
           <div className="flex flex-wrap gap-1.5">
             {gap.resources.map((url, j) => {
@@ -91,7 +107,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
         </div>
       ) : (
         <p className="text-[11px] text-ink-400 italic">
-          No curated resource available yet.
+          No curated resource is available for this skill yet; use the practice task above as your starting point.
         </p>
       )}
     </div>
@@ -133,10 +149,15 @@ function Bucket({ title, subtitle, skills, gapsBySkill }: { title: string; subti
 
 export function LearningRoadmap() {
   const { jobId } = useParams<{ jobId?: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedRole = searchParams.get("role");
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
-  const defaultRole = profile?.target_roles?.[0] || "Full Stack Developer";
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const defaultRole = requestedRole || profile?.target_roles?.[0] || "Full Stack Developer";
+  const [selectedRole, setSelectedRole] = useState<string>(requestedRole || "");
+  useEffect(() => {
+    setSelectedRole(requestedRole || "");
+  }, [requestedRole]);
   const [useGeneralMode, setUseGeneralMode] = useState(!jobId);
 
   const activeRole = selectedRole || defaultRole;
@@ -169,7 +190,7 @@ export function LearningRoadmap() {
 
   const availableRoles = useMemo(() => {
     if (!canonicalRoles || canonicalRoles.length === 0) return ALL_JOB_ROLES;
-    return canonicalRoles.map((r) => r.role);
+    return canonicalRoles;
   }, [canonicalRoles]);
 
   return (

@@ -71,15 +71,29 @@ DOMAIN_PRACTICE_TEMPLATES: dict[str, str] = {
 }
 
 
-def _project_suggestion(skill: str, domain: str | None = None) -> str:
+def _project_suggestion(
+    skill: str,
+    domain: str | None = None,
+    role: str | None = None,
+    subdomain: str | None = None,
+) -> str:
     if domain and domain in DOMAIN_PRACTICE_TEMPLATES:
-        return DOMAIN_PRACTICE_TEMPLATES[domain].format(skill=skill)
-    if domain:
+        suggestion = DOMAIN_PRACTICE_TEMPLATES[domain].format(skill=skill)
+    elif domain:
         dom_lower = domain.lower()
         for d_key, template in DOMAIN_PRACTICE_TEMPLATES.items():
             if d_key.lower() in dom_lower or dom_lower in d_key.lower():
-                return template.format(skill=skill)
-    return f"Complete a practical applied exercise or case study demonstrating {skill} with measurable results."
+                suggestion = template.format(skill=skill)
+                break
+        else:
+            suggestion = f"Complete a practical applied exercise or case study demonstrating {skill} with measurable results."
+    else:
+        suggestion = f"Complete a practical applied exercise or case study demonstrating {skill} with measurable results."
+
+    role_context = " / ".join(part for part in (role, subdomain) if part)
+    if role_context:
+        return f"For {role_context}: {suggestion}"
+    return suggestion
 
 
 # ---------------------------------------------------------------------------
@@ -302,7 +316,7 @@ def compute_skill_gaps(
             target_job_title=job_title,
             current_evidence=evidence,
             resources=get_resources_for_skill(skill),
-            project_suggestion=_project_suggestion(skill, domain),
+            project_suggestion=_project_suggestion(skill, domain, job_title, subdomain),
             estimated_days=PRIORITY_ESTIMATED_DAYS["CORE"],
             candidate_status=cand_status,
             source=source,
@@ -335,7 +349,7 @@ def compute_skill_gaps(
             target_job_title=job_title,
             current_evidence=evidence,
             resources=get_resources_for_skill(skill),
-            project_suggestion=_project_suggestion(skill, domain),
+            project_suggestion=_project_suggestion(skill, domain, job_title, subdomain),
             estimated_days=PRIORITY_ESTIMATED_DAYS["SECONDARY"],
             candidate_status=cand_status,
             source=source,
@@ -368,7 +382,7 @@ def compute_skill_gaps(
             target_job_title=job_title,
             current_evidence=evidence,
             resources=get_resources_for_skill(skill),
-            project_suggestion=_project_suggestion(skill, domain),
+            project_suggestion=_project_suggestion(skill, domain, job_title, subdomain),
             estimated_days=PRIORITY_ESTIMATED_DAYS["BONUS"],
             candidate_status=cand_status,
             source=source,
@@ -589,7 +603,9 @@ def evaluate_career_competencies(
                 target_job_title=profile.canonical_role,
                 current_evidence="MARKET_REQUIREMENT",
                 resources=get_resources_for_skill(comp),
-                project_suggestion=_project_suggestion(comp, profile.domain),
+                project_suggestion=_project_suggestion(
+                    comp, profile.domain, profile.canonical_role, profile.subdomain
+                ),
                 estimated_days=estimated_days,
                 candidate_status=None,
                 source=source,
@@ -772,7 +788,9 @@ def evaluate_career_competencies(
             target_job_title=profile.canonical_role,
             current_evidence=current_evidence,
             resources=get_resources_for_skill(comp),
-            project_suggestion=_project_suggestion(comp, profile.domain),
+            project_suggestion=_project_suggestion(
+                comp, profile.domain, profile.canonical_role, profile.subdomain
+            ),
             estimated_days=effective_days,
             candidate_status=cand_status,
             source=source,
@@ -822,4 +840,3 @@ def build_roadmap(gaps: list[SkillGap]) -> dict[str, list[str]]:
         "week_2": buckets[2],
         "month_1": buckets[3],
     }
-

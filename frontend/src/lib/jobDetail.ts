@@ -5,6 +5,7 @@ export type JobDetail = {
   source: string;
   title: string;
   company: string;
+  company_description?: string | null;
   industry: string;
   description: string;
   skills_required: string[];
@@ -35,6 +36,9 @@ export type JobDetail = {
   apply_url: string;
   responsibilities: string[];
   qualifications?: string[];
+  eligibility_text?: string | null;
+  degree_requirements?: string[];
+  graduation_year_requirements?: number[];
   verification_status?: string;
   verified_at?: string | null;
   last_verified_at?: string | null;

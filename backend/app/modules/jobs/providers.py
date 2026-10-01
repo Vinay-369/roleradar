@@ -47,31 +47,11 @@ class CuratedJobProvider:
         status_clause: dict
         if filters.get("include_all_statuses"):
             status_clause = {}
-        elif filters.get("include_benchmarks"):
-            status_clause = {
-                "verification_status": {
-                    "$in": [
-                        OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
-                        OpportunityLifecycleStatus.MARKET_BENCHMARK.value,
-                    ]
-                },
-                "source": {"$in": [*DIRECT_ATS_SOURCES, "curated_benchmark"]},
-            }
-        elif filters.get("active_discovery_only") or filters.get("direct_apply_only"):
+        else:
             status_clause = {
                 "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
                 "url_type": ApplicationUrlType.DIRECT_REQUISITION.value,
                 "source": {"$in": DIRECT_ATS_SOURCES},
-            }
-        else:
-            status_clause = {
-                "verification_status": {
-                    "$nin": [
-                        OpportunityLifecycleStatus.CLOSED.value,
-                        OpportunityLifecycleStatus.EXPIRED.value,
-                        OpportunityLifecycleStatus.INVALID.value,
-                    ]
-                }
             }
 
         and_clauses: list[dict] = [status_clause] if status_clause else []
@@ -165,11 +145,25 @@ class CuratedJobProvider:
         if isinstance(workplace_type, str) and workplace_type.upper() != "ALL":
             wp_upper = workplace_type.upper()
             if wp_upper == "REMOTE":
-                and_clauses.append({"$or": [{"is_remote": True}, {"location": {"$regex": "remote", "$options": "i"}}]})
+                and_clauses.append({"$or": [
+                    {"workplace_type": {"$in": ["REMOTE", "remote"]}},
+                    {"is_remote": True},
+                    {"location": {"$regex": "remote", "$options": "i"}},
+                ]})
             elif wp_upper == "HYBRID":
-                and_clauses.append({"location": {"$regex": "hybrid", "$options": "i"}})
+                and_clauses.append({"$or": [
+                    {"workplace_type": {"$in": ["HYBRID", "hybrid"]}},
+                    {"location": {"$regex": "hybrid", "$options": "i"}},
+                ]})
             elif wp_upper == "ON_SITE":
-                and_clauses.append({"is_remote": {"$ne": True}, "location": {"$not": {"$regex": "remote", "$options": "i"}}})
+                and_clauses.append({"$or": [
+                    {"workplace_type": {"$in": ["ON_SITE", "ONSITE", "on_site", "onsite"]}},
+                    {"$and": [
+                        {"workplace_type": {"$nin": ["REMOTE", "remote", "HYBRID", "hybrid"]}},
+                        {"is_remote": {"$ne": True}},
+                        {"location": {"$not": {"$regex": "remote|hybrid", "$options": "i"}}},
+                    ]},
+                ]})
 
         # Canonical Registration Career Stage
         stage = filters.get("stage")
@@ -258,7 +252,7 @@ class CuratedJobProvider:
         elif sort_by == "stipend":
             sort_spec = [("stipend", -1), ("stipend_min", -1), ("salary_disclosed", -1), ("compensation_text", -1), ("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
         else:
-            sort_spec = [("quality_tier", 1), ("completeness_status", 1), ("posted_days_ago", 1), ("id", 1)]
+            sort_spec = [("posted_days_ago", 1), ("quality_tier", 1), ("completeness_status", 1), ("id", 1)]
 
         jobs = await repo.find_jobs(self._db, mongo_filter, limit=limit, skip=skip, sort=sort_spec)
         from app.modules.jobs.taxonomy import normalize_provider_experience

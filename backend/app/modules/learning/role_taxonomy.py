@@ -1731,6 +1731,7 @@ class RoleSpecialization:
     domain_override: str | None = None
     subdomain_override: str | None = None
     required_modifier_tokens: set[str] = field(default_factory=set)
+    canonical_role: str | None = None
     additional_core_competencies: list[str] = field(default_factory=list)
     additional_common_competencies: list[str] = field(default_factory=list)
     additional_tools: list[str] = field(default_factory=list)
@@ -1741,6 +1742,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "healthcare_data": RoleSpecialization(
         specialization_id="healthcare_data",
         target_role_family="data_analyst",
+        canonical_role="Healthcare Data Analyst",
         domain_override="Healthcare",
         subdomain_override="Healthcare & Clinical Analytics",
         required_modifier_tokens={"healthcare"},
@@ -1752,6 +1754,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "clinical_data": RoleSpecialization(
         specialization_id="clinical_data",
         target_role_family="data_analyst",
+        canonical_role="Clinical Data Analyst",
         domain_override="Pharmaceutical / Life Sciences",
         subdomain_override="Clinical Trial Data Analysis",
         required_modifier_tokens={"clinical"},
@@ -1763,6 +1766,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "application_security": RoleSpecialization(
         specialization_id="application_security",
         target_role_family="security_engineer",
+        canonical_role="Application Security Engineer",
         domain_override="Cybersecurity",
         subdomain_override="Application Security & Secure SDLC",
         required_modifier_tokens={"application"},
@@ -1774,6 +1778,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "cloud_security": RoleSpecialization(
         specialization_id="cloud_security",
         target_role_family="security_engineer",
+        canonical_role="Cloud Security Engineer",
         domain_override="Cybersecurity",
         subdomain_override="Cloud Security & Posture Management",
         required_modifier_tokens={"cloud"},
@@ -1785,6 +1790,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "product_operations": RoleSpecialization(
         specialization_id="product_operations",
         target_role_family="product_manager",
+        canonical_role="Product Operations Manager",
         domain_override="Product",
         subdomain_override="Product Operations & Analytics",
         required_modifier_tokens={"operations"},
@@ -1796,6 +1802,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "growth_marketing": RoleSpecialization(
         specialization_id="growth_marketing",
         target_role_family="digital_marketing_specialist",
+        canonical_role="Growth Marketing Specialist",
         domain_override="Marketing",
         subdomain_override="Growth & User Acquisition",
         required_modifier_tokens={"growth"},
@@ -1807,6 +1814,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "sales_operations": RoleSpecialization(
         specialization_id="sales_operations",
         target_role_family="operations_analyst",
+        canonical_role="Sales Operations Analyst",
         domain_override="Sales / Business",
         subdomain_override="Sales Operations & Enablement",
         required_modifier_tokens={"sales"},
@@ -1818,6 +1826,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "hospital_operations": RoleSpecialization(
         specialization_id="hospital_operations",
         target_role_family="operations_analyst",
+        canonical_role="Hospital Operations Analyst",
         domain_override="Healthcare",
         subdomain_override="Hospital Operations & Patient Flow",
         required_modifier_tokens={"hospital"},
@@ -1829,6 +1838,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "manufacturing_operations": RoleSpecialization(
         specialization_id="manufacturing_operations",
         target_role_family="manufacturing_engineer",
+        canonical_role="Manufacturing Operations Engineer",
         domain_override="Manufacturing",
         subdomain_override="Plant & Production Operations",
         required_modifier_tokens={"operations"},
@@ -1840,6 +1850,7 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
     "legal_operations": RoleSpecialization(
         specialization_id="legal_operations",
         target_role_family="legal_associate",
+        canonical_role="Legal Operations Associate",
         domain_override="Legal / Compliance",
         subdomain_override="Legal Operations & Technology",
         required_modifier_tokens={"operations"},
@@ -1847,6 +1858,150 @@ ROLE_SPECIALIZATIONS: dict[str, RoleSpecialization] = {
         additional_common_competencies=["Legal Vendor Due Diligence", "Contract SLA & Turnaround Tracking"],
         additional_tools=["Ironclad", "SimpleLegal / Brightflag", "DocuSign", "Excel", "Tableau"],
         additional_knowledge=["Legal Department Operations (CLOC Core 12)", "E-Billing Standards (LEDES)", "Corporate Legal Governance"],
+    ),
+    "java_full_stack": RoleSpecialization(
+        specialization_id="java_full_stack", target_role_family="full_stack_developer",
+        canonical_role="Java Full Stack Developer", required_modifier_tokens={"java"},
+        additional_core_competencies=["Java Application Development", "Spring Boot API Development", "React-Based User Interfaces", "Relational Data Persistence", "End-to-End Java Web Application Delivery"],
+        additional_common_competencies=["Spring Security", "JPA / Hibernate", "REST API Integration"],
+        additional_tools=["Java", "Spring Boot", "React", "PostgreSQL", "Maven"],
+        additional_knowledge=["JVM Fundamentals", "Spring Application Architecture"],
+    ),
+    "python_full_stack": RoleSpecialization(
+        specialization_id="python_full_stack", target_role_family="full_stack_developer",
+        canonical_role="Python Full Stack Developer", required_modifier_tokens={"python"},
+        additional_core_competencies=["Python Web Application Development", "Django or FastAPI Backend Development", "React-Based User Interfaces", "Relational Data Persistence", "End-to-End Python Web Application Delivery"],
+        additional_common_competencies=["Python API Authentication", "ORM Data Modeling", "Frontend API Integration"],
+        additional_tools=["Python", "Django", "FastAPI", "React", "PostgreSQL"],
+        additional_knowledge=["Python Runtime Fundamentals", "Web Application Security"],
+    ),
+    "mern_full_stack": RoleSpecialization(
+        specialization_id="mern_full_stack", target_role_family="full_stack_developer",
+        canonical_role="MERN Full Stack Developer", required_modifier_tokens={"mern"},
+        additional_core_competencies=["MongoDB Document Modeling", "Express.js API Development", "React Component and State Architecture", "Node.js Runtime and Service Design", "End-to-End JavaScript Application Delivery"],
+        additional_common_competencies=["JWT Authentication", "MERN Deployment", "API Validation and Error Handling"],
+        additional_tools=["MongoDB", "Express.js", "React", "Node.js", "TypeScript"],
+        additional_knowledge=["JavaScript Event Loop", "Document Database Trade-offs"],
+    ),
+    "java_backend": RoleSpecialization(
+        specialization_id="java_backend", target_role_family="backend_developer",
+        canonical_role="Java Backend Developer", required_modifier_tokens={"java"},
+        additional_core_competencies=["Java Service Development", "Spring Boot REST API Design", "JPA / Hibernate Persistence", "JVM Performance and Concurrency", "Java Service Testing"],
+        additional_common_competencies=["Spring Security", "Kafka-Based Messaging", "JVM Observability"],
+        additional_tools=["Java", "Spring Boot", "Maven", "PostgreSQL", "Kafka"],
+        additional_knowledge=["JVM Memory Model", "Spring Dependency Injection"],
+    ),
+    "python_backend": RoleSpecialization(
+        specialization_id="python_backend", target_role_family="backend_developer",
+        canonical_role="Python Backend Developer", required_modifier_tokens={"python"},
+        additional_core_competencies=["Python Service Development", "FastAPI or Django API Design", "Python Data Modeling and Persistence", "Async I/O and Task Execution", "Python Service Testing"],
+        additional_common_competencies=["Pydantic Validation", "Celery Task Queues", "Python Profiling"],
+        additional_tools=["Python", "FastAPI", "Django", "PostgreSQL", "Redis"],
+        additional_knowledge=["Python Runtime and Packaging", "ASGI Service Architecture"],
+    ),
+    "node_backend": RoleSpecialization(
+        specialization_id="node_backend", target_role_family="backend_developer",
+        canonical_role="Node.js Backend Developer", required_modifier_tokens={"nodejs"},
+        additional_core_competencies=["Node.js Service Development", "Express or NestJS API Design", "Event Loop and Asynchronous I/O", "Node.js Data Access and Transactions", "Node.js Service Testing"],
+        additional_common_competencies=["Message Queue Consumers", "API Rate Limiting", "Node.js Runtime Profiling"],
+        additional_tools=["Node.js", "TypeScript", "Express.js", "PostgreSQL", "Redis"],
+        additional_knowledge=["JavaScript Event Loop", "Node.js Process and Worker Model"],
+    ),
+    "go_backend": RoleSpecialization(
+        specialization_id="go_backend", target_role_family="backend_developer",
+        canonical_role="Go Backend Developer", required_modifier_tokens={"go"},
+        additional_core_competencies=["Go Service Development", "Goroutine and Channel Concurrency", "Go HTTP and gRPC API Design", "Go Data Access and Transactions", "Go Service Testing"],
+        additional_common_competencies=["Go Profiling and pprof", "Graceful Service Shutdown", "Go Module Management"],
+        additional_tools=["Go", "PostgreSQL", "gRPC", "Docker", "Prometheus"],
+        additional_knowledge=["Go Runtime Scheduler", "Context-Based Cancellation"],
+    ),
+    "react_frontend": RoleSpecialization(
+        specialization_id="react_frontend", target_role_family="frontend_developer",
+        canonical_role="React Frontend Developer", required_modifier_tokens={"react"},
+        additional_core_competencies=["React Component and Hook Design", "React State and Data Fetching", "Accessible React Interface Delivery", "React Performance Profiling", "React Component Testing"],
+        additional_common_competencies=["TypeScript in React", "React Router", "Server Components and Rendering"],
+        additional_tools=["React", "TypeScript", "Vite", "React Testing Library", "Playwright"],
+        additional_knowledge=["React Rendering Model", "Web Accessibility"],
+    ),
+    "angular_frontend": RoleSpecialization(
+        specialization_id="angular_frontend", target_role_family="frontend_developer",
+        canonical_role="Angular Frontend Developer", required_modifier_tokens={"angular"},
+        additional_core_competencies=["Angular Component and Dependency-Injection Architecture", "RxJS Stream Composition", "Angular Forms and Validation", "Angular Accessibility and Responsive Delivery", "Angular Unit and Component Testing"],
+        additional_common_competencies=["Angular Signals and State", "Route Guards", "Lazy-Loaded Feature Design"],
+        additional_tools=["Angular", "TypeScript", "RxJS", "Angular CLI", "Karma"],
+        additional_knowledge=["Angular Change Detection", "Reactive Programming"],
+    ),
+    "vue_frontend": RoleSpecialization(
+        specialization_id="vue_frontend", target_role_family="frontend_developer",
+        canonical_role="Vue.js Frontend Developer", required_modifier_tokens={"vuejs"},
+        additional_core_competencies=["Vue Composition API and Component Design", "Pinia State Management", "Vue Router and Navigation", "Accessible Vue Interface Delivery", "Vue Component Testing"],
+        additional_common_competencies=["Vue and TypeScript Integration", "Nuxt Rendering Modes", "Composable API Design"],
+        additional_tools=["Vue.js", "TypeScript", "Pinia", "Vue Router", "Vitest"],
+        additional_knowledge=["Vue Reactivity System", "Progressive Enhancement"],
+    ),
+    "kotlin_android": RoleSpecialization(
+        specialization_id="kotlin_android", target_role_family="mobile_developer",
+        canonical_role="Kotlin Android Developer", required_modifier_tokens={"kotlin"},
+        additional_core_competencies=["Kotlin Android Application Development", "Jetpack Compose UI Architecture", "Android Lifecycle and State Management", "Offline-First Android Data Persistence", "Android App Testing and Release"],
+        additional_common_competencies=["Coroutines and Flow", "Room Database", "Android Performance Diagnostics"],
+        additional_tools=["Kotlin", "Android Studio", "Jetpack Compose", "Room", "Gradle"],
+        additional_knowledge=["Android Lifecycle", "Material Design for Android"],
+    ),
+    "swift_ios": RoleSpecialization(
+        specialization_id="swift_ios", target_role_family="mobile_developer",
+        canonical_role="Swift iOS Developer", required_modifier_tokens={"swift"},
+        additional_core_competencies=["Swift iOS Application Development", "SwiftUI View and State Architecture", "iOS Concurrency and Async Work", "Local Persistence and Synchronization", "iOS Testing, Signing, and Release"],
+        additional_common_competencies=["Combine Data Flows", "Core Data Modeling", "Instruments Performance Analysis"],
+        additional_tools=["Swift", "SwiftUI", "Xcode", "Core Data", "TestFlight"],
+        additional_knowledge=["iOS App Lifecycle", "Apple Human Interface Guidelines"],
+    ),
+    "flutter_mobile": RoleSpecialization(
+        specialization_id="flutter_mobile", target_role_family="mobile_developer",
+        canonical_role="Flutter Mobile Developer", required_modifier_tokens={"flutter"},
+        additional_core_competencies=["Flutter and Dart Application Development", "Widget Composition and Layout", "Flutter State Management", "Platform Channel Integration", "Flutter Testing and Store Release"],
+        additional_common_competencies=["Offline Data Synchronization", "Flutter Performance Profiling", "Accessibility Semantics"],
+        additional_tools=["Flutter", "Dart", "Riverpod", "Firebase", "Android Studio"],
+        additional_knowledge=["Flutter Rendering Pipeline", "Cross-Platform UX"],
+    ),
+    "aws_cloud_engineer": RoleSpecialization(
+        specialization_id="aws_cloud_engineer", target_role_family="cloud_engineer",
+        canonical_role="AWS Cloud Engineer", required_modifier_tokens={"aws"},
+        additional_core_competencies=["AWS VPC and Network Design", "AWS IAM and Least-Privilege Access", "AWS Compute and Container Operations", "CloudFormation or Terraform Infrastructure as Code", "AWS Monitoring, Backup, and Recovery"],
+        additional_common_competencies=["AWS Cost and Well-Architected Reviews", "AWS Security Hub Operations"],
+        additional_tools=["AWS", "CloudFormation", "Terraform", "CloudWatch", "EKS"],
+        additional_knowledge=["AWS Shared Responsibility Model", "Multi-Account AWS Governance"],
+    ),
+    "azure_cloud_engineer": RoleSpecialization(
+        specialization_id="azure_cloud_engineer", target_role_family="cloud_engineer",
+        canonical_role="Azure Cloud Engineer", required_modifier_tokens={"azure"},
+        additional_core_competencies=["Azure Virtual Network and Connectivity Design", "Microsoft Entra ID and Azure RBAC", "Azure Compute and Container Operations", "Bicep or Terraform Infrastructure as Code", "Azure Monitor, Backup, and Recovery"],
+        additional_common_competencies=["Azure Policy Governance", "Azure Cost Management"],
+        additional_tools=["Microsoft Azure", "Bicep", "Terraform", "Azure Monitor", "AKS"],
+        additional_knowledge=["Azure Landing Zones", "Cloud Identity Governance"],
+    ),
+    "gcp_cloud_engineer": RoleSpecialization(
+        specialization_id="gcp_cloud_engineer", target_role_family="cloud_engineer",
+        canonical_role="Google Cloud Engineer", required_modifier_tokens={"google"},
+        additional_core_competencies=["Google Cloud VPC and Network Design", "Google Cloud IAM and Service Accounts", "GCP Compute and GKE Operations", "Terraform Infrastructure on Google Cloud", "Cloud Logging, Monitoring, and Recovery"],
+        additional_common_competencies=["Organization Policy and Folder Governance", "Google Cloud Cost Optimization"],
+        additional_tools=["Google Cloud Platform", "Terraform", "GKE", "Cloud Logging", "BigQuery"],
+        additional_knowledge=["Google Cloud Resource Hierarchy", "Cloud IAM Federation"],
+    ),
+    "power_bi_analyst": RoleSpecialization(
+        specialization_id="power_bi_analyst", target_role_family="bi_analyst",
+        canonical_role="Power BI Analyst", required_modifier_tokens={"power"},
+        additional_core_competencies=["Power BI Semantic Model Design", "DAX Measures and Filter Context", "Power Query Data Preparation", "Row-Level Security and Workspace Governance", "Executive Dashboard Usability and Refresh Reliability"],
+        additional_common_competencies=["Incremental Refresh Design", "Power BI Deployment Pipelines"],
+        additional_tools=["Power BI", "DAX", "Power Query", "SQL", "Excel"],
+        additional_knowledge=["Star Schema for Power BI", "Self-Service BI Governance"],
+    ),
+    "tableau_analyst": RoleSpecialization(
+        specialization_id="tableau_analyst", target_role_family="bi_analyst",
+        canonical_role="Tableau BI Analyst", required_modifier_tokens={"tableau"},
+        additional_core_competencies=["Tableau Data Modeling and Relationships", "LOD Expressions and Table Calculations", "Interactive Dashboard Design", "Extract Refresh and Performance Optimization", "Tableau Server Publishing and Permissions"],
+        additional_common_competencies=["Dashboard Accessibility", "Tableau Prep Data Flows"],
+        additional_tools=["Tableau", "Tableau Prep", "SQL", "Excel", "Tableau Server"],
+        additional_knowledge=["Visual Analytics Principles", "Analytics Content Governance"],
     ),
 }
 
@@ -1858,7 +2013,7 @@ def _compose_specialized_profile(
 ) -> RoleCompetencyProfile:
     """Safely and deterministically composes a specialized competency profile from a base profile and bounded specialization."""
     title_words = [w.capitalize() for w in input_role_name.strip().split()]
-    canonical_title = " ".join(title_words)
+    canonical_title = spec.canonical_role or " ".join(title_words)
 
     combined_core = list(spec.additional_core_competencies)
     for c in base_profile.core_competencies:
@@ -1934,6 +2089,35 @@ def _expand_compound_titles(title: str) -> list[str]:
     return res
 
 
+def _resolve_controlled_specialization(
+    role_name: str,
+    discriminative_tokens: set[str],
+) -> tuple[RoleCompetencyProfile, str] | None:
+    for spec in ROLE_SPECIALIZATIONS.values():
+        target_prof = ROLE_TAXONOMY.get(spec.target_role_family)
+        if not target_prof:
+            continue
+
+        base_token_sets = [
+            set(_normalize_role_input(target_prof.canonical_role).split()) - GENERIC_ROLE_TOKENS
+        ]
+        base_token_sets.extend(
+            set(_normalize_role_input(alias).split()) - GENERIC_ROLE_TOKENS
+            for alias in target_prof.aliases
+        )
+        if any(
+            base_tokens
+            and base_tokens.issubset(discriminative_tokens)
+            and discriminative_tokens - base_tokens == spec.required_modifier_tokens
+            for base_tokens in base_token_sets
+        ):
+            return (
+                _compose_specialized_profile(target_prof, spec, role_name),
+                f"CONTROLLED_SPECIALIZATION ({spec.specialization_id})",
+            )
+    return None
+
+
 def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, RoleConfidence, str]:
     """
     Authoritative Semantic Role Resolver.
@@ -1966,6 +2150,13 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
     for canon_name, prof in _ROLE_CANONICAL_LOOKUP.items():
         if _normalize_role_input(canon_name) == norm:
             return prof, "HIGH", "EXACT_CANONICAL_MATCH"
+
+    specialized = _resolve_controlled_specialization(
+        role_name,
+        set(norm.split()) - GENERIC_ROLE_TOKENS - SENIORITY_ROLE_MODIFIERS,
+    )
+    if specialized:
+        return specialized[0], "HIGH", specialized[1]
 
     # 2. Exact alias match
     if norm in _ROLE_ALIAS_LOOKUP:
@@ -2071,26 +2262,6 @@ def resolve_role(role_name: str | None) -> tuple[RoleCompetencyProfile | None, R
         best_prof, best_overlap, best_ratio = candidates[0]
         conf: RoleConfidence = "HIGH" if best_ratio >= 0.9 else "MEDIUM"
         return best_prof, conf, f"DISCRIMINATIVE_MATCH (ratio={best_ratio:.2f})"
-
-    # 5. Controlled Specialization Matching
-    # Decompose input into (base_role_family, specialization_modifier)
-    # Allows safe, bounded resolution for compound roles (e.g. Healthcare Data Analyst, Cloud Security Engineer)
-    for spec in ROLE_SPECIALIZATIONS.values():
-        target_prof = ROLE_TAXONOMY.get(spec.target_role_family)
-        if not target_prof:
-            continue
-        
-        # Check canonical tokens and alias tokens of the base profile
-        base_token_sets = [set(_normalize_role_input(target_prof.canonical_role).split()) - GENERIC_ROLE_TOKENS]
-        for a in target_prof.aliases:
-            base_token_sets.append(set(_normalize_role_input(a).split()) - GENERIC_ROLE_TOKENS)
-
-        for base_tokens in base_token_sets:
-            if base_tokens and base_tokens.issubset(discriminative_tokens):
-                remaining_tokens = discriminative_tokens - base_tokens
-                if remaining_tokens and remaining_tokens == spec.required_modifier_tokens:
-                    composed = _compose_specialized_profile(target_prof, spec, role_name)
-                    return composed, "HIGH", f"CONTROLLED_SPECIALIZATION ({spec.specialization_id})"
 
     # 6. Specialized Niche / Unknown Roles
     # Examples: "Marine Robotics Engineer", "Spacecraft Propulsion Specialist", "Quantum Cryogenics Technician"

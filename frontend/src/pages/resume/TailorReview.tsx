@@ -1065,7 +1065,7 @@ export function TailorReview() {
       {/* ========================================================================= */}
       {/* 13. DIRECT APPLY & APPLICATION CONTINUITY (P1-03)                        */}
       {/* ========================================================================= */}
-      <div className="rounded-xl border border-signal-500/30 bg-gradient-to-br from-signal-500/5 via-white to-white p-6 shadow-xs space-y-4">
+      <div className="rr-direct-apply-panel rounded-xl border border-signal-500/30 bg-gradient-to-br from-signal-500/5 via-white to-white p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1169,4 +1169,3 @@ export function TailorReview() {
 }
 
 export default TailorReview;
-

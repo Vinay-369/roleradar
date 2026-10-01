@@ -8,7 +8,13 @@ import {
   Timer, Play, RotateCcw, Bot,
 } from "lucide-react";
 import { getProfile } from "../../lib/profile";
-import { type InterviewQuestion } from "../../lib/interview";
+import {
+  getCuratedInterviewQuestions,
+  getInterviewQuestions,
+  type InterviewPrep,
+  type InterviewQuestion,
+} from "../../lib/interview";
+import { getCanonicalRoles } from "../../lib/learning";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
 import { ALL_JOB_ROLES } from "../../lib/roleConstants";
 
@@ -44,15 +50,6 @@ const MOCK_PLATFORMS = [
     tag: "Free Guides & Cheatsheets",
   },
 ];
-
-import {
-  FULL_STACK_QUESTIONS,
-  BACKEND_QUESTIONS,
-  FRONTEND_QUESTIONS,
-  DATA_SCIENCE_QUESTIONS,
-  DEVOPS_QUESTIONS,
-  CORE_SWE_QUESTIONS,
-} from "./interviewRoleData";
 
 function PracticeTimer() {
   const [secondsLeft, setSecondsLeft] = useState(120);
@@ -283,14 +280,40 @@ function QuestionCard({
 }
 
 export function Interview() {
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
+  const profileQuery = useQuery({ queryKey: ["profile"], queryFn: getProfile });
+  const profile = profileQuery.data;
+  const { data: canonicalRoles } = useQuery({
+    queryKey: ["canonical-roles"],
+    queryFn: getCanonicalRoles,
+  });
 
   const defaultRole = profile?.target_roles?.[0] || "Full Stack Developer";
-  const [selectedRole, setSelectedRole] = useState<string>(defaultRole);
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"technical" | "managerial" | "hr">("technical");
   const [filterView, setFilterView] = useState<"all" | "bookmarked" | "pending">("all");
 
   const effectiveRole = selectedRole || defaultRole;
+  const roleOptions = canonicalRoles?.length ? canonicalRoles : ALL_JOB_ROLES;
+
+  const interviewQuery = useQuery({
+    queryKey: ["interview-questions", effectiveRole],
+    queryFn: async (): Promise<InterviewPrep & { usedCuratedFallback?: boolean }> => {
+      try {
+        return await getInterviewQuestions({ role: effectiveRole });
+      } catch (generationError) {
+        try {
+          return {
+            ...(await getCuratedInterviewQuestions(effectiveRole)),
+            usedCuratedFallback: true,
+          };
+        } catch {
+          throw generationError;
+        }
+      }
+    },
+    enabled: Boolean(effectiveRole) && profileQuery.isFetched,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Stored mastered and bookmarked questions
   const [masteredMap, setMasteredMap] = useState<Record<string, boolean>>(() => {
@@ -335,30 +358,14 @@ export function Interview() {
     setBookmarkMap((prev) => ({ ...prev, [qKey]: !prev[qKey] }));
   };
 
-  // Resolve role-specific questions
-  const roleBank = useMemo(() => {
-    const lower = effectiveRole.toLowerCase();
-    if (lower.includes("frontend") || lower.includes("react") || lower.includes("ui") || lower.includes("vue") || lower.includes("angular")) {
-      return FRONTEND_QUESTIONS;
-    }
-    if (lower.includes("backend") || lower.includes("node") || lower.includes("python") || lower.includes("java") || lower.includes("api") || lower.includes("golang")) {
-      return BACKEND_QUESTIONS;
-    }
-    if (lower.includes("data") || lower.includes("machine learning") || lower.includes("ai") || lower.includes("ml") || lower.includes("analyst")) {
-      return DATA_SCIENCE_QUESTIONS;
-    }
-    if (lower.includes("devops") || lower.includes("cloud") || lower.includes("sre") || lower.includes("infra") || lower.includes("kubernetes")) {
-      return DEVOPS_QUESTIONS;
-    }
-    if (lower.includes("full stack") || lower.includes("fullstack") || lower.includes("web developer")) {
-      return FULL_STACK_QUESTIONS;
-    }
-    return CORE_SWE_QUESTIONS;
-  }, [effectiveRole]);
-
   const currentQuestions = useMemo(() => {
-    return roleBank[activeTab] || roleBank.technical;
-  }, [roleBank, activeTab]);
+    return (interviewQuery.data?.questions ?? []).filter((question) => {
+      const category = question.category.toLowerCase();
+      if (activeTab === "hr") return category === "hr" || category === "behavioral";
+      if (activeTab === "managerial") return category === "managerial" || category === "project_defense";
+      return category === "technical" || category === "role_specific";
+    });
+  }, [interviewQuery.data?.questions, activeTab]);
 
   // Compute stats
   const masteredCount = useMemo(() => {
@@ -387,7 +394,7 @@ export function Interview() {
           <h1 className="font-display text-2xl text-ink-900">Interview Preparation</h1>
         </div>
         <p className="text-ink-500 text-sm">
-          Job-role specific interview questions. Master the Top 20 essential questions for your chosen discipline across Technical, Managerial, and HR rounds with model answers, 2-minute mock timers, and free peer practice links.
+          Interview questions are generated for your selected role and experience, with model answers, 2-minute practice timers, and free peer practice links.
         </p>
       </div>
 
@@ -397,9 +404,9 @@ export function Interview() {
           label="Select Target Job Role:"
           selectedRole={selectedRole}
           onRoleChange={setSelectedRole}
-          roles={ALL_JOB_ROLES}
+          roles={roleOptions}
           includeAllOption={false}
-          helperText="Select or type any job role to load specialized technical, managerial, and HR interview questions."
+          helperText="Choose a specialized role or enter a custom title to generate role-specific interview questions."
         />
       </div>
 
@@ -467,7 +474,7 @@ export function Interview() {
               : "text-ink-500 hover:text-ink-800"
           }`}
         >
-          <Code2 size={14} /> 💻 Technical Round (Top 20)
+          <Code2 size={14} /> 💻 Technical Round
         </button>
         <button
           onClick={() => setActiveTab("managerial")}
@@ -477,7 +484,7 @@ export function Interview() {
               : "text-ink-500 hover:text-ink-800"
           }`}
         >
-          <Users size={14} /> 👔 Managerial Round (Top 20)
+          <Users size={14} /> 👔 Managerial Round
         </button>
         <button
           onClick={() => setActiveTab("hr")}
@@ -487,7 +494,7 @@ export function Interview() {
               : "text-ink-500 hover:text-ink-800"
           }`}
         >
-          <Briefcase size={14} /> 🤝 HR & Culture Round (Top 20)
+          <Briefcase size={14} /> 🤝 HR & Culture Round
         </button>
       </div>
 
@@ -501,7 +508,35 @@ export function Interview() {
 
       {/* Question Cards List */}
       <div className="space-y-4">
-        {displayedQuestions.map((q, idx) => {
+        {interviewQuery.isLoading ? (
+          <div className="rounded-xl border border-ink-100 bg-white p-8 text-center text-sm text-ink-500">
+            Preparing role-specific questions for {effectiveRole}…
+          </div>
+        ) : interviewQuery.isError ? (
+          <div className="rounded-xl border border-alert-600/20 bg-alert-600/5 p-6 text-center">
+            <p className="text-sm font-semibold text-alert-700">Interview questions could not be loaded.</p>
+            <p className="text-xs text-ink-600 mt-1">
+              Generated and curated questions are unavailable. Please try again; your selected role is unchanged.
+            </p>
+            <button
+              onClick={() => void interviewQuery.refetch()}
+              className="mt-3 rounded-lg bg-ink-950 px-3 py-1.5 text-xs font-semibold text-white hover:bg-ink-800"
+            >
+              Try again
+            </button>
+          </div>
+        ) : displayedQuestions.length === 0 ? (
+          <div className="rounded-xl border border-ink-100 bg-white p-6 text-center text-sm text-ink-500">
+            No questions are available for this round yet. Choose another round or try generating the questions again.
+          </div>
+        ) : (
+          <>
+          {interviewQuery.data?.usedCuratedFallback && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Showing curated questions because personalized generation is temporarily unavailable.
+            </p>
+          )}
+          {displayedQuestions.map((q, idx) => {
           const qKey = `${effectiveRole}_${activeTab}_${q.question}`;
           return (
             <QuestionCard
@@ -515,7 +550,9 @@ export function Interview() {
               onToggleBookmarked={() => toggleBookmarked(qKey)}
             />
           );
-        })}
+          })}
+          </>
+        )}
       </div>
 
       {/* Free Mock Interview Practice Platforms */}

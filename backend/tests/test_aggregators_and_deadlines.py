@@ -210,6 +210,7 @@ def test_public_feed_allows_only_verified_direct_ats_sources():
     query = provider._build_mongo_query({
         "active_discovery_only": True,
         "direct_apply_only": True,
+        "include_benchmarks": True,
     })
     status_clause = next(
         clause for clause in query["$and"]
@@ -217,6 +218,51 @@ def test_public_feed_allows_only_verified_direct_ats_sources():
     )
     assert status_clause["url_type"] == ApplicationUrlType.DIRECT_REQUISITION.value
     assert status_clause["source"] == {"$in": ("ashby", "greenhouse", "lever", "smartrecruiters")}
+
+    default_query = provider._build_mongo_query({"include_benchmarks": True})
+    default_status_clause = next(
+        clause for clause in default_query["$and"]
+        if clause.get("verification_status") == "VERIFIED_ACTIVE"
+    )
+    assert default_status_clause["url_type"] == ApplicationUrlType.DIRECT_REQUISITION.value
+    assert default_status_clause["source"] == {"$in": ("ashby", "greenhouse", "lever", "smartrecruiters")}
+
+
+@pytest.mark.parametrize(
+    ("workplace_type", "expected_types"),
+    [
+        ("remote", {"REMOTE", "remote"}),
+        ("hybrid", {"HYBRID", "hybrid"}),
+        ("on_site", {"ON_SITE", "ONSITE", "on_site", "onsite"}),
+    ],
+)
+def test_workplace_filter_includes_normalized_workplace_types(workplace_type, expected_types):
+    provider = CuratedJobProvider(None)
+    query = provider._build_mongo_query({"workplace_type": workplace_type})
+    workplace_clause = next(
+        clause for clause in query["$and"]
+        if "$or" in clause and any("workplace_type" in branch for branch in clause["$or"])
+    )
+    values = {
+        value
+        for branch in workplace_clause["$or"]
+        if "workplace_type" in branch
+        for value in branch["workplace_type"].get("$in", [])
+    }
+    assert values == expected_types
+    if workplace_type == "on_site":
+        legacy_fallback = next(
+            branch["$and"]
+            for branch in workplace_clause["$or"]
+            if "$and" in branch
+        )
+        exclusions = next(
+            clause["workplace_type"]["$nin"]
+            for clause in legacy_fallback
+            if "workplace_type" in clause
+        )
+        assert {"HYBRID", "hybrid", "REMOTE", "remote"} <= set(exclusions)
+        assert {"location": {"$not": {"$regex": "remote|hybrid", "$options": "i"}}} in legacy_fallback
 
 
 @pytest.mark.asyncio
@@ -232,6 +278,28 @@ async def test_salary_sort_prioritizes_disclosed_compensation(monkeypatch):
     monkeypatch.setattr("app.modules.jobs.providers.repo.find_jobs", capture_find_jobs)
     await provider.search({"sort_by": "salary"})
     assert captured_sort[0] == ("salary_disclosed", -1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("sort_by", "expected_first"),
+    [
+        ("recent", ("posted_days_ago", 1)),
+        ("stipend", ("stipend", -1)),
+    ],
+)
+async def test_opportunity_sort_options_use_requested_order(monkeypatch, sort_by, expected_first):
+    provider = CuratedJobProvider(None)
+    captured_sort = None
+
+    async def capture_find_jobs(db, mongo_filter, limit, skip, sort):
+        nonlocal captured_sort
+        captured_sort = sort
+        return []
+
+    monkeypatch.setattr("app.modules.jobs.providers.repo.find_jobs", capture_find_jobs)
+    await provider.search({"sort_by": sort_by})
+    assert captured_sort[0] == expected_first
 
 
 def test_legacy_provider_experience_uses_jd_bounds_instead_of_placeholder():

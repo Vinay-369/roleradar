@@ -1,9 +1,11 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getJobDetail } from "../../lib/jobDetail";
 import { formatCompensation } from "../../lib/compensation";
 import { normalizeJobDescriptionPresentation } from "../../lib/descriptionNormalization";
+import { recordApplicationSubmission } from "../../lib/applications";
+import { useToast } from "../../context/ToastContext";
 import { 
   AlertTriangle, 
   ExternalLink, 
@@ -22,6 +24,9 @@ import {
 
 export function JobDetail() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [showAppliedConfirmation, setShowAppliedConfirmation] = useState(false);
   const { jobId } = useParams<{ jobId: string }>();
   const { data: job, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["job-detail", jobId],
@@ -29,33 +34,30 @@ export function JobDetail() {
     enabled: !!jobId,
     retry: 1,
   });
+  const markAppliedMutation = useMutation({
+    mutationFn: () => recordApplicationSubmission(jobId!),
+    onSuccess: (application) => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      if (application.status === "APPLIED") {
+        toast.success("Application tracker updated to Applied.");
+      } else {
+        toast.info(`Kept the existing tracker stage: ${application.status.replaceAll("_", " ")}.`);
+      }
+      setShowAppliedConfirmation(false);
+    },
+    onError: () => toast.error("Could not update the application tracker. Please try again."),
+  });
 
   const presentation = useMemo(() => {
-    if (!job) {
-      return {
-        responsibilities: [],
-        qualifications: [],
-        detailedSections: [],
-      };
-    }
-    try {
-      return normalizeJobDescriptionPresentation({
-        description: job.description || "",
-        responsibilities: job.responsibilities || [],
-        qualifications: job.qualifications || [],
-        skillsRequired: job.skills_required || [],
-        skillsNiceToHave: job.skills_nice_to_have || [],
-      });
-    } catch (err) {
-      console.error("Failed to normalize job description presentation:", err);
-      return {
-        responsibilities: job.responsibilities || [],
-        qualifications: job.qualifications || [],
-        detailedSections: job.description
-          ? [{ title: "Detailed Description", items: [{ isBullet: false, text: job.description }] }]
-          : [],
-      };
-    }
+    if (!job) return { responsibilities: [], qualifications: [], detailedSections: [] };
+    return normalizeJobDescriptionPresentation({
+      description: job.description || "",
+      responsibilities: job.responsibilities || [],
+      qualifications: job.qualifications || [],
+      skillsRequired: job.skills_required || [],
+      skillsNiceToHave: job.skills_nice_to_have || [],
+    });
   }, [job]);
 
   if (isLoading) {
@@ -124,6 +126,7 @@ export function JobDetail() {
   const isClosed = job.verification_status === "CLOSED" || job.verification_status === "EXPIRED";
 
   const experienceText = (() => {
+    if (job.experience_text?.trim()) return job.experience_text.trim();
     const hasMin = job.experience_min !== null && job.experience_min !== undefined;
     const hasMax = job.experience_max !== null && job.experience_max !== undefined;
     if (hasMin && hasMax) {
@@ -147,15 +150,22 @@ export function JobDetail() {
   const hasProviderApply = Boolean(isVerifiedActive && isAggregatorListing && isSafeHttpUrl(job.apply_url));
 
   const postedText = (() => {
-    if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {
-      if (job.posted_days_ago === 0) return "Posted today";
+    if (job.posted_at) {
+      const postedDate = new Date(job.posted_at);
+      if (!Number.isNaN(postedDate.getTime())) {
+        return `Posted ${postedDate.toLocaleDateString("en-IN", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}`;
+      }
+    }
+    if (job.posted_days_ago !== undefined && job.posted_days_ago !== null && job.posted_days_ago > 0) {
       if (job.posted_days_ago === 1) return "Posted 1 day ago";
       if (job.posted_days_ago <= 14) return `Posted ${job.posted_days_ago} days ago`;
-      if (isVerifiedActive) return "Verified active · Continuous hiring";
       return `Posted ${job.posted_days_ago} days ago`;
     }
-    if (isVerifiedActive) return "Verified active today";
-    return "Active listing";
+    return "Not disclosed";
   })();
 
   const deadlineText = (() => {
@@ -175,10 +185,21 @@ export function JobDetail() {
   const backLink = job.job_type === "internship" ? "/opportunities/internships" : "/opportunities/jobs";
   const backLabel = job.job_type === "internship" ? "Back to Internships" : "Back to Jobs";
 
-  // Technical alignment vs Eligibility separation
-  const match = job.match;
   const eligibility = job.eligibility;
+  const match = job.match;
   const hasExplicitSkills = ((match?.matched_skills?.length ?? 0) + (match?.missing_skills?.length ?? 0)) > 0;
+  const eligibilityDetails = [
+    job.eligibility_text,
+    ...(eligibility?.reasons ?? []),
+    eligibility?.fit_explanation,
+  ].filter((text, index, all): text is string =>
+    typeof text === "string"
+      && text.trim().length > 0
+      && all.findIndex((item) =>
+        typeof item === "string"
+          && item.trim().toLocaleLowerCase() === text.trim().toLocaleLowerCase()
+      ) === index
+  );
 
   return (
     <div className="max-w-4xl mx-auto pt-4 sm:pt-5 pb-12 px-4 sm:px-6">
@@ -219,7 +240,7 @@ export function JobDetail() {
               {deadlineText && (
                 <span className="rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
                   <Calendar size={12} className="text-rose-500" />
-                  <span>Closes: {deadlineText}</span>
+                  <span>Apply by: {deadlineText}</span>
                 </span>
               )}
             </div>
@@ -255,6 +276,7 @@ export function JobDetail() {
                 href={job.apply_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => setShowAppliedConfirmation(true)}
                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-signal-600 hover:bg-signal-700 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-sm active:scale-95 text-center"
               >
                 <span>{hasDirectApply ? "Apply on Official Portal" : "Continue to Application"}</span>
@@ -398,7 +420,7 @@ export function JobDetail() {
         <div className={`rounded-xl border p-3.5 shadow-2xs ${deadlineText ? "border-rose-200/80 bg-rose-50/40" : "border-ink-100 bg-white"}`}>
           <p className={`text-[11px] font-semibold uppercase tracking-wider mb-1 flex items-center gap-1 ${deadlineText ? "text-rose-600" : "text-ink-400"}`}>
             <Calendar size={12} />
-            Registration Closing
+            Last Date to Apply
           </p>
           <p className={`font-semibold text-xs sm:text-sm ${deadlineText ? "text-rose-900" : "text-ink-500"}`}>
             {deadlineText || "Not disclosed"}
@@ -406,138 +428,131 @@ export function JobDetail() {
         </div>
       </div>
 
-      {/* MATCH & ELIGIBILITY SEPARATED DISPLAY (Section 15 Principle) */}
-      {(match || eligibility) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-4">
-          {/* Technical Alignment Card */}
-          <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-ink-500 flex items-center gap-1.5">
-                <Sparkles size={13} className="text-signal-600" />
-                Technical Alignment
-              </p>
-              {match && (
-                hasExplicitSkills ? (
-                  <span className="text-base font-bold font-mono text-signal-700">
-                    {match.overall_score}%
-                  </span>
-                ) : (
-                  <span className="rounded-md bg-ink-100 text-ink-700 px-2 py-0.5 text-[11px] font-semibold">
-                    Limited Technical Evidence
-                  </span>
-                )
-              )}
-            </div>
-
-            {match ? (
-              <div>
-                {hasExplicitSkills ? (
-                  <>
-                    <p className="text-xs text-ink-600 mb-3">
-                      Evaluates technical skill overlap between your master resume and this job's requirements.
-                    </p>
-                    <div className="flex gap-4 text-xs font-medium">
-                      <div className="text-emerald-700">
-                        <span className="font-bold">{match.matched_skills?.length ?? 0}</span> skills matched
-                      </div>
-                      <div className="text-rose-700">
-                        <span className="font-bold">{match.missing_skills?.length ?? 0}</span> skills missing
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-ink-600">
-                    Overall compatibility ({match.overall_score}%) reflects role title, experience level, and location compatibility. This employer listing does not specify explicit technical skills to evaluate.
-                  </p>
-                )}
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-4">
+        <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-500 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-signal-600" />
+              Technical Alignment
+            </p>
+            {match && (hasExplicitSkills ? (
+              <span className="text-base font-bold font-mono text-signal-700">{match.overall_score}%</span>
             ) : (
-              <p className="text-xs text-ink-400 italic">
-                Upload your resume to calculate your technical skill alignment score.
+              <span className="rounded-md bg-ink-100 text-ink-700 px-2 py-0.5 text-[11px] font-semibold">
+                Limited Technical Evidence
+              </span>
+            ))}
+          </div>
+          {match ? (
+            hasExplicitSkills ? (
+              <>
+                <p className="text-xs text-ink-600 mb-3">
+                  Evaluates technical skill overlap between your master resume and this job's requirements.
+                </p>
+                <div className="flex gap-4 text-xs font-medium">
+                  <span className="text-emerald-700"><b>{match.matched_skills?.length ?? 0}</b> skills matched</span>
+                  <span className="text-rose-700"><b>{match.missing_skills?.length ?? 0}</b> skills missing</span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-ink-600">
+                Overall compatibility ({match.overall_score}%) reflects role title, experience level, and location compatibility. The employer did not provide explicit technical skills to evaluate.
               </p>
+            )
+          ) : (
+            <p className="text-xs text-ink-400 italic">Upload your resume to calculate technical skill alignment.</p>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-2xs">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-indigo-600" />
+              Candidate Eligibility
+            </h2>
+            {eligibility && (
+              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                eligibility.status === "ELIGIBLE" || eligibility.status === "LIKELY_ELIGIBLE"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : eligibility.status === "INELIGIBLE"
+                    ? "bg-rose-100 text-rose-800"
+                    : "bg-ink-100 text-ink-700"
+              }`}>
+                {eligibility.status.replaceAll("_", " ")}
+              </span>
             )}
           </div>
-
-          {/* Eligibility & Candidate Stage Card */}
-          <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-2xs">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-ink-500 flex items-center gap-1.5">
-                <ShieldCheck size={13} className="text-indigo-600" />
-                Candidate Eligibility
-              </p>
-              {eligibility && (
-                <span
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                    eligibility.status === "ELIGIBLE" || eligibility.status === "LIKELY_ELIGIBLE"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : eligibility.status === "INELIGIBLE"
-                      ? "bg-rose-100 text-rose-800"
-                      : "bg-ink-100 text-ink-700"
-                  }`}
-                >
-                  {eligibility.status.replace("_", " ")}
+          {eligibilityDetails.length ? (
+            <ul className="space-y-1.5 text-xs text-ink-700">
+              {eligibilityDetails.map((detail) => <li key={detail}>{detail}</li>)}
+            </ul>
+          ) : (
+            <p className="text-xs text-ink-500">Complete your candidate profile to view eligibility checks for this position.</p>
+          )}
+          {(job.degree_requirements?.length
+            || job.graduation_year_requirements?.length
+            || job.student_eligible !== undefined && job.student_eligible !== null
+            || job.fresher_eligible !== undefined && job.fresher_eligible !== null) && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {job.degree_requirements?.map((degree) => (
+                <span key={degree} className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] text-indigo-800">{degree}</span>
+              ))}
+              {job.graduation_year_requirements?.length ? (
+                <span className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] text-indigo-800">
+                  Graduation: {job.graduation_year_requirements.join(", ")}
+                </span>
+              ) : null}
+              {job.student_eligible !== undefined && job.student_eligible !== null && (
+                <span className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] text-indigo-800">
+                  {job.student_eligible ? "Students eligible" : "Students not eligible"}
+                </span>
+              )}
+              {job.fresher_eligible !== undefined && job.fresher_eligible !== null && (
+                <span className="rounded-md bg-indigo-50 px-2 py-1 text-[11px] text-indigo-800">
+                  {job.fresher_eligible ? "Freshers eligible" : "Freshers not eligible"}
                 </span>
               )}
             </div>
+          )}
+        </div>
+      </div>
 
-            {eligibility ? (
-              <div>
-                <p className="text-xs text-ink-800 font-medium mb-1">
-                  {eligibility.reasons && eligibility.reasons.length > 0
-                    ? eligibility.reasons[0]
-                    : eligibility.fit_explanation || "Eligibility confirmed against job criteria."}
-                </p>
-                <p className="text-[11px] text-ink-400">
-                  Eligibility evaluates strict hard requirements (experience years, degree, graduation year) separately from skill fit.
-                </p>
-              </div>
-            ) : (
-              <p className="text-xs text-ink-400 italic">
-                Complete your candidate profile to view eligibility checks for this position.
-              </p>
-            )}
-          </div>
+      {job.company_description && (
+        <div className="rounded-xl border border-ink-100 bg-white p-4 mb-4 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-2">About {job.company}</h2>
+          <p className="text-xs text-ink-600 leading-relaxed line-clamp-3">{job.company_description}</p>
         </div>
       )}
 
-      {/* 1. Job Summary / Overview (if available) */}
-      {presentation.summary && presentation.summary.items.length > 0 && (
+      {presentation.summary?.items.length ? (
         <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3 flex items-center gap-1.5">
-            <Building size={13} className="text-signal-600" />
-            Job Summary & Overview
-          </h3>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">Job Summary & Overview</h2>
           <div className="space-y-2 text-xs text-ink-700 leading-relaxed">
-            {presentation.summary.items.map((item, idx) =>
+            {presentation.summary.items.map((item, index) =>
               item.isBullet ? (
-                <div key={idx} className="flex items-start gap-2 pl-1">
+                <div key={`${item.text}-${index}`} className="flex items-start gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-signal-500 mt-1.5 shrink-0" />
                   <span>{item.text}</span>
                 </div>
-              ) : (
-                <p key={idx}>{item.text}</p>
-              )
+              ) : <p key={`${item.text}-${index}`}>{item.text}</p>
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* 2. Core Responsibilities (if available) */}
-      {presentation.responsibilities && presentation.responsibilities.length > 0 && (
+      {presentation.responsibilities.length ? (
         <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">
-            Core Responsibilities
-          </h3>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">Core Responsibilities</h2>
           <ul className="space-y-2">
-            {presentation.responsibilities.map((r, i) => (
-              <li key={i} className="text-xs text-ink-800 flex items-start gap-2">
+            {presentation.responsibilities.map((item, index) => (
+              <li key={`${item}-${index}`} className="text-xs text-ink-800 flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-signal-500 mt-1.5 shrink-0" />
-                <span>{r}</span>
+                <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
-      )}
+      ) : null}
 
       {/* 3. Structured Job Requirements: Required vs Preferred vs Contextual */}
       <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs space-y-4">
@@ -586,102 +601,63 @@ export function JobDetail() {
           </div>
         )}
 
-        {job.contextual_requirements && job.contextual_requirements.length > 0 && (
-          <div className="pt-3 border-t border-ink-50">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-ink-400 mb-2">
-              Contextual Domain Concepts & Tools
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {job.contextual_requirements.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-md bg-ink-50 text-ink-500 px-2 py-0.5 text-[11px]"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* 4. Qualifications & Educational Requirements (if available) */}
-      {presentation.qualifications && presentation.qualifications.length > 0 && (
+      {presentation.qualifications.length ? (
         <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">
             Qualifications & Educational Requirements
-          </h3>
+          </h2>
           <ul className="space-y-2">
-            {presentation.qualifications.map((q, i) => (
-              <li key={i} className="text-xs text-ink-800 flex items-start gap-2">
+            {presentation.qualifications.map((item, index) => (
+              <li key={`${item}-${index}`} className="text-xs text-ink-800 flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-                <span>{q}</span>
+                <span>{item}</span>
               </li>
             ))}
           </ul>
         </div>
-      )}
+      ) : null}
 
-      {/* 5. Additional Information / Logistics / Perks (if available) */}
-      {presentation.additionalInfo && presentation.additionalInfo.items.length > 0 && (
+      {presentation.additionalInfo?.items.length ? (
         <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">
-            Additional Information
-          </h3>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">Additional Information</h2>
           <div className="space-y-2 text-xs text-ink-700 leading-relaxed">
-            {presentation.additionalInfo.items.map((item, idx) =>
+            {presentation.additionalInfo.items.map((item, index) =>
               item.isBullet ? (
-                <div key={idx} className="flex items-start gap-2 pl-1">
+                <div key={`${item.text}-${index}`} className="flex items-start gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-ink-400 mt-1.5 shrink-0" />
                   <span>{item.text}</span>
                 </div>
-              ) : (
-                <p key={idx}>{item.text}</p>
-              )
+              ) : <p key={`${item.text}-${index}`}>{item.text}</p>
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* 6. Detailed Description (Remaining contextual narrative, with redundant headings and duplicates removed) */}
-      {presentation.detailedSections && presentation.detailedSections.length > 0 && (
+      {presentation.detailedSections.length ? (
         <div className="rounded-xl border border-ink-100 bg-white p-5 mb-4 shadow-2xs">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">
-            Detailed Description
-          </h3>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700 mb-3">Detailed Description</h2>
           <div className="space-y-4">
-            {presentation.detailedSections.map((sec, idx) => (
-              <div key={idx} className="space-y-2">
-                {sec.title && (
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-ink-800 pt-2 border-t border-ink-100 first:border-0 first:pt-0">
-                    {sec.title}
-                  </h4>
-                )}
+            {presentation.detailedSections.map((section, index) => (
+              <section key={`${section.title}-${index}`} className="space-y-2">
+                {section.title && <h3 className="text-xs font-bold uppercase tracking-wider text-ink-800">{section.title}</h3>}
                 <div className="space-y-1.5">
-                  {sec.items.map((item, itemIdx) =>
-                    item.isBullet ? (
-                      <div key={itemIdx} className="text-xs text-ink-700 flex items-start gap-2 pl-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-ink-400 mt-1.5 shrink-0" />
-                        <span className="leading-relaxed">{item.text}</span>
-                      </div>
-                    ) : (
-                      <p key={itemIdx} className="text-xs text-ink-700 leading-relaxed">
-                        {item.text}
-                      </p>
-                    )
-                  )}
+                  {section.items.map((item, itemIndex) => item.isBullet ? (
+                    <div key={`${item.text}-${itemIndex}`} className="text-xs text-ink-700 flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-ink-400 mt-1.5 shrink-0" />
+                      <span className="leading-relaxed">{item.text}</span>
+                    </div>
+                  ) : <p key={`${item.text}-${itemIndex}`} className="text-xs text-ink-700 leading-relaxed">{item.text}</p>)}
                 </div>
-              </div>
+              </section>
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Secondary Companion Actions Grid */}
       <div className="bg-ink-50/70 border border-ink-200 rounded-xl p-4 mb-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-ink-600 mb-3">
-          Preparation & Career Tools
-        </p>
+        <p className="text-xs font-bold uppercase tracking-wider text-ink-600 mb-3">Preparation & Career Tools</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <Link
             to={`/growth/skill-gaps?jobId=${job.id}`}
@@ -689,21 +665,18 @@ export function JobDetail() {
           >
             📊 Skill Gap
           </Link>
-
           <Link
             to={`/growth/roadmap/${job.id}`}
             className="p-3 rounded-lg bg-white border border-ink-200 hover:border-signal-500 text-xs font-medium text-ink-800 hover:text-signal-700 transition-colors shadow-2xs text-center"
           >
             🗺️ Roadmap
           </Link>
-
           <Link
             to={`/growth/interview/${job.id}`}
             className="p-3 rounded-lg bg-white border border-ink-200 hover:border-signal-500 text-xs font-medium text-ink-800 hover:text-signal-700 transition-colors shadow-2xs text-center"
           >
             🎯 Interview Prep
           </Link>
-
           <Link
             to={`/copilot?job_id=${encodeURIComponent(job.id)}&company=${encodeURIComponent(job.company)}&role=${encodeURIComponent(job.title)}&prompt=${encodeURIComponent(`I am preparing to apply for the ${job.title} role at ${job.company}. How should I position my resume, what key competencies should I emphasize, and what interview strategies should I prepare?`)}`}
             className="p-3 rounded-lg bg-white border border-ink-200 hover:border-signal-500 text-xs font-medium text-ink-800 hover:text-signal-700 transition-colors shadow-2xs text-center"
@@ -712,6 +685,51 @@ export function JobDetail() {
           </Link>
         </div>
       </div>
+
+      {showAppliedConfirmation && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !markAppliedMutation.isPending) {
+              setShowAppliedConfirmation(false);
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="applied-confirmation-title"
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
+          >
+            <h2 id="applied-confirmation-title" className="text-base font-bold text-ink-900">
+              Did you submit your application?
+            </h2>
+            <p className="mt-2 text-sm text-ink-600">
+              RoleRadar can’t check applications on the employer’s website. If you completed the application, mark this opportunity as Applied in your tracker.
+            </p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={markAppliedMutation.isPending}
+                onClick={() => setShowAppliedConfirmation(false)}
+                className="rounded-lg border border-ink-200 px-3 py-2 text-xs font-semibold text-ink-700 hover:bg-ink-50 disabled:opacity-60"
+              >
+                Not yet
+              </button>
+              <button
+                type="button"
+                disabled={markAppliedMutation.isPending}
+                onClick={() => markAppliedMutation.mutate()}
+                className="rounded-lg bg-signal-600 px-3 py-2 text-xs font-semibold text-white hover:bg-signal-700 disabled:opacity-60"
+              >
+                {markAppliedMutation.isPending ? "Updating…" : "Yes, mark as applied"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
     </div>
   );
 }

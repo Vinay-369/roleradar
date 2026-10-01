@@ -122,9 +122,8 @@ export type JobQueryFilters = {
   domain?: string;
   stage?: string;
   search?: string;
-  sortBy?: "recent" | "match" | "salary" | "stipend";
+  sortBy?: "recent" | "salary" | "stipend" | "match";
   maxPostedDays?: number;
-  includeBenchmarks?: boolean;
   page?: number;
   pageSize?: number;
 };
@@ -158,7 +157,6 @@ export async function getRecommendedMatches(
   if (filters?.search) params.search = filters.search;
   if (filters?.sortBy) params.sort_by = filters.sortBy;
   if (filters?.maxPostedDays) params.max_posted_days = filters.maxPostedDays;
-  if (filters?.includeBenchmarks !== undefined) params.include_benchmarks = filters.includeBenchmarks;
   if (filters?.page) params.page = filters.page;
   if (filters?.pageSize) params.page_size = filters.pageSize;
 
@@ -179,4 +177,3 @@ export async function createCustomJob(payload: CreateCustomJobPayload): Promise<
   const res = await apiClient.post("/jobs/custom", payload);
   return res.data;
 }
-

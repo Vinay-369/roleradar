@@ -235,7 +235,7 @@ class TestPhase12IndiaOpportunityIntelligence:
         meta = _build_india_metadata(job, skill_score=None)
         assert meta["stipend"] == 25000
         assert meta["stipend_currency"] == "INR"
-        assert meta["stipend_period"] == "per_month"
+        assert meta["stipend_period"] == "MONTH"
 
     # 17. Verified direct opportunity
     def test_17_verified_direct_opportunity(self):

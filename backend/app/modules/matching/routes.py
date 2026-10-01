@@ -13,6 +13,17 @@ from app.modules.resume import repositories as resume_repo
 router = APIRouter()
 
 
+def _sort_matches_by_score(matches: list[dict]) -> list[dict]:
+    return sorted(
+        matches,
+        key=lambda match: (
+            -float(match.get("overall_score") or 0),
+            int(match.get("posted_days_ago") or 0),
+            str(match.get("job_id") or ""),
+        ),
+    )
+
+
 @router.get("/recommended", response_model=list[JobMatchOut])
 async def recommended_matches(
     job_type: str | None = None,
@@ -28,7 +39,6 @@ async def recommended_matches(
     search: str | None = None,
     sort_by: str | None = None,
     max_posted_days: int | None = None,
-    include_benchmarks: bool = False,
     page: int = 1,
     page_size: int = 50,
     response: Response = Response(),
@@ -42,8 +52,6 @@ async def recommended_matches(
 
     raw_page = page.default if hasattr(page, "default") else page
     raw_page_size = page_size.default if hasattr(page_size, "default") else page_size
-    raw_include_benchmarks = include_benchmarks.default if hasattr(include_benchmarks, "default") else include_benchmarks
-
     safe_page = max(1, int(raw_page or 1))
     safe_page_size = min(max(1, int(raw_page_size or 50)), 100)
     skip = (safe_page - 1) * safe_page_size
@@ -53,9 +61,8 @@ async def recommended_matches(
     search_filters: dict = {
         "skip": skip,
         "limit": safe_page_size,
-        "active_discovery_only": not include_benchmarks,
-        "direct_apply_only": not include_benchmarks,
-        "include_benchmarks": include_benchmarks,
+        "active_discovery_only": True,
+        "direct_apply_only": True,
     }
     if job_type:
         search_filters["job_type"] = job_type
@@ -89,9 +96,20 @@ async def recommended_matches(
         response.headers["X-Total-Count"] = str(total_count)
         response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
 
+    sort_by_match = sort_by == "match" and resume is not None
+    if sort_by_match:
+        search_filters["skip"] = 0
+        search_filters["limit"] = max(total_count, 1)
+
     jobs = await jobs_services.search_jobs(db, search_filters, user_id=user_id)
     if live_only:
         jobs = [j for j in jobs if j.get("source") == "live" or (j.get("apply_url") and "example.com" not in j.get("apply_url", ""))]
+
+    # Attach compensation metadata so salary/stipend fields are populated for
+    # seed data that stores numeric values without currency/unit/period context.
+    from app.modules.jobs.routes import _attach_compensation_meta
+    for _j in jobs:
+        _attach_compensation_meta(_j)
 
     from app.modules.jobs.location_normalization import is_india_opportunity
 
@@ -110,6 +128,11 @@ async def recommended_matches(
             "category": "FRESHER",
         }
         matches = await matching_services.get_or_compute_matches(db, user_id, resume, effective_profile, jobs, settings)
+        if sort_by_match:
+            matches = _sort_matches_by_score(matches)[skip:skip + safe_page_size]
+        else:
+            job_order = {str(job["id"]): index for index, job in enumerate(jobs)}
+            matches.sort(key=lambda match: job_order.get(str(match.get("job_id")), len(job_order)))
         return [JobMatchOut(**m) for m in matches]
 
     # Pre-Resume Discovery Mode:
@@ -117,10 +140,6 @@ async def recommended_matches(
     from app.modules.jobs.classification import classify_opportunity
     from app.modules.jobs.location_normalization import normalize_india_location, detect_workplace_type, extract_country_from_location
 
-    def _is_india_job(j: dict) -> bool:
-        return j.get("country") == "India" or is_india_opportunity(j.get("location"))
-
-    jobs.sort(key=lambda j: (0 if _is_india_job(j) else 1, j.get("posted_days_ago", 0)))
     results = []
     for j in jobs:
         created_val = j.get("created_at") or j.get("created")

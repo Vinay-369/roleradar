@@ -1,14 +1,15 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X, RefreshCw } from "lucide-react";
+import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { getRecommendedMatches, syncLiveJobs, type JobMatch } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
-import { ALL_INTERNSHIP_ROLES } from "../../lib/roleConstants";
+import { ALL_INTERNSHIP_ROLES, ALL_JOB_ROLES } from "../../lib/roleConstants";
 import { CANONICAL_CAREER_STAGES, getProfile } from "../../lib/profile";
+import { getCanonicalRoles } from "../../lib/learning";
 import {
   saveListState,
   loadListState,
@@ -27,13 +28,17 @@ export function Internships() {
   });
   const restoredState = useMemo(() => {
     if (consumeNavigatedToDetail("internships")) {
-      return loadListState("internships");
+      const state = loadListState("internships");
+      if (state?.includeBenchmarks) {
+        clearListState("internships");
+        return null;
+      }
+      return state;
     }
     return null;
   }, []);
 
   const [regionScope, setRegionScope] = useState<"india" | "global">(restoredState?.regionScope ?? "india");
-  const [includeBenchmarks, setIncludeBenchmarks] = useState<boolean>(restoredState?.includeBenchmarks ?? false);
 
   // Core Discovery Controls
   const [searchQuery, setSearchQuery] = useState<string>(restoredState?.searchQuery ?? "");
@@ -42,9 +47,19 @@ export function Internships() {
   const [stageFilter, setStageFilter] = useState<string>(restoredState?.stageFilter ?? "ALL");
   const [workplaceFilter, setWorkplaceFilter] = useState<string>(restoredState?.workplaceFilter ?? "ALL");
   const [onlyEligible, setOnlyEligible] = useState<boolean>(restoredState?.onlyEligible ?? false);
-  const [sortBy, setSortBy] = useState<"recent" | "match" | "stipend">(
-    (restoredState?.sortBy === "recent" ? "stipend" : restoredState?.sortBy as any) ?? "stipend"
+  const [sortBy, setSortBy] = useState<"recent" | "stipend" | "match">(
+    restoredState?.sortBy === "stipend"
+      ? "stipend"
+      : restoredState?.sortBy === "match"
+        ? "match"
+        : "recent"
   );
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   // Progressive Loading State
   const [page, setPage] = useState<number>(restoredState?.page ?? 1);
@@ -60,30 +75,46 @@ export function Internships() {
     queryKey: ["profile"],
     queryFn: getProfile,
   });
+  const { data: canonicalRoles } = useQuery({
+    queryKey: ["canonical-roles"],
+    queryFn: getCanonicalRoles,
+  });
+  const roleOptions = useMemo(() => {
+    const options = new Map(
+      (canonicalRoles ?? []).map((option) => [option.role.toLocaleLowerCase(), option]),
+    );
+    for (const role of ALL_INTERNSHIP_ROLES) {
+      const key = role.toLocaleLowerCase();
+      if (!options.has(key)) {
+        options.set(key, { role, domain: "Internships", subdomain: "", aliases: [] });
+      }
+    }
+    return canonicalRoles?.length
+      ? [...options.values()]
+      : [...ALL_JOB_ROLES, ...ALL_INTERNSHIP_ROLES];
+  }, [canonicalRoles]);
 
   // Initial Page 1 Query
-  const { data, isLoading } = useQuery({
+  const { data, isFetching: isLoading } = useQuery({
     queryKey: [
       "matches",
       "internship",
       regionScope,
-      includeBenchmarks,
       selectedRole,
       locationPreset,
       stageFilter,
       workplaceFilter,
-      searchQuery,
+      debouncedSearchQuery,
       sortBy,
     ],
     queryFn: () =>
       getRecommendedMatches("internship", false, {
         region: regionScope,
-        includeBenchmarks,
         role: selectedRole !== "ALL" ? selectedRole : undefined,
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: searchQuery.trim() || undefined,
+        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         page: 1,
         pageSize: PAGE_SIZE,
@@ -118,7 +149,6 @@ export function Internships() {
   const handleSaveListState = () => {
     saveListState("internships", {
       regionScope,
-      includeBenchmarks,
       searchQuery,
       selectedRole,
       locationPreset,
@@ -146,8 +176,9 @@ export function Internships() {
     if (stageFilter !== "ALL") count++;
     if (workplaceFilter !== "ALL") count++;
     if (onlyEligible) count++;
+    if (regionScope !== "india") count++;
     return count;
-  }, [searchQuery, selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible]);
+  }, [searchQuery, selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible, regionScope]);
 
   const resetAllFilters = () => {
     clearListState("internships");
@@ -157,6 +188,7 @@ export function Internships() {
     setStageFilter("ALL");
     setWorkplaceFilter("ALL");
     setOnlyEligible(false);
+    setRegionScope("india");
     setSortBy("recent");
     setPage(1);
   };
@@ -169,12 +201,11 @@ export function Internships() {
     try {
       const res = await getRecommendedMatches("internship", false, {
         region: regionScope,
-        includeBenchmarks,
         role: selectedRole !== "ALL" ? selectedRole : undefined,
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: searchQuery.trim() || undefined,
+        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         page: nextPage,
         pageSize: PAGE_SIZE,
@@ -195,14 +226,22 @@ export function Internships() {
 
   // Secondary client filter for "Eligible for my profile only"
   const visibleInternships = useMemo(() => {
-    if (!onlyEligible) return loadedInternships;
-    return loadedInternships.filter((job) => {
-      if (hasResume) {
-        return job.eligibility?.status === "ELIGIBLE" || job.eligibility?.status === "LIKELY_ELIGIBLE";
-      }
-      return job.student_eligible || job.fresher_eligible;
+    const eligibleInternships = onlyEligible
+      ? loadedInternships.filter((job) => {
+          if (hasResume) {
+            return job.eligibility?.status === "ELIGIBLE" || job.eligibility?.status === "LIKELY_ELIGIBLE";
+          }
+          return job.student_eligible || job.fresher_eligible;
+        })
+      : loadedInternships;
+
+    if (sortBy !== "match") return eligibleInternships;
+    return [...eligibleInternships].sort((a, b) => {
+      const aScore = a.overall_score ?? Number.NEGATIVE_INFINITY;
+      const bScore = b.overall_score ?? Number.NEGATIVE_INFINITY;
+      return bScore - aScore || (a.posted_days_ago ?? Infinity) - (b.posted_days_ago ?? Infinity);
     });
-  }, [loadedInternships, onlyEligible, hasResume]);
+  }, [loadedInternships, onlyEligible, hasResume, sortBy]);
 
   return (
     <div className="max-w-5xl mx-auto pt-4 pb-12 px-4 sm:px-6">
@@ -285,56 +324,90 @@ export function Internships() {
         </div>
       )}
 
-      {/* Streamlined Filter Panel */}
-      <div className="bg-white rounded-xl border border-ink-100 p-3.5 mb-3 shadow-xs space-y-3">
-        {/* Row 1: Search + Role */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-          <div className="sm:col-span-6 relative">
-            <label htmlFor="internship-search-input" className="sr-only">Search internship listings</label>
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-            <input
-              id="internship-search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search internship title, company, skill…"
-              aria-label="Search internships by title, company, or required skill"
-              className="w-full pl-8 pr-8 py-2 rounded-lg border border-ink-200 focus:border-signal-500 focus:ring-2 focus:ring-signal-500/15 text-xs text-ink-900 placeholder:text-ink-400 outline-none transition-all shadow-2xs"
-            />
-            {searchQuery && (
+      <div className="bg-white rounded-xl border border-ink-100 p-4 sm:p-5 mb-4 shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={16} className="text-signal-600" />
+            <h2 className="text-sm font-bold text-ink-900">Find your internship</h2>
+            <span className="hidden sm:inline text-xs text-ink-400">Search and narrow results</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
+              <span>Sort by</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "recent" | "stipend" | "match")}
+                className="rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-xs font-semibold text-ink-800"
+                aria-label="Sort internships"
+              >
+                <option value="recent">Most recent</option>
+                <option value="stipend">Highest compensation</option>
+                <option value="match" disabled={!hasResume}>
+                  Highest matching score{hasResume ? "" : " (resume required)"}
+                </option>
+              </select>
+            </label>
+            {activeFilterCount > 0 && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-ink-400 hover:text-ink-700 hover:bg-ink-100 transition-colors"
-                title="Clear search"
-                aria-label="Clear search input"
+                onClick={resetAllFilters}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-signal-700 hover:bg-signal-500/10 transition-colors"
               >
-                <X size={13} />
+                <RotateCcw size={13} />
+                Clear filters <span className="text-ink-500">({activeFilterCount})</span>
               </button>
             )}
           </div>
+        </div>
 
-          <div className="sm:col-span-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+          <div className="relative md:col-span-6">
+            <label htmlFor="internship-search-input" className="mb-1.5 block text-[11px] font-semibold text-ink-600">Keywords</label>
+            <div className="relative">
+              <Search size={15} className="absolute left-3 top-[calc(50%+1px)] -translate-y-1/2 text-ink-400" />
+              <input
+                id="internship-search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Role, company, skill or location"
+                aria-label="Search internships by role, company, skill, or location"
+                className="w-full rounded-lg border border-ink-200 bg-white py-2.5 pl-9 pr-9 text-sm text-ink-900 shadow-2xs outline-none transition-all placeholder:text-ink-400 focus:border-signal-500 focus:ring-2 focus:ring-signal-500/15"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-[calc(50%+1px)] -translate-y-1/2 rounded-full p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-700"
+                  title="Clear search"
+                  aria-label="Clear search input"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="md:col-span-6">
             <RoleDropdownSelector
-              label="Role:"
+              label="Role"
               selectedRole={selectedRole}
               onRoleChange={setSelectedRole}
-              roles={ALL_INTERNSHIP_ROLES}
+              roles={roleOptions}
               includeAllOption={true}
-              allOptionLabel="All Internship Roles"
+              allOptionLabel="All internship roles"
+              className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_label]:tracking-normal [&>div:last-child]:gap-0"
             />
           </div>
         </div>
 
-        {/* Row 2: Location + Your Stage + Workplace */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-ink-50">
-          <div>
-            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">Location</label>
+        <div className="grid grid-cols-1 gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="block text-[11px] font-semibold text-ink-600">
+            Location
             <select
               value={locationPreset}
               onChange={(e) => setLocationPreset(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
             >
-              <option value="ALL">All Locations</option>
+              <option value="ALL">All locations</option>
               <option value="Bengaluru">Bengaluru</option>
               <option value="Delhi NCR">Delhi NCR</option>
               <option value="Hyderabad">Hyderabad</option>
@@ -342,110 +415,59 @@ export function Internships() {
               <option value="Mumbai">Mumbai</option>
               <option value="Chennai">Chennai</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">
-              Your Stage
-            </label>
+          </label>
+          <label className="block text-[11px] font-semibold text-ink-600">
+            Career stage
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
             >
-              {CANONICAL_CAREER_STAGES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                  {profile?.category === s.value ? " (Your Stage)" : ""}
+              {CANONICAL_CAREER_STAGES.map((stage) => (
+                <option key={stage.value} value={stage.value}>
+                  {stage.label}{profile?.category === stage.value ? " (Your stage)" : ""}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-semibold text-ink-500 uppercase tracking-wider mb-1">Workplace</label>
+          </label>
+          <label className="block text-[11px] font-semibold text-ink-600">
+            Work arrangement
             <select
               value={workplaceFilter}
               onChange={(e) => setWorkplaceFilter(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-xs outline-none focus:border-signal-500 font-medium text-ink-800 shadow-2xs"
+              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
             >
-              <option value="ALL">Any Workplace</option>
-              <option value="remote">Remote Only</option>
+              <option value="ALL">Any arrangement</option>
+              <option value="remote">Remote</option>
               <option value="hybrid">Hybrid</option>
-              <option value="onsite">On-site / Office</option>
+              <option value="on_site">On-site</option>
             </select>
-          </div>
+          </label>
         </div>
 
-        {/* Row 3: Auxiliary Toggles + Sort + Reset */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-ink-50 flex-wrap text-xs">
-          <div className="flex items-center gap-4 flex-wrap">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-ink-700 hover:text-ink-950 font-medium">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink-100 pt-3">
+          {hasResume && (
+            <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
               <input
                 type="checkbox"
-                checked={includeBenchmarks}
-                onChange={(e) => setIncludeBenchmarks(e.target.checked)}
+                checked={onlyEligible}
+                onChange={(e) => setOnlyEligible(e.target.checked)}
                 className="rounded border-ink-300 text-signal-600 focus:ring-signal-500 cursor-pointer"
               />
-              <span>Include Market Benchmark Profiles</span>
+              Eligible for my profile
             </label>
-
-            {hasResume && (
-              <label className="flex items-center gap-2 cursor-pointer select-none text-ink-700 hover:text-ink-950 font-medium">
-                <input
-                  type="checkbox"
-                  checked={onlyEligible}
-                  onChange={(e) => setOnlyEligible(e.target.checked)}
-                  className="rounded border-ink-300 text-signal-600 focus:ring-signal-500 cursor-pointer"
-                />
-                <span>Eligible for my profile only</span>
-              </label>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 ml-auto">
-            <div className="flex items-center gap-1.5 text-xs text-ink-500">
-              <span>Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-2 py-1 rounded-md border border-ink-200 bg-white text-xs font-semibold text-ink-800"
-              >
-                <option value="recent">Most Recent</option>
-                <option value="match">Highest Match</option>
-                <option value="stipend">Stipend</option>
-              </select>
-            </div>
-
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline transition-colors cursor-pointer"
-              >
-                <RotateCcw size={11} />
-                <span>Reset ({activeFilterCount})</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
       {isLoading && <SkeletonCard count={4} />}
 
       {/* Transparent Low Inventory Notice */}
-      {!isLoading && totalCount > 0 && totalCount <= 5 && !includeBenchmarks && (
+      {!isLoading && totalCount > 0 && totalCount <= 5 && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-3 text-xs text-amber-900 flex items-center justify-between gap-2 flex-wrap">
           <p>
             <span className="font-bold">Live Inventory Note:</span> Only {totalCount} live internship{totalCount === 1 ? "" : "s"} currently open directly on employer ATS portals matching these filters.
           </p>
-          <button
-            type="button"
-            onClick={() => setIncludeBenchmarks(true)}
-            className="text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer"
-          >
-            Toggle Market Benchmark Profiles →
-          </button>
         </div>
       )}
 
@@ -460,11 +482,11 @@ export function Internships() {
           }
           description={
             activeFilterCount > 0
-              ? "Try clearing filters or selecting another role. You can also toggle 'Include Market Benchmark Profiles' to explore reference career paths."
-              : "Connected employer ATS portals currently have no matching live internship postings. You can enable 'Include Market Benchmark Profiles' to explore student competencies."
+              ? "Try clearing filters or selecting another role."
+              : "Connected employer ATS portals currently have no matching live internships. Check back later or broaden your search filters."
           }
-          actionText={activeFilterCount > 0 ? "Reset Filters" : (!includeBenchmarks ? "Show Career Benchmark Roles" : undefined)}
-          onAction={activeFilterCount > 0 ? resetAllFilters : (!includeBenchmarks ? () => setIncludeBenchmarks(true) : undefined)}
+          actionText={activeFilterCount > 0 ? "Reset Filters" : undefined}
+          onAction={activeFilterCount > 0 ? resetAllFilters : undefined}
           secondaryActionText="Paste External Job Description"
           secondaryActionHref="/resume/tailor-custom"
         />
@@ -477,23 +499,14 @@ export function Internships() {
           <div className="flex items-center justify-between px-1 py-1 text-xs text-ink-600 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-ink-900">
-                Showing {visibleInternships.length} of {totalCount} active internship{totalCount === 1 ? "" : "s"}
+                {onlyEligible
+                  ? `Showing ${visibleInternships.length} eligible internship${visibleInternships.length === 1 ? "" : "s"}`
+                  : `Showing ${visibleInternships.length} of ${totalCount} active internship${totalCount === 1 ? "" : "s"}`}
               </span>
-              {!includeBenchmarks && (
-                <span className="text-ink-400 hidden sm:inline">
-                  • Verified live from connected employer ATS boards
-                </span>
-              )}
+              <span className="text-ink-400 hidden sm:inline">
+                • Verified live from connected employer ATS boards
+              </span>
             </div>
-            {!includeBenchmarks && (
-              <button
-                type="button"
-                onClick={() => setIncludeBenchmarks(true)}
-                className="text-signal-700 hover:text-signal-800 font-medium underline underline-offset-2 text-[11px] cursor-pointer ml-auto"
-              >
-                Explore Market Benchmark Profiles →
-              </button>
-            )}
           </div>
 
           {visibleInternships.map((job) => (
@@ -501,7 +514,7 @@ export function Internships() {
           ))}
 
           {/* Progressive "Show More" Action */}
-          {visibleInternships.length < totalCount ? (
+          {loadedInternships.length < totalCount ? (
             <div className="mt-6 flex flex-col items-center justify-center gap-2 pt-2 pb-4">
               <button
                 type="button"
@@ -515,12 +528,7 @@ export function Internships() {
                     <span>Loading more internships…</span>
                   </>
                 ) : (
-                  <>
-                    <span>Show More Internships</span>
-                    <span className="text-ink-400 font-mono text-[11px]">
-                      ({visibleInternships.length} loaded of {totalCount})
-                    </span>
-                  </>
+                  <span>Show More Internships</span>
                 )}
               </button>
               <p className="text-[11px] text-ink-400">

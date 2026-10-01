@@ -18,8 +18,10 @@ from app.modules.learning.engine import (
     _project_suggestion,
     build_roadmap,
     compute_skill_gaps,
+    evaluate_career_competencies,
 )
 from app.modules.learning.routes import _compute_gaps
+from app.modules.learning.role_taxonomy import ROLE_TAXONOMY, resolve_role
 from app.modules.learning.skill_resources import get_resources_for_skill
 
 
@@ -164,6 +166,69 @@ def test_domain_aware_practice_suggestions():
     # Software Engineering
     s_soft = _project_suggestion("REST APIs", domain="Software Engineering")
     assert "hands-on application" in s_soft
+
+
+def test_specialized_role_roadmaps_have_role_specific_practice_guidance():
+    role_names = (
+        "Java Full Stack Developer",
+        "Python Full Stack Developer",
+        "MERN Full Stack Developer",
+    )
+    role_plans = []
+
+    for role_name in role_names:
+        profile, confidence, _ = resolve_role(role_name)
+        assert profile is not None
+        assert confidence == "HIGH"
+        gaps = evaluate_career_competencies(profile, candidate=None)
+        roadmap = build_roadmap(gaps)
+        scheduled = tuple(
+            skill
+            for stage in ("immediate", "week_1", "week_2", "month_1")
+            for skill in roadmap[stage]
+        )
+        practice = tuple(gap.project_suggestion for gap in gaps)
+        assert all(role_name in suggestion for suggestion in practice)
+        role_plans.append((scheduled, practice))
+
+    assert len({plan[0] for plan in role_plans}) == len(role_names)
+    assert len({plan[1] for plan in role_plans}) == len(role_names)
+
+
+def test_all_canonical_roles_have_distinct_skill_roadmaps_with_full_coverage():
+    profiles = list(ROLE_TAXONOMY.values())
+    core_by_role = {
+        profile.canonical_role: {skill.casefold() for skill in profile.core_competencies}
+        for profile in profiles
+    }
+    roadmap_signatures = set()
+
+    for profile in profiles:
+        other_roles_core = set().union(
+            *(skills for role, skills in core_by_role.items() if role != profile.canonical_role)
+        )
+        assert core_by_role[profile.canonical_role] - other_roles_core, (
+            f"{profile.canonical_role} has no role-specific core competencies"
+        )
+
+        gaps = evaluate_career_competencies(profile, candidate=None)
+        assert all(gap.target_job_title == profile.canonical_role for gap in gaps)
+        assert all(gap.project_suggestion and gap.estimated_days > 0 for gap in gaps)
+        roadmap = build_roadmap(gaps)
+        scheduled = [
+            skill
+            for stage in ("immediate", "week_1", "week_2", "month_1")
+            for skill in roadmap[stage]
+        ]
+        expected = [gap.skill for gap in gaps if gap.status != "DEMONSTRATED"]
+
+        assert len(scheduled) == len(set(scheduled)), profile.canonical_role
+        assert set(scheduled) == set(expected), profile.canonical_role
+        roadmap_signatures.add(
+            tuple(tuple(roadmap[stage]) for stage in ("immediate", "week_1", "week_2", "month_1"))
+        )
+
+    assert len(roadmap_signatures) == len(profiles)
 
 
 def test_ui_mastery_wording_removal():
