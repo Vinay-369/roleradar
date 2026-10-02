@@ -14,6 +14,7 @@ import pytest
 
 from app.core.config import Settings
 from app.modules.learning.engine import (
+    SkillGap,
     _order_skills_with_prerequisites,
     _project_suggestion,
     build_roadmap,
@@ -195,6 +196,46 @@ def test_specialized_role_roadmaps_have_role_specific_practice_guidance():
     assert len({plan[1] for plan in role_plans}) == len(role_names)
 
 
+def test_each_roadmap_skill_gets_distinct_actionable_learning_steps():
+    skill_names = (
+        "Patient Assessment & Triage",
+        "HIPAA & Privacy Compliance",
+        "Electronic Health Records",
+    )
+    gaps = [
+        SkillGap(
+            skill=skill,
+            priority="CORE",
+            reason=f"'{skill}' is required.",
+            target_job_title="Registered Nurse",
+            current_evidence="MARKET_REQUIREMENT",
+            domain="Healthcare",
+            subdomain="Clinical Nursing & Patient Care",
+        )
+        for skill in skill_names
+    ]
+
+    assert len({gap.learning_guidance for gap in gaps}) == len(gaps)
+    assert len({gap.practice_guidance for gap in gaps}) == len(gaps)
+    assert len({gap.proof_guidance for gap in gaps}) == len(gaps)
+    for gap in gaps:
+        assert gap.target_job_title in gap.learning_guidance
+        assert gap.skill in gap.learning_guidance
+        assert gap.skill in gap.practice_guidance
+        assert gap.target_job_title in gap.proof_guidance
+        assert gap.skill in gap.proof_guidance
+
+    data_structures = SkillGap(
+        skill="Data Structures & Algorithms",
+        priority="CORE",
+        reason="Required for the target role.",
+        target_job_title="Software Engineer",
+        current_evidence="MARKET_REQUIREMENT",
+        domain="Software Engineering",
+    )
+    assert "tiny example" in data_structures.learning_guidance
+
+
 def test_all_canonical_roles_have_distinct_skill_roadmaps_with_full_coverage():
     profiles = list(ROLE_TAXONOMY.values())
     core_by_role = {
@@ -214,6 +255,10 @@ def test_all_canonical_roles_have_distinct_skill_roadmaps_with_full_coverage():
         gaps = evaluate_career_competencies(profile, candidate=None)
         assert all(gap.target_job_title == profile.canonical_role for gap in gaps)
         assert all(gap.project_suggestion and gap.estimated_days > 0 for gap in gaps)
+        assert all(
+            gap.learning_guidance and gap.practice_guidance and gap.proof_guidance
+            for gap in gaps
+        )
         roadmap = build_roadmap(gaps)
         scheduled = [
             skill

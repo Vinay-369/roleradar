@@ -49,6 +49,9 @@ class SkillGapOut(BaseModel):
     current_evidence: str
     resources: list[str] = Field(default_factory=list)
     project_suggestion: str = ""
+    learning_guidance: str = ""
+    practice_guidance: str = ""
+    proof_guidance: str = ""
     estimated_days: int = 5
     # Extended Role Intelligence & Provenance fields
     candidate_status: str | None = None

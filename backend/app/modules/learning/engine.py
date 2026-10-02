@@ -18,6 +18,118 @@ from app.modules.learning.skill_resources import get_resources_for_skill
 PRIORITY_ESTIMATED_DAYS = {"CORE": 10, "SECONDARY": 5, "BONUS": 3}
 
 
+SKILL_GUIDANCE_TEMPLATES: dict[str, tuple[str, str, str]] = {
+    "clinical": (
+        "Review the accepted protocol behind {skill}. Identify when it applies, the decision points, safety checks, and what must be documented for {role}.",
+        "Work through a simulated {role} case that requires {skill}. Record your assessment, the action you chose, and when you would escalate.",
+        "For {role}, keep a de-identified {skill} simulation checklist showing each decision, safety check, and documentation step; compare it with the applicable protocol.",
+    ),
+    "finance": (
+        "Break {skill} into its inputs, calculation or accounting rules, assumptions, and validation checks as used in {role}. Reproduce a worked example before adapting it.",
+        "Create a small {skill} case for {role}; trace the source data, show the calculation or reconciliation, and test one changed assumption.",
+        "For {role}, save the {skill} worksheet or model with formulas, source references, assumptions, and a brief explanation of the reconciled result.",
+    ),
+    "governance": (
+        "Identify the standard, policy, or control that governs {skill} in {role}. Learn its scope, required evidence, exceptions, and escalation path.",
+        "Audit a sample {role} scenario for {skill}. Map each requirement to evidence, mark any gap, and recommend a proportionate corrective action.",
+        "For {role}, produce a traceable {skill} checklist or case note linking each finding to its requirement, evidence, decision, and follow-up.",
+    ),
+    "analysis": (
+        "Study how {skill} turns inputs into a defensible conclusion for {role}: define the measures, check assumptions, reproduce a worked example, and note limitations.",
+        "Use a small realistic dataset or case to apply {skill}; check input quality, explain the result, and make one decision supported by the evidence.",
+        "For {role}, present an annotated {skill} analysis with source inputs, method, validation checks, conclusion, and one limitation or caveat.",
+    ),
+    "design": (
+        "Learn the principles and constraints behind {skill} for {role}. Compare a strong and weak example, then identify the criteria you will use to judge your work.",
+        "Create two alternatives that apply {skill} to the same {role} brief. Select one using explicit criteria and gather feedback from a representative user or reviewer.",
+        "For {role}, show the final {skill} artifact alongside the brief, selection rationale, and feedback or test result that informed the revision.",
+    ),
+    "instructional": (
+        "Translate {skill} into a measurable learner outcome for {role}. Study sequencing, accessibility, and how to check understanding.",
+        "Build a short lesson or learning activity for {skill}; include an example, a learner exercise, and a check that reveals misconceptions.",
+        "For {role}, save the {skill} lesson artifact, its learning objective, assessment prompt, and a sample response to learner results.",
+    ),
+    "people": (
+        "Break {skill} into the preparation, conversation or hand-off, decision, and follow-up expected in {role}. Note fairness, confidentiality, and success criteria.",
+        "Role-play a realistic {role} scenario using {skill}. Prepare an opening, key questions, a decision or recommendation, and a follow-up plan.",
+        "For {role}, keep an anonymized {skill} scenario brief and scorecard showing your preparation, decision rationale, communication, and follow-up.",
+    ),
+    "operations": (
+        "Map the workflow behind {skill} in {role}: trigger, inputs, owner, hand-offs, controls, and measurable definition of success.",
+        "Run a small process-improvement case for {skill}. Map the current flow, identify one bottleneck or failure mode, and test a change against a baseline.",
+        "For {role}, present the {skill} before-and-after process map with the change made, control points, and the measure used to judge its effect.",
+    ),
+    "leadership": (
+        "Study how {skill} sets direction in {role}: desired outcome, scope, stakeholders, dependencies, risks, and decision rights.",
+        "Create a bounded {role} plan that applies {skill}; define milestones, owners, risks, and how progress will be reviewed.",
+        "For {role}, save the {skill} plan with a decision log, milestone status, risk response, and a concise stakeholder update.",
+    ),
+    "programming": (
+        "Use authoritative documentation to learn the syntax and core behavior of {skill}. Build a tiny example, then inspect one edge case and one common failure.",
+        "Implement a focused {skill} feature for a {role} use case. Include input validation, a normal-path test, and an edge-case test.",
+        "For {role}, share the runnable {skill} example with tests, expected output, and a short note explaining one implementation choice.",
+    ),
+    "technology": (
+        "Study {skill}'s architecture and operating model in {role}: how it is configured, what it connects to, and how to verify healthy behavior.",
+        "Configure or exercise {skill} in a small use case for {role}. Capture the setup, verify a successful run, and deliberately test a failure or recovery path.",
+        "For {role}, provide a configuration or workflow diagram for {skill}, with verification output, a tested failure/recovery case, and the operational trade-off you observed.",
+    ),
+    "general": (
+        "Define what competent use of {skill} looks like in {role}. Compare a reliable reference example with a weak one, then list the criteria you will apply.",
+        "Complete a bounded {role} case that uses {skill}. State the starting conditions, the decision you made, and how you checked the result.",
+        "For {role}, keep the {skill} work sample with its context, decision rationale, review criteria, and a specific improvement you would make next.",
+    ),
+}
+
+
+def _skill_guidance_category(skill: str, domain: str | None = None) -> str:
+    skill_lower = skill.lower()
+    domain_lower = (domain or "").lower()
+
+    if any(term in skill_lower for term in ("patient", "clinical", "nursing", "medication", "triage", "care plan", "infection control")):
+        return "clinical"
+    if any(term in skill_lower for term in ("financial", "accounting", "ledger", "budget", "forecast", "valuation", "cash flow", "tax", "payroll", "reconciliation")) or "finance" in domain_lower:
+        return "finance"
+    if any(term in skill_lower for term in ("compliance", "regulatory", "hipaa", "privacy", "legal", "contract", "audit", "policy", "governance", "security control")):
+        return "governance"
+    if "data structures" in skill_lower:
+        return "programming"
+    if any(term in skill_lower for term in ("database", "electronic health records", "ehr", "api", "cloud", "devops", "kubernetes", "docker", "network", "infrastructure", "platform", "testing", "automation", "cybersecurity", "crm", "erp", "tableau", "salesforce", "workday")):
+        return "technology"
+    if any(term in skill_lower for term in ("analysis", "analytics", "modeling", "modelling", "research", "statistics", "dashboard", "data", "metrics", "trend", "experiment")) or any(term in domain_lower for term in ("data", "analytics", "research")):
+        return "analysis"
+    if any(term in skill_lower for term in ("design", "prototype", "composition", "layout", "visual", "ux", "ui", "accessibility", "storyboard")) or "design" in domain_lower:
+        return "design"
+    if any(term in skill_lower for term in ("curriculum", "lesson", "instruction", "teaching", "learner", "pedagogy")) or "education" in domain_lower:
+        return "instructional"
+    if any(term in skill_lower for term in ("employee", "candidate", "recruit", "sourcing", "onboarding", "negotiation", "prospect", "client", "customer", "stakeholder communication", "relationship")) or any(term in domain_lower for term in ("hr", "people", "sales", "marketing")):
+        return "people"
+    if any(term in skill_lower for term in ("logistics", "inventory", "procurement", "supply chain", "manufacturing", "production", "quality control", "process optimization", "operations")) or any(term in domain_lower for term in ("operations", "supply chain", "manufacturing")):
+        return "operations"
+    if any(term in skill_lower for term in ("project management", "roadmap", "strategic planning", "risk management", "portfolio management", "program management")) or "project management" in domain_lower:
+        return "leadership"
+    if any(term in skill_lower for term in ("programming", "python", "javascript", "typescript", "java", "kotlin", "swift", "golang", "coding", "data structures", "algorithms")):
+        return "programming"
+    if any(term in skill_lower for term in ("api", "database", "cloud", "devops", "kubernetes", "docker", "network", "infrastructure", "platform", "software", "testing", "automation", "cybersecurity", "electronic health records", "ehr", "crm", "erp", "tableau", "salesforce", "excel", "workday")) or any(term in domain_lower for term in ("software", "cloud", "cybersecurity", "engineering")):
+        return "technology"
+    return "general"
+
+
+def _skill_guidance(
+    skill: str,
+    domain: str | None,
+    role: str,
+) -> tuple[str, str, str]:
+    category = _skill_guidance_category(skill, domain)
+    learn, practice, proof = SKILL_GUIDANCE_TEMPLATES[category]
+    role_context = role or "your target role"
+    return (
+        learn.format(skill=skill, role=role_context),
+        practice.format(skill=skill, role=role_context),
+        proof.format(skill=skill, role=role_context),
+    )
+
+
 @dataclass
 class SkillGap:
     skill: str
@@ -41,6 +153,20 @@ class SkillGap:
     evidence: list[dict] = field(default_factory=list)
     explanation: str = ""
     evidence_type: str = "NONE"
+    learning_guidance: str = ""
+    practice_guidance: str = ""
+    proof_guidance: str = ""
+
+    def __post_init__(self) -> None:
+        if not (self.learning_guidance and self.practice_guidance and self.proof_guidance):
+            learn, practice, proof = _skill_guidance(
+                self.skill,
+                self.domain,
+                self.target_job_title,
+            )
+            self.learning_guidance = self.learning_guidance or learn
+            self.practice_guidance = self.practice_guidance or practice
+            self.proof_guidance = self.proof_guidance or proof
 
 
 DOMAIN_PRACTICE_TEMPLATES: dict[str, str] = {

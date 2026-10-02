@@ -52,27 +52,28 @@ export function ToastContainer() {
         return (
           <div
             key={toast.id}
-            className={`pointer-events-auto w-full rounded-2xl border ${style.border} ${style.bg} p-3.5 shadow-xl shadow-ink-950/10 flex items-start gap-3 animate-fade-in-down transition-all hover:scale-[1.01]`}
+            data-toast-type={toast.type}
+            className={`rr-toast pointer-events-auto w-full rounded-2xl border ${style.border} ${style.bg} p-3.5 shadow-xl shadow-ink-950/10 flex items-start gap-3 animate-fade-in-down transition-all hover:scale-[1.01]`}
             role="alert"
           >
-            <div className={`p-1.5 rounded-xl shrink-0 ${style.iconColor}`}>
+            <div className={`rr-toast-icon p-1.5 rounded-xl shrink-0 ${style.iconColor}`}>
               <Icon size={16} />
             </div>
 
             <div className="flex-1 min-w-0 pt-0.5">
               {toast.title && (
-                <p className={`text-xs font-bold ${style.titleColor} leading-snug`}>
+                <p className={`rr-toast-title text-xs font-bold ${style.titleColor} leading-snug`}>
                   {toast.title}
                 </p>
               )}
-              <p className="text-xs text-ink-700 mt-0.5 leading-relaxed break-words font-medium">
+              <p className="rr-toast-message text-xs text-ink-700 mt-0.5 leading-relaxed break-words font-medium">
                 {toast.message}
               </p>
             </div>
 
             <button
               onClick={() => removeToast(toast.id)}
-              className="p-1 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100/80 transition-colors shrink-0 -mr-1 -mt-1"
+              className="rr-toast-dismiss p-1 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100/80 transition-colors shrink-0 -mr-1 -mt-1"
               aria-label="Dismiss notification"
             >
               <X size={14} />

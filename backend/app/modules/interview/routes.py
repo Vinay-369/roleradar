@@ -24,6 +24,53 @@ def _build_real_experiences_search_url(company: str, title: str) -> str:
     return f"https://www.google.com/search?q={query}"
 
 
+def _format_resume_entries(entries: list[object] | None, limit: int = 5) -> str:
+    formatted: list[str] = []
+
+    def text_items(value: object) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+    for entry in (entries or [])[:limit]:
+        if isinstance(entry, str):
+            if entry.strip():
+                formatted.append(entry.strip())
+            continue
+        if not isinstance(entry, dict):
+            continue
+
+        parts = [
+            str(entry[key]).strip()
+            for key in ("title", "role", "company", "organization")
+            if isinstance(entry.get(key), str) and entry[key].strip()
+        ]
+
+        technologies = entry.get("tech_stack") or entry.get("technologies")
+        if isinstance(technologies, list):
+            technology_text = ", ".join(text_items(technologies))
+        elif isinstance(technologies, str):
+            technology_text = technologies.strip()
+        else:
+            technology_text = ""
+        if technology_text:
+            parts.append(f"Technologies: {technology_text}")
+
+        bullets = text_items(entry.get("bullets"))
+        for section_key in ("progression", "responsibility_groups"):
+            sections = entry.get(section_key)
+            if isinstance(sections, list):
+                for section in sections:
+                    if isinstance(section, dict):
+                        bullets.extend(text_items(section.get("bullets")))
+        parts.extend(bullets[:5])
+
+        if parts:
+            formatted.append(" — ".join(parts))
+
+    return " | ".join(formatted)
+
+
 async def _generate_prep(db, ai_service, user_id, job_id: str | None = None, role: str | None = None, company: str | None = None):
     resume = await resume_repo.get_active_master_resume(db, user_id)
     profile = await profile_repo.get_profile(db, user_id)
@@ -51,10 +98,12 @@ async def _generate_prep(db, ai_service, user_id, job_id: str | None = None, rol
         jd_text = f"Interview preparation for {target_role} position at {target_company}."
 
     if resume is not None and resume.get("parsed"):
+        parsed_resume = resume["parsed"]
+        skills = parsed_resume.get("skills") or []
         resume_summary = (
-            f"Skills: {', '.join(resume['parsed'].get('skills', []))}. "
-            f"Experience: {' | '.join(resume['parsed'].get('experience_raw', [])[:5])}. "
-            f"Projects: {' | '.join(resume['parsed'].get('projects_raw', [])[:5])}."
+            f"Skills: {', '.join(text for text in skills if isinstance(text, str))}. "
+            f"Experience: {_format_resume_entries(parsed_resume.get('experience_raw'))}. "
+            f"Projects: {_format_resume_entries(parsed_resume.get('projects_raw'))}."
         )
     else:
         achievements = await resume_repo.list_achievements(db, user_id)

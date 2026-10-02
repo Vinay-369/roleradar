@@ -23,6 +23,8 @@ import {
   Info,
   Layers,
   Share2,
+  TriangleAlert,
+  RotateCcw,
 } from "lucide-react";
 import {
   listConversations,
@@ -66,7 +68,7 @@ function FormattedMarkdown({ content }: { content: string }) {
   function flushList() {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={`ul-${elements.length}`} className="my-2.5 space-y-1.5 pl-5 list-disc text-ink-800 marker:text-signal-600">
+        <ul key={`ul-${elements.length}`} className="my-2.5 list-disc space-y-1.5 pl-5 text-ink-800 marker:text-signal-600 dark:text-slate-200">
           {listItems.map((item, idx) => (
             <li key={idx} className="text-xs leading-relaxed pl-0.5">
               {formatInline(item)}
@@ -81,13 +83,13 @@ function FormattedMarkdown({ content }: { content: string }) {
   function flushCodeBlock() {
     if (codeBlockLines.length > 0 || inCodeBlock) {
       elements.push(
-        <div key={`code-${elements.length}`} className="my-3 rounded-lg overflow-hidden border border-ink-800 bg-ink-950 shadow-xs">
+        <div key={`code-${elements.length}`} className="my-3 overflow-hidden rounded-lg border border-slate-700 bg-slate-950 shadow-xs">
           {codeBlockLang && (
-            <div className="px-3 py-1 bg-ink-900 border-b border-ink-800 text-[10px] font-mono text-ink-400 uppercase tracking-wider">
+            <div className="border-b border-slate-700 bg-slate-900 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400">
               {codeBlockLang}
             </div>
           )}
-          <pre className="p-3 text-xs font-mono text-emerald-400 overflow-x-auto leading-relaxed">
+          <pre className="overflow-x-auto p-3 text-xs font-mono leading-relaxed text-emerald-400">
             <code>{codeBlockLines.join("\n")}</code>
           </pre>
         </div>
@@ -112,19 +114,19 @@ function FormattedMarkdown({ content }: { content: string }) {
       const token = match[0];
       if (token.startsWith("**") && token.endsWith("**")) {
         parts.push(
-          <strong key={`b-${match.index}`} className="font-bold text-ink-950">
+          <strong key={`b-${match.index}`} className="font-bold text-ink-950 dark:text-white">
             {token.slice(2, -2)}
           </strong>
         );
       } else if (token.startsWith("`") && token.endsWith("`")) {
         parts.push(
-          <code key={`c-${match.index}`} className="bg-ink-100 text-signal-700 px-1.5 py-0.5 rounded text-[11px] font-mono border border-ink-200/60 font-semibold">
+          <code key={`c-${match.index}`} className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-signal-700 dark:border-slate-600 dark:bg-slate-700 dark:text-signal-300">
             {token.slice(1, -1)}
           </code>
         );
       } else if (token.startsWith("*") && token.endsWith("*")) {
         parts.push(
-          <em key={`i-${match.index}`} className="italic text-ink-700">
+          <em key={`i-${match.index}`} className="italic text-ink-700 dark:text-slate-200">
             {token.slice(1, -1)}
           </em>
         );
@@ -166,26 +168,26 @@ function FormattedMarkdown({ content }: { content: string }) {
       const headingText = headingMatch[2];
       if (level === 1) {
         elements.push(
-          <h1 key={`h1-${lineIdx}`} className="font-bold text-base text-ink-950 mt-4 mb-2">
+          <h1 key={`h1-${lineIdx}`} className="mt-4 mb-2 text-base font-bold text-ink-950 dark:text-white">
             {formatInline(headingText)}
           </h1>
         );
       } else if (level === 2) {
         elements.push(
-          <h2 key={`h2-${lineIdx}`} className="font-bold text-sm text-ink-950 mt-3.5 mb-1.5">
+          <h2 key={`h2-${lineIdx}`} className="mt-3.5 mb-1.5 text-sm font-bold text-ink-950 dark:text-white">
             {formatInline(headingText)}
           </h2>
         );
       } else if (level === 3) {
         elements.push(
-          <h3 key={`h3-${lineIdx}`} className="font-bold text-xs uppercase tracking-wider text-signal-700 mt-3 mb-1.5 flex items-center gap-1.5">
+          <h3 key={`h3-${lineIdx}`} className="mt-3 mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-signal-700 dark:text-signal-300">
             <Sparkles size={12} className="text-signal-600 shrink-0" />
             {formatInline(headingText)}
           </h3>
         );
       } else {
         elements.push(
-          <h4 key={`h4-${lineIdx}`} className="font-bold text-xs text-ink-900 mt-2.5 mb-1">
+          <h4 key={`h4-${lineIdx}`} className="mt-2.5 mb-1 text-xs font-bold text-ink-900 dark:text-slate-100">
             {formatInline(headingText)}
           </h4>
         );
@@ -198,8 +200,8 @@ function FormattedMarkdown({ content }: { content: string }) {
     } else if (/^\d+\.\s+/.test(trimmed)) {
       flushList();
       elements.push(
-        <div key={`num-${lineIdx}`} className="flex gap-2 my-1.5 text-xs text-ink-800 leading-relaxed">
-          <span className="font-bold text-signal-600 shrink-0">{trimmed.match(/^\d+\./)?.[0]}</span>
+        <div key={`num-${lineIdx}`} className="my-2 flex items-start gap-2.5 text-xs leading-relaxed text-ink-800 dark:text-slate-200">
+          <span className="mt-px inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-100 text-[10px] font-bold text-amber-800 dark:border-amber-800 dark:bg-amber-900/60 dark:text-amber-200">{trimmed.match(/^\d+/)?.[0]}</span>
           <div>{formatInline(trimmed.replace(/^\d+\.\s+/, ""))}</div>
         </div>
       );
@@ -208,7 +210,7 @@ function FormattedMarkdown({ content }: { content: string }) {
     } else {
       flushList();
       elements.push(
-        <p key={`p-${lineIdx}`} className="my-2.5 text-xs text-ink-800 leading-relaxed">
+        <p key={`p-${lineIdx}`} className="my-2.5 text-xs leading-relaxed text-ink-800 dark:text-slate-200">
           {formatInline(trimmed)}
         </p>
       );
@@ -454,6 +456,11 @@ export function Copilot() {
     );
   }
 
+  function handleRegenerate(index: number) {
+    const previousUserMessage = [...messages.slice(0, index)].reverse().find((message) => message.role === "user");
+    if (previousUserMessage) handleSend(previousUserMessage.text);
+  }
+
   // Voice Input via Browser Web Speech API
   function toggleVoiceRecording() {
     if (isRecording) {
@@ -673,38 +680,39 @@ export function Copilot() {
   }
 
   return (
-    <div className="flex h-full w-full bg-slate-50/40 overflow-hidden select-text">
+    <div className="flex h-full w-full select-text overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* ------------------------------------------------------------------ */}
       {/* Left Sidebar: Multi-Session Conversation Threads */}
       {/* ------------------------------------------------------------------ */}
       <div
-        className={`shrink-0 transition-all duration-300 flex flex-col bg-white border-r border-ink-100/80 shadow-xs h-full z-10 overflow-hidden ${
+        className={`z-10 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xs transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
           sidebarOpen ? "w-64 sm:w-72" : "w-0 p-0 border-0 overflow-hidden"
         }`}
       >
         {sidebarOpen && (
           <>
             {/* Sidebar Header */}
-            <div className="p-3 border-b border-ink-100/80 flex items-center justify-between bg-ink-50/40 shrink-0">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-2">
                 <MessageSquare size={15} className="text-signal-600" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-ink-900">Conversations</h2>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-ink-900 dark:text-slate-100">Conversations</h2>
               </div>
               <button
                 onClick={() => toggleSidebar(false)}
-                className="p-1 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-ink-100 transition-colors"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-slate-200 hover:text-ink-700 dark:hover:bg-slate-800 dark:hover:text-white"
                 title="Collapse sidebar"
+                aria-label="Collapse sidebar"
               >
                 <PanelLeftClose size={15} />
               </button>
             </div>
 
             {/* New Chat Button */}
-            <div className="p-2.5 border-b border-ink-100/80 shrink-0">
+            <div className="shrink-0 border-b border-slate-200 p-2.5 dark:border-slate-800">
               <button
                 onClick={() => createConvMutation.mutate(undefined)}
                 disabled={createConvMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-ink-950 hover:bg-ink-900 text-white text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-signal-600 px-3 py-2 text-xs font-bold text-white shadow-2xs transition-all hover:bg-signal-700 active:scale-95 disabled:opacity-50"
               >
                 <Plus size={14} />
                 <span>New Chat</span>
@@ -817,82 +825,79 @@ export function Copilot() {
       {/* ------------------------------------------------------------------ */}
       {/* Main Chat Workspace (Full-Height ChatGPT/Claude Style Layout) */}
       {/* ------------------------------------------------------------------ */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-white overflow-hidden">
+      <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-slate-900">
         {/* Sleek Compact Header Bar */}
-        <header className="h-12 px-4 sm:px-6 border-b border-ink-100/80 bg-white/90 backdrop-blur-sm flex items-center justify-between shrink-0 z-10">
+        <header className="min-h-14 px-3 sm:px-6 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-between gap-3 shrink-0 z-10 dark:border-slate-800 dark:bg-slate-900/95">
           <div className="flex items-center gap-2.5 min-w-0">
-            {!sidebarOpen && (
-              <button
-                onClick={() => toggleSidebar(true)}
-                className="p-1.5 rounded-lg text-ink-500 hover:text-ink-900 hover:bg-ink-100 transition-colors shrink-0"
-                title="Open conversation threads"
-              >
-                <PanelLeftOpen size={16} />
-              </button>
-            )}
+            <button
+              onClick={() => toggleSidebar(!sidebarOpen)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-slate-100 hover:text-ink-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              title={sidebarOpen ? "Collapse conversation sidebar" : "Open conversation sidebar"}
+              aria-label={sidebarOpen ? "Collapse conversation sidebar" : "Open conversation sidebar"}
+            >
+              {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+            </button>
 
-            <div className="w-7 h-7 rounded-lg bg-signal-500/10 text-signal-700 flex items-center justify-center shrink-0 font-bold border border-signal-500/20">
+            <div className="w-8 h-8 rounded-lg bg-signal-500/10 text-signal-700 flex items-center justify-center shrink-0 font-bold border border-signal-500/20 dark:text-signal-300">
               <Bot size={15} />
             </div>
 
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className="font-display text-xs sm:text-sm font-bold text-ink-950 truncate">
+            <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+              <h1 className="font-display text-sm font-bold text-ink-950 truncate dark:text-white">
                 Career Copilot
               </h1>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-signal-50 text-signal-700 border border-signal-200">
+              <span className="inline-flex w-fit items-center rounded-full border border-signal-200 bg-signal-50 px-2 py-0.5 text-[9px] font-semibold text-signal-700 dark:border-signal-900 dark:bg-signal-950/50 dark:text-signal-300">
                 Engineering Mentor v4
               </span>
             </div>
           </div>
 
           {/* Top Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
             <button
               onClick={() => handleOpenShare()}
-              className="inline-flex items-center gap-1.5 text-xs text-signal-700 hover:text-signal-950 transition-colors px-2.5 py-1 rounded-lg bg-signal-50 hover:bg-signal-100 border border-signal-200/80 font-semibold shadow-2xs"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-ink-600 transition-colors hover:bg-white hover:text-signal-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
               title="Share this chat history"
             >
               <Share2 size={12} />
-              <span>Share</span>
+              <span className="hidden sm:inline">Share</span>
             </button>
 
             <button
               onClick={handleExportChat}
-              className="inline-flex items-center gap-1.5 text-xs text-ink-600 hover:text-ink-900 transition-colors px-2.5 py-1 rounded-lg bg-ink-50 hover:bg-ink-100 border border-ink-200/80 font-medium shadow-2xs"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-ink-600 transition-colors hover:bg-white hover:text-ink-950 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
               title="Export conversation as Markdown"
             >
               <Download size={12} />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden md:inline">Export</span>
             </button>
 
-            {!sidebarOpen && (
-              <button
-                onClick={() => createConvMutation.mutate(undefined)}
-                disabled={createConvMutation.isPending}
-                className="inline-flex items-center gap-1.5 text-xs text-white bg-ink-950 hover:bg-ink-900 transition-all px-2.5 py-1 rounded-lg font-semibold shadow-2xs active:scale-95"
-                title="Start a new chat"
-              >
-                <Plus size={12} />
-                <span className="hidden sm:inline">New Chat</span>
-              </button>
-            )}
+            <button
+              onClick={() => createConvMutation.mutate(undefined)}
+              disabled={createConvMutation.isPending}
+              className="inline-flex h-8 items-center gap-1 rounded-lg bg-signal-600 px-2.5 text-xs font-bold text-white shadow-xs transition-colors hover:bg-signal-700 active:scale-95 disabled:opacity-60 sm:gap-1.5 sm:px-3"
+              title="Start a new chat"
+            >
+              <Plus size={13} />
+              <span className="hidden sm:inline">New Chat</span>
+            </button>
           </div>
         </header>
 
         {/* Dynamic Context Banner */}
         {activeContext && (
-          <div className="px-4 sm:px-6 py-2 bg-gradient-to-r from-signal-500/10 via-signal-500/5 to-transparent border-b border-signal-500/20 flex items-center justify-between text-xs text-ink-800 shrink-0">
+          <div className="flex shrink-0 items-center justify-between border-b border-signal-500/20 bg-gradient-to-r from-signal-500/10 via-signal-500/5 to-transparent px-4 py-2 text-xs text-ink-800 dark:text-slate-200 sm:px-6">
             <div className="flex items-center gap-2">
               <Layers size={13} className="text-signal-600 shrink-0" />
               <span>
                 <strong>Context Focused:</strong> Analyzing for{" "}
-                <span className="text-signal-700 font-semibold">{activeContext.role || "Target Role"}</span>
+                <span className="font-semibold text-signal-700 dark:text-signal-300">{activeContext.role || "Target Role"}</span>
                 {activeContext.company ? ` at ${activeContext.company}` : ""}
               </span>
             </div>
             <button
               onClick={() => setActiveContext(null)}
-              className="text-ink-400 hover:text-ink-700 p-1 rounded transition-colors"
+              className="rounded p-1 text-ink-400 transition-colors hover:text-ink-700 dark:hover:text-white"
               title="Dismiss focused context"
             >
               <X size={12} />
@@ -901,16 +906,16 @@ export function Copilot() {
         )}
 
         {/* Expansive Message Stream */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-5">
+        <div className="flex-1 snap-y snap-proximity overflow-y-auto bg-slate-50/60 px-3 py-5 sm:px-8 sm:py-6 dark:bg-slate-950/40">
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.map((m, i) => (
               <div
                 key={i}
                 ref={i === messages.length - 1 && m.role === "assistant" ? lastAssistantMsgRef : null}
-                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}
+                className={`flex snap-start ${m.role === "user" ? "justify-end pl-8 sm:pl-16" : "justify-start pr-2"} animate-fade-in-up`}
               >
                 {m.role === "user" ? (
-                  <div className="max-w-xl w-fit rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 bg-ink-950 text-white rounded-br-xs shadow-2xs text-xs leading-relaxed group">
+                  <div className="max-w-xl w-fit rounded-2xl rounded-br-sm border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs leading-relaxed text-white shadow-sm sm:px-4 sm:py-3 dark:border-slate-700 dark:bg-slate-800">
                     {m.attachment && (
                       <div className="mb-2 p-2 rounded-xl bg-ink-900 border border-ink-800 flex items-center justify-between text-[11px] text-ink-200 gap-2">
                         <div className="flex items-center gap-1.5 truncate">
@@ -925,15 +930,30 @@ export function Copilot() {
                     <p className="whitespace-pre-wrap font-medium">{m.text}</p>
                   </div>
                 ) : (
-                  <div className="max-w-3xl w-fit bg-white border border-ink-100 text-ink-800 rounded-2xl p-4 rounded-bl-xs shadow-xs text-xs leading-relaxed group transition-all">
-                    <FormattedMarkdown content={m.text} />
+                  <div className={`w-full max-w-4xl rounded-2xl rounded-bl-sm border p-4 text-xs leading-relaxed shadow-sm transition-all sm:p-5 ${
+                    m.text.toLowerCase().includes("local ai connection notice")
+                      ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"
+                      : "border-slate-200 bg-white text-ink-800 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                  }`}>
+                    {m.text.toLowerCase().includes("local ai connection notice") && (
+                      <div className="mb-3 flex items-start gap-2.5 border-b border-amber-200/80 pb-3 dark:border-amber-800/70">
+                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                          <TriangleAlert size={17} />
+                        </span>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">Local AI connection notice</p>
+                          <p className="mt-1 text-xs font-medium text-amber-950 dark:text-amber-100">Career Copilot could not reach the local Ollama model.</p>
+                        </div>
+                      </div>
+                    )}
+                    <FormattedMarkdown content={m.text.replace(/^###\s*⚠️?\s*Local AI Connection Notice\s*/i, "")} />
 
                     {/* Proactive Resume Intelligence Suggestion Card */}
                     {m.resume_suggestion && (
-                      <div className="mt-3.5 p-2.5 rounded-xl bg-signal-500/10 border border-signal-500/30 flex items-center justify-between gap-2">
+                      <div className="mt-3.5 flex items-center justify-between gap-2 rounded-xl border border-signal-500/30 bg-signal-500/10 p-2.5 dark:bg-signal-950/40">
                         <div className="flex items-center gap-2">
                           <Sparkles size={14} className="text-signal-600 shrink-0" />
-                          <span className="text-[11px] text-signal-950 font-medium">
+                          <span className="text-[11px] font-medium text-signal-950 dark:text-signal-100">
                             {m.resume_suggestion}
                           </span>
                         </div>
@@ -947,22 +967,33 @@ export function Copilot() {
                     )}
 
                     {/* Copy Button Footer */}
-                    <div className="mt-3.5 pt-2 border-t border-ink-100/60 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[10px] text-ink-400 font-medium">RoleRadar Grounded Mentor</span>
-                      <button
-                        onClick={() => handleCopy(m.text, i)}
-                        className="inline-flex items-center gap-1 text-[11px] text-ink-600 hover:text-signal-700 bg-ink-50 hover:bg-ink-100 px-2.5 py-0.5 rounded-md border border-ink-100 transition-colors font-medium"
-                      >
-                        {copiedIndex === i ? (
-                          <>
-                            <Check size={11} className="text-signal-600" /> Copied
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={11} /> Copy
-                          </>
+                    <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-200/80 pt-3 dark:border-slate-700">
+                      <span className="text-[10px] font-semibold text-ink-400 dark:text-slate-400">RoleRadar Grounded Mentor</span>
+                      <div className="flex items-center gap-1.5">
+                        {i > 0 && messages.slice(0, i).some((message) => message.role === "user") && (
+                          <button
+                            onClick={() => handleRegenerate(i)}
+                            disabled={isGenerating || sendMutation.isPending}
+                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-ink-600 transition-colors hover:bg-slate-50 hover:text-signal-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                          >
+                            <RotateCcw size={11} /> Regenerate
+                          </button>
                         )}
-                      </button>
+                        <button
+                          onClick={() => handleCopy(m.text, i)}
+                          className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-ink-600 transition-colors hover:bg-slate-50 hover:text-signal-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                        >
+                          {copiedIndex === i ? (
+                            <>
+                              <Check size={11} className="text-signal-600" /> Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={11} /> Copy
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -971,7 +1002,7 @@ export function Copilot() {
 
             {(isGenerating || sendMutation.isPending) && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start animate-fade-in-up">
-                <div className="bg-white border border-ink-100 rounded-2xl rounded-bl-xs px-4 py-3 text-xs text-ink-600 flex items-center gap-1.5 shadow-xs">
+                <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-4 py-3 text-xs text-ink-600 shadow-xs dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300">
                   <span className="w-2 h-2 rounded-full bg-signal-500 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-2 h-2 rounded-full bg-signal-500 animate-bounce" style={{ animationDelay: "150ms" }} />
                   <span className="w-2 h-2 rounded-full bg-signal-500 animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -985,20 +1016,20 @@ export function Copilot() {
         {/* ------------------------------------------------------------------ */}
         {/* Streamlined Bottom Input Dock */}
         {/* ------------------------------------------------------------------ */}
-        <div className="shrink-0 border-t border-ink-100/60 bg-white/95 backdrop-blur-sm px-4 sm:px-8 pt-2.5 pb-3.5">
+        <div className="shrink-0 border-t border-slate-200 bg-white/95 px-3 pt-2.5 pb-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 sm:px-8">
           <div className="max-w-4xl mx-auto space-y-2">
 
             {/* Active Attachment Chip (When attached before sending) */}
             {activeAttachment && (
-              <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between text-xs text-teal-950 animate-fade-in-up">
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50 p-2.5 text-xs text-teal-950 animate-fade-in-up dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100">
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText size={15} className="text-teal-700 shrink-0" />
                   <span className="font-semibold truncate">{activeAttachment.filename}</span>
-                  <span className="text-[10px] text-teal-700 bg-white px-2 py-0.5 rounded border border-teal-200 font-mono">
+                  <span className="rounded border border-teal-200 bg-white px-2 py-0.5 text-[10px] font-mono text-teal-700 dark:border-teal-800 dark:bg-slate-900 dark:text-teal-300">
                     {activeAttachment.file_type} • {activeAttachment.extracted_text.length} chars
                   </span>
                   {activeAttachment.is_resume && (
-                    <span className="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold">
+                    <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                       ✓ Resume Detected
                     </span>
                   )}
@@ -1015,7 +1046,7 @@ export function Copilot() {
             )}
 
             {/* Main Input Bar */}
-            <div className="bg-white p-2 sm:p-2.5 rounded-2xl border border-ink-200 shadow-xs focus-within:border-signal-500 focus-within:ring-2 focus-within:ring-signal-500/10 transition-all flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-all focus-within:border-signal-500 focus-within:ring-2 focus-within:ring-signal-500/10 dark:border-slate-700 dark:bg-slate-900 sm:gap-2 sm:p-2.5">
               {/* Hidden File Input */}
               <input
                 type="file"
@@ -1030,8 +1061,8 @@ export function Copilot() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAttachment}
-                className={`p-2 rounded-xl text-ink-500 hover:text-ink-900 hover:bg-ink-100 transition-colors shrink-0 ${
-                  activeAttachment ? "text-teal-600 bg-teal-50" : ""
+                className={`shrink-0 rounded-xl p-2 text-ink-500 transition-colors hover:bg-slate-100 hover:text-ink-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white ${
+                  activeAttachment ? "bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-300" : ""
                 }`}
                 title="Attach Document (PDF, DOCX, Code, TXT) or Screenshot"
               >
@@ -1049,7 +1080,7 @@ export function Copilot() {
                 className={`p-2 rounded-xl transition-all shrink-0 ${
                   isRecording
                     ? "bg-alert-600 text-white shadow-xs animate-pulse"
-                    : "text-ink-500 hover:text-ink-900 hover:bg-ink-100"
+                    : "text-ink-500 hover:bg-slate-100 hover:text-ink-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                 }`}
                 title={isRecording ? "Stop voice listening" : "Voice input (Speech to Text)"}
               >
@@ -1068,14 +1099,18 @@ export function Copilot() {
                     ? `Ask questions about ${activeAttachment.filename}…`
                     : "Ask anything about system design, coding, interview strategy, or resume metrics…"
                 }
-                className="flex-1 px-2 py-2 text-xs sm:text-sm outline-none bg-transparent text-ink-900 placeholder:text-ink-400"
+                className="min-w-0 flex-1 bg-transparent px-2 py-2 text-xs text-ink-900 outline-none placeholder:text-ink-400 dark:text-white dark:placeholder:text-slate-500 sm:text-sm"
               />
 
               {/* Send Button */}
               <button
                 onClick={() => handleSend()}
                 disabled={isGenerating || sendMutation.isPending || (!input.trim() && !activeAttachment)}
-                className="flex items-center gap-1.5 rounded-xl bg-ink-950 hover:bg-ink-900 text-white px-4 py-2.5 text-xs font-semibold transition-all disabled:opacity-40 active:scale-95 shadow-xs shrink-0"
+                className={`inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 sm:px-4 ${
+                  input.trim() || activeAttachment
+                    ? "bg-signal-600 hover:bg-signal-700"
+                    : "bg-slate-400 dark:bg-slate-700"
+                }`}
               >
                 <Send size={13} />
                 <span>Send</span>
@@ -1083,7 +1118,7 @@ export function Copilot() {
             </div>
 
             {/* Transparent OCR / Limitation Note Footer */}
-            <div className="px-2 flex items-center justify-between text-[10px] text-ink-400">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 px-2 text-center text-[10px] text-ink-400 dark:text-slate-500">
               <span className="flex items-center gap-1">
                 <Info size={10} className="text-ink-400 shrink-0" />
                 Attachments extract text via OCR. Photos/diagrams are text-extracted only.

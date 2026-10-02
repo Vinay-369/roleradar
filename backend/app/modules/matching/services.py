@@ -168,7 +168,12 @@ async def get_or_compute_matches(
 
         if j_id in cached_map:
             cached_data = cached_map[j_id]["match_data"]
-            india_meta = _build_india_metadata(job, skill_score=cached_data.get("skill_score"))
+            india_meta = _build_india_metadata(
+                job,
+                profile=profile,
+                resume=resume,
+                skill_score=cached_data.get("skill_score"),
+            )
             results.append({
                 **cached_data,
                 "job_title": job["title"],
@@ -251,7 +256,12 @@ async def get_or_compute_matches(
             created_val = job.get("created_at") or job.get("created")
             created_str = created_val.isoformat() if hasattr(created_val, "isoformat") else (str(created_val) if created_val else "")
 
-            india_meta = _build_india_metadata(job, skill_score=match.skill_score)
+            india_meta = _build_india_metadata(
+                job,
+                profile=profile,
+                resume=resume,
+                skill_score=match.skill_score,
+            )
             results.append({
                 **match_data,
                 "job_title": job["title"],
@@ -367,4 +377,3 @@ def _multi_factor_rank_key(r: dict):
         q_tier_rank,
         tech_match,
     )
-

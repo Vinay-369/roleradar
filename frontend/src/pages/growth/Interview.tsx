@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  MessageCircleQuestion, ExternalLink, Sparkles,
+  MessageCircleQuestion, Sparkles,
   ChevronDown, ChevronUp, AlertTriangle, Lightbulb,
   Video, Code2, Users, Briefcase, Star, CheckCircle2,
-  Timer, Play, RotateCcw, Bot,
+  Timer, Play, RotateCcw, Bot, BookOpen,
+  Search, Terminal, ArrowUpRight,
 } from "lucide-react";
 import { getProfile } from "../../lib/profile";
 import {
@@ -51,6 +52,8 @@ const MOCK_PLATFORMS = [
   },
 ];
 
+const MOCK_PLATFORM_ICONS = [Users, Video, Code2, Briefcase, BookOpen];
+
 function PracticeTimer() {
   const [secondsLeft, setSecondsLeft] = useState(120);
   const [isActive, setIsActive] = useState(false);
@@ -73,7 +76,7 @@ function PracticeTimer() {
   const timeFormatted = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 
   return (
-    <div className="p-3.5 bg-ink-50 rounded-xl border border-ink-100 space-y-2 mt-2">
+    <div className="mt-2 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-ink-800 flex items-center gap-1.5">
           <Timer size={14} className="text-signal-500" />
@@ -149,18 +152,18 @@ function QuestionCard({
     : "HR & Culture Round";
 
   return (
-    <div className={`rounded-xl border transition-all ${
+    <article className={`rounded-xl border border-slate-200 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all hover:shadow-md sm:p-5 ${
       isMastered
-        ? "border-signal-500/40 bg-white shadow-xs"
-        : "border-ink-100 bg-white shadow-xs hover:shadow-md"
-    } p-5`}>
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-2">
-          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider border ${badgeStyle}`}>
+        ? "border-signal-500/40 bg-white"
+        : "bg-white"
+    }`}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
             {roundName}
           </span>
-          <span className="text-[11px] text-ink-400 font-mono">Q{index + 1}</span>
-          <span className="text-[11px] text-ink-500 font-medium hidden sm:inline">• {role}</span>
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold font-mono text-slate-600">Q{index + 1}</span>
+          <span className="hidden max-w-40 truncate text-[11px] font-medium text-ink-500 sm:inline">{role}</span>
           {isMastered && (
             <span className="text-[10px] font-semibold text-signal-700 bg-signal-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
               <CheckCircle2 size={10} /> Mastered
@@ -172,10 +175,11 @@ function QuestionCard({
           {/* Bookmark Button */}
           <button
             onClick={onToggleBookmarked}
-            className={`p-1.5 rounded-lg transition-colors ${
+            aria-label={isBookmarked ? "Remove bookmark" : "Save question"}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
               isBookmarked
-                ? "text-amber-500 bg-amber-500/10"
-                : "text-ink-400 hover:text-amber-500 hover:bg-ink-100"
+                ? "border-amber-200 bg-amber-50 text-amber-600"
+                : "border-slate-200 bg-white text-ink-400 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
             }`}
             title={isBookmarked ? "Remove Bookmark" : "Bookmark for Revision"}
           >
@@ -185,10 +189,11 @@ function QuestionCard({
           {/* Mastered Checkbox Button */}
           <button
             onClick={onToggleMastered}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+            aria-pressed={isMastered}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition-all ${
               isMastered
-                ? "bg-signal-500 text-white shadow-2xs"
-                : "bg-ink-100 text-ink-700 hover:bg-ink-200"
+                ? "border-signal-600 bg-signal-600 text-white shadow-2xs hover:bg-signal-700"
+                : "border-slate-200 bg-white text-ink-700 hover:border-signal-500/40 hover:bg-signal-50"
             }`}
             title={isMastered ? "Mark as Pending" : "Mark as Mastered"}
           >
@@ -198,40 +203,52 @@ function QuestionCard({
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-ink-900 mb-2 leading-relaxed">
+      <h3 className="mb-3 text-sm font-semibold leading-relaxed text-ink-900 sm:text-base">
         {q.question}
       </h3>
 
       {q.star_hint && (
-        <div className="rounded-lg bg-ink-50/80 p-3 mb-3 border border-ink-100/60">
-          <p className="text-xs font-semibold text-ink-700 mb-0.5 flex items-center gap-1.5">
-            <Sparkles size={12} className="text-signal-600" /> Focus Strategy:
+        <div className="mb-3 rounded-lg border border-indigo-100 border-l-4 border-l-indigo-500 bg-indigo-50/50 p-3">
+          <p className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold text-indigo-800">
+            <Sparkles size={13} className="text-indigo-600" /> Focus Strategy
           </p>
           <p className="text-xs text-ink-600 leading-relaxed">{q.star_hint}</p>
         </div>
       )}
 
       {/* Action Buttons: Expand Answer & Practice Timer */}
-      <div className="flex flex-col sm:flex-row gap-2 mt-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex-1 flex items-center justify-between px-3.5 py-2 rounded-lg bg-ink-50 hover:bg-ink-100 text-ink-800 text-xs font-semibold transition-colors"
+          aria-expanded={expanded}
+          className="inline-flex min-h-9 flex-1 items-center justify-between gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-left text-xs font-semibold text-ink-700 transition-colors hover:border-signal-500/40 hover:bg-slate-50 sm:flex-none"
         >
           <span className="flex items-center gap-1.5">
-            <Lightbulb size={14} className="text-amber-500" />
-            {expanded ? "Hide Answer Strategy" : "💡 How to Answer & Sample Model Response"}
+            <Lightbulb size={14} className="shrink-0 text-amber-500" />
+            {expanded ? "Hide Answer Strategy" : "How to Answer & Sample Response"}
           </span>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
 
         <button
+          type="button"
           onClick={() => setShowPracticeTimer(!showPracticeTimer)}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-ink-50 hover:bg-ink-100 text-ink-700 text-xs font-medium transition-colors"
+          aria-expanded={showPracticeTimer}
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-ink-700 transition-colors hover:border-signal-500/40 hover:bg-slate-50"
           title="Practice answering in 2 minutes"
         >
           <Timer size={13} className="text-signal-500" />
-          <span>{showPracticeTimer ? "Hide Timer" : "⏱️ Practice (2m)"}</span>
+          <span>{showPracticeTimer ? "Hide Timer" : "Practice (2m)"}</span>
         </button>
+        <Link
+          to={`/copilot?role=${encodeURIComponent(role)}&category=${encodeURIComponent(q.category)}&prompt=${encodeURIComponent(`For the interview question: "${q.question}" (in a ${roundName} for ${role}):\n\nPlease provide detailed guidance on:\n1. How to approach and structure the answer\n2. How to present and communicate key points effectively\n3. Key technical/architectural concepts or STAR talking points to mention\n4. What mistakes or red flags to avoid`)}`}
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-signal-500/25 bg-signal-500/5 px-3.5 py-2 text-xs font-semibold text-signal-800 transition-colors hover:bg-signal-500/10"
+        >
+          <Bot size={14} className="text-signal-600" />
+          Ask Copilot
+          <ArrowUpRight size={12} />
+        </Link>
       </div>
 
       {showPracticeTimer && <PracticeTimer />}
@@ -267,15 +284,7 @@ function QuestionCard({
         </div>
       )}
 
-      {/* Ask Copilot for Detailed Information & Presentation Strategy Button */}
-      <Link
-        to={`/copilot?role=${encodeURIComponent(role)}&category=${encodeURIComponent(q.category)}&prompt=${encodeURIComponent(`For the interview question: "${q.question}" (in a ${roundName} for ${role}):\n\nPlease provide detailed guidance on:\n1. How to approach and structure the answer\n2. How to present and communicate key points effectively\n3. Key technical/architectural concepts or STAR talking points to mention\n4. What mistakes or red flags to avoid`)}`}
-        className="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-signal-500/10 hover:bg-signal-500/20 text-signal-800 text-xs font-bold transition-all border border-signal-500/20"
-      >
-        <Bot size={14} className="text-signal-600" />
-        <span>Ask Copilot for detailed information & how to present ↗</span>
-      </Link>
-    </div>
+    </article>
   );
 }
 
@@ -386,20 +395,34 @@ export function Interview() {
     });
   }, [currentQuestions, effectiveRole, activeTab, filterView, bookmarkMap, masteredMap]);
 
+  const readinessPercent = currentQuestions.length > 0
+    ? Math.round((masteredCount / currentQuestions.length) * 100)
+    : 0;
+
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <MessageCircleQuestion size={24} className="text-signal-600" />
-          <h1 className="font-display text-2xl text-ink-900">Interview Preparation</h1>
+        <div className="mb-1 flex items-center gap-2">
+          <MessageCircleQuestion size={22} className="shrink-0 text-signal-600" />
+          <h1 className="min-w-0 break-words font-display text-2xl font-bold text-ink-900">Interview Preparation</h1>
         </div>
-        <p className="text-ink-500 text-sm">
+        <p className="text-sm leading-relaxed text-ink-500">
           Interview questions are generated for your selected role and experience, with model answers, 2-minute practice timers, and free peer practice links.
         </p>
       </div>
 
       {/* Target Role Dropdown Card */}
-      <div className="bg-white rounded-xl border border-ink-100 p-5 shadow-xs">
+      <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all hover:border-signal-500/25 focus-within:border-signal-500/50 focus-within:ring-2 focus-within:ring-signal-500/10 sm:p-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 text-xs font-bold text-ink-800">
+            <Search size={14} className="text-signal-600" />
+            Prepare for your target role
+          </span>
+          <span className="hidden items-center gap-1.5 rounded-full border border-signal-500/20 bg-signal-500/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-signal-700 sm:inline-flex">
+            <Sparkles size={11} />
+            Role-specific question set
+          </span>
+        </div>
         <RoleDropdownSelector
           label="Select Target Job Role:"
           selectedRole={selectedRole}
@@ -407,99 +430,105 @@ export function Interview() {
           roles={roleOptions}
           includeAllOption={false}
           helperText="Choose a specialized role or enter a custom title to generate role-specific interview questions."
+          className="[&_label]:text-xs [&_input[role=combobox]]:h-11 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:py-2.5 [&_input[role=combobox]]:focus:ring-signal-500/15"
         />
       </div>
 
-      {/* Mastery Progress Card */}
-      <div className="bg-white rounded-xl border border-ink-100 p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5">
-          <div>
-            <span className="text-xs font-bold text-ink-900 flex items-center gap-1.5">
-              <CheckCircle2 size={15} className="text-signal-600" />
-              Round Readiness: {masteredCount} / {currentQuestions.length} Questions Mastered ({Math.round((masteredCount / (currentQuestions.length || 1)) * 100)}%)
-            </span>
+      {/* Readiness, filters, and interview round navigation */}
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
+        <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-ink-900">
+                <CheckCircle2 size={15} className="text-signal-600" />
+                Round Readiness
+              </span>
+              <span className="text-xs font-semibold tabular-nums text-ink-600">
+                {masteredCount}/{currentQuestions.length} mastered · {readinessPercent}%
+              </span>
+            </div>
+            <div
+              className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-label="Round readiness"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={readinessPercent}
+            >
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-signal-500 to-emerald-500 transition-all duration-500"
+                style={{ width: `${readinessPercent}%` }}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs">
-            <button
-              onClick={() => setFilterView("all")}
-              className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
-                filterView === "all"
-                  ? "bg-ink-950 text-white"
-                  : "bg-ink-50 text-ink-600 hover:bg-ink-100"
-              }`}
-            >
-              All ({currentQuestions.length})
-            </button>
-            <button
-              onClick={() => setFilterView("bookmarked")}
-              className={`px-2.5 py-1 rounded-md transition-colors font-medium flex items-center gap-1 ${
-                filterView === "bookmarked"
-                  ? "bg-amber-500 text-white"
-                  : "bg-ink-50 text-ink-600 hover:bg-ink-100"
-              }`}
-            >
-              <Star size={11} className={bookmarkCount > 0 ? "fill-amber-400" : ""} />
-              Saved ({bookmarkCount})
-            </button>
-            <button
-              onClick={() => setFilterView("pending")}
-              className={`px-2.5 py-1 rounded-md transition-colors font-medium ${
-                filterView === "pending"
-                  ? "bg-ink-950 text-white"
-                  : "bg-ink-50 text-ink-600 hover:bg-ink-100"
-              }`}
-            >
-              Pending ({currentQuestions.length - masteredCount})
-            </button>
+          <div role="group" aria-label="Filter questions" className="flex shrink-0 items-center gap-1 rounded-full bg-slate-100 p-1">
+            {([
+              ["all", "All", currentQuestions.length],
+              ["bookmarked", "Saved", bookmarkCount],
+              ["pending", "Pending", currentQuestions.length - masteredCount],
+            ] as const).map(([filter, label, count]) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setFilterView(filter)}
+                aria-pressed={filterView === filter}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+                  filterView === filter
+                    ? "bg-white text-ink-900 shadow-2xs"
+                    : "text-ink-600 hover:text-ink-900"
+                }`}
+              >
+                {filter === "bookmarked" && <Star size={11} className={bookmarkCount > 0 ? "fill-amber-400 text-amber-500" : ""} />}
+                {label}
+                <span className="text-[10px] opacity-70">{count}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2 rounded-full bg-ink-100 overflow-hidden">
-          <div
-            className="h-full bg-signal-500 rounded-full transition-all duration-300"
-            style={{ width: `${(masteredCount / (currentQuestions.length || 1)) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Categorized Round Tabs (Technical, Managerial, HR) */}
-      <div className="flex border-b border-ink-100 gap-2 pb-1">
+      <div role="group" aria-label="Interview rounds" className="grid grid-cols-1 gap-1.5 border-t border-slate-100 pt-3 sm:grid-cols-3">
         <button
+          type="button"
           onClick={() => setActiveTab("technical")}
-          className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all flex items-center gap-1.5 ${
+          aria-pressed={activeTab === "technical"}
+          className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "technical"
-              ? "border-b-2 border-signal-600 text-signal-700 bg-signal-500/5 shadow-2xs"
-              : "text-ink-500 hover:text-ink-800"
+              ? "border border-signal-500/25 bg-signal-500/10 text-signal-800 shadow-2xs"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
           }`}
         >
-          <Code2 size={14} /> 💻 Technical Round
+          <Terminal size={15} /> Technical Round
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("managerial")}
-          className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all flex items-center gap-1.5 ${
+          aria-pressed={activeTab === "managerial"}
+          className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "managerial"
-              ? "border-b-2 border-purple-600 text-purple-700 bg-purple-500/5 shadow-2xs"
-              : "text-ink-500 hover:text-ink-800"
+              ? "border border-purple-200 bg-purple-50 text-purple-800 shadow-2xs"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
           }`}
         >
-          <Users size={14} /> 👔 Managerial Round
+          <Users size={15} /> Managerial Round
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab("hr")}
-          className={`px-4 py-2 text-xs font-semibold rounded-t-lg transition-all flex items-center gap-1.5 ${
+          aria-pressed={activeTab === "hr"}
+          className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "hr"
-              ? "border-b-2 border-amber-600 text-amber-700 bg-amber-500/5 shadow-2xs"
-              : "text-ink-500 hover:text-ink-800"
+              ? "border border-amber-200 bg-amber-50 text-amber-800 shadow-2xs"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
           }`}
         >
-          <Briefcase size={14} /> 🤝 HR & Culture Round
+          <Briefcase size={15} /> HR & Culture Round
         </button>
       </div>
+      </section>
 
       {/* Round Header Summary */}
-      <div className="flex items-center justify-between px-1 text-xs text-ink-500">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 text-xs text-ink-500">
         <span>
           Showing <strong>{displayedQuestions.length} essential questions</strong> specifically tailored for <strong>{effectiveRole}</strong>
         </span>
@@ -556,39 +585,46 @@ export function Interview() {
       </div>
 
       {/* Free Mock Interview Practice Platforms */}
-      <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-xs">
-        <h3 className="font-display text-base text-ink-900 mb-1 flex items-center gap-2">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
+        <h3 className="mb-1 flex items-center gap-2 font-display text-base font-bold text-ink-900">
           <Video size={18} className="text-signal-600" /> Free Mock Interview Practice Platforms
         </h3>
-        <p className="text-xs text-ink-500 mb-4">
+        <p className="mb-4 text-xs leading-relaxed text-ink-500">
           Practice live technical coding and behavioral mock interviews for free with peer candidates and engineers.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {MOCK_PLATFORMS.map((plat) => (
-            <a
-              key={plat.name}
-              href={plat.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-lg border border-ink-100 bg-ink-50/40 hover:bg-white hover:border-signal-500 hover:shadow-xs transition-all flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-xs text-ink-900 group-hover:text-signal-700">{plat.name}</span>
-                  <span className="text-[10px] font-semibold text-signal-700 bg-signal-500/10 px-2 py-0.5 rounded-full">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {MOCK_PLATFORMS.map((plat, index) => {
+            const PlatformIcon = MOCK_PLATFORM_ICONS[index];
+            return (
+              <article
+                key={plat.name}
+                className="group flex min-h-44 flex-col rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition-all hover:-translate-y-0.5 hover:border-signal-500/35 hover:bg-white hover:shadow-md"
+              >
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-signal-700 shadow-2xs">
+                    <PlatformIcon size={17} />
+                  </span>
+                  <span className="rounded-full border border-signal-500/20 bg-signal-500/5 px-2 py-1 text-[9px] font-semibold text-signal-700">
                     {plat.tag}
                   </span>
                 </div>
-                <p className="text-[11px] text-ink-500 leading-snug">{plat.desc}</p>
-              </div>
-              <span className="text-[11px] font-semibold text-signal-600 mt-2 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                Practice on {plat.name} <ExternalLink size={10} />
-              </span>
-            </a>
-          ))}
+                <h4 className="text-sm font-bold text-ink-900">{plat.name}</h4>
+                <p className="mt-1 flex-1 text-[11px] leading-relaxed text-ink-500">{plat.desc}</p>
+                <a
+                  href={plat.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-signal-600 px-3 py-2 text-[11px] font-semibold text-white shadow-2xs transition-colors hover:bg-signal-700"
+                >
+                  Practice on {plat.name}
+                  <ArrowUpRight size={12} />
+                </a>
+              </article>
+            );
+          })}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

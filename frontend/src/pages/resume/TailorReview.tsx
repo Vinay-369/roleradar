@@ -18,6 +18,8 @@ import {
   RefreshCw,
   Info,
   ExternalLink,
+  GitCompare,
+  FileText,
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { recordApplicationSubmission } from "../../lib/applications";
@@ -78,7 +80,7 @@ function TailoringProgressScreen({ isGenerating }: { isGenerating: boolean }) {
 
       {/* Title */}
       <div className="text-center max-w-md">
-        <h2 className="text-lg font-bold text-ink-900 mb-1">
+        <h2 className="mb-1 text-lg font-bold text-slate-900 dark:text-slate-100">
           {isGenerating ? "Crafting Your Tailored Resume" : "Loading Your Tailored Resume…"}
         </h2>
         <p className="text-xs text-ink-500 leading-relaxed">
@@ -150,6 +152,7 @@ export function TailorReview() {
   const [isEditing, setIsEditing] = useState(false);
   const [editableSummary, setEditableSummary] = useState("");
   const [editableSkillsRaw, setEditableSkillsRaw] = useState("");
+  const generationStartedForJob = useRef<string | null>(null);
 
   // Check if an existing version already exists for this job before triggering a new generation
   const { data: existingJobVersion, isLoading: isCheckingJob } = useQuery({
@@ -185,12 +188,20 @@ export function TailorReview() {
       !activeVersionId &&
       !isCheckingJob &&
       existingJobVersion === null &&
-      !generateMutation.isPending &&
-      !generateMutation.isSuccess
+      generationStartedForJob.current !== effectiveJobId
     ) {
+      // Guard against duplicate POSTs when React Query updates the mutation state.
+      generationStartedForJob.current = effectiveJobId;
       generateMutation.mutate(effectiveJobId);
     }
-  }, [effectiveVersionId, effectiveJobId, existingJobVersion, isCheckingJob]);
+  }, [
+    effectiveVersionId,
+    effectiveJobId,
+    existingJobVersion,
+    isCheckingJob,
+    activeVersionId,
+    generateMutation,
+  ]);
 
   // 2. Fetch Version Data
   const { data: version, isLoading } = useQuery({
@@ -348,11 +359,39 @@ export function TailorReview() {
     return <TailoringProgressScreen isGenerating={generateMutation.isPending} />;
   }
 
+  if (generateMutation.isError && !version) {
+    const errorMessage = (generateMutation.error as any)?.response?.data?.detail;
+    return (
+      <div className="mx-auto mt-12 max-w-lg rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm dark:border-rose-900/60 dark:bg-slate-900">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Could not tailor this match</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+          {errorMessage || "The tailoring service did not return a resume draft. Please try again."}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (!effectiveJobId) return;
+            generationStartedForJob.current = effectiveJobId;
+            generateMutation.reset();
+            generateMutation.mutate(effectiveJobId);
+          }}
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-signal-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-signal-700"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Try tailoring again
+        </button>
+      </div>
+    );
+  }
+
   if (!version) {
     return (
-      <div className="rounded-xl border border-ink-100 bg-white p-8 text-center max-w-lg mx-auto mt-12">
+      <div className="mx-auto mt-12 max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
         <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
-        <h2 className="text-base font-bold text-ink-900">No Tailored Resume Found</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">No Tailored Resume Found</h2>
         <p className="text-xs text-ink-500 mt-1 mb-4">Please select a job to begin evidence-grounded tailoring.</p>
         <Link to="/opportunities/jobs" className="inline-flex items-center gap-2 px-4 py-2 bg-ink-900 text-white rounded-lg text-xs font-semibold">
           Browse Opportunities
@@ -381,11 +420,11 @@ export function TailorReview() {
   const evidenceBadge = getEvidenceBadge(version);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:py-8">
       {/* 1. Header Banner & Disclaimers */}
-      <div className="rounded-2xl border border-ink-100 bg-white p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 sm:p-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-lg dark:shadow-slate-950/10">
+        <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${evidenceBadge.style}`}>
                 {evidenceBadge.iconType === "alert" && <AlertTriangle size={12} className="shrink-0" />}
@@ -400,42 +439,42 @@ export function TailorReview() {
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-ink-900 mt-2 font-display">
-              {version.job_title} <span className="text-ink-400 font-normal">at</span> {version.company}
+            <h1 className="mt-3 font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">
+              {version.job_title} <span className="font-normal text-slate-500 dark:text-ink-400">at</span> {version.company}
             </h1>
-            <p className="text-xs text-ink-500 mt-1 max-w-2xl">
+            <p className="mt-2 max-w-2xl text-xs leading-relaxed text-slate-600 dark:text-slate-400">
               Targeted resume transformation with strict anti-fabrication truth guard, ATS format validation, and explicit candidate evidence mapping.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsPreviewOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-xs font-semibold text-ink-800 shadow-2xs hover:border-signal-500 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400 dark:hover:bg-slate-800"
             >
-              <Eye className="w-3.5 h-3.5 text-signal-600" /> Live Preview
+              <Eye className="h-3.5 w-3.5" /> Live Preview
             </button>
             <button
               onClick={() => setIsDiffOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-ink-200 text-xs font-semibold text-ink-700 hover:bg-ink-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400 dark:hover:bg-slate-800"
             >
-              <Layers className="w-3.5 h-3.5" /> Full Diff
+              <GitCompare className="h-3.5 w-3.5" /> Full Diff
             </button>
             {pendingChanges.length > 0 && (
               <button
                 onClick={handleApproveAll}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-signal-600 text-white text-xs font-semibold hover:bg-signal-700 shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400 dark:hover:bg-slate-800"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" /> Approve All ({pendingChanges.length})
+                <CheckCircle2 className="h-3.5 w-3.5" /> Approve All ({pendingChanges.length})
               </button>
             )}
             <button
               onClick={() => finalizeMutation.mutate()}
               disabled={finalizeMutation.isPending}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-ink-900 text-white text-xs font-semibold hover:bg-ink-800 shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400 dark:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <FileCheck2 className="w-3.5 h-3.5 text-signal-400" />
+              <FileCheck2 className="h-3.5 w-3.5" />
               {finalizeMutation.isPending
                 ? "Finalizing Resume…"
                 : version.is_finalized
@@ -450,7 +489,7 @@ export function TailorReview() {
               }}
               disabled={deleteMutation.isPending}
               title="Delete this tailored draft"
-              className="p-2 rounded-lg border border-ink-200 text-ink-400 hover:text-alert-600 hover:bg-alert-50 hover:border-alert-200 transition-colors"
+              className="ml-auto rounded-xl border border-slate-300 p-2.5 text-slate-500 transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-rose-700 dark:hover:bg-rose-950/40 dark:hover:text-rose-300 xl:ml-0"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -458,120 +497,119 @@ export function TailorReview() {
         </div>
 
         {/* Ethical System Notice */}
-        <div className="mt-4 pt-3 border-t border-ink-100 flex items-start gap-2 text-[11px] text-ink-500">
-          <Info className="w-4 h-4 text-ink-400 shrink-0 mt-0.5" />
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50 p-3.5 text-[11px] leading-relaxed text-slate-600 dark:border-slate-700/80 dark:bg-slate-800/60 dark:text-slate-400">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
           <span>
-            <strong>RoleRadar Guarantee Notice:</strong> We guarantee factual accuracy against your uploaded master resume and ATS layout compliance.
-            We do not claim guaranteed shortlisting or automatic hiring outcomes, as hiring decisions remain with human recruiters.
+            <strong className="text-slate-900 dark:text-slate-200">RoleRadar Guarantee Notice:</strong> We guarantee factual accuracy against your uploaded master resume and ATS layout compliance. We do not claim guaranteed shortlisting or automatic hiring outcomes; hiring decisions remain with human recruiters.
           </span>
         </div>
       </div>
 
       {/* 2. Top Intelligence Grid (Analysis, Classification, Strategy) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Card 1: Resume Analysis */}
-        <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="w-4 h-4 text-signal-600" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-600">1. Resume Analysis</h3>
+            <ShieldCheck className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">1. Resume Analysis</h3>
           </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Candidate Name</span>
-              <span className="font-semibold text-ink-900">{version.parsed?.personal?.name || "Verified Candidate"}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Candidate</p>
+              <p className="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{version.parsed?.personal?.name || "Verified Candidate"}</p>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Verified Skills Count</span>
-              <span className="font-semibold text-ink-900">{version.parsed?.skills?.length || 0} skills</span>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Verified skills</p>
+              <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{version.parsed?.skills?.length || 0}</p>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Work Experience Entries</span>
-              <span className="font-semibold text-ink-900">{version.parsed?.experience_raw?.length || 0} items</span>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Experience entries</p>
+              <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{version.parsed?.experience_raw?.length || 0}</p>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-ink-500">Projects Count</span>
-              <span className="font-semibold text-ink-900">{version.parsed?.projects_raw?.length || 0} items</span>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Projects</p>
+              <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{version.parsed?.projects_raw?.length || 0}</p>
             </div>
           </div>
         </div>
 
         {/* Card 2: Candidate Classification */}
-        <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-2 mb-3">
-            <Award className="w-4 h-4 text-signal-600" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-600">2. Candidate Classification</h3>
+            <Award className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">2. Candidate Classification</h3>
           </div>
           <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Experience Tier</span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-signal-500/10 text-signal-700">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <span className="text-slate-500 dark:text-slate-400">Experience Tier</span>
+              <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-800 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300">
                 {classification?.classification || "PROFESSIONAL"}
               </span>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Experience Level</span>
-              <span className="font-semibold text-ink-900">{classification?.experience_level || "MID"}</span>
+            <div className="flex justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <span className="text-slate-500 dark:text-slate-400">Experience Level</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{classification?.experience_level || "MID"}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Project Depth</span>
-              <span className="font-semibold text-ink-900">{classification?.project_depth || "STANDARD"}</span>
+            <div className="flex justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <span className="text-slate-500 dark:text-slate-400">Project Depth</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{classification?.project_depth || "STANDARD"}</span>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-ink-500">Career Continuity</span>
-              <span className="font-semibold text-ink-900">{classification?.career_continuity || "CONTINUOUS"}</span>
+            <div className="flex justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+              <span className="text-slate-500 dark:text-slate-400">Career Continuity</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-100">{classification?.career_continuity || "CONTINUOUS"}</span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Recommended Strategy */}
-        <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-2 mb-3">
-            <Layers className="w-4 h-4 text-signal-600" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-600">3. Recommended Strategy</h3>
+            <Layers className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">3. Recommended Strategy</h3>
           </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Layout Strategy</span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-ink-100 text-ink-800">
+          <div className="grid grid-cols-1 gap-2 text-xs">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <span className="min-w-0 flex-1 text-slate-600 dark:text-slate-400">Layout Strategy</span>
+              <span className="max-w-[62%] break-words text-right text-[11px] font-bold text-slate-900 dark:text-slate-100">
                 {strategy?.candidate_type || "BALANCED_CHRONOLOGY"}
               </span>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Education Placement</span>
-              <span className="font-semibold text-ink-900">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <span className="min-w-0 flex-1 text-slate-600 dark:text-slate-400">Education Placement</span>
+              <span className="max-w-[62%] break-words text-right font-semibold text-slate-900 dark:text-slate-100">
                 {strategy?.highlight_education_top ? "Top (Fresher/Student)" : "Standard (Bottom)"}
               </span>
             </div>
-            <div className="flex justify-between py-1 border-b border-ink-50">
-              <span className="text-ink-500">Recommended Template</span>
-              <span className="font-semibold text-ink-900 capitalize">{strategy?.template_variant || "Modern"}</span>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <span className="min-w-0 flex-1 text-slate-600 dark:text-slate-400">Recommended Template</span>
+              <span className="max-w-[62%] break-words text-right font-semibold capitalize text-slate-900 dark:text-slate-100">{strategy?.template_variant || "Modern"}</span>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-ink-500">Recommended Length</span>
-              <span className="font-semibold text-ink-900">{strategy?.recommended_length_pages || 1} Page</span>
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+              <span className="min-w-0 flex-1 text-slate-600 dark:text-slate-400">Recommended Length</span>
+              <span className="max-w-[62%] break-words text-right font-semibold text-slate-900 dark:text-slate-100">{strategy?.recommended_length_pages || 1} Page</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* 3. Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-ink-200">
+      <div className="sticky top-0 z-30 -mx-4 flex items-center gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50/95 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <button
           onClick={() => setActiveTab("alignment")}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+          className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
             activeTab === "alignment"
-              ? "border-signal-600 text-signal-700 bg-signal-500/5"
-              : "border-transparent text-ink-500 hover:text-ink-800"
+              ? "border-sky-500 text-sky-700 dark:text-sky-300"
+              : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           4. JD Alignment & Requirement Mapping ({mappings.length})
         </button>
         <button
           onClick={() => setActiveTab("changes")}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
             activeTab === "changes"
-              ? "border-signal-600 text-signal-700 bg-signal-500/5"
-              : "border-transparent text-ink-500 hover:text-ink-800"
+              ? "border-sky-500 text-sky-700 dark:text-sky-300"
+              : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           8. Changes Made ({changes.length})
@@ -583,20 +621,20 @@ export function TailorReview() {
         </button>
         <button
           onClick={() => setActiveTab("editor")}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
             activeTab === "editor"
-              ? "border-signal-600 text-signal-700 bg-signal-500/5"
-              : "border-transparent text-ink-500 hover:text-ink-800"
+              ? "border-sky-500 text-sky-700 dark:text-sky-300"
+              : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           <Edit3 className="w-3.5 h-3.5" /> 10. Final Editable Resume
         </button>
         <button
           onClick={() => setActiveTab("ats")}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+          className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-xs font-bold transition-colors ${
             activeTab === "ats"
-              ? "border-signal-600 text-signal-700 bg-signal-500/5"
-              : "border-transparent text-ink-500 hover:text-ink-800"
+              ? "border-sky-500 text-sky-700 dark:text-sky-300"
+              : "border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           }`}
         >
           11. ATS & Readability Findings
@@ -609,38 +647,38 @@ export function TailorReview() {
       {activeTab === "alignment" && (
         <div className="space-y-4">
           {/* Explanatory Header & Legend */}
-          <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-xs space-y-3">
+          <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
-              <h3 className="text-sm font-bold text-ink-900 font-display">Job Requirement Alignment</h3>
-              <p className="text-xs text-ink-500 mt-0.5">
+              <h3 className="font-display text-sm font-bold text-slate-900 dark:text-white">Job Requirement Alignment</h3>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 See how your experience and skills align with each job requirement.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2 border-t border-ink-100 text-[11px]">
+            <div className="grid grid-cols-1 gap-2.5 border-t border-slate-200 pt-3 text-[11px] dark:border-slate-800 sm:grid-cols-2 lg:grid-cols-3">
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-signal-500/10 text-signal-700 border border-signal-500/20 shrink-0">Direct Match</span>
-                <span className="text-ink-500">Backed by direct work experience or project evidence.</span>
+                <span className="text-slate-500 dark:text-slate-400">Backed by direct work experience or project evidence.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 shrink-0">Strong Match</span>
-                <span className="text-ink-500">Matches a closely related or equivalent technology.</span>
+                <span className="text-slate-500 dark:text-slate-400">Matches a closely related or equivalent technology.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-teal-500/10 text-teal-700 border border-teal-500/20 shrink-0">Supported</span>
-                <span className="text-ink-500">Backed by listed skills or academic coursework.</span>
+                <span className="text-slate-500 dark:text-slate-400">Backed by listed skills or academic coursework.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">Partial</span>
-                <span className="text-ink-500">Only part of the requirement is supported.</span>
+                <span className="text-slate-500 dark:text-slate-400">Only part of the requirement is supported.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-amber-700 border border-amber-500/20 shrink-0">Related</span>
-                <span className="text-ink-500">Your background includes adjacent or related skills.</span>
+                <span className="text-slate-500 dark:text-slate-400">Your background includes adjacent or related skills.</span>
               </div>
               <div className="flex items-start gap-1.5">
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-alert-500/10 text-alert-700 border border-alert-500/20 shrink-0">Missing</span>
-                <span className="text-ink-500">No supporting evidence found in your source resume.</span>
+                <span className="text-slate-500 dark:text-slate-400">No supporting evidence found in your source resume.</span>
               </div>
             </div>
           </div>
@@ -675,7 +713,7 @@ export function TailorReview() {
                 key={f.id}
                 onClick={() => setReqFilter(f.id as any)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                  reqFilter === f.id ? "bg-ink-900 text-white" : f.color || "bg-ink-100 text-ink-700 hover:bg-ink-200"
+                  reqFilter === f.id ? "bg-slate-900 text-white dark:bg-sky-500 dark:text-slate-950" : f.color || "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 {f.label}
@@ -684,22 +722,36 @@ export function TailorReview() {
           </div>
 
           {/* Mappings List */}
-          <div className="rounded-xl border border-ink-100 bg-white overflow-hidden shadow-xs divide-y divide-ink-100">
+          <div className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
             {filteredMappings.length === 0 ? (
               <div className="p-8 text-center text-xs text-ink-400">No requirements match the selected filter.</div>
             ) : (
               filteredMappings.map((m, idx) => {
                 const statusInfo = getRequirementStatusInfo(m.status);
                 return (
-                  <div key={idx} className="p-4 hover:bg-ink-50/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div key={idx} className={`flex flex-col justify-between gap-3 p-4 transition-colors md:flex-row md:items-center ${
+                    m.status === "CONFLICTING"
+                      ? "border-l-4 border-rose-600 bg-rose-50/70 dark:border-rose-500 dark:bg-rose-950/40"
+                      : m.status === "MISSING"
+                        ? "border-l-4 border-amber-500 bg-amber-50/50 dark:border-amber-500 dark:bg-amber-950/20"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  }`}>
                     <div className="space-y-1 max-w-3xl">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-ink-100 text-ink-600 font-bold">
                           {m.category || "REQUIREMENT"}
                         </span>
-                        <p className="text-xs font-semibold text-ink-900">{m.requirement_text}</p>
+                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{m.requirement_text}</p>
                       </div>
-                      {m.notes && <p className="text-[11px] text-ink-500 italic pl-2 border-l-2 border-ink-200">{m.notes}</p>}
+                      {m.notes && (
+                        <p className={`rounded-lg border px-3 py-2 text-[11px] leading-relaxed ${
+                          m.status === "CONFLICTING"
+                            ? "border-rose-800 bg-red-950/40 text-red-200"
+                            : m.status === "MISSING"
+                              ? "border-amber-800 bg-amber-950/30 text-amber-200"
+                              : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        }`}>{m.status === "CONFLICTING" ? "Qualification conflict: " : ""}{m.notes}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -739,7 +791,7 @@ export function TailorReview() {
 
               <div className="space-y-3">
                 {needsConfirmationChanges.map((c) => (
-                  <div key={c.change_id} className="rounded-lg border border-amber-200 bg-white p-4 space-y-2">
+                  <div key={c.change_id} className="space-y-2 rounded-xl border border-amber-200 bg-white p-4 dark:border-amber-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-amber-800 uppercase text-[10px] bg-amber-100 px-2 py-0.5 rounded">
                         NEEDS CONFIRMATION • {c.section}
@@ -748,13 +800,13 @@ export function TailorReview() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      <div className="p-2.5 rounded bg-ink-50 border border-ink-100">
-                        <p className="text-[10px] font-bold text-ink-500 uppercase mb-1">Source Original:</p>
-                        <p className="text-ink-700">{c.original || "(None / Skill Addition)"}</p>
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-800">
+                        <p className="mb-1 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Source Original:</p>
+                        <p className="text-slate-700 dark:text-slate-200">{c.original || "(None / Skill Addition)"}</p>
                       </div>
-                      <div className="p-2.5 rounded bg-amber-500/5 border border-amber-200">
-                        <p className="text-[10px] font-bold text-amber-800 uppercase mb-1">Proposed Rewrite:</p>
-                        <p className="text-amber-950 font-medium">{c.proposed}</p>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 dark:border-amber-800 dark:bg-amber-950/30">
+                        <p className="mb-1 text-[10px] font-bold uppercase text-amber-800 dark:text-amber-300">Proposed Rewrite:</p>
+                        <p className="font-medium text-amber-950 dark:text-amber-100">{c.proposed}</p>
                       </div>
                     </div>
 
@@ -764,10 +816,10 @@ export function TailorReview() {
                       </p>
                     )}
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-ink-100">
+                    <div className="flex justify-end gap-2 border-t border-slate-200 pt-2 dark:border-slate-700">
                       <button
                         onClick={() => changeStatusMutation.mutate({ changeId: c.change_id, status: "REJECTED" })}
-                        className="px-3 py-1.5 rounded text-xs font-semibold bg-ink-100 text-ink-700 hover:bg-ink-200"
+                        className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
                         Keep Original (Reject)
                       </button>
@@ -780,12 +832,12 @@ export function TailorReview() {
 
           {/* Section B: All Tailoring Changes (8. Changes Made) */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-600">8. Proposed Transformations & Improvements</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">8. Proposed Transformations & Improvements</h3>
             {changes.map((c) => (
-              <div key={c.change_id} className="rounded-xl border border-ink-100 bg-white p-4 shadow-xs space-y-3">
+              <div key={c.change_id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-ink-100 text-ink-700">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                       {c.section}
                     </span>
                     <span
@@ -796,7 +848,7 @@ export function TailorReview() {
                           ? "bg-alert-500/10 text-alert-700"
                           : c.status === "NEEDS_USER_INPUT"
                           ? "bg-amber-500/10 text-amber-700"
-                          : "bg-ink-100 text-ink-600"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                     >
                       {c.status === "NEEDS_USER_INPUT" ? "NEEDS CONFIRMATION" : c.status}
@@ -809,7 +861,7 @@ export function TailorReview() {
                         <button
                           onClick={() => changeStatusMutation.mutate({ changeId: c.change_id, status: "APPROVED" })}
                           className={`px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 ${
-                            c.status === "APPROVED" ? "bg-signal-600 text-white" : "bg-ink-50 text-ink-600 hover:bg-signal-50 hover:text-signal-700"
+                            c.status === "APPROVED" ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
                           }`}
                         >
                           <Check className="w-3 h-3" /> Approve
@@ -817,7 +869,7 @@ export function TailorReview() {
                         <button
                           onClick={() => changeStatusMutation.mutate({ changeId: c.change_id, status: "REJECTED" })}
                           className={`px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 ${
-                            c.status === "REJECTED" ? "bg-alert-600 text-white" : "bg-ink-50 text-ink-600 hover:bg-alert-50 hover:text-alert-700"
+                            c.status === "REJECTED" ? "bg-rose-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
                           }`}
                         >
                           <XCircle className="w-3 h-3" /> Reject
@@ -828,18 +880,18 @@ export function TailorReview() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-lg bg-ink-50/70 border border-ink-100">
-                    <p className="text-[10px] font-bold text-ink-400 uppercase mb-1">Original Content:</p>
-                    <p className="text-ink-700">{c.original || "(New Addition)"}</p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                    <p className="mb-1 text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Original Content:</p>
+                    <p className="text-slate-700 dark:text-slate-200">{c.original || "(New Addition)"}</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-signal-500/5 border border-signal-500/20">
-                    <p className="text-[10px] font-bold text-signal-700 uppercase mb-1">Tailored Proposal:</p>
-                    <p className="text-ink-900 font-medium">{c.proposed}</p>
+                  <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 dark:border-sky-900 dark:bg-sky-950/30">
+                    <p className="mb-1 text-[10px] font-bold uppercase text-sky-700 dark:text-sky-300">Tailored Proposal:</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{c.proposed}</p>
                   </div>
                 </div>
 
                 {c.reason && (
-                  <div className="p-2.5 rounded bg-ink-50/50 border border-ink-100 text-[11px] text-ink-600">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     <strong>Why this change was made:</strong> {c.reason}
                   </div>
                 )}
@@ -853,11 +905,11 @@ export function TailorReview() {
       {/* TAB 3: FINAL EDITABLE RESUME (10. Final Editable Resume)                 */}
       {/* ========================================================================= */}
       {activeTab === "editor" && (
-        <div className="rounded-xl border border-ink-100 bg-white p-6 shadow-xs space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-ink-100">
+        <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
             <div>
-              <h3 className="text-base font-bold text-ink-900 font-display">10. Final Editable Resume Preview</h3>
-              <p className="text-xs text-ink-500">Edit any section directly before final PDF/DOCX rendering.</p>
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100">10. Final Editable Resume Preview</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Edit any section directly before final PDF/DOCX rendering.</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -884,9 +936,9 @@ export function TailorReview() {
           {/* Section: Personal Info */}
           <div className="space-y-1">
             <h4 className="text-xs font-bold uppercase text-ink-400">Header & Contact (Protected)</h4>
-            <div className="p-3 rounded-lg bg-ink-50 border border-ink-100 text-xs text-ink-700">
-              <p className="font-bold text-ink-900 text-sm">{version.parsed?.personal?.name || "Candidate Name"}</p>
-              <p className="text-ink-500">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{version.parsed?.personal?.name || "Candidate Name"}</p>
+              <p className="text-slate-500 dark:text-slate-400">
                 {version.parsed?.personal?.email} • {version.parsed?.personal?.location || "Location Verified"}
               </p>
             </div>
@@ -903,7 +955,7 @@ export function TailorReview() {
                 className="w-full p-3 text-xs rounded-lg border border-ink-200 focus:border-signal-500 focus:outline-none"
               />
             ) : (
-              <div className="p-3 rounded-lg bg-ink-50/50 border border-ink-100 text-xs leading-relaxed text-ink-800">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                 {version.parsed?.summary || "No summary provided."}
               </div>
             )}
@@ -921,9 +973,9 @@ export function TailorReview() {
                 className="w-full p-3 text-xs rounded-lg border border-ink-200 focus:border-signal-500 focus:outline-none"
               />
             ) : (
-              <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-ink-50/50 border border-ink-100">
+              <div className="flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
                 {(version.parsed?.skills || []).map((sk: string, idx: number) => (
-                  <span key={idx} className="px-2 py-0.5 rounded text-xs font-medium bg-white border border-ink-200 text-ink-800">
+                  <span key={idx} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                     {sk}
                   </span>
                 ))}
@@ -936,7 +988,7 @@ export function TailorReview() {
             <h4 className="text-xs font-bold uppercase text-ink-400">Work Experience</h4>
             <div className="space-y-2">
               {(version.parsed?.experience_raw || []).map((exp: string, idx: number) => (
-                <div key={idx} className="p-3 rounded-lg bg-ink-50/40 border border-ink-100 text-xs text-ink-800 leading-relaxed">
+                <div key={idx} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                   {exp}
                 </div>
               ))}
@@ -948,7 +1000,7 @@ export function TailorReview() {
             <h4 className="text-xs font-bold uppercase text-ink-400">Technical Projects</h4>
             <div className="space-y-2">
               {(version.parsed?.projects_raw || []).map((proj: any, idx: number) => (
-                <div key={idx} className="p-3 rounded-lg bg-ink-50/40 border border-ink-100 text-xs text-ink-800 leading-relaxed">
+                <div key={idx} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                   {typeof proj === "string" ? proj : `${proj.title}: ${proj.bullets?.join(" ") || ""}`}
                 </div>
               ))}
@@ -961,11 +1013,11 @@ export function TailorReview() {
       {/* TAB 4: ATS & READABILITY FINDINGS (11. ATS/Readability Findings)          */}
       {/* ========================================================================= */}
       {activeTab === "ats" && (
-        <div className="rounded-xl border border-ink-100 bg-white p-6 shadow-xs space-y-6">
-          <div className="flex items-start justify-between pb-4 border-b border-ink-100">
+        <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
             <div>
-              <h3 className="text-base font-bold text-ink-900 font-display">11. ATS & Readability Validation Report</h3>
-              <p className="text-xs text-ink-500">
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100">11. ATS & Readability Validation Report</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Automated compliance checks across standard section headings, bullet formatting, date consistency, and ATS readability.
               </p>
             </div>
@@ -979,21 +1031,21 @@ export function TailorReview() {
 
           {/* Sub-Score Bars */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 rounded-lg bg-ink-50 border border-ink-100 text-center">
-              <p className="text-ink-500 text-[10px] uppercase font-bold">Standard Headings</p>
-              <p className="text-lg font-bold text-ink-900">{atsFindings?.ats_format_validation?.standard_headings_score || 100}%</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
+              <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Standard Headings</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.standard_headings_score || 100}%</p>
             </div>
-            <div className="p-3 rounded-lg bg-ink-50 border border-ink-100 text-center">
-              <p className="text-ink-500 text-[10px] uppercase font-bold">Section Order</p>
-              <p className="text-lg font-bold text-ink-900">{atsFindings?.ats_format_validation?.section_order_score || 100}%</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
+              <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Section Order</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.section_order_score || 100}%</p>
             </div>
-            <div className="p-3 rounded-lg bg-ink-50 border border-ink-100 text-center">
-              <p className="text-ink-500 text-[10px] uppercase font-bold">Bullet Quality</p>
-              <p className="text-lg font-bold text-ink-900">{atsFindings?.ats_format_validation?.bullet_consistency_score || 95}%</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
+              <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Bullet Quality</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.bullet_consistency_score || 95}%</p>
             </div>
-            <div className="p-3 rounded-lg bg-ink-50 border border-ink-100 text-center">
-              <p className="text-ink-500 text-[10px] uppercase font-bold">Date Consistency</p>
-              <p className="text-lg font-bold text-ink-900">{atsFindings?.ats_format_validation?.date_consistency_score || 100}%</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
+              <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Date Consistency</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.date_consistency_score || 100}%</p>
             </div>
           </div>
 
@@ -1017,47 +1069,53 @@ export function TailorReview() {
       {/* ========================================================================= */}
       {/* 12. EXPORT OPTIONS & TEMPLATE SELECTION                                  */}
       {/* ========================================================================= */}
-      <div className="rounded-xl border border-ink-100 bg-white p-6 shadow-xs space-y-5">
+      <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
         <div>
-          <h3 className="text-base font-bold text-ink-900 font-display">12. Export Resume Options</h3>
-          <p className="text-xs text-ink-500">Choose an ATS-safe template variant and download your tailored resume.</p>
+          <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">12. Export Resume Options</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Choose an ATS-safe template variant and download your tailored resume.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div role="radiogroup" aria-label="Resume template" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
               onClick={() => setSelectedTemplate(t.id)}
+              aria-pressed={selectedTemplate === t.id}
               className={`p-3.5 rounded-xl border text-left transition-all ${
                 selectedTemplate === t.id
-                  ? "border-signal-600 bg-signal-500/5 shadow-xs ring-1 ring-signal-500"
-                  : "border-ink-200 bg-white hover:border-ink-300"
+                  ? "border-sky-500 bg-sky-50 shadow-sm ring-2 ring-sky-500/30 dark:bg-sky-950/30"
+                  : "border-slate-200 bg-white hover:border-sky-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-sky-700 dark:hover:bg-slate-800/80"
               }`}
             >
-              <p className="text-xs font-bold text-ink-900">{t.label}</p>
-              <p className="text-[11px] text-ink-500 mt-1">{t.desc}</p>
+              <span className="mb-2 flex items-center gap-2">
+                <span className={`grid size-4 place-items-center rounded-full border ${selectedTemplate === t.id ? "border-sky-600" : "border-slate-400 dark:border-slate-500"}`}>
+                  {selectedTemplate === t.id && <span className="size-2 rounded-full bg-sky-600 dark:bg-sky-400" />}
+                </span>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{t.label}</span>
+              </span>
+              <p className="pl-6 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{t.desc}</p>
             </button>
           ))}
         </div>
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-ink-100">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-signal-500/30 bg-signal-500/10 text-signal-800 text-xs font-bold hover:bg-signal-500/20 transition-colors shadow-2xs"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:border-sky-700 dark:hover:bg-slate-800"
           >
-            <Eye className="w-4 h-4 text-signal-600" /> Preview PDF
+            <Eye className="h-4 w-4" /> Preview PDF
           </button>
           <button
             onClick={() => handleDownload("docx")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-ink-200 bg-white text-ink-800 text-xs font-semibold hover:bg-ink-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
-            <Download className="w-4 h-4 text-ink-500" /> Export DOCX
+            <FileText className="h-4 w-4 text-blue-500" /> Export DOCX
           </button>
           <button
             onClick={() => handleDownload("pdf")}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-signal-600 text-white text-xs font-bold hover:bg-signal-700 shadow-xs"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:border-slate-400 dark:hover:bg-slate-800"
           >
-            <Download className="w-4 h-4" /> Export PDF
+            <Download className="h-4 w-4" /> Export PDF
           </button>
         </div>
       </div>
@@ -1065,17 +1123,17 @@ export function TailorReview() {
       {/* ========================================================================= */}
       {/* 13. DIRECT APPLY & APPLICATION CONTINUITY (P1-03)                        */}
       {/* ========================================================================= */}
-      <div className="rr-direct-apply-panel rounded-xl border border-signal-500/30 bg-gradient-to-br from-signal-500/5 via-white to-white p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rr-direct-apply-panel space-y-4 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-indigo-50 p-5 shadow-sm sm:p-6 dark:border-sky-700/50 dark:from-sky-900/40 dark:to-indigo-900/40">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="p-1 rounded-md bg-signal-500/20 text-signal-800">
+              <span className="rounded-lg bg-sky-400/15 p-1.5 text-sky-300">
                 <CheckCircle2 size={16} />
               </span>
-              <h3 className="text-base font-bold text-ink-950 font-display">13. Next Step: Direct Application</h3>
+              <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">13. Next Step: Direct Application</h3>
             </div>
-            <p className="text-xs text-ink-600">
-              Your resume is finalized for <strong className="text-ink-900">{version.job_title} at {version.company}</strong>.
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              Your resume is finalized for <strong className="text-slate-900 dark:text-white">{version.job_title} at {version.company}</strong>.
               Apply directly without needing to search for the job again.
             </p>
           </div>
@@ -1085,7 +1143,7 @@ export function TailorReview() {
               <button
                 type="button"
                 onClick={handleApplyDirectly}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-signal-600 hover:bg-signal-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-sm font-bold text-slate-950 shadow-md transition-all hover:bg-sky-400 active:scale-[.98]"
               >
                 <span>Apply Directly on {version.company} Portal</span>
                 <ExternalLink size={14} />
@@ -1103,7 +1161,7 @@ export function TailorReview() {
       {/* Direct Apply Confirmation Modal (P1-03) */}
       {showApplyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white border border-ink-100 shadow-2xl p-6 space-y-4 animate-fade-in-up">
+          <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-fade-in-up dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-signal-500/10 flex items-center justify-center text-signal-600 shrink-0">
                 <CheckCircle2 size={22} />

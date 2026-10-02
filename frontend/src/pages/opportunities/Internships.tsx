@@ -2,7 +2,13 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X, RefreshCw, SlidersHorizontal } from "lucide-react";
-import { getRecommendedMatches, syncLiveJobs, type JobMatch } from "../../lib/jobs";
+import {
+  getRecommendedMatches,
+  isWithinPostingAge,
+  MAX_ACTIVE_POSTING_AGE_DAYS,
+  syncLiveJobs,
+  type JobMatch,
+} from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
@@ -19,6 +25,11 @@ import {
 } from "../../lib/listState";
 
 const PAGE_SIZE = 20;
+const isInternshipListing = (job: JobMatch): boolean => {
+  if (job.opportunity_type) return job.opportunity_type.toUpperCase() === "INTERNSHIP";
+  return job.job_type.toLowerCase() === "internship"
+    || /\b(intern|internship|co-?op)\b/i.test(job.job_title);
+};
 
 export function Internships() {
   const queryClient = useQueryClient();
@@ -63,7 +74,11 @@ export function Internships() {
 
   // Progressive Loading State
   const [page, setPage] = useState<number>(restoredState?.page ?? 1);
-  const [loadedInternships, setLoadedInternships] = useState<JobMatch[]>(restoredState?.loadedItems ?? []);
+  const [loadedInternships, setLoadedInternships] = useState<JobMatch[]>(
+    restoredState?.loadedItems?.filter((job) =>
+      isInternshipListing(job) && isWithinPostingAge(job, MAX_ACTIVE_POSTING_AGE_DAYS)
+    ) ?? [],
+  );
   const [totalCount, setTotalCount] = useState<number>(restoredState?.totalCount ?? 0);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
@@ -116,6 +131,7 @@ export function Internships() {
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
         search: debouncedSearchQuery.trim() || undefined,
         sortBy,
+        maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: 1,
         pageSize: PAGE_SIZE,
       }),
@@ -128,7 +144,9 @@ export function Internships() {
       return;
     }
     if (data) {
-      setLoadedInternships(data.items);
+      setLoadedInternships(data.items.filter((job) =>
+        isInternshipListing(job) && isWithinPostingAge(job, MAX_ACTIVE_POSTING_AGE_DAYS)
+      ));
       setTotalCount(data.total);
       setPage(1);
     }
@@ -207,12 +225,17 @@ export function Internships() {
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
         search: debouncedSearchQuery.trim() || undefined,
         sortBy,
+        maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: nextPage,
         pageSize: PAGE_SIZE,
       });
       setLoadedInternships((prev) => {
         const existing = new Set(prev.map((j) => j.job_id));
-        const newItems = res.items.filter((j) => !existing.has(j.job_id));
+        const newItems = res.items.filter((j) =>
+          isInternshipListing(j)
+          && isWithinPostingAge(j, MAX_ACTIVE_POSTING_AGE_DAYS)
+          && !existing.has(j.job_id)
+        );
         return [...prev, ...newItems];
       });
       setTotalCount(res.total);
@@ -244,49 +267,33 @@ export function Internships() {
   }, [loadedInternships, onlyEligible, hasResume, sortBy]);
 
   return (
-    <div className="max-w-5xl mx-auto pt-4 pb-12 px-4 sm:px-6">
+    <div className="mx-auto w-full max-w-7xl px-4 pt-5 pb-12 sm:px-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <GraduationCap size={20} className="text-signal-600" />
-            <h1 className="text-xl sm:text-2xl font-bold font-display text-ink-950">Internships & Co-ops</h1>
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-signal-500/20 bg-signal-500/10 text-signal-700"><GraduationCap size={20} /></span>
+            <h1 className="font-display text-xl font-bold text-ink-950 sm:text-2xl">Internships & Co-ops</h1>
           </div>
-          <p className="text-xs text-ink-500">
+          <p className="pl-11 text-xs text-ink-500">
             Student and fresher friendly opportunities verified directly on employer portals.
           </p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 flex-wrap shrink-0">
-          <button
-            type="button"
-            onClick={() => liveSync.mutate()}
-            disabled={liveSync.isPending}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-signal-200 bg-signal-50 hover:bg-signal-100 text-signal-800 text-xs font-semibold transition-colors disabled:opacity-60"
-            title={liveSync.error ? "Live listing refresh failed" : "Fetch the latest internship listings"}
+        <div className="flex shrink-0 flex-wrap items-center justify-start gap-2 sm:justify-end">
+          <div
+            role="group"
+            aria-label="Internship listing region"
+            className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800"
           >
-            <RefreshCw size={13} className={liveSync.isPending ? "animate-spin" : ""} />
-            <span>{liveSync.isPending ? "Refreshing…" : "Refresh live listings"}</span>
-          </button>
-          <Link
-            to="/resume/tailor-custom"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold transition-colors shadow-2xs"
-          >
-            <FileText size={13} className="text-signal-600" />
-            <span>Paste External JD</span>
-          </Link>
-          {liveSync.data && <span className="text-[11px] text-ink-500">Synced {liveSync.data.added_count}</span>}
-          {liveSync.error && <span className="text-[11px] text-rose-700">Refresh failed</span>}
-
-          {/* India vs Global Scope Explorer */}
-          <div className="inline-flex rounded-lg border border-ink-200 bg-ink-50 p-1 text-xs font-semibold shrink-0">
             <button
               type="button"
               onClick={() => setRegionScope("india")}
-              className={`px-3 py-1 rounded-md transition-all ${
+              aria-pressed={regionScope === "india"}
+              className={`h-8 rounded-md px-3 text-xs font-semibold transition-colors ${
                 regionScope === "india"
-                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
-                  : "text-ink-600 hover:text-ink-950"
+                  ? "bg-white text-signal-700 shadow-xs dark:bg-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               🇮🇳 India
@@ -294,15 +301,35 @@ export function Internships() {
             <button
               type="button"
               onClick={() => setRegionScope("global")}
-              className={`px-3 py-1 rounded-md transition-all ${
+              aria-pressed={regionScope === "global"}
+              className={`h-8 rounded-md px-3 text-xs font-semibold transition-colors ${
                 regionScope === "global"
-                  ? "bg-white text-signal-700 shadow-xs font-bold border border-ink-100"
-                  : "text-ink-600 hover:text-ink-950"
+                  ? "bg-white text-signal-700 shadow-xs dark:bg-slate-700 dark:text-white"
+                  : "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               🌐 Global
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => liveSync.mutate()}
+            disabled={liveSync.isPending}
+            className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-signal-200 bg-signal-50 px-3 text-xs font-semibold text-signal-800 transition-colors hover:bg-signal-100 disabled:opacity-60 dark:border-signal-900 dark:bg-signal-950/40 dark:text-signal-300 dark:hover:bg-signal-950/70"
+            title={liveSync.error ? "Live listing refresh failed" : "Fetch the latest internship listings"}
+          >
+            <RefreshCw size={14} className={liveSync.isPending ? "animate-spin" : ""} />
+            <span>{liveSync.isPending ? "Refreshing…" : "Refresh live listings"}</span>
+          </button>
+          <Link
+            to="/resume/tailor-custom"
+            className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <FileText size={14} className="text-signal-600" />
+            <span>Paste External JD</span>
+          </Link>
+          {liveSync.data && <span className="text-[11px] text-ink-500">Synced {liveSync.data.added_count}</span>}
+          {liveSync.error && <span role="status" className="text-[11px] text-rose-700">Refresh failed</span>}
         </div>
       </div>
 
@@ -324,20 +351,20 @@ export function Internships() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-ink-100 p-4 sm:p-5 mb-4 shadow-xs space-y-4">
+      <div className="mb-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-signal-600" />
-            <h2 className="text-sm font-bold text-ink-900">Find your internship</h2>
+            <h2 className="text-sm font-bold text-ink-900 dark:text-slate-100">Find your internship</h2>
             <span className="hidden sm:inline text-xs text-ink-400">Search and narrow results</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
               <span>Sort by</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as "recent" | "stipend" | "match")}
-                className="rounded-lg border border-ink-200 bg-white px-2.5 py-2 text-xs font-semibold text-ink-800"
+                className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 aria-label="Sort internships"
               >
                 <option value="recent">Most recent</option>
@@ -360,18 +387,18 @@ export function Internships() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-          <div className="relative md:col-span-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="relative">
             <label htmlFor="internship-search-input" className="mb-1.5 block text-[11px] font-semibold text-ink-600">Keywords</label>
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-[calc(50%+1px)] -translate-y-1/2 text-ink-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 id="internship-search-input"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Role, company, skill or location"
                 aria-label="Search internships by role, company, skill, or location"
-                className="w-full rounded-lg border border-ink-200 bg-white py-2.5 pl-9 pr-9 text-sm text-ink-900 shadow-2xs outline-none transition-all placeholder:text-ink-400 focus:border-signal-500 focus:ring-2 focus:ring-signal-500/15"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-9 text-sm text-slate-900 shadow-2xs outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
               {searchQuery && (
                 <button
@@ -386,7 +413,7 @@ export function Internships() {
               )}
             </div>
           </div>
-          <div className="md:col-span-6">
+          <div>
             <RoleDropdownSelector
               label="Role"
               selectedRole={selectedRole}
@@ -394,18 +421,15 @@ export function Internships() {
               roles={roleOptions}
               includeAllOption={true}
               allOptionLabel="All internship roles"
-              className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_label]:tracking-normal [&>div:last-child]:gap-0"
+              className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_label]:tracking-normal [&_input[role=combobox]]:h-10 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:py-2 [&_input[role=combobox]]:focus:ring-indigo-500/15 [&>div:last-child]:gap-0"
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 border-t border-ink-100 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block text-[11px] font-semibold text-ink-600">
             Location
             <select
               value={locationPreset}
               onChange={(e) => setLocationPreset(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="ALL">All locations</option>
               <option value="Bengaluru">Bengaluru</option>
@@ -421,7 +445,7 @@ export function Internships() {
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               {CANONICAL_CAREER_STAGES.map((stage) => (
                 <option key={stage.value} value={stage.value}>
@@ -435,7 +459,7 @@ export function Internships() {
             <select
               value={workplaceFilter}
               onChange={(e) => setWorkplaceFilter(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-ink-200 bg-white px-3 py-2.5 text-sm font-medium text-ink-800 shadow-2xs outline-none focus:border-signal-500"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="ALL">Any arrangement</option>
               <option value="remote">Remote</option>
@@ -445,18 +469,20 @@ export function Internships() {
           </label>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink-100 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-800">
           {hasResume && (
-            <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
+            <label className="inline-flex cursor-pointer items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200">
               <input
                 type="checkbox"
                 checked={onlyEligible}
                 onChange={(e) => setOnlyEligible(e.target.checked)}
-                className="rounded border-ink-300 text-signal-600 focus:ring-signal-500 cursor-pointer"
+                className="peer sr-only"
               />
+              <span aria-hidden="true" className={`relative h-5 w-9 rounded-full transition-colors ${onlyEligible ? "bg-emerald-500 dark:bg-emerald-600" : "bg-slate-300 dark:bg-slate-600"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${onlyEligible ? "translate-x-4" : "translate-x-0.5"}`} /></span>
               Eligible for my profile
             </label>
           )}
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Sort and filters update listings automatically.</span>
         </div>
       </div>
 
@@ -496,16 +522,24 @@ export function Internships() {
       {visibleInternships.length > 0 && (
         <div className="space-y-3">
           {/* Single Authoritative Count & Status Row */}
-          <div className="flex items-center justify-between px-1 py-1 text-xs text-ink-600 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-ink-900">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+            <div>
+              <span className="text-sm font-semibold text-ink-900 dark:text-slate-100">
                 {onlyEligible
                   ? `Showing ${visibleInternships.length} eligible internship${visibleInternships.length === 1 ? "" : "s"}`
                   : `Showing ${visibleInternships.length} of ${totalCount} active internship${totalCount === 1 ? "" : "s"}`}
               </span>
-              <span className="text-ink-400 hidden sm:inline">
-                • Verified live from connected employer ATS boards
+              <span className="ml-2 hidden text-xs text-slate-500 sm:inline dark:text-slate-400">
+                Verified live from connected employer ATS boards
               </span>
+            </div>
+            <div className="w-full sm:w-40">
+              <div className="mb-1 flex justify-between text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                <span>Loaded</span><span>{visibleInternships.length}/{totalCount}</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                <div className="h-full rounded-full bg-indigo-600 transition-all" style={{ width: `${totalCount ? Math.min(100, (visibleInternships.length / totalCount) * 100) : 0}%` }} />
+              </div>
             </div>
           </div>
 
@@ -520,7 +554,7 @@ export function Internships() {
                 type="button"
                 onClick={handleShowMore}
                 disabled={isLoadingMore}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink-900 hover:bg-ink-950 text-white text-xs font-semibold shadow-xs hover:shadow transition-all disabled:opacity-50 cursor-pointer active:scale-98"
+                className="inline-flex h-11 min-w-52 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-sm font-semibold text-slate-800 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.99] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-200"
               >
                 {isLoadingMore ? (
                   <>

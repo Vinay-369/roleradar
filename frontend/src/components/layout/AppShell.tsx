@@ -72,12 +72,12 @@ export function AppShell() {
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-ink-50">
       {/* Mobile Top Header Bar */}
-      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-ink-950 text-ink-100 border-b border-ink-800 shrink-0 z-30">
+      <header className="rr-mobile-header md:hidden flex items-center justify-between px-4 py-3 bg-white text-ink-900 border-b border-ink-100 shrink-0 z-30">
         <div className="flex items-center gap-2.5">
           {!isHome && (
             <button
               onClick={handleBack}
-              className="p-1 rounded-lg text-ink-300 hover:text-white hover:bg-ink-900 transition-colors"
+              className="p-1 rounded-lg text-ink-600 hover:text-ink-950 hover:bg-ink-50 transition-colors"
               aria-label="Go back"
               title="Go back"
             >
@@ -88,8 +88,8 @@ export function AppShell() {
             <div className="w-7 h-7 rounded-md bg-gradient-to-br from-signal-400 to-signal-600 flex items-center justify-center shrink-0">
               <Target size={15} className="text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-display text-base font-semibold tracking-tight text-white">
-              Role<span className="text-signal-400">Radar</span>
+            <span className="font-display text-base font-semibold tracking-tight text-ink-900">
+              Role<span className="text-signal-700">Radar</span>
             </span>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function AppShell() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-1.5 rounded-lg text-ink-300 hover:text-white hover:bg-ink-900 transition-colors"
+            className="p-1.5 rounded-lg text-ink-600 hover:text-ink-950 hover:bg-ink-50 transition-colors"
             aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
             title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
           >
@@ -106,7 +106,7 @@ export function AppShell() {
           </button>
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-1.5 rounded-lg text-ink-300 hover:text-white hover:bg-ink-900 transition-colors"
+            className="p-1.5 rounded-lg text-ink-600 hover:text-ink-950 hover:bg-ink-50 transition-colors"
             aria-label="Open navigation menu"
           >
             <Menu size={20} />
@@ -123,9 +123,9 @@ export function AppShell() {
       />
 
       {/* Main Content Area with Universal Top Bar */}
-      <div className="rr-theme-content flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="rr-theme-content flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
         {/* Desktop Top Navigation Bar */}
-        <header className="hidden md:flex items-center justify-between px-8 py-3.5 bg-white border-b border-ink-100 shrink-0 z-20">
+        <header className="rr-topbar hidden md:flex items-center justify-between px-4 py-3 lg:px-8 bg-white border-b border-ink-100 shrink-0 z-20">
           {/* Left: Breadcrumbs & Back */}
           <div className="flex items-center gap-3">
             {!isHome ? (
@@ -147,13 +147,13 @@ export function AppShell() {
 
             <div className="h-4 w-px bg-ink-100" />
 
-            <span className="text-xs font-bold text-ink-900 tracking-tight">
+            <span className="text-sm font-semibold text-ink-900 tracking-tight">
               {pageTitle}
             </span>
           </div>
 
           {/* Right: Copilot Shortcut & User Profile Avatar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={toggleTheme}
@@ -222,8 +222,8 @@ export function AppShell() {
         </header>
 
         {/* Scrollable Page Body */}
-        <main className={`flex-1 ${location.pathname.startsWith("/copilot") ? "overflow-hidden p-0 bg-white" : "overflow-y-auto px-4 py-6 md:px-8 md:py-8 bg-ink-50"}`}>
-          <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "max-w-6xl mx-auto"} rr-page-transition`}>
+        <main className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 bg-ink-50"}`}>
+          <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "rr-app-page w-full max-w-6xl mx-auto"} rr-page-transition`}>
             <Outlet />
           </div>
         </main>

@@ -6,7 +6,15 @@ from app.core.rate_limit import auth_rate_limit
 from app.db.mongo import get_db
 from app.modules.auth import services
 from app.modules.auth.dependencies import get_current_user
-from app.modules.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserPublic
+from app.modules.auth.schemas import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    LoginRequest,
+    RegisterRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+    UserPublic,
+)
 
 router = APIRouter()
 
@@ -56,6 +64,34 @@ async def login(
     except services.InvalidCredentialsError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
     return TokenResponse(access_token=token)
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_password(
+    body: ForgotPasswordRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    token = await services.request_password_reset(db, body.email)
+    response = ForgotPasswordResponse(
+        message="If an account exists for that email, a password reset link has been prepared."
+    )
+    # Development has no configured mail transport, so expose the token for the local UI.
+    if token and settings.ENV.lower() != "production":
+        response.reset_token = token
+    return response
+
+
+@router.post("/reset-password")
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    try:
+        await services.reset_password(db, body.token, body.new_password)
+    except services.InvalidPasswordResetTokenError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return {"message": "Password updated successfully. You can now sign in."}
 
 
 @router.get("/me", response_model=UserPublic)

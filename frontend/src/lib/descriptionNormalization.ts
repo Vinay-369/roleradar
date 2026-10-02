@@ -108,9 +108,16 @@ export function normalizeJobDescriptionPresentation(params: {
 
   const rawClean = cleanRawText(description);
   if (!rawClean) {
+    const fallbackSeen = new Set<string>();
+    const uniqueFallback = (items: string[]) => items.filter((item) => {
+      const key = normalizeKey(item);
+      if (!key || fallbackSeen.has(key)) return false;
+      fallbackSeen.add(key);
+      return true;
+    });
     return {
-      responsibilities: responsibilities.filter(Boolean),
-      qualifications: qualifications.filter(Boolean),
+      responsibilities: uniqueFallback(responsibilities.filter(Boolean)),
+      qualifications: uniqueFallback(qualifications.filter(Boolean)),
       detailedSections: [],
     };
   }
@@ -314,11 +321,33 @@ export function normalizeJobDescriptionPresentation(params: {
     }
   }
 
+  const displayedContent = new Set<string>();
+  const keepUniqueText = (text: string): boolean => {
+    const key = normalizeKey(text);
+    if (!key || displayedContent.has(key)) return false;
+    displayedContent.add(key);
+    return true;
+  };
+  const uniqueItems = (items: NormalizedItem[]): NormalizedItem[] =>
+    items.filter((item) => keepUniqueText(item.text));
+
+  const finalSummary = summarySec
+    ? { ...summarySec, items: uniqueItems(summarySec.items) }
+    : undefined;
+  const uniqueResponsibilities = finalResponsibilities.filter(keepUniqueText);
+  const uniqueQualifications = finalQualifications.filter(keepUniqueText);
+  const finalAdditional = additionalSec
+    ? { ...additionalSec, items: uniqueItems(additionalSec.items) }
+    : undefined;
+  const uniqueDetailed = finalDetailed
+    .map((section) => ({ ...section, items: uniqueItems(section.items) }))
+    .filter((section) => section.items.length > 0);
+
   return {
-    summary: summarySec && summarySec.items.length > 0 ? summarySec : undefined,
-    responsibilities: finalResponsibilities,
-    qualifications: finalQualifications,
-    additionalInfo: additionalSec && additionalSec.items.length > 0 ? additionalSec : undefined,
-    detailedSections: finalDetailed,
+    summary: finalSummary && finalSummary.items.length > 0 ? finalSummary : undefined,
+    responsibilities: uniqueResponsibilities,
+    qualifications: uniqueQualifications,
+    additionalInfo: finalAdditional && finalAdditional.items.length > 0 ? finalAdditional : undefined,
+    detailedSections: uniqueDetailed,
   };
 }

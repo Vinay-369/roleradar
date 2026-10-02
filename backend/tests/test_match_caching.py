@@ -75,6 +75,33 @@ async def test_first_call_computes_and_caches_matches(db, sample_candidate, samp
 
 
 @pytest.mark.asyncio
+async def test_eligibility_uses_profile_for_new_and_cached_matches(db, sample_candidate):
+    settings = Settings(EMBEDDING_PROVIDER="mock")
+    senior_job = {
+        "id": "senior_job",
+        "title": "Senior Backend Engineer",
+        "company": "TechCorp",
+        "skills_required": ["Python"],
+        "experience_min": 5,
+        "job_type": "full_time",
+        "source": "curated",
+        "apply_url": "https://example.com/apply",
+    }
+
+    for _ in range(2):
+        results = await get_or_compute_matches(
+            db,
+            "user_with_limited_experience",
+            sample_candidate["resume"],
+            sample_candidate["profile"],
+            [senior_job],
+            settings,
+        )
+
+        assert results[0]["eligibility"]["status"] == "EXPERIENCE_MISMATCH"
+
+
+@pytest.mark.asyncio
 async def test_subsequent_call_uses_cache_without_calling_compute_match(db, sample_candidate, sample_jobs, monkeypatch):
     settings = Settings(EMBEDDING_PROVIDER="mock")
     user_id = "user_123"

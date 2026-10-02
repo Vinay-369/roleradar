@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
-  Sparkles, Briefcase, Bookmark, ArrowRight, FileText,
+  Sparkles, Briefcase, Bookmark, ArrowRight, FileText, Building2,
   ShieldCheck, Map, MessageCircleQuestion, CheckCircle2,
   TrendingUp, Compass, Zap, Target, FileEdit,
 } from "lucide-react";
@@ -82,6 +82,12 @@ function DashboardSkeleton() {
       </div>
     </div>
   );
+}
+
+function getMatchScoreStyle(score: number): string {
+  if (score > 70) return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (score >= 50) return "border-amber-200 bg-amber-50 text-amber-800";
+  return "border-slate-200 bg-slate-100 text-slate-600";
 }
 
 export function Dashboard() {
@@ -176,7 +182,10 @@ export function Dashboard() {
         <>
           {/* 3. Core Benchmark KPI Rings */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover">
+            <div
+              title="Role readiness combines ATS parseability and recruiter-impact signals."
+              className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover"
+            >
               <div className="w-full flex items-center justify-between text-xs text-ink-500 mb-2">
                 <span className="font-semibold text-ink-700">Readiness</span>
                 <TrendingUp size={14} className="text-signal-600" />
@@ -185,7 +194,10 @@ export function Dashboard() {
               <p className="text-[11px] text-ink-500 mt-2">Composite blend of ATS parseability & recruiter impact</p>
             </div>
 
-            <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover">
+            <div
+              title="ATS compatibility evaluates resume structure, keyword density, and parseability."
+              className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover"
+            >
               <div className="w-full flex items-center justify-between text-xs text-ink-500 mb-2">
                 <span className="font-semibold text-ink-700">Strict ATS Screening</span>
                 <CheckCircle2 size={14} className="text-signal-600" />
@@ -194,7 +206,10 @@ export function Dashboard() {
               <p className="text-[11px] text-ink-500 mt-2">ATS format compatibility: section structure, keyword density, and parse-ability</p>
             </div>
 
-            <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover">
+            <div
+              title="Skill coverage measures keyword alignment against live target job postings."
+              className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs flex flex-col items-center justify-between text-center card-hover"
+            >
               <div className="w-full flex items-center justify-between text-xs text-ink-500 mb-2">
                 <span className="font-semibold text-ink-700">Skill Coverage</span>
                 <Compass size={14} className="text-amber-500" />
@@ -224,51 +239,60 @@ export function Dashboard() {
           </div>
 
           {/* 5. Top Live Matches & Applications Tracker Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Top Matches Widget */}
-            <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Briefcase size={16} className="text-signal-600" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700">Top Recommended Matches</h3>
                 </div>
-                <Link to="/opportunities/jobs" className="text-xs font-semibold text-signal-600 hover:underline">
+                <Link to="/opportunities/jobs" className="shrink-0 text-xs font-semibold text-signal-600 hover:underline">
                   View all ↗
                 </Link>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {data.top_matches.length === 0 && (
-                  <p className="text-xs text-ink-500 py-3 text-center">Complete onboarding to see matched job listings.</p>
+                  <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50/60 px-4 py-6 text-center">
+                    <p className="text-xs text-ink-500">Complete onboarding to see matched job listings.</p>
+                  </div>
                 )}
                 {data.top_matches.slice(0, 4).map((m) => (
                   <div
                     key={m.job_id}
-                    className="p-3 rounded-xl border border-ink-100 bg-ink-50/40 hover:bg-white hover:border-signal-500/50 hover:shadow-xs transition-all flex items-center justify-between gap-2 group"
+                    className="group grid grid-cols-1 gap-3 rounded-xl border border-ink-100 bg-ink-50/40 p-3.5 transition-all duration-200 hover:border-signal-500/40 hover:bg-white hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4"
                   >
                     <Link
                       to={`/opportunities/job/${m.job_id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0"
+                      className="flex min-w-0 flex-1 items-center gap-3"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-ink-100 text-ink-700 flex items-center justify-center font-bold text-xs uppercase shrink-0 group-hover:bg-signal-500/10 group-hover:text-signal-700 transition-colors">
-                        {m.company.slice(0, 2)}
+                      <div
+                        aria-hidden="true"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-ink-100 bg-white text-signal-700 shadow-2xs transition-colors group-hover:border-signal-500/30 group-hover:bg-signal-500/5"
+                      >
+                        <Building2 size={18} strokeWidth={1.8} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-ink-900 group-hover:text-signal-700 leading-tight truncate">{m.job_title}</p>
+                        <p className="line-clamp-2 text-xs font-bold leading-tight text-ink-900 group-hover:text-signal-700">{m.job_title}</p>
                         <p className="text-[11px] text-ink-500 mt-0.5 truncate">{m.company}</p>
                       </div>
                     </Link>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-signal-500/10 text-signal-700 font-display whitespace-nowrap">
+                    <div className="flex w-full shrink-0 items-center justify-end gap-2">
+                      <span
+                        title="Match score reflects skill coverage, role alignment, experience, location, compensation, and industry fit."
+                        aria-label={`${m.overall_score}% match. Based on skills, role, experience, location, compensation, and industry fit.`}
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold tabular-nums font-display whitespace-nowrap ${getMatchScoreStyle(m.overall_score)}`}
+                      >
                         {m.overall_score}% match
                       </span>
                       <Link
                         to={`/resume/tailor/${m.job_id}`}
                         title={`Tailor resume for ${m.job_title} at ${m.company}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ink-950 hover:bg-signal-600 text-white text-[11px] font-semibold transition-all active:scale-95 whitespace-nowrap shadow-xs"
+                        className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-ink-200 bg-white px-3 py-2 text-[11px] font-semibold text-ink-700 transition-all hover:border-ink-300 hover:bg-ink-50 hover:text-ink-900 active:scale-[0.98]"
                       >
                         <FileEdit size={11} />
-                        <span>Tailor</span>
+                        <span>{data.top_matches[0]?.job_id === m.job_id ? "Tailor top match" : "Tailor"}</span>
                       </Link>
                     </div>
                   </div>
@@ -277,40 +301,44 @@ export function Dashboard() {
             </div>
 
             {/* Saved Opportunities Widget */}
-            <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Bookmark size={16} className="text-amber-500" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700">
                     Saved Opportunities ({totalApplications})
                   </h3>
                 </div>
-                <Link to="/applications?tab=SAVED" className="text-xs font-semibold text-signal-600 hover:underline">
-                  View all ↗
-                </Link>
+                {totalApplications > 0 && (
+                  <Link to="/applications?tab=SAVED" className="shrink-0 text-xs font-semibold text-signal-600 hover:underline">
+                    View all ↗
+                  </Link>
+                )}
               </div>
 
-              <div className="rounded-xl border border-ink-100 bg-ink-50/40 p-4 space-y-2.5">
-                {totalApplications === 0 ? (
-                  <p className="text-xs text-ink-500 text-center py-2">
+              {totalApplications === 0 ? (
+                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-ink-200 bg-ink-50/40 p-5 text-center">
+                  <Bookmark size={19} className="mb-2 text-ink-400" />
+                  <p className="max-w-xs text-xs leading-relaxed text-ink-500">
                     No saved opportunities yet. Bookmark target roles to access them quickly here.
                   </p>
-                ) : (
+                  <Link
+                    to="/opportunities/jobs"
+                    className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-signal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-signal-700"
+                  >
+                    Explore opportunities
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              ) : (
+                <div className="min-h-40 rounded-xl border border-ink-100 bg-ink-50/40 p-4">
                   <div className="space-y-2">
                     <p className="text-xs text-ink-600 font-medium">
                       You have <strong className="text-ink-950">{totalApplications}</strong> bookmarked {totalApplications === 1 ? "role" : "roles"} ready for tailored resume reviews and direct applications.
                     </p>
                   </div>
-                )}
-              </div>
-
-              <Link
-                to="/applications?tab=SAVED"
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 rounded-xl shadow-xs transition-colors"
-              >
-                <span>View Saved Roles</span>
-                <ArrowRight size={12} />
-              </Link>
+                </div>
+              )}
             </div>
           </div>
         </>

@@ -2,6 +2,10 @@
 Auth business logic. Pure Python + repository calls — no framework
 (FastAPI) concerns here, so it's directly unit-testable.
 """
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import Settings
@@ -14,6 +18,10 @@ class EmailAlreadyRegisteredError(Exception):
 
 
 class InvalidCredentialsError(Exception):
+    pass
+
+
+class InvalidPasswordResetTokenError(Exception):
     pass
 
 
@@ -47,6 +55,26 @@ async def authenticate_user(
 
     token = create_access_token(subject=str(user["_id"]), settings=settings)
     return user, token
+
+
+async def request_password_reset(db: AsyncIOMotorDatabase, email: str) -> str | None:
+    user = await repo.get_user_by_email(db, email)
+    if not user:
+        return None
+
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
+    await repo.set_password_reset_token(db, str(user["_id"]), token_hash, expires_at)
+    return raw_token
+
+
+async def reset_password(db: AsyncIOMotorDatabase, token: str, new_password: str) -> None:
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    user = await repo.get_user_by_password_reset_token(db, token_hash, datetime.now(timezone.utc))
+    if not user:
+        raise InvalidPasswordResetTokenError("This password reset link is invalid or expired.")
+    await repo.update_password_and_clear_reset_token(db, str(user["_id"]), hash_password(new_password))
 
 
 async def ensure_demo_user(db: AsyncIOMotorDatabase) -> dict:

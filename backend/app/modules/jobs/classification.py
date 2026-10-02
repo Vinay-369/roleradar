@@ -90,13 +90,14 @@ def extract_graduation_years(text: str) -> list[int]:
 def classify_opportunity_type(
     title: str,
     description: str = "",
-    job_type_hint: str = "",
+    job_type_hint: str | None = None,
 ) -> OpportunityType:
     """
     Classifies opportunity type based on semantic signals across title and description.
     """
     title_lower = (title or "").lower().strip()
     desc_lower = (description or "").lower()
+    job_type_lower = (job_type_hint or "").lower().strip()
 
     # 1. Apprenticeship
     if re.search(r"\b(?:apprentice|apprenticeship)\b", title_lower):
@@ -107,7 +108,7 @@ def classify_opportunity_type(
         return OpportunityType.GRADUATE_PROGRAM
 
     # 3. Internship
-    if job_type_hint.lower() == "internship" or re.search(r"\b(?:intern|internship|trainee|co-op|summer\s+analyst|student\s+worker)\b", title_lower):
+    if job_type_lower == "internship" or re.search(r"\b(?:intern|internship|trainee|co-op|summer\s+analyst|student\s+worker)\b", title_lower):
         return OpportunityType.INTERNSHIP
 
     # 4. Contract / Freelance
@@ -216,7 +217,7 @@ def classify_opportunity(
     description: str = "",
     experience_min: int | None = None,
     experience_max: int | None = None,
-    job_type_hint: str = "",
+    job_type_hint: str | None = None,
 ) -> OpportunityClassification:
     """
     Performs comprehensive deterministic opportunity classification.

@@ -1,24 +1,27 @@
 @import "tailwindcss";
 
-@theme {
-  /* RoleRadar Enterprise SaaS Design System */
-  --color-ink-950: #090d10;
-  --color-ink-900: #11171c;
-  --color-ink-800: #1b2329;
-  --color-ink-700: #2c3841;
-  --color-ink-600: #485966;
-  --color-ink-500: #647582;
-  --color-ink-400: #889ba8;
-  --color-ink-300: #afbfc9;
-  --color-ink-200: #d1dce2;
-  --color-ink-100: #e6edf0;
-  --color-ink-50: #f5f8fa;
+/* Keep Tailwind's dark utilities in sync with RoleRadar's persisted theme toggle. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  --color-signal-700: #0b6855;
-  --color-signal-600: #0e7c66;
-  --color-signal-500: #12967a;
-  --color-signal-400: #2fb593;
-  --color-signal-300: #6ee7b7;
+@theme {
+  /* RoleRadar Aurora: cool neutrals, electric cyan, and deep-space ink. */
+  --color-ink-950: #07111f;
+  --color-ink-900: #101d30;
+  --color-ink-800: #1a2a40;
+  --color-ink-700: #30435b;
+  --color-ink-600: #4c6078;
+  --color-ink-500: #657a92;
+  --color-ink-400: #8498ad;
+  --color-ink-300: #aab9ca;
+  --color-ink-200: #cad5e2;
+  --color-ink-100: #e1e9f2;
+  --color-ink-50: #f3f7fc;
+
+  --color-signal-700: #036082;
+  --color-signal-600: #087ca4;
+  --color-signal-500: #08a7c7;
+  --color-signal-400: #22c5e5;
+  --color-signal-300: #a5f3fc;
 
   --color-amber-700: #945d06;
   --color-amber-600: #b3720a;
@@ -33,6 +36,14 @@
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+:root {
+  --rr-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --rr-ease-gentle: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --rr-motion-fast: 220ms;
+  --rr-motion-base: 320ms;
+  --rr-motion-slow: 560ms;
+}
+
 /* Base Global Styles */
 * {
   box-sizing: border-box;
@@ -43,7 +54,7 @@ html {
 }
 
 body {
-  background-color: var(--color-ink-50);
+  background-color: #f3f7fc;
   color: var(--color-ink-900);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -71,16 +82,15 @@ body {
 
 /* Interactive Card & Button Hover Elevators */
 .card-hover {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  transition: transform 280ms var(--rr-ease-smooth), border-color 280ms var(--rr-ease-gentle);
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  transform: translateY(-1px);
 }
 
 .interactive-chip {
-  transition: all 0.15s ease-in-out;
+  transition: transform 220ms var(--rr-ease-smooth), background-color 280ms var(--rr-ease-gentle), color 280ms var(--rr-ease-gentle);
 }
 
 .interactive-chip:hover {
@@ -104,8 +114,8 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #12967a;
-  box-shadow: 0 0 0 3px rgba(18, 150, 122, 0.14);
+  border-color: #087ca4;
+  box-shadow: 0 0 0 3px rgba(8, 124, 164, 0.14);
   outline: none;
 }
 
@@ -114,18 +124,29 @@ textarea::placeholder {
   color: #889ba8;
 }
 
+html:not([data-theme="dark"]) .rr-theme-content :is(input, select, textarea) {
+  border-color: rgba(116, 145, 181, 0.3);
+  background-color: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 1px 2px rgba(31, 62, 101, 0.035);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(input, select, textarea):focus {
+  border-color: #0895b8;
+  box-shadow: 0 0 0 3px rgba(8, 124, 164, 0.12);
+}
+
 html[data-theme="dark"] body {
-  background-color: #090d10;
-  color: #e6edf0;
+  background-color: #070b16;
+  color: #e5edf7;
 }
 
 html[data-theme="dark"] .rr-theme-content {
-  color: #e6edf0;
-  background-color: #090d10;
+  color: #e5edf7;
+  background-color: #070b16;
 }
 
 html[data-theme="dark"] .rr-theme-content .rr-direct-apply-panel {
-  background-color: #11171c !important;
+  background-color: #101827 !important;
   background-image: none !important;
   border-color: #24594e !important;
   color: #e6edf0;
@@ -133,22 +154,22 @@ html[data-theme="dark"] .rr-theme-content .rr-direct-apply-panel {
 
 html[data-theme="dark"] .rr-theme-content [class~="bg-white"],
 html[data-theme="dark"] .rr-theme-content [class*="bg-white/"] {
-  background-color: #11171c !important;
+  background-color: #101827 !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class~="bg-ink-50"],
 html[data-theme="dark"] .rr-theme-content [class*="bg-ink-50/"] {
-  background-color: #090d10 !important;
+  background-color: #070b16 !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class~="bg-ink-100"],
 html[data-theme="dark"] .rr-theme-content [class*="bg-ink-100/"] {
-  background-color: #1b2329 !important;
+  background-color: #111c2d !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class~="bg-ink-200"],
 html[data-theme="dark"] .rr-theme-content [class*="bg-ink-200/"] {
-  background-color: #2c3841 !important;
+  background-color: #1b2a3f !important;
 }
 
 html[data-theme="dark"] .rr-theme-content :is(
@@ -204,26 +225,26 @@ html[data-theme="dark"] .rr-theme-content :is(
 
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-950"],
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-900"] {
-  color: #f5f8fa !important;
+  color: #f4f8ff !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-800"],
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-700"] {
-  color: #d1dce2 !important;
+  color: #d2dfef !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-600"],
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-500"] {
-  color: #afbfc9 !important;
+  color: #adbed1 !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="text-ink-400"] {
-  color: #9aabb5 !important;
+  color: #93a7bd !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="text-signal-700"],
 html[data-theme="dark"] .rr-theme-content [class*="text-signal-600"] {
-  color: #6ee7b7 !important;
+  color: #67e8f9 !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="text-amber-700"],
@@ -278,43 +299,43 @@ html[data-theme="dark"] .rr-theme-content [class~="border-ink-50"],
 html[data-theme="dark"] .rr-theme-content [class*="border-ink-50/"],
 html[data-theme="dark"] .rr-theme-content [class~="border-ink-100"],
 html[data-theme="dark"] .rr-theme-content [class*="border-ink-100/"] {
-  border-color: #2c3841 !important;
+  border-color: #23334a !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class~="border-ink-200"],
 html[data-theme="dark"] .rr-theme-content [class*="border-ink-200/"] {
-  border-color: #37464f !important;
+  border-color: #30445e !important;
 }
 
 html[data-theme="dark"] .rr-theme-content [class*="divide-ink-100"] > :not(:last-child) {
-  border-color: #2c3841 !important;
+  border-color: #23334a !important;
 }
 
 html[data-theme="dark"] .rr-theme-content input,
 html[data-theme="dark"] .rr-theme-content select,
 html[data-theme="dark"] .rr-theme-content textarea {
-  background-color: #11171c;
-  color: #f5f8fa;
-  border-color: #37464f;
+  background-color: #101827;
+  color: #f4f8ff;
+  border-color: #30445e;
   color-scheme: dark;
 }
 
 html[data-theme="dark"] .rr-theme-content input::placeholder,
 html[data-theme="dark"] .rr-theme-content textarea::placeholder {
-  color: #9aabb5;
+  color: #93a7bd;
 }
 
 html[data-theme="dark"] .rr-skeleton {
-  background: linear-gradient(90deg, #1b2329 25%, #2c3841 37%, #1b2329 63%);
+  background: linear-gradient(90deg, #111c2d 25%, #1b2a3f 37%, #111c2d 63%);
   background-size: 400px 100%;
 }
 
 html[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: #485966;
+  background: #4c6078;
 }
 
 html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: #647582;
+  background: #657a92;
 }
 
 /* Keyframe Animations */
@@ -324,7 +345,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .rr-page-transition {
-  animation: rr-fade-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: rr-fade-in 180ms var(--rr-ease-gentle) both;
 }
 
 @keyframes rr-fade-in-up {
@@ -333,7 +354,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-fade-in-up {
-  animation: rr-fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: rr-fade-in-up 440ms var(--rr-ease-smooth) both;
 }
 
 @keyframes rr-fade-in-down {
@@ -342,7 +363,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-fade-in-down {
-  animation: rr-fade-in-down 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: rr-fade-in-down 460ms var(--rr-ease-smooth) both;
 }
 
 @keyframes rr-scale-in {
@@ -351,7 +372,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-scale-in {
-  animation: rr-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: rr-scale-in 300ms var(--rr-ease-smooth) both;
 }
 
 @keyframes rr-pulse-soft {
@@ -360,7 +381,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-pulse-soft {
-  animation: rr-pulse-soft 2s ease-in-out infinite;
+  animation: rr-pulse-soft 3.8s var(--rr-ease-gentle) infinite;
 }
 
 @keyframes rr-shimmer {
@@ -371,7 +392,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 .rr-skeleton {
   background: linear-gradient(90deg, #edf2f5 25%, #f7fafc 37%, #edf2f5 63%);
   background-size: 400px 100%;
-  animation: rr-shimmer 1.4s ease-in-out infinite;
+  animation: rr-shimmer 1.9s var(--rr-ease-gentle) infinite;
 }
 
 @keyframes rr-ring-draw {
@@ -379,7 +400,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .rr-ring-progress {
-  animation: rr-ring-draw 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: rr-ring-draw 1.2s var(--rr-ease-smooth) both;
 }
 
 @keyframes rr-radar-spin {
@@ -397,5 +418,587 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
 }
 
 .animate-float {
-  animation: rr-float 3s ease-in-out infinite;
+  animation: rr-float 4.8s var(--rr-ease-gentle) infinite;
+}
+
+/* Enterprise workspace chrome */
+.rr-sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  box-shadow: 1px 0 2px rgba(15, 23, 42, 0.025);
+}
+
+.rr-mobile-header {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #e2e8f0;
+}
+
+.rr-sidebar [aria-current="page"] {
+  background: #eaf6f9;
+  box-shadow: inset 2px 0 0 #087ca4;
+}
+
+.rr-sidebar nav a {
+  position: relative;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.rr-sidebar nav a:hover {
+  background-color: #f4f7fa;
+}
+
+.rr-sidebar [aria-current="page"] svg {
+  filter: none;
+}
+
+.rr-brand-mark {
+  box-shadow: 0 2px 7px rgba(8, 124, 164, 0.2);
+}
+
+.rr-topbar {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #e2e8f0;
+}
+
+.rr-main-canvas {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background-color: #f5f7fa;
+  background-image: none;
+}
+
+.rr-main-canvas::before,
+.rr-main-canvas::after {
+  display: none;
+}
+
+.rr-main-canvas > div {
+  position: relative;
+  z-index: 1;
+}
+
+.rr-app-page > * {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: #e2e8f0;
+  background-image: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"].card-hover:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+}
+
+html:not([data-theme="dark"]) .rr-main-canvas {
+  background-color: #f3f6fa;
+  background-image:
+    radial-gradient(ellipse at 82% 0%, rgba(8, 167, 199, 0.055), transparent 38%),
+    linear-gradient(180deg, #f7f9fc 0%, #f1f5f9 100%);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar {
+  border-right-color: #dce5ef;
+  box-shadow: 4px 0 18px rgba(28, 49, 77, 0.035);
+}
+
+html:not([data-theme="dark"]) .rr-topbar,
+html:not([data-theme="dark"]) .rr-mobile-header {
+  background-color: rgba(255, 255, 255, 0.94);
+  border-color: #dce5ef;
+  box-shadow: 0 1px 5px rgba(28, 49, 77, 0.035);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar [aria-current="page"] {
+  background: linear-gradient(90deg, #e6f5f8 0%, #f0f9fb 100%);
+  box-shadow: inset 3px 0 0 #087ca4;
+  color: #10263a;
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a:hover:not([aria-current="page"]) {
+  background-color: #f1f6fa;
+  color: #10263a;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: #dfe7f0;
+  box-shadow:
+    0 1px 2px rgba(19, 39, 65, 0.035),
+    0 7px 18px rgba(19, 39, 65, 0.025);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"].card-hover:hover {
+  border-color: #c4d5e3;
+  box-shadow:
+    0 3px 7px rgba(19, 39, 65, 0.055),
+    0 12px 26px rgba(19, 39, 65, 0.055);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(button, a[class*="rounded-"]):is(:hover, :focus-visible)[class*="hover:bg-ink-"],
+html:not([data-theme="dark"]) .rr-theme-content :is(button, a[class*="rounded-"]):is(:hover, :focus-visible)[class*="hover:bg-white"],
+html:not([data-theme="dark"]) .rr-theme-content :is(button, a[class*="rounded-"]):is(:hover, :focus-visible)[class*="hover:bg-gray-"],
+html:not([data-theme="dark"]) .rr-theme-content :is(button, a[class*="rounded-"]):is(:hover, :focus-visible)[class*="hover:bg-slate-"] {
+  background-color: #eaf2f7;
+  border-color: #c7d6e3;
+  color: #10263a;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(button, a[class*="rounded-"]):focus-visible {
+  outline-color: #087ca4;
+  box-shadow: 0 0 0 4px rgba(8, 124, 164, 0.13);
+}
+
+html:not([data-theme="dark"]) .rr-auth-screen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+html:not([data-theme="dark"]) .rr-auth-screen::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    linear-gradient(rgba(67, 100, 145, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(67, 100, 145, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at 75% 45%, black 0%, transparent 72%);
+}
+
+html:not([data-theme="dark"]) .rr-auth-form {
+  position: relative;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid rgba(116, 145, 181, 0.24);
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+html:not([data-theme="dark"]) .rr-auth-form input {
+  border-color: rgba(116, 145, 181, 0.32);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 2px rgba(31, 62, 101, 0.035);
+}
+
+html:not([data-theme="dark"]) .rr-auth-form input:focus {
+  border-color: #0895b8;
+  box-shadow: 0 0 0 4px rgba(8, 167, 199, 0.13), 0 5px 14px rgba(8, 167, 199, 0.08);
+}
+
+html:not([data-theme="dark"]) .rr-auth-form button[type="submit"] {
+  background: #101d30;
+  box-shadow: 0 2px 5px rgba(16, 45, 69, 0.13);
+}
+
+html:not([data-theme="dark"]) .rr-auth-form button[type="submit"]:hover {
+  box-shadow: 0 12px 25px rgba(8, 104, 137, 0.24);
+}
+
+/* The auth surface sits outside .rr-theme-content, so mirror the app theme here. */
+html[data-theme="dark"] .rr-auth-page {
+  background-image: linear-gradient(135deg, #020617 0%, #0f172a 55%, #111827 100%);
+}
+
+html[data-theme="dark"] .rr-auth-page form {
+  border-color: #1e293b;
+  background-color: #0f172a;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .rr-auth-page input {
+  border-color: #334155;
+  background-color: #020617;
+  color: #f1f5f9;
+}
+
+html[data-theme="dark"] .rr-auth-page input::placeholder {
+  color: #64748b;
+}
+
+html[data-theme="dark"] .rr-auth-page :is(label, .text-slate-700) {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .rr-auth-page .text-slate-900,
+html[data-theme="dark"] .rr-auth-page .dark\:text-white {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .rr-auth-page .text-slate-500 {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .rr-auth-page .border-slate-200 {
+  border-color: #1e293b;
+}
+
+html[data-theme="dark"] .rr-auth-page .bg-white\/80 {
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) :is(h1, h2) {
+  font-family: var(--font-display);
+  letter-spacing: -0.035em;
+}
+
+.rr-theme-content .card-hover {
+  transition:
+    transform var(--rr-motion-base) var(--rr-ease-smooth),
+    border-color var(--rr-motion-slow) var(--rr-ease-gentle);
+}
+
+.rr-theme-content :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #08a7c7;
+  outline-offset: 3px;
+}
+
+.rr-theme-content :is(a, button, input, select, textarea, [class*="transition-"]) {
+  transition-property: color, background-color, border-color, opacity, transform;
+  transition-duration: var(--rr-motion-base);
+  transition-timing-function: var(--rr-ease-smooth);
+}
+
+.rr-theme-content :is(input, select, textarea) {
+  transition-property: border-color, box-shadow;
+}
+
+.rr-theme-content :is(button, a[class*="rounded-"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rr-theme-content button:not(:disabled) {
+  transition:
+    transform var(--rr-motion-fast) var(--rr-ease-smooth),
+    background-color var(--rr-motion-base) var(--rr-ease-gentle),
+    border-color var(--rr-motion-base) var(--rr-ease-gentle),
+    color var(--rr-motion-base) var(--rr-ease-gentle);
+}
+
+.rr-theme-content button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+.rr-theme-content button:not(:disabled):hover svg,
+.rr-theme-content a[class*="rounded-"]:hover svg {
+  transition: transform var(--rr-motion-base) var(--rr-ease-smooth);
+  transform: translateX(1px) scale(1.035);
+}
+
+@keyframes rr-rise-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.992); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes rr-nav-arrive {
+  from { opacity: 0.65; transform: translateX(-5px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+html[data-theme="dark"] .rr-topbar {
+  background: #0f1726;
+  border-color: #243246;
+}
+
+html[data-theme="dark"] .rr-sidebar,
+html[data-theme="dark"] .rr-mobile-header {
+  background: #0f1726;
+  border-color: #243246;
+  color: #e5edf7;
+}
+
+html[data-theme="dark"] .rr-sidebar .text-ink-900,
+html[data-theme="dark"] .rr-mobile-header .text-ink-900 {
+  color: #e5edf7;
+}
+
+html[data-theme="dark"] .rr-sidebar .text-ink-600,
+html[data-theme="dark"] .rr-mobile-header .text-ink-600 {
+  color: #adbed1;
+}
+
+html[data-theme="dark"] .rr-sidebar .text-ink-500 {
+  color: #93a7bd;
+}
+
+html[data-theme="dark"] .rr-sidebar .text-signal-700,
+html[data-theme="dark"] .rr-mobile-header .text-signal-700 {
+  color: #67e8f9;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a:hover {
+  background-color: #172338;
+  color: #f4f8ff;
+}
+
+html[data-theme="dark"] .rr-sidebar [aria-current="page"] {
+  background: #132b3a;
+  color: #f4f8ff;
+  box-shadow: inset 2px 0 0 #22c5e5;
+}
+
+html[data-theme="dark"] .rr-sidebar [aria-current="page"] svg {
+  color: #67e8f9;
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: #243246;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] .rr-main-canvas {
+  background-color: #0b1220;
+  background-image: none;
+}
+
+html[data-theme="dark"] .rr-theme-content [class~="bg-white"][class*="rounded-"] {
+  background-image: none;
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"].card-hover:hover {
+  border-color: #3b526e;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content .rr-learning-resource:hover {
+  background-color: rgba(8, 167, 199, 0.1);
+  border-color: rgba(8, 143, 181, 0.42);
+  color: #036082;
+}
+
+html[data-theme="dark"] .rr-theme-content .rr-learning-resource:hover {
+  background-color: rgba(34, 197, 229, 0.12) !important;
+  border-color: rgba(103, 232, 249, 0.32) !important;
+  color: #a5f3fc !important;
+}
+
+html[data-theme="dark"] .rr-toast {
+  background: #111c2d !important;
+  color: #e5edf7;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .rr-toast-title {
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] .rr-toast-message {
+  color: #d2dfef !important;
+}
+
+html[data-theme="dark"] .rr-toast-icon {
+  background-color: #1b2a3f !important;
+  color: #67e8f9 !important;
+}
+
+html[data-theme="dark"] .rr-toast[data-toast-type="success"] {
+  border-color: #2d806d !important;
+}
+
+html[data-theme="dark"] .rr-toast[data-toast-type="error"] {
+  border-color: #8c3b44 !important;
+}
+
+html[data-theme="dark"] .rr-toast[data-toast-type="warning"] {
+  border-color: #8a682d !important;
+}
+
+html[data-theme="dark"] .rr-toast[data-toast-type="info"] {
+  border-color: #38638a !important;
+}
+
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible) {
+  box-shadow: 0 0 0 2px rgba(125, 160, 198, 0.24);
+}
+
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible)[class*="hover:bg-white"],
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible)[class*="hover:bg-ink-"],
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible)[class*="hover:bg-slate-"],
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible)[class*="hover:bg-gray-"] {
+  background-color: #1b2a3f !important;
+  border-color: #52708f !important;
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] :is(button, a[class*="rounded-"], [role="button"]):is(:hover, :focus-visible):is(
+  [class*="hover:bg-signal-50"], [class*="hover:bg-signal-100"],
+  [class*="hover:bg-teal-50"], [class*="hover:bg-teal-100"],
+  [class*="hover:bg-emerald-50"], [class*="hover:bg-emerald-100"],
+  [class*="hover:bg-green-50"], [class*="hover:bg-green-100"],
+  [class*="hover:bg-amber-50"], [class*="hover:bg-amber-100"],
+  [class*="hover:bg-yellow-50"], [class*="hover:bg-yellow-100"],
+  [class*="hover:bg-orange-50"], [class*="hover:bg-orange-100"],
+  [class*="hover:bg-red-50"], [class*="hover:bg-red-100"],
+  [class*="hover:bg-rose-50"], [class*="hover:bg-rose-100"],
+  [class*="hover:bg-pink-50"], [class*="hover:bg-pink-100"],
+  [class*="hover:bg-blue-50"], [class*="hover:bg-blue-100"],
+  [class*="hover:bg-sky-50"], [class*="hover:bg-sky-100"],
+  [class*="hover:bg-cyan-50"], [class*="hover:bg-cyan-100"],
+  [class*="hover:bg-indigo-50"], [class*="hover:bg-indigo-100"],
+  [class*="hover:bg-purple-50"], [class*="hover:bg-purple-100"],
+  [class*="hover:bg-violet-50"], [class*="hover:bg-violet-100"],
+  [class*="hover:bg-fuchsia-50"], [class*="hover:bg-fuchsia-100"]
+) {
+  background-color: #1b2a3f !important;
+  border-color: #52708f !important;
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] [class*="hover:text-white"]:hover {
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] .rr-toast-dismiss:hover {
+  background-color: #24364d !important;
+  color: #f4f8ff !important;
+}
+
+/* Light theme readability: use stronger text and surface boundaries on the pale canvas. */
+html:not([data-theme="dark"]) .rr-theme-content {
+  color: #1e293b;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(input, select, textarea) {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(input, select, textarea)::placeholder {
+  color: #64748b;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(input, select, textarea):focus {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.16), 0 2px 7px rgba(15, 23, 42, 0.06);
+}
+
+/*
+ * Shared button palette: keep primary actions calm on the pale canvas and
+ * visible against dark surfaces without the default neon cyan glow.
+ */
+html:not([data-theme="dark"]) .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"],
+  [class~="bg-indigo-500"], [class~="bg-indigo-600"], [class~="bg-indigo-700"]
+) {
+  background-color: #3f608b !important;
+  border-color: #3f608b !important;
+  color: #ffffff !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="hover:bg-signal-500"], [class~="hover:bg-signal-600"], [class~="hover:bg-signal-700"],
+  [class~="hover:bg-indigo-500"], [class~="hover:bg-indigo-600"], [class~="hover:bg-indigo-700"]
+):hover {
+  background-color: #304e74 !important;
+  border-color: #304e74 !important;
+  color: #ffffff !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"],
+  [class~="bg-indigo-500"], [class~="bg-indigo-600"], [class~="bg-indigo-700"]
+):focus-visible {
+  box-shadow: 0 0 0 3px rgba(63, 96, 139, 0.24) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"],
+  [class~="bg-indigo-500"], [class~="bg-indigo-600"], [class~="bg-indigo-700"]
+) {
+  background-color: #315b78 !important;
+  border-color: #477997 !important;
+  color: #f5f9ff !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="hover:bg-signal-500"], [class~="hover:bg-signal-600"], [class~="hover:bg-signal-700"],
+  [class~="hover:bg-indigo-500"], [class~="hover:bg-indigo-600"], [class~="hover:bg-indigo-700"]
+):hover {
+  background-color: #3d6d8d !important;
+  border-color: #5b91ae !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is([class~="rounded-xl"], [class~="rounded-2xl"]) :is(button, a, [role="button"]):is(
+  [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"],
+  [class~="bg-indigo-500"], [class~="bg-indigo-600"], [class~="bg-indigo-700"]
+):focus-visible {
+  box-shadow: 0 0 0 3px rgba(91, 145, 174, 0.34) !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-ink-300"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-slate-400"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-gray-400"] {
+  color: #64748b !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-ink-400"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-zinc-400"] {
+  color: #52637a !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-ink-500"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-slate-500"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="text-gray-500"] {
+  color: #475569 !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content [class*="border-ink-50"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="border-ink-100"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="border-slate-100"],
+html:not([data-theme="dark"]) .rr-theme-content [class*="border-slate-200"] {
+  border-color: #d7e0ea !important;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class*="bg-white"][class*="rounded-"] {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.035);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content :is(a, button):focus-visible {
+  outline: 2px solid #0891b2;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.14);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a:hover,
+html:not([data-theme="dark"]) .rr-mobile-header button:hover,
+html:not([data-theme="dark"]) .rr-theme-content .rr-topbar button:hover {
+  color: #10263a;
+  background-color: #e8f1f6;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .rr-sidebar nav a:hover,
+  .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"].card-hover:hover {
+    transform: none;
+  }
+
+  .rr-sidebar nav a::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .rr-main-canvas::after {
+    display: none;
+  }
 }

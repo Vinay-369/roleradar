@@ -8,6 +8,7 @@ Enforces strict gatekeeping for the public feed:
 - No unverified fallback
 - User isolation for private custom JDs
 """
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -65,8 +66,16 @@ class CuratedJobProvider:
         user_clause = {"$or": [{"source": {"$ne": "custom"}}, {"user_id": user_id}]} if user_id else {"source": {"$ne": "custom"}}
         and_clauses.append(user_clause)
 
-        if filters.get("job_type"):
-            mongo_filter["job_type"] = filters["job_type"]
+        job_type = filters.get("job_type")
+        if job_type == "internship":
+            and_clauses.append({
+                "$or": [
+                    {"opportunity_type": {"$in": ["INTERNSHIP", "internship"]}},
+                    {"title": {"$regex": r"\b(intern|internship|co-?op)\b", "$options": "i"}},
+                ]
+            })
+        elif job_type:
+            mongo_filter["job_type"] = job_type
         if filters.get("location"):
             mongo_filter["location"] = filters["location"]
         if filters.get("remote_only"):
@@ -114,7 +123,21 @@ class CuratedJobProvider:
             try:
                 m_int = int(max_days)
                 if m_int > 0:
-                    and_clauses.append({"posted_days_ago": {"$lte": m_int}})
+                    cutoff = (datetime.now(timezone.utc) - timedelta(days=m_int)).isoformat()
+                    and_clauses.append({
+                        "$or": [
+                            {"posted_at": {"$gte": cutoff}},
+                            {
+                                "posted_at": {"$in": [None, ""]},
+                                "first_seen_at": {"$gte": cutoff},
+                            },
+                            {
+                                "posted_at": {"$in": [None, ""]},
+                                "first_seen_at": {"$in": [None, ""]},
+                                "posted_days_ago": {"$lte": m_int},
+                            },
+                        ]
+                    })
             except (ValueError, TypeError):
                 pass
 

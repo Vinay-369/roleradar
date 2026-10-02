@@ -1,5 +1,7 @@
 import { apiClient } from "./apiClient";
 
+export const MAX_ACTIVE_POSTING_AGE_DAYS = 60;
+
 export type EligibilityStatus =
   | "ELIGIBLE"
   | "LIKELY_ELIGIBLE"
@@ -109,6 +111,20 @@ export type JobMatch = {
   application_deadline?: string | null;
   end_date?: string | null;
 };
+
+export function isWithinPostingAge(job: JobMatch, maxAgeDays: number): boolean {
+  if (job.posted_at) {
+    const postedAt = Date.parse(job.posted_at);
+    if (!Number.isNaN(postedAt)) {
+      const ageDays = Math.max(0, (Date.now() - postedAt) / 86_400_000);
+      return ageDays <= maxAgeDays;
+    }
+  }
+
+  return typeof job.posted_days_ago === "number"
+    && job.posted_days_ago >= 0
+    && job.posted_days_ago <= maxAgeDays;
+}
 
 export type JobQueryFilters = {
   jobType?: "full_time" | "internship";

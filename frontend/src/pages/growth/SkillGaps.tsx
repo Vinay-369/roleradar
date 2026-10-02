@@ -215,16 +215,16 @@ export function SkillGaps() {
   const demonstratedCount = gaps.filter((g) => g.status === "DEMONSTRATED").length;
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Target size={24} className="text-signal-600" />
-          <h1 className="font-display text-2xl text-ink-900">
+    <div className="mx-auto w-full min-w-0 max-w-5xl">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Target size={22} className="shrink-0 text-signal-600" />
+          <h1 className="min-w-0 break-words font-display text-2xl font-bold text-ink-900">
             {isMarketBenchmark ? "Career Skill Map" : "Canonical Career Skill Alignment"}
           </h1>
         </div>
       </div>
-      <p className="text-ink-500 mb-6 text-sm">
+      <p className="mb-4 text-sm leading-relaxed text-ink-500">
         {isMarketBenchmark
           ? `Authoritative competency structure for ${activeRole}. Clearly categorized into Core, Important, and Supporting skills.`
           : `Verified alignment between your resume evidence and canonical competencies for ${activeRole}.`}
@@ -274,7 +274,7 @@ export function SkillGaps() {
       )}
 
       {/* Target Role Selector Bar */}
-      <div className="bg-white rounded-lg border border-ink-100 p-4 mb-6 shadow-xs">
+      <div className="mb-5 rounded-xl border border-ink-200 bg-white p-3.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-colors focus-within:border-signal-500/50 focus-within:ring-2 focus-within:ring-signal-500/10 sm:p-4">
         <RoleDropdownSelector
           label="Analyzing Career Role:"
           selectedRole={activeRole}
@@ -282,6 +282,7 @@ export function SkillGaps() {
           roles={roleOptions}
           includeAllOption={false}
           helperText="Select any canonical career role from RoleRadar's authoritative competency taxonomy."
+          className="[&_label]:text-xs [&_input[role=combobox]]:h-11 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:py-2.5 [&_input[role=combobox]]:focus:ring-signal-500/15"
         />
       </div>
 
@@ -324,83 +325,87 @@ export function SkillGaps() {
           </div>
 
           {/* Mode A Metrics Bar: Core vs Important vs Supporting */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
+          <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
-              <span className="text-xl font-bold text-ink-900 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink-900">
                 {alignment?.summary?.total ?? gaps.length}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-blue-500/20 shadow-2xs">
+            <div className="rounded-xl border border-blue-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-blue-700">Core (Learn First)</span>
-                <Target size={14} className="text-blue-600" />
+                <span className="text-[11px] font-semibold text-blue-700">Core (Learn First)</span>
+                <Target size={16} className="text-blue-600" />
               </div>
-              <span className="text-xl font-bold text-blue-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-blue-700">
                 {alignment?.summary?.core_count ?? gaps.filter((g) => g.importance === "CORE").length}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-indigo-500/20 shadow-2xs">
+            <div className="rounded-xl border border-indigo-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-indigo-700">Important</span>
-                <Layers size={14} className="text-indigo-600" />
+                <span className="text-[11px] font-semibold text-indigo-700">Important</span>
+                <Layers size={16} className="text-indigo-600" />
               </div>
-              <span className="text-xl font-bold text-indigo-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-indigo-700">
                 {alignment?.summary?.important_count ?? gaps.filter((g) => g.importance === "IMPORTANT" || g.importance === "COMMON").length}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-teal-500/20 shadow-2xs">
+            <div className="rounded-xl border border-teal-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-teal-700">Supporting Tools</span>
-                <BookOpen size={14} className="text-teal-600" />
+                <span className="text-[11px] font-semibold text-teal-700">Supporting Tools</span>
+                <BookOpen size={16} className="text-teal-600" />
               </div>
-              <span className="text-xl font-bold text-teal-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-teal-700">
                 {alignment?.summary?.supporting_count ?? gaps.filter((g) => g.importance === "SUPPORTING" || g.importance === "OPTIONAL").length}
               </span>
             </div>
           </div>
 
           {/* Mode A Filter Tabs */}
-          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+          <div role="group" aria-label="Filter competencies by importance" className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
             <button
+              aria-pressed={importanceFilter === "ALL"}
               onClick={() => setImportanceFilter("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 importanceFilter === "ALL"
-                  ? "bg-ink-900 text-white shadow-2xs"
-                  : "bg-white text-ink-600 hover:bg-ink-50 border border-ink-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              All Requirements ({gaps.length})
+              All Requirements <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${importanceFilter === "ALL" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{gaps.length}</span>
             </button>
             <button
+              aria-pressed={importanceFilter === "CORE"}
               onClick={() => setImportanceFilter("CORE")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 importanceFilter === "CORE"
-                  ? "bg-blue-600 text-white shadow-2xs"
-                  : "bg-white text-blue-700 hover:bg-blue-50 border border-blue-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Core Foundations ({alignment?.summary?.core_count ?? 0})
+              Core Foundations <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${importanceFilter === "CORE" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{alignment?.summary?.core_count ?? 0}</span>
             </button>
             <button
+              aria-pressed={importanceFilter === "IMPORTANT"}
               onClick={() => setImportanceFilter("IMPORTANT")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 importanceFilter === "IMPORTANT"
-                  ? "bg-indigo-600 text-white shadow-2xs"
-                  : "bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Important ({alignment?.summary?.important_count ?? 0})
+              Important <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${importanceFilter === "IMPORTANT" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{alignment?.summary?.important_count ?? 0}</span>
             </button>
             <button
+              aria-pressed={importanceFilter === "SUPPORTING"}
               onClick={() => setImportanceFilter("SUPPORTING")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 importanceFilter === "SUPPORTING"
-                  ? "bg-teal-600 text-white shadow-2xs"
-                  : "bg-white text-teal-700 hover:bg-teal-50 border border-teal-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Supporting Tools ({alignment?.summary?.supporting_count ?? 0})
+              Supporting Tools <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${importanceFilter === "SUPPORTING" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{alignment?.summary?.supporting_count ?? 0}</span>
             </button>
           </div>
         </>
@@ -409,93 +414,98 @@ export function SkillGaps() {
       {/* Mode B Metrics Bar: When Resume Exists */}
       {!isLoading && !isMarketBenchmark && alignment?.summary && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="bg-white p-3.5 rounded-xl border border-ink-100 shadow-2xs">
+          <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <span className="text-[11px] font-medium text-ink-400 block">Total Competencies</span>
-              <span className="text-xl font-bold text-ink-900 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-ink-900">
                 {alignment.summary.total}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-emerald-500/20 shadow-2xs">
+            <div className="rounded-xl border border-emerald-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-emerald-700">Demonstrated</span>
-                <CheckCircle2 size={14} className="text-emerald-600" />
+                <span className="text-[11px] font-semibold text-emerald-700">Demonstrated</span>
+                <CheckCircle2 size={16} className="text-emerald-600" />
               </div>
-              <span className="text-xl font-bold text-emerald-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-emerald-700">
                 {alignment.summary.demonstrated}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-amber-500/20 shadow-2xs">
+            <div className="rounded-xl border border-amber-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-amber-700">Partially Demonstrated</span>
-                <AlertCircle size={14} className="text-amber-600" />
+                <span className="text-[11px] font-semibold text-amber-700">Partially Demonstrated</span>
+                <AlertCircle size={16} className="text-amber-600" />
               </div>
-              <span className="text-xl font-bold text-amber-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-amber-700">
                 {alignment.summary.partially_demonstrated}
               </span>
             </div>
-            <div className="bg-white p-3.5 rounded-xl border border-ink-200 shadow-2xs">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-ink-500">No Resume Evidence</span>
-                <MinusCircle size={14} className="text-ink-400" />
+                <span className="text-[11px] font-semibold text-slate-600">No Resume Evidence</span>
+                <MinusCircle size={16} className="text-slate-500" />
               </div>
-              <span className="text-xl font-bold text-ink-700 mt-0.5 block">
+              <span className="mt-1 block text-2xl font-bold tabular-nums text-slate-700">
                 {alignment.summary.no_resume_evidence}
               </span>
             </div>
           </div>
 
           {/* Mode B Prioritized Action Tabs */}
-          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
+          <div role="group" aria-label="Filter competencies by learning priority" className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
             <button
+              aria-pressed={priorityFilter === "ALL"}
               onClick={() => setPriorityFilter("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 priorityFilter === "ALL"
-                  ? "bg-ink-900 text-white shadow-2xs"
-                  : "bg-white text-ink-600 hover:bg-ink-50 border border-ink-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              All Gaps ({gaps.length})
+              All Gaps <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityFilter === "ALL" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{gaps.length}</span>
             </button>
             <button
+              aria-pressed={priorityFilter === "LEARN_FIRST"}
               onClick={() => setPriorityFilter("LEARN_FIRST")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 priorityFilter === "LEARN_FIRST"
-                  ? "bg-alert-700 text-white shadow-2xs"
-                  : "bg-white text-alert-700 hover:bg-alert-50 border border-alert-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Learn First ({learnFirstCount})
+              Learn First <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityFilter === "LEARN_FIRST" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{learnFirstCount}</span>
             </button>
             <button
+              aria-pressed={priorityFilter === "STRENGTHEN"}
               onClick={() => setPriorityFilter("STRENGTHEN")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 priorityFilter === "STRENGTHEN"
-                  ? "bg-amber-600 text-white shadow-2xs"
-                  : "bg-white text-amber-700 hover:bg-amber-50 border border-amber-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Strengthen ({strengthenCount})
+              Strengthen <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityFilter === "STRENGTHEN" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{strengthenCount}</span>
             </button>
             <button
+              aria-pressed={priorityFilter === "LATER_SUPPORTING"}
               onClick={() => setPriorityFilter("LATER_SUPPORTING")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 priorityFilter === "LATER_SUPPORTING"
-                  ? "bg-teal-600 text-white shadow-2xs"
-                  : "bg-white text-teal-700 hover:bg-teal-50 border border-teal-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Later / Supporting ({laterCount})
+              Later / Supporting <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityFilter === "LATER_SUPPORTING" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{laterCount}</span>
             </button>
             <button
+              aria-pressed={priorityFilter === "DEMONSTRATED"}
               onClick={() => setPriorityFilter("DEMONSTRATED")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
                 priorityFilter === "DEMONSTRATED"
-                  ? "bg-emerald-600 text-white shadow-2xs"
-                  : "bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200"
+                  ? "bg-ink-950 text-white shadow-xs"
+                  : "border border-ink-200 bg-white text-ink-600 hover:bg-ink-50 hover:text-ink-900"
               }`}
             >
-              Demonstrated ({demonstratedCount})
+              Demonstrated <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${priorityFilter === "DEMONSTRATED" ? "bg-white/15 text-white" : "bg-ink-100 text-ink-600"}`}>{demonstratedCount}</span>
             </button>
           </div>
         </>
@@ -536,37 +546,37 @@ export function SkillGaps() {
           return (
             <div
               key={`${gap.skill}-${i}`}
-              className={`rounded-xl border transition-shadow hover:shadow-xs p-4.5 ${
+              className={`rounded-xl border bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
                 isDemonstrated
-                  ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                  ? "border-emerald-200"
                   : isPartial
-                  ? "border-amber-500/20 bg-amber-500/[0.02]"
+                  ? "border-amber-200"
                   : priorityGroup === "LEARN_FIRST"
-                  ? "border-signal-500/30 bg-signal-500/[0.01]"
-                  : "border-ink-100 bg-white"
+                  ? "border-blue-200"
+                  : "border-ink-100"
               }`}
             >
-              <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-ink-900 text-sm">{gap.skill}</h3>
+                    <h3 className="text-sm font-bold text-ink-900">{gap.skill}</h3>
 
                     {/* Mode B: Canonical Status Badge */}
                     {hasResume ? (
                       isDemonstrated ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                           <CheckCircle2 size={11} />
-                          <span>Demonstrated</span>
+                          <span>DEMONSTRATED</span>
                         </span>
                       ) : isPartial ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
                           <AlertCircle size={11} />
-                          <span>Partially Demonstrated</span>
+                          <span>PARTIALLY DEMONSTRATED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium bg-ink-100 text-ink-600 border border-ink-200">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                           <MinusCircle size={11} />
-                          <span>No Resume Evidence</span>
+                          <span>NO RESUME EVIDENCE</span>
                         </span>
                       )
                     ) : null}
@@ -576,10 +586,10 @@ export function SkillGaps() {
                       <span
                         className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
                           priorityGroup === "LEARN_FIRST"
-                            ? "bg-alert-600/10 text-alert-700 border-alert-600/20"
+                            ? "bg-violet-50 text-violet-700 border-violet-200"
                             : priorityGroup === "STRENGTHEN"
-                            ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                            : "bg-teal-500/10 text-teal-700 border-teal-500/20"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200"
                         }`}
                       >
                         {priorityGroup === "LEARN_FIRST"
@@ -595,10 +605,10 @@ export function SkillGaps() {
                       <span
                         className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border ${
                           gap.importance === "CORE"
-                            ? "bg-blue-500/10 text-blue-700 border-blue-500/20 font-semibold"
+                            ? "bg-blue-50 text-blue-700 border-blue-200 font-semibold"
                             : gap.importance === "IMPORTANT" || gap.importance === "COMMON"
-                            ? "bg-indigo-500/10 text-indigo-700 border-indigo-500/20"
-                            : "bg-ink-50 text-ink-500 border-ink-100"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                            : "bg-slate-50 text-slate-600 border-slate-200"
                         }`}
                       >
                         {gap.importance}
@@ -616,14 +626,16 @@ export function SkillGaps() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-ink-400 font-mono">
-                    Estimated study: ~{gap.estimated_days} days
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-ink-100 bg-ink-50 px-2.5 py-1.5 text-[11px] font-medium text-ink-600">
+                    <BookOpen size={12} className="text-signal-600" />
+                    ~{gap.estimated_days} days study
                   </span>
                   <button
                     onClick={() => toggleCard(gap.skill)}
-                    className="p-1 rounded text-ink-400 hover:text-ink-700 hover:bg-ink-50 transition-colors"
-                    aria-label="Toggle details"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-ink-400 transition-colors hover:border-ink-200 hover:bg-ink-50 hover:text-ink-700"
+                    aria-label={`${isExpanded ? "Hide" : "Show"} details for ${gap.skill}`}
+                    aria-expanded={isExpanded}
                   >
                     {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
@@ -631,19 +643,22 @@ export function SkillGaps() {
               </div>
 
               {/* Concise summary reason */}
-              <p className="text-xs text-ink-600 mb-2 leading-relaxed">
+              <p className="mb-3 text-xs leading-relaxed text-ink-600">
                 {gap.explanation || gap.reason}
               </p>
 
               {/* Evidence Provenance Section (When Resume Exists & Evidence Found) */}
               {hasResume && gap.evidence && gap.evidence.length > 0 && (
-                <div className="mt-2 mb-2 p-2.5 rounded-lg bg-ink-50/70 border border-ink-100 text-[11px] space-y-1">
-                  <div className="flex items-center gap-1.5 text-ink-700 font-medium flex-wrap">
-                    <FileCheck size={12} className="text-signal-600 shrink-0" />
-                    <span>Evidence Source: {gap.evidence[0].entity_name || gap.evidence[0].section}</span>
+                <div className="mb-2 rounded-lg border border-ink-100 bg-ink-50/70 p-3 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-ink-700">
+                      <FileCheck size={13} className="shrink-0 text-signal-600" />
+                      Evidence
+                    </span>
+                    <span className="text-ink-600">{gap.evidence[0].entity_name || gap.evidence[0].section}</span>
                     {gap.evidence[0].evidence_type && (
                       <span
-                        className={`text-[9.5px] px-1.5 py-0.2 rounded border font-sans font-semibold ${
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-sans font-semibold ${
                           getEvidenceBadge(gap.evidence[0].evidence_type).className
                         }`}
                       >
@@ -652,7 +667,7 @@ export function SkillGaps() {
                     )}
                   </div>
                   {gap.evidence[0].text && (
-                    <p className="text-ink-600 italic text-[10.5px] line-clamp-2">
+                    <p className="mt-2 line-clamp-2 text-[10.5px] italic text-ink-600">
                       "{gap.evidence[0].text}"
                     </p>
                   )}
@@ -714,8 +729,8 @@ export function SkillGaps() {
 
               {/* Action Footer */}
               {!isDemonstrated && (
-                <div className="pt-2.5 mt-2 border-t border-ink-100/70 flex items-center justify-between gap-2">
-                  <span className="text-[11px] text-ink-400">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-3">
+                  <span className="text-[11px] text-ink-500">
                     Step-by-step roadmap available in learning progression
                   </span>
                   <Link
@@ -724,7 +739,7 @@ export function SkillGaps() {
                         ? `/growth/roadmap/${encodeURIComponent(targetJobId!)}?role=${encodeURIComponent(activeRole)}`
                         : `/growth/roadmap?role=${encodeURIComponent(activeRole)}`
                     }
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-signal-500/10 hover:bg-signal-500/20 text-signal-700 text-[11px] font-semibold transition-colors shrink-0"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-signal-500/25 bg-white px-3 py-2 text-[11px] font-semibold text-signal-700 shadow-2xs transition-colors hover:border-signal-500/50 hover:bg-signal-50"
                   >
                     <MapIcon size={11} className="text-signal-600" />
                     <span>View in Roadmap</span>

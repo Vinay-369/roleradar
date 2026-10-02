@@ -151,7 +151,7 @@ export function RoleDropdownSelector({
   return (
     <div className={`space-y-1.5 ${className}`} ref={rootRef}>
       <div className="flex h-[14px] items-center justify-between flex-wrap gap-2">
-        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-600">
+        <label className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-600 dark:text-slate-300">
           <Target size={11} className="text-signal-600 shrink-0" />
           <span>{label}</span>
         </label>
@@ -190,7 +190,7 @@ export function RoleDropdownSelector({
           }}
           onKeyDown={handleKeyDown}
           placeholder={`Search ${roleOptions.length} roles or type a custom role…`}
-          className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-ink-200 bg-white text-sm font-semibold text-ink-900 outline-none focus:border-signal-500 focus:ring-2 focus:ring-signal-500/10 transition-all shadow-2xs"
+          className="w-full rounded-lg border border-ink-200 bg-white py-2.5 pl-9 pr-9 text-sm font-semibold text-ink-900 outline-none shadow-2xs transition-all focus:border-signal-500 focus:ring-2 focus:ring-signal-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
         <ChevronDown
           size={14}
@@ -202,7 +202,7 @@ export function RoleDropdownSelector({
             id={listboxId}
             role="listbox"
             aria-label="Matching career roles"
-            className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-white py-1 shadow-lg"
+            className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-ink-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
           >
             {includeAllOption && (
               <button
@@ -212,7 +212,7 @@ export function RoleDropdownSelector({
                 aria-selected={selectedRole === "ALL"}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => selectRole("ALL")}
-                className={`w-full px-3 py-2 text-left text-xs font-semibold hover:bg-signal-500/10 ${selectedRole === "ALL" ? "bg-signal-500/10 text-signal-800" : "text-ink-800"}`}
+                className={`w-full px-3 py-2 text-left text-xs font-semibold hover:bg-signal-500/10 dark:hover:bg-signal-950/50 ${selectedRole === "ALL" ? "bg-signal-500/10 text-signal-800 dark:text-signal-300" : "text-ink-800 dark:text-slate-200"}`}
               >
                 {allOptionLabel}
               </button>
@@ -228,11 +228,11 @@ export function RoleDropdownSelector({
                 onMouseDown={(event) => event.preventDefault()}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => selectRole(option.role)}
-                className={`w-full px-3 py-2 text-left hover:bg-signal-500/10 ${activeIndex === index ? "bg-ink-50" : ""}`}
+                className={`w-full px-3 py-2 text-left hover:bg-signal-500/10 dark:hover:bg-signal-950/50 ${activeIndex === index ? "bg-ink-50 dark:bg-slate-800" : ""}`}
               >
-                <span className="block text-xs font-semibold text-ink-800">{option.role}</span>
+                <span className="block text-xs font-semibold text-ink-800 dark:text-slate-100">{option.role}</span>
                 {(option.domain || option.subdomain) && (
-                  <span className="block mt-0.5 text-[10px] text-ink-400">
+                  <span className="block mt-0.5 text-[10px] text-ink-400 dark:text-slate-500">
                     {[option.domain, option.subdomain].filter(Boolean).join(" · ")}
                   </span>
                 )}
@@ -258,13 +258,13 @@ export function RoleDropdownSelector({
             )}
 
             {!filteredRoles.length && !showCustomOption && !includeAllOption && (
-              <p className="px-3 py-3 text-xs text-ink-500">No roles found. Try another search.</p>
+              <p className="px-3 py-3 text-xs text-ink-500 dark:text-slate-400">No roles found. Try another search.</p>
             )}
           </div>
         )}
       </div>
 
-      {helperText && <p className="text-[11px] text-ink-400 leading-relaxed">{helperText}</p>}
+      {helperText && <p className="text-[11px] leading-relaxed text-ink-400 dark:text-slate-500">{helperText}</p>}
     </div>
   );
 }

@@ -37,3 +37,26 @@ async def create_user(db: AsyncIOMotorDatabase, email: str, password_hash: str, 
     result = await db[Collections.USERS].insert_one(doc)
     doc["_id"] = result.inserted_id
     return doc
+
+
+async def set_password_reset_token(db: AsyncIOMotorDatabase, user_id: str, token_hash: str, expires_at: datetime) -> None:
+    await db[Collections.USERS].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"password_reset_token_hash": token_hash, "password_reset_expires_at": expires_at}},
+    )
+
+
+async def get_user_by_password_reset_token(db: AsyncIOMotorDatabase, token_hash: str, now: datetime) -> dict | None:
+    return await db[Collections.USERS].find_one(
+        {"password_reset_token_hash": token_hash, "password_reset_expires_at": {"$gt": now}}
+    )
+
+
+async def update_password_and_clear_reset_token(db: AsyncIOMotorDatabase, user_id: str, password_hash: str) -> None:
+    await db[Collections.USERS].update_one(
+        {"_id": ObjectId(user_id)},
+        {
+            "$set": {"password_hash": password_hash, "updated_at": datetime.now(timezone.utc)},
+            "$unset": {"password_reset_token_hash": "", "password_reset_expires_at": ""},
+        },
+    )

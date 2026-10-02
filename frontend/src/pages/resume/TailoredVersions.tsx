@@ -3,13 +3,12 @@ import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight, Trash2, Loader2, Copy, Sparkles, Eye,
-  FileText, FileCode2, Download, CheckCircle2, XCircle, Target,
+  FileText, FileCode2, Download, CheckCircle2, XCircle, Target, GitCompare, ShieldCheck,
 } from "lucide-react";
 import { listTailoredVersions, deleteTailoredVersion } from "../../lib/tailoring";
 import { ResumeDiffModal } from "../../components/resume/ResumeDiffModal";
 import { ResumePreviewModal } from "../../components/resume/ResumePreviewModal";
 import { useToast } from "../../context/ToastContext";
-import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 
 // ── Inline export button ──────────────────────────────────────────────────────
@@ -59,7 +58,11 @@ function DownloadButton({
       onClick={handleDownload}
       disabled={isDownloading}
       title={`Download tailored resume as ${format.toUpperCase()}`}
-      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-signal-50 hover:border-signal-400 text-ink-700 hover:text-signal-700 text-[11px] font-semibold shadow-2xs transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[11px] font-semibold shadow-2xs transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+        format === "pdf"
+          ? "border-rose-200 bg-rose-50/70 text-rose-800 hover:border-rose-300 hover:bg-rose-100"
+          : "border-blue-200 bg-blue-50/70 text-blue-800 hover:border-blue-300 hover:bg-blue-100"
+      }`}
     >
       {isDownloading ? (
         <Loader2 size={12} className="animate-spin" />
@@ -92,10 +95,10 @@ export function TailoredVersions() {
   });
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fade-in-up">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 animate-fade-in-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="p-1 rounded-md bg-signal-500/10 text-signal-700">
               <Copy size={15} />
@@ -109,17 +112,17 @@ export function TailoredVersions() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-auto">
           <Link
             to="/resume/tailor-custom"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-ink-50 border border-ink-200 text-ink-700 text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-semibold text-ink-700 shadow-2xs transition-colors hover:border-slate-400 hover:bg-slate-50"
           >
             <FileText size={13} />
             <span>Custom JD</span>
           </Link>
           <Link
             to="/opportunities/jobs"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-signal-500 hover:bg-signal-600 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-signal-600 px-3.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-signal-700"
           >
             <Sparkles size={13} />
             <span>Tailor for a Job</span>
@@ -130,17 +133,34 @@ export function TailoredVersions() {
       {isLoading ? (
         <SkeletonCard count={3} />
       ) : data?.length === 0 ? (
-        <EmptyState
-          icon={Copy}
-          title="No tailored versions created yet"
-          description="Tailor your master resume for any job opening to generate verified, company-aligned versions with ATS scoring feedback."
-          actionText="Browse Job Openings"
-          actionHref="/opportunities/jobs"
-          secondaryActionText="Custom JD Tailoring"
-          secondaryActionHref="/resume/tailor-custom"
-        />
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center shadow-sm">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-signal-500/20 bg-signal-500/10 text-signal-700">
+            <Copy size={22} />
+          </span>
+          <h2 className="font-display text-lg font-bold text-ink-900">No tailored versions yet</h2>
+          <p className="mx-auto mt-1 max-w-lg text-sm leading-relaxed text-ink-500">
+            Tailor your master resume for a job to create a company-aligned version with ATS feedback and Truth Guard review.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Link
+              to="/opportunities/jobs"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-signal-600 px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-signal-700"
+            >
+              <Sparkles size={14} />
+              Tailor for a Job
+              <ArrowRight size={13} />
+            </Link>
+            <Link
+              to="/resume/tailor-custom"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-ink-700 transition-colors hover:bg-slate-50"
+            >
+              <FileText size={14} />
+              Use a Custom JD
+            </Link>
+          </div>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
           {data?.map((v) => {
             const approved = v.changes.filter((c) => c.status === "APPROVED").length;
             const pending = v.changes.filter((c) => c.status === "PENDING").length;
@@ -154,40 +174,49 @@ export function TailoredVersions() {
             return (
               <div
                 key={v.id}
-                className="rounded-2xl border border-ink-100 bg-white hover:border-signal-500/40 hover:shadow-md transition-all overflow-hidden"
+                className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-signal-500/35 hover:shadow-md"
               >
                 {/* Card body */}
-                <div className="p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    {/* Left: job info */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-display font-bold text-ink-950 text-sm truncate">
-                          {v.job_title}
-                        </span>
-                        <span className="text-xs text-ink-400">•</span>
-                        <span className="text-xs text-ink-600 font-medium">{v.company}</span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                            v.is_finalized
-                              ? "bg-signal-500/10 text-signal-700 border border-signal-500/20"
-                              : pending > 0
-                              ? "bg-amber-500/10 text-amber-700 border border-amber-500/20"
-                              : "bg-ink-100 text-ink-600 border border-ink-200"
-                          }`}
-                        >
-                          {v.is_finalized ? "✓ Finalized" : pending > 0 ? `${pending} Pending` : "Draft"}
-                        </span>
+                  <div className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h2 className="truncate font-display text-base font-bold text-ink-950">{v.job_title}</h2>
+                        <p className="mt-1 text-sm font-medium text-ink-600">{v.company}</p>
+                        <p className="mt-1 text-[11px] text-ink-500">
+                          Created {new Date(v.created_at).toLocaleDateString("en-IN", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </p>
                       </div>
+                      <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                        v.is_finalized
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-amber-200 bg-amber-50 text-amber-800"
+                      }`}>
+                        {v.is_finalized ? "Finalized" : "Draft"}
+                      </span>
+                    </div>
 
-                      <p className="text-xs text-ink-500">
-                        Created {new Date(v.created_at).toLocaleDateString("en-IN", {
-                          day: "numeric", month: "short", year: "numeric",
-                        })} · {approved}/{v.changes.length} changes approved · Truth Guard verified
-                      </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {v.validation_summary?.anti_fabrication_passed && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                          <ShieldCheck size={11} />
+                          Truth Guard Verified
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-slate-700">
+                        <CheckCircle2 size={11} className="text-emerald-600" />
+                        {approved}/{v.changes.length} changes approved
+                      </span>
+                      {pending > 0 && (
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-800">
+                          {pending} pending
+                        </span>
+                      )}
+                    </div>
 
-                      {/* Skills & ATS score summary row */}
-                      <div className="flex items-center gap-3 flex-wrap mt-1">
+                    {/* Skills & ATS score summary row */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                         {atsScore !== null && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-signal-700 bg-signal-500/10 border border-signal-500/20 px-2 py-0.5 rounded-full">
                             <Target size={11} />
@@ -208,12 +237,11 @@ export function TailoredVersions() {
                         )}
                       </div>
                     </div>
-
-                    {/* Right: actions */}
-                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-start flex-wrap sm:flex-nowrap">
+                  {/* Card action bar */}
+                  <div className="mx-4 mb-4 mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 sm:mx-5">
                       {isConfirming ? (
-                        <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-2.5 py-1 rounded-xl">
-                          <span className="text-[11px] font-bold text-red-800">Delete?</span>
+                        <div className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5">
+                          <span className="text-[11px] font-bold text-red-800">Delete this version?</span>
                           <button
                             type="button"
                             onClick={() => deleteMutation.mutate(v.id)}
@@ -240,17 +268,28 @@ export function TailoredVersions() {
                             triggerButton={
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white hover:bg-ink-50 text-ink-800 text-xs font-semibold shadow-2xs transition-all hover:border-signal-500"
+                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-transparent bg-slate-50 px-3 text-xs font-semibold text-ink-700 transition-colors hover:border-slate-200 hover:bg-white"
                               >
                                 <Eye size={13} className="text-signal-600" />
                                 <span>Preview</span>
                               </button>
                             }
                           />
-                          <ResumeDiffModal version={v} />
+                          <ResumeDiffModal
+                            version={v}
+                            triggerButton={
+                              <button
+                                type="button"
+                                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-transparent bg-slate-50 px-3 text-xs font-semibold text-ink-700 transition-colors hover:border-slate-200 hover:bg-white"
+                              >
+                                <GitCompare size={13} className="text-ink-500" />
+                                Compare Diff
+                              </button>
+                            }
+                          />
                           <Link
                             to={`/resume/tailor/${v.job_id}?version=${v.id}`}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-ink-950 hover:bg-ink-900 px-3 py-1.5 rounded-lg shadow-2xs transition-colors"
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-signal-600 px-3.5 text-xs font-bold text-white shadow-2xs transition-colors hover:bg-signal-700"
                           >
                             <span>{v.is_finalized ? "View & Export" : "Review"}</span>
                             <ArrowRight size={12} />
@@ -258,22 +297,21 @@ export function TailoredVersions() {
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(v.id)}
-                            className="p-1.5 rounded-lg text-ink-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600"
                             title="Delete this tailored version"
+                            aria-label={`Delete tailored resume for ${v.job_title} at ${v.company}`}
                           >
                             <Trash2 size={15} />
                           </button>
                         </>
                       )}
-                    </div>
                   </div>
-                </div>
 
                 {/* Download footer strip */}
                 {!isConfirming && (
-                  <div className="px-5 py-2.5 border-t border-ink-50 bg-ink-50/50 flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-5">
                     <Download size={12} className="text-ink-400" />
-                    <span className="text-[11px] text-ink-500 font-medium mr-1">Download tailored resume:</span>
+                    <span className="mr-1 text-[11px] font-medium text-ink-500">Download tailored resume</span>
                     <DownloadButton versionId={v.id} company={v.company} format="pdf" />
                     <DownloadButton versionId={v.id} company={v.company} format="docx" />
                   </div>

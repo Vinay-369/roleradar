@@ -1,7 +1,18 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Map as MapIcon, Sparkles, BookOpen, ExternalLink, Code2, Info, ArrowRight } from "lucide-react";
+import {
+  Map as MapIcon,
+  Sparkles,
+  BookOpen,
+  ExternalLink,
+  Code2,
+  Info,
+  ArrowRight,
+  Clock3,
+  ChevronDown,
+  ShieldCheck,
+} from "lucide-react";
 import { getProfile } from "../../lib/profile";
 import { getRoadmap, getSkillGaps, getCanonicalRoles, type SkillGap } from "../../lib/learning";
 import { RoleDropdownSelector } from "../../components/ui/RoleDropdownSelector";
@@ -40,53 +51,77 @@ function getResourceLabel(url: string, index: number): { label: string; tag: str
 }
 
 function GapDetail({ gap }: { gap: SkillGap }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const steps = [
+    { title: "Learn", content: gap.learning_guidance || gap.reason, icon: BookOpen },
+    { title: "Practice", content: gap.practice_guidance || gap.project_suggestion, icon: Code2 },
+    {
+      title: "Prove",
+      content: gap.proof_guidance || `Record the ${gap.skill} deliverable, the decisions you made, and a measurable outcome. Add that role-relevant evidence to a project or your work history.`,
+      icon: ShieldCheck,
+    },
+  ];
+  const ActiveStepIcon = steps[activeStep].icon;
+
   return (
-    <div className="rounded-lg bg-ink-50/70 p-3.5 border border-ink-100/70 shadow-2xs">
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-xs font-bold text-ink-900 flex items-center gap-1.5">
+    <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs sm:p-4">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-ink-900">
           <Code2 size={13} className="text-signal-600" /> {gap.skill}
         </p>
-        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase ${
           gap.priority === "CORE"
-            ? "text-alert-700 bg-alert-600/10 border border-alert-600/20"
+            ? "border-indigo-200 bg-indigo-50 text-indigo-700"
             : gap.priority === "SECONDARY"
-            ? "text-amber-700 bg-amber-500/10 border border-amber-500/20"
-            : "text-signal-700 bg-signal-500/10 border border-signal-500/20"
+            ? "border-slate-200 bg-slate-100 text-slate-700"
+            : "border-emerald-200 bg-emerald-50 text-emerald-700"
         }`}>
           {gap.priority}
         </span>
       </div>
-      <p className="text-[10px] text-ink-500 mb-1.5">
+      <p className="mb-2 text-[11px] text-ink-500">
         {gap.target_job_title}{gap.subdomain ? ` · ${gap.subdomain}` : ""}
       </p>
-      <p className="text-[10px] text-ink-400 mb-1.5">
-        Suggested study time: about {gap.estimated_days} days
-      </p>
-      <div className="mb-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">Step 1 · Learn</p>
-        <p className="text-[11px] text-ink-600 leading-relaxed">{gap.reason}</p>
-      </div>
+      <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-ink-600">
+        <Clock3 size={12} className="text-signal-600" />
+        Suggested study · {gap.estimated_days} days
+      </span>
 
-      <div className="bg-white/80 p-2.5 rounded-md border border-ink-100 mb-2.5">
-        <p className="text-[11px] font-semibold text-ink-800 flex items-center gap-1 mb-0.5">
-          <span>Step 2 · Practice</span>
-        </p>
-        <p className="text-[11px] text-ink-600 leading-snug">{gap.project_suggestion}</p>
+      <div className="mb-2.5 flex items-center gap-1 rounded-lg bg-slate-100 p-1" role="group" aria-label={`Learning steps for ${gap.skill}`}>
+        {steps.map((step, index) => {
+          const StepIcon = step.icon;
+          return (
+            <button
+              key={step.title}
+              type="button"
+              onClick={() => setActiveStep(index)}
+              aria-pressed={activeStep === index}
+              className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+                activeStep === index
+                  ? "bg-white text-signal-700 shadow-2xs"
+                  : "text-ink-500 hover:text-ink-800"
+              }`}
+            >
+              <StepIcon size={12} />
+              <span>Step {index + 1} · {step.title}</span>
+            </button>
+          );
+        })}
       </div>
-
-      <div className="mb-2.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-500">Step 3 · Prove this skill for your target role</p>
-        <p className="text-[11px] text-ink-600 leading-relaxed">
-          Record the {gap.skill} deliverable, the decisions you made, and a measurable outcome. Add that role-relevant evidence to a project or your work history.
+      <div className="mb-3 min-h-14 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-600">
+          <ActiveStepIcon size={12} className="text-signal-600" />
+          Step {activeStep + 1} · {steps[activeStep].title}
         </p>
+        <p className="text-[11px] leading-relaxed text-ink-700">{steps[activeStep].content}</p>
       </div>
 
       {gap.resources && gap.resources.length > 0 ? (
         <div>
-          <p className="text-[10px] uppercase font-bold tracking-wider text-ink-400 mb-1.5 flex items-center gap-1">
-            <BookOpen size={11} className="text-signal-600" /> Curated resources for {gap.skill}:
+          <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+            <BookOpen size={12} className="text-signal-600" /> Curated resources
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {gap.resources.map((url, j) => {
               const resInfo = getResourceLabel(url, j);
               return (
@@ -95,55 +130,88 @@ function GapDetail({ gap }: { gap: SkillGap }) {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-800 bg-white hover:bg-signal-500 hover:text-white px-2.5 py-1 rounded-md border border-ink-200 transition-all shadow-2xs"
+                  className="rr-learning-resource inline-flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-medium text-ink-800 shadow-2xs transition-colors hover:border-signal-500/40 hover:bg-signal-50/60"
+                  title={`Open ${resInfo.label}: ${url}`}
                 >
-                  <span className="font-semibold">{resInfo.label}</span>
-                  <span className="text-[9px] opacity-75 group-hover:text-white">({resInfo.tag})</span>
-                  <ExternalLink size={10} className="shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{resInfo.label}</span>
+                    <span className="block truncate text-[9px] text-ink-500">{resInfo.tag}</span>
+                  </span>
+                  <ExternalLink size={12} className="shrink-0 text-signal-600" />
                 </a>
               );
             })}
           </div>
         </div>
       ) : (
-        <p className="text-[11px] text-ink-400 italic">
-          No curated resource is available for this skill yet; use the practice task above as your starting point.
-        </p>
+        <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <Sparkles size={13} className="mt-0.5 shrink-0 text-signal-600" />
+          <p className="text-[10px] leading-relaxed text-ink-600">
+            No curated resource yet. Use the practice step to guide your self-directed learning.
+          </p>
+        </div>
       )}
-    </div>
+    </article>
   );
 }
 
-function Bucket({ title, subtitle, skills, gapsBySkill }: { title: string; subtitle: string; skills: string[]; gapsBySkill: Map<string, SkillGap> }) {
-  return (
-    <div className="rounded-xl border border-ink-100 bg-white p-4 shadow-xs flex flex-col justify-between">
-      <div>
-        <div className="flex items-center justify-between mb-1 pb-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-ink-900">{title}</p>
-          <span className="text-[10px] font-semibold bg-ink-100 text-ink-700 px-2 py-0.5 rounded-full">
-            {skills.length} {skills.length === 1 ? "skill" : "skills"}
-          </span>
-        </div>
-        <p className="text-[11px] text-ink-400 mb-3">{subtitle}</p>
+function Bucket({ id, title, subtitle, skills, gapsBySkill }: { id: string; title: string; subtitle: string; skills: string[]; gapsBySkill: Map<string, SkillGap> }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const estimatedDays = skills.reduce(
+    (total, skill) => total + (gapsBySkill.get(skill.toLowerCase())?.estimated_days ?? 0),
+    0,
+  );
+  const durationLabel = estimatedDays > 0
+    ? `~${Math.max(1, Math.ceil(estimatedDays / 7))} ${Math.ceil(estimatedDays / 7) === 1 ? "week" : "weeks"}`
+    : null;
 
-        {skills.length === 0 ? (
-          <p className="text-xs text-ink-400 italic py-6 text-center">No missing competencies scheduled in this timeframe.</p>
+  return (
+    <section id={id} className="scroll-mt-6 flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
+      <div>
+        <div className="mb-3 flex items-center gap-3">
+          <span aria-hidden="true" className="h-8 w-1 shrink-0 rounded-full bg-signal-500" />
+          <button
+            type="button"
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((open) => !open)}
+            className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-xs font-bold uppercase tracking-wider text-ink-900">{title}</span>
+              <span className="mt-0.5 block text-[10px] text-ink-500">{subtitle}</span>
+            </span>
+            <span className="flex shrink-0 items-center gap-2">
+              <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold text-ink-600 sm:inline-flex">
+                {skills.length} {skills.length === 1 ? "skill" : "skills"}{durationLabel ? ` · ${durationLabel}` : ""}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-ink-600 sm:hidden">
+                {skills.length}{durationLabel ? ` · ${durationLabel}` : ""}
+              </span>
+              <ChevronDown size={15} className={`text-ink-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+        </div>
+
+        {isOpen && (skills.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-5 text-center text-xs text-ink-500">
+            No missing competencies scheduled in this timeframe.
+          </p>
         ) : (
-          <div className="space-y-3">
-            {skills.map((s) => {
-              const gap = gapsBySkill.get(s.toLowerCase());
+          <div className="space-y-2.5">
+            {skills.map((skill) => {
+              const gap = gapsBySkill.get(skill.toLowerCase());
               return gap ? (
-                <GapDetail key={s} gap={gap} />
+                <GapDetail key={skill} gap={gap} />
               ) : (
-                <div key={s} className="p-3 bg-ink-50 rounded-lg text-xs font-medium text-ink-800">
-                  {s}
+                <div key={skill} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-ink-800">
+                  {skill}
                 </div>
               );
             })}
           </div>
-        )}
+        ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -182,6 +250,14 @@ export function LearningRoadmap() {
   const totalScheduled = roadmap
     ? roadmap.immediate.length + roadmap.week_1.length + roadmap.week_2.length + roadmap.month_1.length
     : 0;
+  const sprintItems = roadmap
+    ? [
+        { id: "roadmap-sprint-1", label: "Sprint 1", title: "Immediate", subtitle: "Days 1–3", skills: roadmap.immediate },
+        { id: "roadmap-sprint-2", label: "Sprint 2", title: "Week 1 Foundation", subtitle: "Week 1", skills: roadmap.week_1 },
+        { id: "roadmap-sprint-3", label: "Sprint 3", title: "Practical Implementation", subtitle: "Week 2", skills: roadmap.week_2 },
+        { id: "roadmap-sprint-4", label: "Sprint 4", title: "Month 1 Advanced", subtitle: "Month 1", skills: roadmap.month_1 },
+      ]
+    : [];
 
   const { data: canonicalRoles } = useQuery({
     queryKey: ["canonical-roles"],
@@ -194,11 +270,11 @@ export function LearningRoadmap() {
   }, [canonicalRoles]);
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <MapIcon size={24} className="text-signal-600" />
-          <h1 className="font-display text-2xl text-ink-900">Learning Roadmap</h1>
+    <div className="mx-auto w-full min-w-0 max-w-5xl">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <MapIcon size={22} className="shrink-0 text-signal-600" />
+          <h1 className="min-w-0 break-words font-display text-2xl font-bold text-ink-900">Learning Roadmap</h1>
         </div>
         {jobId && (
           <button
@@ -209,12 +285,12 @@ export function LearningRoadmap() {
           </button>
         )}
       </div>
-      <p className="text-ink-500 mb-6 text-sm">
-        A step-by-step learning progression built from real market requirements with curated study resources and project guides.
+      <p className="mb-4 text-sm leading-relaxed text-ink-500">
+        Build role-ready skills through a focused, step-by-step learning plan for {activeRole}.
       </p>
 
       {/* Target Role Selector Card */}
-      <div className="bg-white rounded-xl border border-ink-100 p-4 mb-6 shadow-xs">
+      <div className="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-colors focus-within:border-signal-500/50 focus-within:ring-2 focus-within:ring-signal-500/10 sm:p-4 lg:flex-row lg:items-center">
         <RoleDropdownSelector
           label="Roadmap for Target Role:"
           selectedRole={activeRole}
@@ -222,7 +298,23 @@ export function LearningRoadmap() {
           roles={availableRoles}
           includeAllOption={false}
           helperText="Select or specify any target role to generate a personalized multi-week learning progression."
+          className="min-w-0 flex-1 [&_label]:text-xs [&_input[role=combobox]]:h-11 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:py-2.5 [&_input[role=combobox]]:focus:ring-signal-500/15"
         />
+        {roadmap && (
+          <span className={`inline-flex shrink-0 items-center justify-center gap-1.5 self-start rounded-full border px-3 py-2 text-[10px] font-bold uppercase tracking-wide lg:self-center ${
+            roadmap.personalization_status === "NONE" || (!roadmap.is_personalized && roadmap.personalization_status !== "LIMITED_EVIDENCE")
+              ? "border-blue-200 bg-blue-50 text-blue-700"
+              : roadmap.personalization_status === "LIMITED_EVIDENCE"
+                ? "border-amber-200 bg-amber-50 text-amber-800"
+                : "border-signal-500/25 bg-signal-500/10 text-signal-700"
+          }`}>
+            {roadmap.personalization_status === "NONE" || (!roadmap.is_personalized && roadmap.personalization_status !== "LIMITED_EVIDENCE")
+              ? <><Info size={12} /> Market Benchmark</>
+              : roadmap.personalization_status === "LIMITED_EVIDENCE"
+                ? <><Info size={12} /> Market · Limited Evidence</>
+                : <><Sparkles size={12} /> {roadmap.roadmap_type === "JOB" ? "Job-Specific Analysis" : "Candidate vs Market Analysis"}</>}
+          </span>
+        )}
       </div>
 
       {roadmapLoading && (
@@ -285,18 +377,9 @@ export function LearningRoadmap() {
               </Link>
             </div>
           ) : (
-            <div className="flex items-center justify-between px-1 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider bg-signal-500/10 text-signal-700 px-2.5 py-0.5 rounded-full border border-signal-500/20 flex items-center gap-1">
-                  <Sparkles size={11} /> {roadmap.roadmap_type === "JOB" ? "Job-Specific Personalization" : "Candidate vs Market Analysis"}
-                </span>
-                {roadmap.role_context && (
-                  <span className="text-xs text-ink-500 font-medium">
-                    • {roadmap.role_context}
-                  </span>
-                )}
-              </div>
-            </div>
+            roadmap.role_context ? (
+              <p className="mb-4 px-1 text-xs font-medium text-ink-500">{roadmap.role_context}</p>
+            ) : null
           )}
         </>
       )}
@@ -322,32 +405,57 @@ export function LearningRoadmap() {
       )}
 
       {roadmap && totalScheduled > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <>
+        <nav aria-label="Learning roadmap sprints" className="relative mb-4 overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
+          <div aria-hidden="true" className="absolute left-8 right-8 top-[30px] hidden h-px bg-slate-200 sm:block" />
+          <ol className="relative flex min-w-[620px] items-start">
+            {sprintItems.map((sprint, index) => (
+              <li key={sprint.id} className="flex flex-1">
+                <a
+                  href={`#${sprint.id}`}
+                  className="group flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-lg px-2 py-1 text-center transition-colors hover:bg-slate-50"
+                >
+                  <span className="z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-signal-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-signal-600/20">
+                    {index + 1}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-ink-700 group-hover:text-signal-700">{sprint.label}</span>
+                  <span className="max-w-full truncate text-[10px] text-ink-500">{sprint.skills.length} {sprint.skills.length === 1 ? "skill" : "skills"} · {sprint.subtitle}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Bucket
+            id="roadmap-sprint-1"
             title="Sprint 1: Immediate"
             subtitle="Core high-priority blockers (Days 1–3)"
             skills={roadmap.immediate}
             gapsBySkill={gapsBySkill}
           />
           <Bucket
+            id="roadmap-sprint-2"
             title="Sprint 2: Week 1 Foundation"
             subtitle="Foundational missing concepts (Week 1)"
             skills={roadmap.week_1}
             gapsBySkill={gapsBySkill}
           />
           <Bucket
+            id="roadmap-sprint-3"
             title="Sprint 3: Practical Implementation"
             subtitle="Hands-on practice & frameworks (~Week 2)"
             skills={roadmap.week_2}
             gapsBySkill={gapsBySkill}
           />
           <Bucket
+            id="roadmap-sprint-4"
             title="Sprint 4: Month 1 Advanced"
             subtitle="Architecture, scale & bonus skills (Month 1)"
             skills={roadmap.month_1}
             gapsBySkill={gapsBySkill}
           />
         </div>
+        </>
       )}
     </div>
   );

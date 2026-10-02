@@ -228,6 +228,37 @@ def test_public_feed_allows_only_verified_direct_ats_sources():
     assert default_status_clause["source"] == {"$in": ("ashby", "greenhouse", "lever", "smartrecruiters")}
 
 
+def test_internship_filter_excludes_non_internship_roles():
+    provider = CuratedJobProvider(None)
+    query = provider._build_mongo_query({"job_type": "internship"})
+
+    internship_clause = next(
+        clause for clause in query["$and"]
+        if "$or" in clause and any("opportunity_type" in branch for branch in clause["$or"])
+    )
+    assert internship_clause["$or"] == [
+        {"opportunity_type": {"$in": ["INTERNSHIP", "internship"]}},
+        {"title": {"$regex": r"\b(intern|internship|co-?op)\b", "$options": "i"}},
+    ]
+    assert "job_type" not in query or query["job_type"] != "internship"
+
+
+def test_max_posted_days_filters_using_posted_or_first_seen_date():
+    provider = CuratedJobProvider(None)
+    query = provider._build_mongo_query({"max_posted_days": 60})
+
+    freshness_clause = next(
+        clause for clause in query["$and"]
+        if "$or" in clause and any("posted_at" in branch for branch in clause["$or"])
+    )
+    assert any(
+        branch.get("posted_days_ago") == {"$lte": 60}
+        for branch in freshness_clause["$or"]
+    )
+    assert freshness_clause["$or"][0]["posted_at"]["$gte"]
+    assert freshness_clause["$or"][1]["first_seen_at"]["$gte"]
+
+
 @pytest.mark.parametrize(
     ("workplace_type", "expected_types"),
     [

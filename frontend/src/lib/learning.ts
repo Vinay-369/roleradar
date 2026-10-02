@@ -30,6 +30,9 @@ export type SkillGap = {
   current_evidence: string;
   resources: string[];
   project_suggestion: string;
+  learning_guidance?: string;
+  practice_guidance?: string;
+  proof_guidance?: string;
   estimated_days: number;
   candidate_status?: "MATCHED" | "PARTIAL" | "RELATED" | "MISSING" | null;
   source?: string;

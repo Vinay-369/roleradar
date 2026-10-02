@@ -17,6 +17,9 @@ import {
   Edit3,
   Check,
   X,
+  CircleHelp,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import {
   listApplications,
@@ -26,19 +29,18 @@ import {
   type ApplicationStatus,
 } from "../../lib/applications";
 import { useToast } from "../../context/ToastContext";
-import { EmptyState } from "../../components/ui/EmptyState";
 import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 
 const ALL_STATUSES: { value: ApplicationStatus; label: string; color: string }[] = [
-  { value: "SAVED", label: "Saved", color: "bg-ink-100 text-ink-700 border-ink-200" },
-  { value: "TAILORED", label: "Tailored", color: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  { value: "QUEUED", label: "Queued", color: "bg-purple-50 text-purple-700 border-purple-200" },
-  { value: "APPLIED", label: "Applied", color: "bg-signal-50 text-signal-700 border-signal-200" },
-  { value: "SHORTLISTED", label: "Shortlisted", color: "bg-sky-50 text-sky-700 border-sky-200" },
-  { value: "INTERVIEW", label: "Interview", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { value: "OFFER", label: "Offer", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  { value: "REJECTED", label: "Rejected", color: "bg-rose-50 text-rose-700 border-rose-200" },
-  { value: "WITHDRAWN", label: "Withdrawn", color: "bg-zinc-100 text-zinc-600 border-zinc-200" },
+  { value: "SAVED", label: "Saved", color: "bg-ink-100 text-ink-700 border-ink-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700" },
+  { value: "TAILORED", label: "Tailored", color: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-900" },
+  { value: "QUEUED", label: "Queued", color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-900" },
+  { value: "APPLIED", label: "Applied", color: "bg-signal-50 text-signal-700 border-signal-200 dark:bg-signal-950/40 dark:text-signal-300 dark:border-signal-900" },
+  { value: "SHORTLISTED", label: "Shortlisted", color: "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-900" },
+  { value: "INTERVIEW", label: "Interview", color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900" },
+  { value: "OFFER", label: "Offer", color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900" },
+  { value: "REJECTED", label: "Rejected", color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900" },
+  { value: "WITHDRAWN", label: "Withdrawn", color: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-700" },
 ];
 
 function getStatusBadge(status: ApplicationStatus) {
@@ -82,6 +84,7 @@ export function Applications() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"ALL" | "SAVED" | "TAILORED" | "APPLIED" | "ARCHIVED">(initialTab);
+  const [viewMode, setViewMode] = useState<"list" | "board">("list");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
 
@@ -158,28 +161,48 @@ export function Applications() {
     updateMutation.mutate({ id, updates: { notes: noteText } });
   };
 
+  const boardColumns: { title: string; statuses: ApplicationStatus[]; color: string }[] = [
+    { title: "Saved", statuses: ["SAVED"], color: "border-slate-300" },
+    { title: "Tailored", statuses: ["TAILORED", "QUEUED"], color: "border-indigo-300" },
+    { title: "Applied", statuses: ["APPLIED"], color: "border-signal-400" },
+    { title: "Interviewing", statuses: ["SHORTLISTED", "INTERVIEW"], color: "border-amber-300" },
+    { title: "Offer / Archived", statuses: ["OFFER", "REJECTED", "WITHDRAWN"], color: "border-emerald-300" },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 space-y-6 animate-fade-in-up">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 animate-fade-in-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-signal-500/10 text-signal-700">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-signal-500/15 bg-signal-500/10 text-signal-700">
               <ClipboardCheck size={20} />
             </span>
-            <h1 className="font-display text-2xl font-bold text-ink-950">
+            <h1 className="font-display text-2xl font-bold text-ink-950 sm:text-3xl">
               Application Tracker
             </h1>
           </div>
-          <p className="text-sm text-ink-600">
-            Track your applications manually. RoleRadar cannot access status updates from employer websites, so update each card when your application progresses.
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pl-11">
+            <p className="text-sm text-ink-600">Track your applications manually</p>
+            <span className="group relative inline-flex">
+              <button
+                type="button"
+                aria-label="Why are application updates manual?"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-ink-400 transition-colors hover:bg-slate-100 hover:text-signal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal-500 dark:hover:bg-slate-800"
+              >
+                <CircleHelp size={15} />
+              </button>
+              <span role="tooltip" className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-relaxed text-ink-700 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                Employer portals don’t share application progress with RoleRadar. Update each status here when you hear back or move to the next stage.
+              </span>
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-2.5 self-start sm:self-auto">
           <Link
             to="/opportunities/jobs"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-signal-600 hover:bg-signal-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-signal-600 px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-signal-700"
           >
             <Sparkles size={14} />
             <span>Discover Opportunities</span>
@@ -187,85 +210,167 @@ export function Applications() {
         </div>
       </div>
 
-      {/* Tabs and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-1 bg-ink-100/70 p-1 rounded-xl text-xs font-medium overflow-x-auto">
+      {/* Tabs, search, and view controls */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 text-xs font-medium dark:bg-slate-800">
           <button
             type="button"
             onClick={() => handleTabChange("ALL")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "ALL" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 transition-all ${
+              activeTab === "ALL" ? "bg-white text-ink-950 shadow-xs font-bold dark:bg-slate-700 dark:text-white" : "text-ink-600 hover:text-ink-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            All ({allApps.length})
+            All <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] dark:bg-slate-600">{allApps.length}</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("SAVED")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "SAVED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 transition-all ${
+              activeTab === "SAVED" ? "bg-white text-ink-950 shadow-xs font-bold dark:bg-slate-700 dark:text-white" : "text-ink-600 hover:text-ink-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            Saved ({savedCount})
+            Saved <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] dark:bg-slate-600">{savedCount}</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("TAILORED")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "TAILORED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 transition-all ${
+              activeTab === "TAILORED" ? "bg-white text-ink-950 shadow-xs font-bold dark:bg-slate-700 dark:text-white" : "text-ink-600 hover:text-ink-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            Tailored ({tailoredCount})
+            Tailored <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] dark:bg-slate-600">{tailoredCount}</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("APPLIED")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "APPLIED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 transition-all ${
+              activeTab === "APPLIED" ? "bg-white text-ink-950 shadow-xs font-bold dark:bg-slate-700 dark:text-white" : "text-ink-600 hover:text-ink-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            Applied ({appliedCount})
+            Applied <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] dark:bg-slate-600">{appliedCount}</span>
           </button>
           <button
             type="button"
             onClick={() => handleTabChange("ARCHIVED")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "ARCHIVED" ? "bg-white text-ink-950 shadow-xs font-bold" : "text-ink-600 hover:text-ink-900"
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 transition-all ${
+              activeTab === "ARCHIVED" ? "bg-white text-ink-950 shadow-xs font-bold dark:bg-slate-700 dark:text-white" : "text-ink-600 hover:text-ink-900 dark:text-slate-300 dark:hover:text-white"
             }`}
           >
-            Archived ({archivedCount})
+            Archived <span className="rounded-full bg-slate-200/80 px-1.5 py-0.5 text-[10px] dark:bg-slate-600">{archivedCount}</span>
           </button>
         </div>
 
-        <div className="relative max-w-xs w-full">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:w-64">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search roles or companies..."
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-ink-200 bg-white text-xs text-ink-900 placeholder:text-ink-400 focus:outline-hidden"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs text-ink-900 placeholder:text-ink-400 outline-none transition focus:border-signal-400 focus:ring-2 focus:ring-signal-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           />
+        </div>
+        <div className="inline-flex h-10 shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800" aria-label="Application display mode">
+          <button type="button" onClick={() => setViewMode("list")} aria-pressed={viewMode === "list"} title="List view" className={`inline-flex h-8 w-9 items-center justify-center rounded-md transition ${viewMode === "list" ? "bg-white text-signal-700 shadow-xs dark:bg-slate-700 dark:text-white" : "text-ink-500 hover:text-ink-900 dark:text-slate-400 dark:hover:text-white"}`}>
+            <List size={16} />
+          </button>
+          <button type="button" onClick={() => setViewMode("board")} aria-pressed={viewMode === "board"} title="Kanban board view" className={`inline-flex h-8 w-9 items-center justify-center rounded-md transition ${viewMode === "board" ? "bg-white text-signal-700 shadow-xs dark:bg-slate-700 dark:text-white" : "text-ink-500 hover:text-ink-900 dark:text-slate-400 dark:hover:text-white"}`}>
+            <LayoutGrid size={16} />
+          </button>
+        </div>
         </div>
       </div>
 
       {isLoading ? (
         <SkeletonCard count={3} />
-      ) : filteredApps.length === 0 ? (
-        <EmptyState
-          icon={ClipboardCheck}
-          title="No applications found"
-          description={
-            searchQuery
-              ? `No tracked applications match "${searchQuery}".`
-              : "Track opportunities as you discover, tailor, and submit applications."
-          }
-          actionText="Explore Jobs"
-          actionHref="/opportunities/jobs"
-          secondaryActionText="Explore Internships"
-          secondaryActionHref="/opportunities/internships"
-        />
-      ) : (
+        ) : filteredApps.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:py-16">
+            <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-signal-500/20 bg-signal-500/10 text-signal-700 dark:text-signal-300">
+              <ClipboardCheck size={29} strokeWidth={1.7} />
+              <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-400 dark:border-slate-900" />
+            </div>
+            <h2 className="font-display text-xl font-bold text-ink-950 dark:text-white">No applications found</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-500 dark:text-slate-400">
+              {searchQuery
+                ? `No tracked applications match "${searchQuery}". Try another search or explore current opportunities.`
+                : "Your next opportunity starts here. Save a role to track its progress from discovery through offer."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-2.5">
+              <Link to="/opportunities/jobs" className="inline-flex h-10 items-center gap-2 rounded-lg bg-signal-600 px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-signal-700">
+                <Sparkles size={14} />
+                Explore Jobs
+              </Link>
+              <Link to="/opportunities/internships" className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-ink-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                Explore Internships
+              </Link>
+            </div>
+          </div>
+        ) : viewMode === "board" ? (
+          <div className="flex gap-4 overflow-x-auto pb-3">
+            {boardColumns.map((column) => {
+              const columnApps = filteredApps.filter((app) => column.statuses.includes(app.status));
+              return (
+                <section key={column.title} className="w-[260px] shrink-0">
+                  <div className={`mb-3 flex items-center justify-between border-t-2 ${column.color} rounded-t-lg bg-slate-50 px-3 py-3 dark:bg-slate-900`}>
+                    <h2 className="text-xs font-bold text-ink-800 dark:text-slate-100">{column.title}</h2>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-ink-600 shadow-xs dark:bg-slate-800 dark:text-slate-300">{columnApps.length}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {columnApps.map((app) => (
+                      <article key={app.id} className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+                        <div className="flex items-start gap-2.5">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            <Building2 size={17} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <Link to={app.job_id ? `/opportunities/job/${app.job_id}` : "#"} className="line-clamp-2 text-sm font-bold leading-snug text-ink-950 hover:text-signal-700 dark:text-white dark:hover:text-signal-300">
+                              {app.job_title}
+                            </Link>
+                            <p className="mt-1 truncate text-xs text-ink-500 dark:text-slate-400">{app.company}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {getStatusBadge(app.status)}
+                          <span className="inline-flex items-center gap-1 text-[10px] text-ink-400" title={`Added ${formatDate(app.created_at)}`}>
+                            <Calendar size={11} /> Tracked {formatDate(app.created_at)}
+                          </span>
+                        </div>
+                        <label className="mt-3 block text-[10px] font-medium text-ink-500 dark:text-slate-400">
+                          Update status
+                          <select
+                            value={app.status}
+                            onChange={(e) => updateMutation.mutate({ id: app.id, updates: { status: e.target.value as ApplicationStatus } })}
+                            disabled={updateMutation.isPending}
+                            aria-label={`Update status for ${app.job_title}`}
+                            className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-ink-800 outline-none focus:border-signal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                          >
+                            {ALL_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                          </select>
+                        </label>
+                        <div className="mt-3 flex gap-2">
+                          {app.job_id && (
+                            <Link to={`/resume/tailor/${app.job_id}`} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-signal-50 text-[11px] font-semibold text-signal-700 transition hover:bg-signal-100 dark:bg-signal-950/40 dark:text-signal-300 dark:hover:bg-signal-950/70">
+                              <FileText size={12} /> Tailor Resume
+                            </Link>
+                          )}
+                          <Link to={app.job_id ? `/opportunities/job/${app.job_id}` : "#"} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 text-[11px] font-semibold text-ink-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                            <ExternalLink size={12} /> View JD
+                          </Link>
+                        </div>
+                      </article>
+                    ))}
+                    {columnApps.length === 0 && (
+                      <div className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-[11px] text-ink-400 dark:border-slate-800 dark:text-slate-500">
+                        No roles in this stage
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
         <div className="space-y-3.5">
           {filteredApps.map((app) => {
             const hasDirectApply =
@@ -277,32 +382,33 @@ export function Applications() {
             return (
               <div
                 key={app.id}
-                className="rounded-2xl border border-ink-100 bg-white p-5 shadow-xs hover:shadow-sm hover:border-ink-200 transition-all duration-200"
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
               >
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   {/* Left Column: Role Details */}
-                  <div className="space-y-2 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link
-                        to={app.job_id ? `/opportunities/job/${app.job_id}` : "#"}
-                        className="text-base font-bold text-ink-950 hover:text-signal-600 hover:underline leading-snug truncate"
-                      >
-                        {app.job_title}
-                      </Link>
-                      {getStatusBadge(app.status)}
-                      {app.tailored_resume_id && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
-                          <FileText size={11} />
-                          Tailored Resume Attached
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-ink-600 font-medium flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <Building2 size={13} className="text-ink-400 shrink-0" />
-                        <span>{app.company}</span>
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      <Building2 size={20} />
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          to={app.job_id ? `/opportunities/job/${app.job_id}` : "#"}
+                          className="truncate text-base font-bold leading-snug text-ink-950 hover:text-signal-600 hover:underline dark:text-white"
+                        >
+                          {app.job_title}
+                        </Link>
+                        {getStatusBadge(app.status)}
+                        {app.tailored_resume_id && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300">
+                            <FileText size={11} />
+                            Tailored Resume Attached
+                          </span>
+                        )}
                       </div>
+                      <p className="text-xs font-medium text-ink-600 dark:text-slate-300">{app.company}</p>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-ink-600 dark:text-slate-400">
                       <div className="flex items-center gap-1 text-ink-400">
                         <Calendar size={12} />
                         <span>Saved: {formatDate(app.created_at)}</span>
@@ -324,7 +430,7 @@ export function Applications() {
                             value={noteText}
                             onChange={(e) => setNoteText(e.target.value)}
                             placeholder="Add note (e.g. Recruiter message sent)..."
-                            className="flex-1 px-2.5 py-1 text-xs border border-signal-400 rounded-lg outline-none"
+                            className="h-9 flex-1 rounded-lg border border-signal-400 bg-white px-2.5 text-xs text-ink-900 outline-none focus:ring-2 focus:ring-signal-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             autoFocus
                           />
                           <button
@@ -361,12 +467,13 @@ export function Applications() {
                       )}
                     </div>
                   </div>
+                  </div>
 
                   {/* Right Column: Status Transition & Actions */}
                   <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2.5 shrink-0">
                     {/* Status Dropdown */}
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-ink-500 font-medium">Your stage:</span>
+                      <span className="text-[11px] font-medium text-ink-500">Update status:</span>
                       <select
                         value={app.status}
                         onChange={(e) =>
@@ -378,7 +485,7 @@ export function Applications() {
                         disabled={updateMutation.isPending}
                         aria-label={`Manually update application stage for ${app.job_title}`}
                         title="Update this stage yourself; employer website activity is not synced."
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 bg-white text-ink-900 shadow-2xs outline-none focus:border-signal-500 cursor-pointer"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-900 shadow-2xs outline-none focus:border-signal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       >
                         {ALL_STATUSES.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -388,7 +495,7 @@ export function Applications() {
                       </select>
                     </div>
                     <p className="text-[10px] text-ink-400 sm:text-right md:text-right">
-                      Update manually; employer activity is not synced.
+                      Updated {formatDate(app.updated_at)}
                     </p>
 
                     {/* Action Buttons */}
@@ -397,10 +504,20 @@ export function Applications() {
                       {app.job_id && (
                         <Link
                           to={`/resume/tailor/${app.job_id}`}
-                          className="px-2.5 py-1.5 rounded-lg bg-signal-50 hover:bg-signal-100 text-signal-700 text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-signal-50 px-2.5 py-1.5 text-xs font-semibold text-signal-700 transition-colors hover:bg-signal-100 dark:bg-signal-950/40 dark:text-signal-300 dark:hover:bg-signal-950/70"
                           title="Tailor resume"
                         >
-                          Tailor
+                          <FileText size={13} />
+                          Tailor Resume
+                        </Link>
+                      )}
+                      {app.job_id && (
+                        <Link
+                          to={`/opportunities/job/${app.job_id}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-ink-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          <ExternalLink size={13} />
+                          View JD
                         </Link>
                       )}
 

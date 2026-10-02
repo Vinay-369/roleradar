@@ -209,3 +209,27 @@ class TestPhase13BRelevanceAndClassification:
         # Without explicit 0-1 yr requirement or junior title, sales role is UNKNOWN and not fresher eligible
         assert cl.suitability == CandidateSuitabilitySignal.UNKNOWN
         assert cl.fresher_eligible is False
+
+    def test_missing_job_type_hint_does_not_crash_classification(self):
+        full_time = classify_opportunity(
+            "Software Engineer",
+            "Build backend services",
+            job_type_hint=None,
+        )
+        internship_by_title = classify_opportunity(
+            "Software Engineering Intern",
+            "Build backend services",
+            job_type_hint=None,
+        )
+
+        assert full_time.opportunity_type == OpportunityType.FULL_TIME
+        assert internship_by_title.opportunity_type == OpportunityType.INTERNSHIP
+
+    def test_blank_job_type_hint_is_treated_as_unspecified(self):
+        classification = classify_opportunity(
+            "Software Engineer",
+            "Build backend services",
+            job_type_hint="   ",
+        )
+
+        assert classification.opportunity_type == OpportunityType.FULL_TIME
