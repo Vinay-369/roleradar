@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 
-type NavItem = { label: string; to: string; icon: React.ComponentType<{ size?: number; className?: string }> };
+type NavItem = { label: string; to: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }> };
 type NavGroup = { label: string; items: NavItem[] };
 
 const groups: NavGroup[] = [
@@ -75,13 +75,13 @@ export function Sidebar({
       )}
 
       <aside
-        className={`rr-sidebar fixed md:static inset-y-0 left-0 z-50 w-64 shrink-0 bg-white text-ink-900 h-screen overflow-y-auto px-4 py-6 flex flex-col transition-all duration-200 ease-in-out md:translate-x-0 ${
+        className={`rr-sidebar fixed md:static inset-y-0 left-0 z-50 w-[15.5rem] shrink-0 bg-white text-ink-900 h-screen overflow-y-auto px-3.5 py-5 flex flex-col transition-all duration-200 ease-in-out md:translate-x-0 ${
           collapsed ? "md:w-16 md:px-2" : ""
         } ${
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className={`px-2 mb-8 flex items-center ${collapsed ? "md:flex-col md:items-end md:gap-2" : "justify-between"}`}>
+        <div className={`px-2 mb-7 flex items-center ${collapsed ? "md:flex-col md:items-end md:gap-2" : "justify-between"}`}>
           <div className={`flex items-center gap-2 ${collapsed ? "md:w-full md:justify-center" : ""}`}>
             <div className="rr-brand-mark w-8 h-8 rounded-md bg-gradient-to-br from-signal-400 to-signal-600 flex items-center justify-center shrink-0">
               <Target size={16} className="text-white" strokeWidth={2.5} />
@@ -123,7 +123,7 @@ export function Sidebar({
           )}
         </div>
 
-        <nav className={`flex-1 space-y-6 ${collapsed ? "md:space-y-3" : ""}`}>
+        <nav className={`flex-1 space-y-5 ${collapsed ? "md:space-y-3" : ""}`}>
           {groups.map((group, gIdx) => (
             <div key={gIdx} className={collapsed ? "md:space-y-1" : ""}>
               {group.label && !collapsed && (
@@ -142,15 +142,15 @@ export function Sidebar({
                         className={({ isActive }) =>
                           `group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all ${
                             collapsed ? "md:justify-center md:px-0" : ""} ${
-                            isActive
-                              ? "bg-signal-500/10 text-ink-900 font-semibold shadow-2xs"
-                              : "text-ink-600 hover:text-ink-950 hover:bg-ink-50"
+                             isActive
+                               ? "border-l-4 border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold shadow-2xs"
+                               : "text-ink-600 hover:text-indigo-700 hover:bg-indigo-50/70"
                           }`
                         }
                       >
                         {({ isActive }) => (
                           <>
-                            <Icon size={16} className={isActive ? "text-signal-700" : "text-ink-400 group-hover:text-ink-700"} />
+                             <Icon size={16} strokeWidth={1.75} className={isActive ? "text-indigo-600" : "text-ink-400 group-hover:text-indigo-600"} />
                             <span className={collapsed ? "md:hidden" : ""}>{item.label}</span>
                           </>
                         )}
@@ -170,8 +170,8 @@ export function Sidebar({
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-all ${collapsed ? "md:justify-center md:px-0" : ""} ${
                 isActive
-                  ? "bg-signal-500/10 text-ink-900 font-semibold"
-                  : "text-ink-600 hover:text-ink-950 hover:bg-ink-50"
+                   ? "border-l-4 border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold"
+                   : "text-ink-600 hover:text-indigo-700 hover:bg-indigo-50/70"
               }`
             }
           >

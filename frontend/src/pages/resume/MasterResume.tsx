@@ -491,18 +491,18 @@ export function MasterResume() {
           {/* 4. STRUCTURAL VERIFICATION & ATS SCAN FINDINGS                            */}
           {/* ========================================================================= */}
           {isMultiCol && (
-            <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50/80 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50/80 p-4 dark:border-amber-700 dark:bg-amber-950/45 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-white text-amber-700">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-white text-amber-700 dark:border-amber-700 dark:bg-ink-900 dark:text-amber-300">
                   <AlertTriangle size={18} />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-amber-950">Multi-Column Layout May Reduce ATS Accuracy</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+                  <h3 className="text-sm font-bold text-amber-950 dark:text-amber-100">Multi-Column Layout May Reduce ATS Accuracy</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-900/80 dark:text-amber-200/90">
                     Some applicant tracking systems read columns out of order. A single-column layout improves the reliability of parsing your experience and contact details.
                   </p>
                   {showLayoutFix && (
-                    <p className="mt-2 rounded-lg border border-amber-200 bg-white/80 p-2.5 text-[11px] leading-relaxed text-amber-950">
+                    <p className="mt-2 rounded-lg border border-amber-200 bg-white/80 p-2.5 text-[11px] leading-relaxed text-amber-950 dark:border-amber-700 dark:bg-ink-900/80 dark:text-amber-100">
                       How to fix: move content into one left-aligned column, avoid tables and text boxes, and keep section headings in the normal document flow.
                     </p>
                   )}
@@ -512,7 +512,7 @@ export function MasterResume() {
                 type="button"
                 onClick={() => setShowLayoutFix((visible) => !visible)}
                 aria-expanded={showLayoutFix}
-                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100"
+                className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition-colors hover:bg-amber-100 dark:border-amber-700 dark:bg-ink-900 dark:text-amber-100 dark:hover:bg-amber-900/40"
               >
                 <Info size={13} />
                 {showLayoutFix ? "Hide fix tip" : "How to Fix"}

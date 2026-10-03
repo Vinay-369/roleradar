@@ -372,7 +372,7 @@ export function Copilot() {
         queryClient.invalidateQueries({ queryKey: ["copilot-conversation", data.conversation_id] });
       }
     },
-    onError: () => {
+    onError: (err: any) => {
       isSendingRef.current = false;
       justReceivedReplyRef.current = true;
       setIsGenerating(false);
@@ -380,7 +380,7 @@ export function Copilot() {
         ...prev,
         {
           role: "assistant",
-          text: "### Connection Notice\n\nI couldn't process your question right now. Please verify your connection and try again.",
+          text: `### Connection Notice\n\n${err?.response?.data?.detail || "I couldn't process your question right now. Please verify your connection and try again."}`,
         },
       ]);
     },

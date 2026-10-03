@@ -32,7 +32,7 @@ export function Onboarding() {
 
   const [category, setCategory] = useState("FRESHER");
   const [experienceYears, setExperienceYears] = useState("0");
-  const [targetRoles, setTargetRoles] = useState<string[]>(["Full Stack Developer"]);
+  const [targetRoles, setTargetRoles] = useState<string[]>([]);
   const [roleInput, setRoleInput] = useState("");
   const [rolesOpen, setRolesOpen] = useState(false);
   const rolePickerRef = useRef<HTMLDivElement>(null);
@@ -137,9 +137,22 @@ export function Onboarding() {
     && experienceIsValid;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8 dark:bg-slate-950 sm:py-12">
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-800 dark:shadow-black/20 sm:p-8">
-        <header>
+    <main className="rr-auth-page min-h-screen overflow-x-hidden px-4 py-8 sm:py-12">
+      <header className="rr-portal-header -mx-4 -mt-8 mb-8 sm:-mt-12">
+        <div className="rr-portal-header-inner">
+          <div className="rr-portal-brand">
+            <div className="rr-portal-brand-mark"><Target size={23} strokeWidth={2.5} /></div>
+            <div>
+              <p className="font-display text-lg font-semibold tracking-tight text-white">Role<span className="text-cyan-300">Radar</span></p>
+              <p className="text-xs font-medium text-slate-300">AI Resume Intelligence</p>
+            </div>
+          </div>
+          <span className="rr-portal-year">AI CAREER WORKSPACE</span>
+        </div>
+      </header>
+
+      <form onSubmit={handleSubmit} className="rr-onboarding-card mx-auto w-full max-w-2xl space-y-6 rounded-2xl border bg-white p-5 shadow-lg sm:p-8 dark:bg-slate-900">
+        <header className="rr-onboarding-heading">
           <div className="mb-5">
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-semibold text-indigo-700 dark:text-indigo-300">Step 1 of 2</span>
@@ -411,6 +424,7 @@ export function Onboarding() {
           {submitting ? "Saving Profile..." : <>Finish Setup & Enter Dashboard <ArrowRight size={16} /></>}
         </button>
       </form>
+
     </main>
   );
 }

@@ -58,7 +58,7 @@ export function Register() {
   }
 
   return (
-    <main className="rr-auth-page relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-slate-100 to-indigo-50/30 p-4 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100">
+    <main className="rr-auth-page relative min-h-screen overflow-x-hidden overflow-y-auto text-slate-900 dark:text-slate-100">
       <button
         type="button"
         onClick={toggleTheme}
@@ -69,21 +69,28 @@ export function Register() {
         {theme === "light" ? <Moon size={18} /> : <Sun size={18} className="text-amber-300" />}
       </button>
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-lg shadow-indigo-500/20">
+      <header className="rr-portal-header">
+        <div className="rr-portal-header-inner">
+          <div className="rr-portal-brand">
+          <div className="rr-portal-brand-mark">
             <Target size={23} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-white">Role<span className="text-indigo-600 dark:text-indigo-400">Radar</span></p>
-            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">AI Resume Intelligence</p>
+            <p className="font-display text-lg font-semibold tracking-tight text-white">Role<span className="text-cyan-300">Radar</span></p>
+            <p className="text-xs font-medium text-slate-300">AI Resume Intelligence</p>
           </div>
         </div>
+          <span className="rr-portal-year">AI CAREER WORKSPACE</span>
+        </div>
+      </header>
 
-        <form onSubmit={handleSubmit} className="w-full rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/5 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+      <div className="relative z-10 mx-auto flex w-full max-w-[632px] flex-col items-center px-4 py-12">
+
+        <form onSubmit={handleSubmit} className="rr-portal-card w-full rounded-2xl border bg-white p-8 shadow-xl sm:p-10 dark:bg-slate-900">
           <div className="mb-7">
+            <p className="rr-portal-eyebrow">ROLE RADAR SIGN UP</p>
             <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">Create your account</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Build your personal workspace for smarter applications.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Set up your personal RoleRadar workspace.</p>
           </div>
 
           {error && <p className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium leading-5 text-red-700 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-300" role="alert">{error}</p>}
@@ -116,9 +123,11 @@ export function Register() {
             {submitting ? "Creating account..." : <>Create account <ArrowRight size={17} /></>}
           </button>
 
-          <p className="mt-7 text-center text-sm text-slate-500 dark:text-slate-400">Already have an account? <Link to="/login" className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">Sign in</Link></p>
+          <p className="mt-7 text-center text-sm text-slate-500 dark:text-slate-400">Already have an account? <Link to="/login" className="font-semibold text-cyan-700 hover:underline dark:text-cyan-300">Sign in</Link></p>
         </form>
+        <p className="rr-portal-assurance">Secure access · Your resume data stays private</p>
       </div>
+
     </main>
   );
 }

@@ -64,7 +64,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
   const ActiveStepIcon = steps[activeStep].icon;
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs sm:p-4">
+    <article className="rr-interactive-card rounded-xl border border-slate-200 bg-white p-3 shadow-2xs sm:p-4">
       <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
         <p className="flex items-center gap-1.5 text-sm font-bold text-ink-900">
           <Code2 size={13} className="text-signal-600" /> {gap.skill}
@@ -73,7 +73,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
           gap.priority === "CORE"
             ? "border-indigo-200 bg-indigo-50 text-indigo-700"
             : gap.priority === "SECONDARY"
-            ? "border-slate-200 bg-slate-100 text-slate-700"
+            ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
             : "border-emerald-200 bg-emerald-50 text-emerald-700"
         }`}>
           {gap.priority}
@@ -87,7 +87,7 @@ function GapDetail({ gap }: { gap: SkillGap }) {
         Suggested study · {gap.estimated_days} days
       </span>
 
-      <div className="mb-2.5 flex items-center gap-1 rounded-lg bg-slate-100 p-1" role="group" aria-label={`Learning steps for ${gap.skill}`}>
+      <div className="rr-learning-step-group mb-2.5 flex items-center gap-1 rounded-lg bg-slate-100 p-1" role="group" aria-label={`Learning steps for ${gap.skill}`}>
         {steps.map((step, index) => {
           const StepIcon = step.icon;
           return (
@@ -98,12 +98,12 @@ function GapDetail({ gap }: { gap: SkillGap }) {
               aria-pressed={activeStep === index}
               className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold transition-colors ${
                 activeStep === index
-                  ? "bg-white text-signal-700 shadow-2xs"
-                  : "text-ink-500 hover:text-ink-800"
+                   ? "bg-sky-50 text-sky-700 shadow-2xs dark:bg-sky-950/60 dark:text-sky-300"
+                   : "text-ink-700 hover:text-ink-950 dark:text-ink-200 dark:hover:text-white"
               }`}
             >
-              <StepIcon size={12} />
-              <span>Step {index + 1} · {step.title}</span>
+              <StepIcon size={12} className="rr-roadmap-step-icon" />
+              <span className="rr-roadmap-step-label">Step {index + 1} · {step.title}</span>
             </button>
           );
         })}
@@ -166,7 +166,7 @@ function Bucket({ id, title, subtitle, skills, gapsBySkill }: { id: string; titl
     : null;
 
   return (
-    <section id={id} className="scroll-mt-6 flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
+    <section id={id} className="rr-interactive-card scroll-mt-6 flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
       <div>
         <div className="mb-3 flex items-center gap-3">
           <span aria-hidden="true" className="h-8 w-1 shrink-0 rounded-full bg-signal-500" />
@@ -221,7 +221,7 @@ export function LearningRoadmap() {
   const requestedRole = searchParams.get("role");
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
-  const defaultRole = requestedRole || profile?.target_roles?.[0] || "Full Stack Developer";
+  const defaultRole = requestedRole || profile?.target_roles?.[0] || "";
   const [selectedRole, setSelectedRole] = useState<string>(requestedRole || "");
   useEffect(() => {
     setSelectedRole(requestedRole || "");
@@ -236,6 +236,7 @@ export function LearningRoadmap() {
       if (jobId && !useGeneralMode) return getRoadmap(jobId);
       return getRoadmap({ role: activeRole });
     },
+    enabled: Boolean((jobId && !useGeneralMode) || activeRole),
   });
 
   const { data: gaps } = useQuery({
@@ -244,6 +245,7 @@ export function LearningRoadmap() {
       if (jobId && !useGeneralMode) return getSkillGaps(jobId);
       return getSkillGaps({ role: activeRole });
     },
+    enabled: Boolean((jobId && !useGeneralMode) || activeRole),
   });
 
   const gapsBySkill = new Map((gaps ?? []).map((g) => [g.skill.toLowerCase(), g]));
@@ -270,7 +272,7 @@ export function LearningRoadmap() {
   }, [canonicalRoles]);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl">
+    <div className="rr-learning-roadmap mx-auto w-full min-w-0 max-w-5xl">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <MapIcon size={22} className="shrink-0 text-signal-600" />
@@ -407,7 +409,7 @@ export function LearningRoadmap() {
       {roadmap && totalScheduled > 0 && (
         <>
         <nav aria-label="Learning roadmap sprints" className="relative mb-4 overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
-          <div aria-hidden="true" className="absolute left-8 right-8 top-[30px] hidden h-px bg-slate-200 sm:block" />
+          <div aria-hidden="true" className="absolute left-[12.5%] right-[12.5%] top-[30px] hidden h-px bg-slate-200 dark:bg-ink-300 sm:block" />
           <ol className="relative flex min-w-[620px] items-start">
             {sprintItems.map((sprint, index) => (
               <li key={sprint.id} className="flex flex-1">

@@ -70,7 +70,7 @@ export function AppShell() {
     : user?.email?.slice(0, 2).toUpperCase() || "RR";
 
   return (
-    <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-ink-50">
+    <div className="rr-workspace-scale flex h-screen overflow-hidden flex-col md:flex-row bg-ink-50">
       {/* Mobile Top Header Bar */}
       <header className="rr-mobile-header md:hidden flex items-center justify-between px-4 py-3 bg-white text-ink-900 border-b border-ink-100 shrink-0 z-30">
         <div className="flex items-center gap-2.5">
@@ -177,7 +177,7 @@ export function AppShell() {
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen((prev) => !prev)}
-                className="w-8 h-8 rounded-xl bg-gradient-to-br from-ink-800 to-ink-950 hover:from-ink-700 hover:to-ink-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer focus:outline-hidden"
+                className="rr-profile-trigger w-8 h-8 rounded-xl bg-gradient-to-br from-ink-800 to-ink-950 hover:from-ink-700 hover:to-ink-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs transition-all hover:scale-105 active:scale-95 cursor-pointer focus:outline-hidden"
                 title={user?.full_name || "Profile"}
                 aria-label="Profile"
               >
@@ -185,7 +185,7 @@ export function AppShell() {
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-ink-100 bg-white p-2 shadow-xl animate-scale-in z-50">
+                <div className="rr-profile-menu absolute right-0 mt-2 w-56 rounded-2xl border border-ink-100 bg-white p-2 shadow-xl animate-scale-in z-50">
                   <div className="px-3 py-2 border-b border-ink-50 mb-1">
                     <p className="text-xs font-bold text-ink-950 truncate">
                       {user?.full_name || "RoleRadar User"}
@@ -222,8 +222,8 @@ export function AppShell() {
         </header>
 
         {/* Scrollable Page Body */}
-        <main className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-6 md:px-6 md:py-8 lg:px-8 bg-ink-50"}`}>
-          <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "rr-app-page w-full max-w-6xl mx-auto"} rr-page-transition`}>
+        <main className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-5 md:px-6 md:py-6 lg:px-8 bg-ink-50"}`}>
+          <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "rr-app-page w-full max-w-[1400px] mx-auto"} rr-page-transition`}>
             <Outlet />
           </div>
         </main>

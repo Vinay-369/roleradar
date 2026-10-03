@@ -289,7 +289,7 @@ export function JobDetail() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setShowAppliedConfirmation(true)}
-                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 text-center"
+                className="rr-apply-action inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-95 text-center"
               >
                 <span>{hasDirectApply ? "Apply on Official Portal" : "Continue to Application"}</span>
                 <ExternalLink size={13} />

@@ -121,7 +121,7 @@ export function SkillGaps() {
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: getProfile });
 
-  const defaultRole = targetJob?.title || requestedRole || profile?.target_roles?.[0] || "Full Stack Developer";
+  const defaultRole = targetJob?.title || requestedRole || profile?.target_roles?.[0] || "";
   const [selectedRole, setSelectedRole] = useState<string>(requestedRole || "");
   useEffect(() => {
     setSelectedRole(requestedRole || "");
@@ -574,7 +574,7 @@ export function SkillGaps() {
                           <span>PARTIALLY DEMONSTRATED</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
                           <MinusCircle size={11} />
                           <span>NO RESUME EVIDENCE</span>
                         </span>

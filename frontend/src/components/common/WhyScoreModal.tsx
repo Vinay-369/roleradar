@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { HelpCircle, X, Scale, CheckCircle2, AlertCircle } from "lucide-react";
 import type { JobMatch } from "../../lib/jobs";
 
@@ -78,9 +79,9 @@ export function WhyScoreModal({ job, triggerClassName }: WhyScoreModalProps) {
         <span>Why this score?</span>
       </button>
 
-      {open && (
+      {open && createPortal((
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/60 p-4 backdrop-blur-sm animate-fade-in"
           onClick={() => setOpen(false)}
         >
           <div
@@ -245,7 +246,7 @@ export function WhyScoreModal({ job, triggerClassName }: WhyScoreModalProps) {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </>
   );
 }

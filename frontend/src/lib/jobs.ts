@@ -83,10 +83,8 @@ export type JobMatch = {
   stipend?: number | null;
   stipend_currency?: string | null;
   stipend_period?: string | null;
-  salary_currency?: string | null;
   compensation_type?: string | null;
   compensation_text?: string | null;
-  compensation_type?: string | null;
   eligibility_text?: string | null;
   degree_requirements?: string[];
   graduation_year_requirements?: number[];

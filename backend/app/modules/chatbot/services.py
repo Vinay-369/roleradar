@@ -4,6 +4,7 @@ Handles multi-session conversation threads, document/image attachment injection,
 proactive resume-audit suggestions, and delegates language generation to AIService.chat().
 Fully backwards-compatible with legacy positional arguments.
 """
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -62,14 +63,25 @@ async def handle_chat_message(
     attachment_filename = attachment.filename if attachment else None
     is_resume_attachment = attachment.is_resume if attachment else False
 
-    reply = await ai_service.chat(
-        context=context,
-        user_message=message,
-        conversation_history=history_text,
-        attachment_text=attachment_text,
-        attachment_filename=attachment_filename,
-        is_resume_attachment=is_resume_attachment,
-    )
+    try:
+        timeout_seconds = getattr(ai_service._settings, "COPILOT_REQUEST_TIMEOUT_SECONDS", 45)
+        reply = await asyncio.wait_for(
+            ai_service.chat(
+                context=context,
+                user_message=message,
+                conversation_history=history_text,
+                attachment_text=attachment_text,
+                attachment_filename=attachment_filename,
+                is_resume_attachment=is_resume_attachment,
+            ),
+            timeout=max(5, int(timeout_seconds)),
+        )
+    except asyncio.TimeoutError:
+        reply = (
+            "### Local AI Connection Notice\n\n"
+            "Career Copilot did not receive a response before the 45-second limit. "
+            "Please make sure your configured AI provider is running, then try again."
+        )
     grounded = len(context.missing_context_notes) == 0
 
     resume_suggestion = None

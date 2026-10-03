@@ -26,9 +26,9 @@ function formatLocation(value?: string | null): string | null {
 }
 
 function getScoreBadgeClass(score: number): string {
-  if (score >= 70) return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
-  if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900";
-  return "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+  if (score >= 70) return "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900";
+  if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900";
+  return "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900";
 }
 
 export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetail?: () => void }) {
@@ -118,7 +118,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
         : null;
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700 sm:p-5">
+    <article className="rr-job-match-card rr-interactive-card rounded-xl border border-slate-200/70 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
           <Link
             to={`/opportunities/job/${job.job_id}`}
             onClick={onViewDetail}
-            className="block text-base font-bold leading-snug text-ink-900 hover:text-signal-700"
+             className="block text-base font-bold leading-snug text-slate-900 hover:text-indigo-600"
           >
             {job.job_title}
           </Link>
@@ -158,7 +158,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
 
         <div className="flex shrink-0 items-start gap-2">
           {score !== null && score !== undefined && (
-            <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-bold tabular-nums ${getScoreBadgeClass(score)}`}>
+             <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-bold tabular-nums ${getScoreBadgeClass(score)}`}>
               {score}% <span className="text-[10px] font-semibold">match</span>
             </span>
           )}
@@ -175,38 +175,38 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
           {isInternship ? "Internship" : "Full-time"}
         </span>
         {workplace && (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {workplace}
           </span>
         )}
         {compensationDisclosed ? (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {compensation}
           </span>
         ) : (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
             Salary not disclosed
           </span>
         )}
         {experienceDisplay && (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {experienceDisplay}
           </span>
         )}
         {location && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <MapPin size={12} />
             {location}
           </span>
         )}
         {deadlineDisplay && (
           <span
-            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            className="inline-flex items-center gap-1 rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
             title={`Application deadline: ${job.registration_closing_date || job.application_deadline || job.end_date}`}
           >
             <Calendar size={12} />
@@ -214,7 +214,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
           </span>
         )}
         {job.seniority && (
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {job.seniority}
           </span>
         )}
@@ -223,7 +223,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
       {(fitLabel || warningLabel) && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {fitLabel && (
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <span className="rounded-full border border-sky-200/60 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
               {fitLabel}
             </span>
           )}
@@ -239,12 +239,12 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
       )}
 
       {job.has_match && job.missing_skills.length > 0 ? (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
             {job.missing_skills.slice(0, 4).map((skill) => (
               <span
                 key={skill}
-                className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
+                className="rounded-full border border-rose-200/60 bg-rose-50/80 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
                 title={`Missing skill: ${skill}`}
               >
                 + {skill}
@@ -262,14 +262,14 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
           />
         </div>
       ) : job.has_match ? (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-1 flex justify-end">
           <WhyScoreModal
             job={job}
             triggerClassName="inline-flex items-center gap-1 text-xs font-medium text-ink-500 hover:text-signal-700"
           />
         </div>
       ) : job.skills_required?.length ? (
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {job.skills_required.slice(0, 5).map((skill) => (
             <span key={skill} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               {skill}
@@ -283,13 +283,13 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
         {hasSafeApplyUrl && (
           <a
             href={job.apply_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 sm:text-sm"
+            className="rr-apply-action inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 text-xs font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 sm:text-sm"
             title={isVerifiedDirect ? `Apply directly on ${job.company}'s official portal` : `Continue to ${job.company}'s listing`}
           >
             Apply
@@ -299,14 +299,14 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
         <Link
           to={`/opportunities/job/${job.job_id}`}
           onClick={onViewDetail}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:text-sm"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition-all hover:border-indigo-300 hover:bg-indigo-50/40 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:text-sm"
         >
           View Details
           <ArrowRight size={13} />
         </Link>
         <Link
           to={job.has_match ? `/resume/tailor/${job.job_id}` : `/resume/master?targetJobId=${encodeURIComponent(job.job_id)}`}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-signal-50 px-3 text-xs font-semibold text-signal-800 transition-colors hover:bg-signal-100 dark:bg-signal-950/40 dark:text-signal-300 dark:hover:bg-signal-950/70 sm:text-sm"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-all hover:border-indigo-300 hover:bg-indigo-50/40 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:text-sm"
         >
           <Sparkles size={13} className="text-signal-600" />
           {job.has_match ? "Tailor Resume" : "Tailor"}

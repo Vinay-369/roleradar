@@ -267,9 +267,9 @@ export function Internships() {
   }, [loadedInternships, onlyEligible, hasResume, sortBy]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pt-5 pb-12 sm:px-6">
+    <div className="mx-auto w-full max-w-7xl px-4 pt-4 pb-8 sm:px-6">
       {/* Header Bar */}
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-2">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-signal-500/20 bg-signal-500/10 text-signal-700"><GraduationCap size={20} /></span>
@@ -351,7 +351,7 @@ export function Internships() {
         </div>
       )}
 
-      <div className="mb-4 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-5">
+      <div className="rr-opportunity-filter-panel mb-3 space-y-3 rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-signal-600" />
@@ -520,7 +520,7 @@ export function Internships() {
 
       {/* Results List */}
       {visibleInternships.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {/* Single Authoritative Count & Status Row */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
             <div>

@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     CLOUD_FALLBACK_MODEL: str | None = None
 
     AI_REQUEST_TIMEOUT_SECONDS: int = 300
+    COPILOT_REQUEST_TIMEOUT_SECONDS: int = 45
     AI_MAX_RETRIES: int = 2  # for JSON-repair retry loop
 
     # --- Job sources ---

@@ -296,7 +296,7 @@ export function Interview() {
     queryFn: getCanonicalRoles,
   });
 
-  const defaultRole = profile?.target_roles?.[0] || "Full Stack Developer";
+  const defaultRole = profile?.target_roles?.[0] || "";
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"technical" | "managerial" | "hr">("technical");
   const [filterView, setFilterView] = useState<"all" | "bookmarked" | "pending">("all");
@@ -435,7 +435,7 @@ export function Interview() {
       </div>
 
       {/* Readiness, filters, and interview round navigation */}
-      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-4">
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:border-ink-200 dark:bg-ink-900 sm:p-4">
         <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center justify-between gap-3">
@@ -462,7 +462,7 @@ export function Interview() {
             </div>
           </div>
 
-          <div role="group" aria-label="Filter questions" className="flex shrink-0 items-center gap-1 rounded-full bg-slate-100 p-1">
+            <div role="group" aria-label="Filter questions" className="flex shrink-0 items-center gap-1 rounded-full bg-slate-100 p-1 dark:bg-ink-800">
             {([
               ["all", "All", currentQuestions.length],
               ["bookmarked", "Saved", bookmarkCount],
@@ -475,8 +475,8 @@ export function Interview() {
                 aria-pressed={filterView === filter}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors ${
                   filterView === filter
-                    ? "bg-white text-ink-900 shadow-2xs"
-                    : "text-ink-600 hover:text-ink-900"
+                    ? "bg-white text-ink-900 shadow-2xs dark:bg-ink-950 dark:text-white"
+                    : "text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white"
                 }`}
               >
                 {filter === "bookmarked" && <Star size={11} className={bookmarkCount > 0 ? "fill-amber-400 text-amber-500" : ""} />}
@@ -487,15 +487,15 @@ export function Interview() {
           </div>
         </div>
 
-      <div role="group" aria-label="Interview rounds" className="grid grid-cols-1 gap-1.5 border-t border-slate-100 pt-3 sm:grid-cols-3">
+      <div role="group" aria-label="Interview rounds" className="grid grid-cols-1 gap-1.5 border-t border-slate-100 pt-3 dark:border-ink-200 sm:grid-cols-3">
         <button
           type="button"
           onClick={() => setActiveTab("technical")}
           aria-pressed={activeTab === "technical"}
           className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "technical"
-              ? "border border-signal-500/25 bg-signal-500/10 text-signal-800 shadow-2xs"
-              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
+              ? "border border-signal-500/25 bg-signal-500/10 text-signal-800 shadow-2xs dark:border-signal-400/30 dark:bg-signal-500/15 dark:text-signal-300"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800 dark:text-ink-300 dark:hover:border-ink-300 dark:hover:bg-ink-800 dark:hover:text-white"
           }`}
         >
           <Terminal size={15} /> Technical Round
@@ -506,8 +506,8 @@ export function Interview() {
           aria-pressed={activeTab === "managerial"}
           className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "managerial"
-              ? "border border-purple-200 bg-purple-50 text-purple-800 shadow-2xs"
-              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
+              ? "border border-purple-200 bg-purple-50 text-purple-800 shadow-2xs dark:border-purple-400/30 dark:bg-purple-500/15 dark:text-purple-200"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800 dark:text-ink-300 dark:hover:border-ink-300 dark:hover:bg-ink-800 dark:hover:text-white"
           }`}
         >
           <Users size={15} /> Managerial Round
@@ -518,8 +518,8 @@ export function Interview() {
           aria-pressed={activeTab === "hr"}
           className={`flex min-w-fit items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-all sm:px-4 ${
             activeTab === "hr"
-              ? "border border-amber-200 bg-amber-50 text-amber-800 shadow-2xs"
-              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800"
+              ? "border border-amber-200 bg-amber-50 text-amber-800 shadow-2xs dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-200"
+              : "border border-transparent text-ink-500 hover:border-slate-200 hover:bg-slate-50 hover:text-ink-800 dark:text-ink-300 dark:hover:border-ink-300 dark:hover:bg-ink-800 dark:hover:text-white"
           }`}
         >
           <Briefcase size={15} /> HR & Culture Round

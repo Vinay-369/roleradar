@@ -89,6 +89,75 @@ body {
   transform: translateY(-1px);
 }
 
+/* Calm, reusable hover motion for repeated content cards. */
+.rr-interactive-card {
+  position: relative;
+  isolation: isolate;
+  transform: translateZ(0);
+  transition:
+    transform var(--rr-motion-base) var(--rr-ease-smooth),
+    opacity var(--rr-motion-base) var(--rr-ease-gentle);
+  will-change: transform;
+}
+
+.rr-interactive-card::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(79, 70, 229, 0.07), transparent 42%, rgba(8, 167, 199, 0.06));
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--rr-motion-base) var(--rr-ease-gentle);
+}
+
+.rr-interactive-card:hover,
+.rr-interactive-card:focus-within {
+  transform: translate3d(0, -4px, 0);
+}
+
+.rr-interactive-card:hover::after,
+.rr-interactive-card:focus-within::after {
+  opacity: 1;
+}
+
+.rr-interactive-card > :is(a, button):first-child,
+.rr-interactive-card .rr-card-icon {
+  transition: transform var(--rr-motion-base) var(--rr-ease-smooth);
+}
+
+.rr-interactive-card:hover > :is(a, button):first-child,
+.rr-interactive-card:focus-within > :is(a, button):first-child,
+.rr-interactive-card:hover .rr-card-icon,
+.rr-interactive-card:focus-within .rr-card-icon {
+  transform: translate3d(0, -1px, 0);
+}
+
+html[data-theme="dark"] .rr-interactive-card:hover,
+html[data-theme="dark"] .rr-interactive-card:focus-within {
+  transform: translate3d(0, -4px, 0);
+}
+
+html[data-theme="dark"] .rr-interactive-card::after {
+  background: linear-gradient(120deg, rgba(56, 189, 248, 0.1), transparent 46%, rgba(45, 212, 191, 0.08));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-interactive-card,
+  .rr-interactive-card::after,
+  .rr-interactive-card > :is(a, button):first-child,
+  .rr-interactive-card .rr-card-icon {
+    transition: none;
+    will-change: auto;
+  }
+
+  .rr-interactive-card:hover,
+  .rr-interactive-card:focus-within {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .interactive-chip {
   transition: transform 220ms var(--rr-ease-smooth), background-color 280ms var(--rr-ease-gentle), color 280ms var(--rr-ease-gentle);
 }
@@ -242,11 +311,78 @@ html[data-theme="dark"] .rr-theme-content [class*="text-ink-400"] {
   color: #93a7bd !important;
 }
 
+/* Normalize neutral text utilities for dark surfaces. Many feature pages use
+ * slate utilities without a per-element dark variant, so keep those labels
+ * readable without requiring repetitive markup changes. */
+html[data-theme="dark"] .rr-theme-content :is(
+  [class*="text-slate-950"], [class*="text-slate-900"],
+  [class*="text-gray-950"], [class*="text-gray-900"],
+  [class*="text-zinc-950"], [class*="text-zinc-900"],
+  [class*="text-neutral-950"], [class*="text-neutral-900"],
+  [class*="text-stone-950"], [class*="text-stone-900"]
+) {
+  color: #f4f8ff !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is(
+  [class*="text-slate-800"], [class*="text-slate-700"],
+  [class*="text-gray-800"], [class*="text-gray-700"],
+  [class*="text-zinc-800"], [class*="text-zinc-700"],
+  [class*="text-neutral-800"], [class*="text-neutral-700"],
+  [class*="text-stone-800"], [class*="text-stone-700"]
+) {
+  color: #d7e2ee !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is(
+  [class*="text-slate-600"], [class*="text-slate-500"],
+  [class*="text-gray-600"], [class*="text-gray-500"],
+  [class*="text-zinc-600"], [class*="text-zinc-500"],
+  [class*="text-neutral-600"], [class*="text-neutral-500"],
+  [class*="text-stone-600"], [class*="text-stone-500"]
+) {
+  color: #afc0d2 !important;
+}
+
+html[data-theme="dark"] .rr-theme-content :is(
+  [class*="text-slate-400"], [class*="text-slate-300"],
+  [class*="text-gray-400"], [class*="text-gray-300"],
+  [class*="text-zinc-400"], [class*="text-zinc-300"],
+  [class*="text-neutral-400"], [class*="text-neutral-300"],
+  [class*="text-stone-400"], [class*="text-stone-300"]
+) {
+  color: #93a7bd !important;
+}
+
+/* Learning roadmap cards use shared light surfaces in several nested
+ * components. Keep those surfaces and their controls aligned in dark mode. */
+html[data-theme="dark"] .rr-learning-roadmap :is(
+  [class~="bg-white"], [class*="bg-white/"],
+  [class~="bg-slate-50"], [class*="bg-slate-50/"],
+  [class~="bg-slate-100"], [class*="bg-slate-100/"]
+) {
+  background-color: #101827 !important;
+}
+
+html[data-theme="dark"] .rr-learning-roadmap :is(
+  [class~="border-slate-200"], [class*="border-slate-200/"],
+  [class~="border-ink-100"], [class*="border-ink-100/"]
+) {
+  border-color: #30445e !important;
+}
+
+html[data-theme="dark"] .rr-learning-roadmap [class*="hover:bg-slate-50"]:hover {
+  background-color: #1b2a3f !important;
+}
+
 html[data-theme="dark"] .rr-theme-content [class*="text-signal-700"],
+html[data-theme="dark"] .rr-theme-content [class*="text-signal-800"],
 html[data-theme="dark"] .rr-theme-content [class*="text-signal-600"] {
   color: #67e8f9 !important;
 }
 
+html[data-theme="dark"] .rr-theme-content [class*="text-amber-900"],
+html[data-theme="dark"] .rr-theme-content [class*="text-amber-800"],
 html[data-theme="dark"] .rr-theme-content [class*="text-amber-700"],
 html[data-theme="dark"] .rr-theme-content [class*="text-amber-600"],
 html[data-theme="dark"] .rr-theme-content [class*="text-amber-500"] {
@@ -393,6 +529,99 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(90deg, #edf2f5 25%, #f7fafc 37%, #edf2f5 63%);
   background-size: 400px 100%;
   animation: rr-shimmer 1.9s var(--rr-ease-gentle) infinite;
+}
+
+/* Immersive dashboard hero: the visual layer is transform/opacity-only so
+ * pointer motion stays on the compositor and never forces layout. */
+.rr-immersive-hero {
+  perspective: 1200px;
+  contain: layout paint;
+}
+
+.rr-hero-grid {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 78%);
+  opacity: 0.7;
+}
+
+.rr-hero-shape {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(125, 211, 252, 0.34);
+  border-radius: 18%;
+  opacity: 0.72;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.rr-hero-shape::before,
+.rr-hero-shape::after {
+  position: absolute;
+  inset: 14%;
+  border: inherit;
+  border-radius: inherit;
+  content: "";
+  transform: translate3d(10px, 10px, -16px);
+}
+
+.rr-hero-shape::after {
+  inset: 28%;
+  opacity: 0.58;
+  transform: translate3d(-8px, -8px, 18px) rotate(45deg);
+}
+
+.rr-hero-shape-1,
+.rr-hero-shape-4 {
+  border-color: rgba(167, 243, 208, 0.42);
+  border-radius: 50%;
+}
+
+.rr-hero-shape-2 {
+  border-color: rgba(196, 181, 253, 0.42);
+  border-radius: 8%;
+}
+
+.rr-split-character {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(0, 16px, 0) scale3d(0.96, 0.96, 1);
+  animation: rr-split-character-in 720ms var(--rr-ease-smooth) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes rr-split-character-in {
+  0% { opacity: 0; transform: translate3d(0, 16px, 0) scale3d(0.96, 0.96, 1); }
+  58% { opacity: 0.72; transform: translate3d(0, -2px, 0) scale3d(1.01, 1.01, 1); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+}
+
+.rr-magnetic-action {
+  transform: translate3d(0, 0, 0);
+  transition: transform var(--rr-motion-fast) var(--rr-ease-smooth), opacity var(--rr-motion-fast) var(--rr-ease-gentle);
+  will-change: transform;
+}
+
+.rr-magnetic-action:hover {
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rr-split-character {
+    animation: none;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .rr-magnetic-action,
+  .rr-hero-shape {
+    transition: none;
+    will-change: auto;
+  }
 }
 
 @keyframes rr-ring-draw {
@@ -1001,4 +1230,889 @@ html:not([data-theme="dark"]) .rr-theme-content .rr-topbar button:hover {
   .rr-main-canvas::after {
     display: none;
   }
+}
+
+/* Final product polish: compact workspace rhythm and a shared surface language. */
+:root {
+  --rr-canvas: #f4f7fb;
+  --rr-surface: #ffffff;
+  --rr-surface-muted: #f8fafc;
+  --rr-border: #d9e3ee;
+  --rr-border-strong: #c5d3e1;
+  --rr-shadow-card: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .035);
+}
+
+html:not([data-theme="dark"]) body {
+  background: var(--rr-canvas);
+}
+
+.rr-main-canvas {
+  background-color: var(--rr-canvas);
+}
+
+.rr-sidebar {
+  border-right-color: var(--rr-border);
+  box-shadow: 4px 0 22px rgba(22, 48, 78, .045);
+}
+
+.rr-sidebar nav a {
+  min-height: 36px;
+  border: 1px solid transparent;
+}
+
+.rr-sidebar nav a[aria-current="page"] {
+  border-color: rgba(8, 124, 164, .12);
+  box-shadow: inset 3px 0 0 #087ca4, 0 1px 2px rgba(8, 124, 164, .05);
+}
+
+.rr-topbar {
+  min-height: 58px;
+  backdrop-filter: blur(14px);
+}
+
+.rr-app-page > * {
+  max-width: 100%;
+}
+
+/* Cards across pages: quieter borders, slightly denser padding, more useful hierarchy. */
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: var(--rr-border);
+  box-shadow: var(--rr-shadow-card);
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"]:hover {
+  border-color: var(--rr-border-strong);
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) :is(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) :is(button, a) {
+  min-height: 34px;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) input,
+.rr-theme-content main:not(.rr-copilot-canvas) select,
+.rr-theme-content main:not(.rr-copilot-canvas) textarea {
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+html[data-theme="dark"] {
+  --rr-canvas: #0a1220;
+  --rr-surface: #101a2b;
+  --rr-surface-muted: #121f32;
+  --rr-border: #263750;
+  --rr-border-strong: #38516e;
+  --rr-shadow-card: 0 1px 2px rgba(0, 0, 0, .24), 0 10px 28px rgba(0, 0, 0, .12);
+}
+
+html[data-theme="dark"] .rr-main-canvas {
+  background: var(--rr-canvas);
+}
+
+html[data-theme="dark"] .rr-sidebar,
+html[data-theme="dark"] .rr-topbar,
+html[data-theme="dark"] .rr-mobile-header {
+  border-color: var(--rr-border);
+}
+
+html[data-theme="dark"] .rr-sidebar nav a[aria-current="page"] {
+  border-color: rgba(103, 232, 249, .16);
+  box-shadow: inset 3px 0 0 #22c5e5, 0 1px 2px rgba(0, 0, 0, .18);
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: var(--rr-border);
+  box-shadow: var(--rr-shadow-card);
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"]:hover {
+  border-color: var(--rr-border-strong);
+}
+
+@media (max-width: 767px) {
+  .rr-main-canvas {
+    padding-bottom: 1.25rem;
+  }
+
+  .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+    border-radius: 16px;
+  }
+}
+
+/* SSP-inspired public portal shell for authentication. */
+.rr-auth-page {
+  background: #f4f5fb;
+  color: #1b2042;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-image: radial-gradient(circle at 10% 0%, rgba(99, 102, 241, .1), transparent 24rem), radial-gradient(circle at 90% 18%, rgba(34, 211, 238, .08), transparent 25rem);
+  zoom: .67;
+  width: 100%;
+  min-height: 149.253731vh;
+}
+
+@media (max-width: 640px) {
+  .rr-auth-page { zoom: 1; width: 100%; min-height: 100vh; }
+}
+
+body:has(.rr-auth-page),
+html:has(.rr-auth-page) {
+  background: #f4f5fb;
+}
+
+.rr-login-page {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.rr-login-page > .relative.z-10 {
+  flex: 1;
+  justify-content: flex-start;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+@media (max-width: 640px) {
+  .rr-login-page { overflow-y: auto; }
+  .rr-login-page > .relative.z-10 { flex: none; }
+}
+
+.rr-portal-header {
+  position: relative;
+  background: linear-gradient(110deg, #171b4a 0%, #242260 56%, #163e68 100%);
+  border-bottom: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+}
+
+.rr-portal-header-inner {
+  width: min(720px, calc(100% - 2rem));
+  min-height: 72px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rr-portal-brand { display: flex; align-items: center; gap: .8rem; }
+.rr-portal-brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #27246b;
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(3, 32, 48, .16);
+}
+.rr-portal-year { color: #b9eaf4; font-size: .68rem; font-weight: 700; letter-spacing: .16em; }
+
+.rr-portal-card {
+  width: min(600px, 70vw);
+  max-width: 600px;
+  overflow: hidden;
+  padding: 0 !important;
+  border-color: rgba(20, 40, 78, .14);
+  border-radius: 32px;
+  box-shadow: 0 36px 100px rgba(15, 23, 42, .18);
+  animation: rr-portal-rise .32s ease-out both;
+}
+.rr-portal-card > div:first-child {
+  height: 200px;
+  margin: 0 !important;
+  padding: 40px 28px 19px;
+  background: linear-gradient(135deg, #1b1b50 0%, #29266b 100%);
+  color: #fff;
+}
+.rr-portal-card > div:first-child h1 {
+  margin-top: 16px;
+  color: #fff !important;
+  font-size: 30px;
+  line-height: 42px;
+  font-weight: 800;
+}
+.rr-portal-card > div:first-child p:not(.rr-portal-eyebrow) {
+  margin-top: 5px;
+  color: #cbd5e1 !important;
+  font-size: 15.2px;
+  line-height: 22.8px;
+}
+.rr-portal-card > div.space-y-5 { padding: 28px 28px 0; }
+.rr-portal-card > button,
+.rr-portal-card > .my-6,
+.rr-portal-card > p { width: calc(100% - 56px); margin-left: 28px; margin-right: 28px; }
+.rr-portal-card > p { margin-bottom: 28px; }
+.rr-portal-eyebrow { display: block; margin-bottom: 0; color: #67e8f9; font-size: .72rem; font-weight: 800; letter-spacing: .16em; }
+.rr-portal-assurance { margin-top: 1rem; color: #71818a; font-size: .72rem; }
+.rr-portal-footer {
+  width: 100%;
+  margin: 0 auto;
+  min-height: 371px;
+  padding: 48px max(48px, calc((100% - 720px) / 2));
+  background: #171b3d;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #cbd5e1;
+  font-size: 13.6px;
+  line-height: 20.4px;
+}
+.rr-portal-footer strong { color: #b9eaf4; }
+.rr-portal-footer-links { display: flex; gap: 1rem; }
+.rr-portal-footer a:hover { color: #67e8f9; text-decoration: underline; }
+
+.rr-auth-page form input {
+  border-radius: 8px;
+  border-color: #cdd2e6;
+  background: #fbfdfe;
+  box-shadow: inset 0 1px 2px rgba(28, 60, 75, .03);
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+.rr-auth-page form input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, .16); }
+.rr-auth-page form label { color: #3f4666; font-size: .76rem; font-weight: 700; }
+.rr-auth-page form > button[type="submit"] { border-radius: 12px; background: linear-gradient(110deg, #171b4a 0%, #242260 56%, #163e68 100%); box-shadow: none; transition: transform .2s, box-shadow .2s; }
+.rr-auth-page form > button[type="submit"]:hover { background: linear-gradient(110deg, #20245a 0%, #302d7a 56%, #1d527f 100%); transform: translateY(-2px); box-shadow: 0 8px 18px rgba(23, 27, 74, .24); }
+.rr-auth-page form button[type="button"] { border-radius: 8px; }
+
+@keyframes rr-portal-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html[data-theme="dark"] .rr-auth-page { background: #0f1b25; }
+html[data-theme="dark"] .rr-portal-card { border-color: #29404d; }
+html[data-theme="dark"] .rr-portal-footer { color: #9bb0ba; }
+html[data-theme="dark"] .rr-portal-footer strong { color: #d6e5eb; }
+
+@media (max-width: 560px) {
+  .rr-portal-card { width: calc(100vw - 32px); }
+  .rr-portal-header-inner { min-height: 72px; }
+  .rr-portal-year { display: none; }
+  .rr-portal-footer { flex-direction: column; }
+}
+
+/* Roadmap step labels need their own contrast because the shared ink palette
+   intentionally remaps many utility classes for dark mode. */
+.rr-roadmap-step-label {
+  color: #29415c;
+  opacity: 1;
+  text-shadow: none;
+}
+
+.rr-roadmap-step-icon {
+  color: #29415c;
+  opacity: 1;
+}
+
+html[data-theme="dark"] .rr-roadmap-step-label {
+  color: #d7e2ee !important;
+}
+
+html[data-theme="dark"] .rr-roadmap-step-icon {
+  color: #b7cbe0 !important;
+}
+
+button[aria-pressed="true"] .rr-roadmap-step-label {
+  color: #087ca4;
+}
+
+html[data-theme="dark"] button[aria-pressed="true"] .rr-roadmap-step-label {
+  color: #a5f3fc !important;
+}
+
+button[aria-pressed="true"] .rr-roadmap-step-icon,
+html[data-theme="dark"] button[aria-pressed="true"] .rr-roadmap-step-icon {
+  color: #22c5e5 !important;
+}
+
+html[data-theme="dark"] .rr-learning-step-group {
+  background: #1b2a3f !important;
+  border: 1px solid #30445e;
+}
+
+/* Light mode refinement: add depth and hierarchy without resorting to harsh
+   shadows or pure-white-on-pale layouts. */
+html:not([data-theme="dark"]) {
+  --rr-canvas: #f8fafc;
+  --rr-surface: #ffffff;
+  --rr-surface-muted: #f1f5f9;
+  --rr-border: rgba(226, 232, 240, .8);
+  --rr-border-strong: #cbd5e1;
+  --rr-shadow-card: 0 1px 2px 0 rgba(15, 23, 42, .04), 0 4px 12px -2px rgba(15, 23, 42, .03);
+  --rr-text-primary: #0f172a;
+  --rr-text-body: #334155;
+  --rr-text-muted: #64748b;
+  --rr-accent: #4f46e5;
+  --rr-accent-hover: #4338ca;
+}
+
+html:not([data-theme="dark"]) .rr-main-canvas {
+  background-color: var(--rr-canvas);
+  background-image:
+    radial-gradient(circle at 88% -8%, rgba(79, 70, 229, .055), transparent 27rem),
+    linear-gradient(180deg, #f8fafc 0%, #f8fafc 64%, #f1f5f9 100%);
+}
+
+html:not([data-theme="dark"]) .rr-topbar,
+html:not([data-theme="dark"]) .rr-mobile-header {
+  background: rgba(255, 255, 255, .92);
+  border-color: #d4e0eb;
+  box-shadow: 0 1px 0 rgba(38, 75, 108, .04), 0 5px 16px rgba(38, 75, 108, .035);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar {
+  background: #ffffff;
+  border-right-color: rgba(226, 232, 240, .8);
+  box-shadow: 5px 0 24px rgba(15, 23, 42, .035);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: #d4e0eb;
+  box-shadow: var(--rr-shadow-card);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"]:hover {
+  border-color: #b9ccdc;
+  box-shadow: 0 3px 8px rgba(38, 75, 108, .065), 0 14px 30px rgba(38, 75, 108, .06);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) :is(
+  [class~="bg-ink-50"], [class*="bg-ink-50/"],
+  [class~="bg-slate-50"], [class*="bg-slate-50/"],
+  [class~="bg-gray-50"], [class*="bg-gray-50/"]
+) {
+  background-color: #f6f9fc;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) :is(
+  [class~="bg-ink-100"], [class*="bg-ink-100/"],
+  [class~="bg-slate-100"], [class*="bg-slate-100/"],
+  [class~="bg-gray-100"], [class*="bg-gray-100/"]
+) {
+  background-color: #eaf1f7;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) :is(
+  [class*="border-ink-100"], [class*="border-slate-200"], [class*="border-gray-200"]
+) {
+  border-color: #d4e0eb;
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a[aria-current="page"] {
+  background: linear-gradient(90deg, #dff5f8 0%, #eefafd 100%);
+  border-color: rgba(8, 124, 164, .16);
+  color: #14334b;
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a[aria-current="page"] svg {
+  color: #087ca4;
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a[aria-current="page"] svg {
+  color: #4f46e5;
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card {
+  border-color: rgba(226, 232, 240, .8);
+  box-shadow: var(--rr-shadow-card);
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, .08), 0 12px 24px -6px rgba(79, 70, 229, .08);
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card [class~="bg-slate-100"] {
+  border: 1px solid rgba(226, 232, 240, .6);
+  color: #334155;
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card [class~="bg-emerald-50"] {
+  border-color: rgba(167, 243, 208, .7);
+  color: #047857;
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card [class~="bg-amber-50"] {
+  border-color: rgba(253, 230, 138, .7);
+  color: #b45309;
+}
+
+html:not([data-theme="dark"]) .rr-job-match-card [class~="bg-sky-50"] {
+  border-color: rgba(186, 230, 253, .7);
+  color: #0369a1;
+}
+
+html:not([data-theme="dark"]) .rr-opportunity-filter-panel {
+  border-color: rgba(226, 232, 240, .8);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .035), 0 4px 12px -2px rgba(15, 23, 42, .025);
+}
+
+html:not([data-theme="dark"]) .rr-opportunity-filter-panel :is(input, select) {
+  background-color: rgba(248, 250, 252, .72);
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+
+html:not([data-theme="dark"]) .rr-opportunity-filter-panel :is(input, select):focus {
+  background-color: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, .15);
+}
+
+/* Compact card density across the product. Keep large hero surfaces and the
+   copilot canvas untouched; tighten only rounded content cards in app pages. */
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="p-6"],
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="sm:p-6"] {
+  padding: 1.25rem;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="p-5"],
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="sm:p-5"] {
+  padding: 1rem;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="p-4"],
+.rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="bg-white"][class~="sm:p-4"] {
+  padding: .875rem;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="space-y-6"] {
+  row-gap: 1.25rem;
+}
+
+.rr-theme-content main:not(.rr-copilot-canvas) [class~="gap-6"] {
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="sm:p-6"] {
+    padding: 1.25rem;
+  }
+
+  .rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="sm:p-5"] {
+    padding: 1rem;
+  }
+
+  .rr-theme-content main:not(.rr-copilot-canvas) [class*="rounded-"][class~="sm:p-4"] {
+    padding: .875rem;
+  }
+}
+
+/* RoleRadar workspace theme: keep the portal's clear hierarchy, but carry the
+   product's indigo/cyan career-intelligence identity through every page. */
+html:not([data-theme="dark"]) .rr-main-canvas {
+  background-color: #f4f5fb;
+  background-image: radial-gradient(circle at 90% -10%, rgba(99, 102, 241, .09), transparent 28rem), linear-gradient(180deg, #f4f5fb 0%, #eef2f8 100%);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+  border-right-color: #dfe3f2;
+}
+
+html:not([data-theme="dark"]) .rr-topbar,
+html:not([data-theme="dark"]) .rr-mobile-header {
+  background: rgba(255, 255, 255, .94);
+  border-color: #dfe3f2;
+  box-shadow: 0 1px 0 rgba(39, 36, 107, .04), 0 6px 18px rgba(39, 36, 107, .05);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar .rr-brand-mark,
+html:not([data-theme="dark"]) .rr-mobile-header .rr-brand-mark {
+  background: linear-gradient(135deg, #171b4a, #2563eb);
+  box-shadow: 0 5px 12px rgba(37, 99, 235, .18);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a[aria-current="page"] {
+  background: linear-gradient(90deg, #e8e9ff 0%, #e5f9fc 100%);
+  border-color: rgba(79, 70, 229, .18);
+  color: #2c2871;
+  box-shadow: inset 3px 0 0 #4f46e5, 0 2px 5px rgba(79, 70, 229, .07);
+}
+
+html:not([data-theme="dark"]) .rr-sidebar nav a[aria-current="page"] svg { color: #4f46e5; }
+html:not([data-theme="dark"]) .rr-sidebar nav a:hover { background: #f0f0ff; color: #3730a3; }
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"] {
+  border-color: #dfe3f2;
+  box-shadow: 0 1px 2px rgba(27, 32, 66, .04), 0 8px 24px rgba(39, 36, 107, .045);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"]:hover {
+  border-color: #c7c9ee;
+  box-shadow: 0 5px 14px rgba(39, 36, 107, .08), 0 14px 30px rgba(37, 99, 235, .05);
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) :is(input, select, textarea) {
+  border-color: #cdd2e6;
+  background: #ffffff;
+}
+
+html:not([data-theme="dark"]) .rr-theme-content main:not(.rr-copilot-canvas) :is(input, select, textarea):focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, .14);
+}
+
+html[data-theme="dark"] .rr-main-canvas { background: #0d1026; }
+html[data-theme="dark"] .rr-sidebar,
+html[data-theme="dark"] .rr-topbar,
+html[data-theme="dark"] .rr-mobile-header { background: #141633; border-color: #2a2d54; }
+html[data-theme="dark"] .rr-sidebar nav a[aria-current="page"] { background: linear-gradient(90deg, #252354, #183c50); border-color: rgba(103, 232, 249, .18); box-shadow: inset 3px 0 0 #67e8f9; }
+html[data-theme="dark"] .rr-sidebar nav a:hover { background: #202348; }
+
+/* Keep the signed-in workspace at native scale and contained by the viewport.
+   Individual page bodies own their scrolling inside AppShell. */
+.rr-workspace-scale {
+  zoom: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.rr-main-canvas {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.rr-app-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.rr-profile-menu,
+.rr-profile-menu p,
+.rr-profile-menu a,
+.rr-profile-menu button {
+  color: #27304f;
+}
+
+html:not([data-theme="dark"]) .rr-topbar .rr-profile-trigger:hover,
+html:not([data-theme="dark"]) .rr-topbar .rr-profile-trigger:focus-visible {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #171b4a, #2563eb) !important;
+}
+
+.rr-profile-menu a:hover,
+.rr-profile-menu button:hover {
+  color: #29266b !important;
+  background-color: #eef0ff !important;
+}
+
+.rr-profile-menu button.text-alert-700,
+.rr-profile-menu button.text-alert-700 .text-alert-600 {
+  color: #b4232f !important;
+}
+
+.rr-profile-menu button.text-alert-700:hover {
+  color: #991b1b !important;
+  background-color: #fff1f2 !important;
+}
+
+html[data-theme="dark"] .rr-profile-menu {
+  background: #171b3d !important;
+  border-color: #2a2d54 !important;
+}
+
+html[data-theme="dark"] .rr-profile-menu,
+html[data-theme="dark"] .rr-profile-menu p,
+html[data-theme="dark"] .rr-profile-menu a,
+html[data-theme="dark"] .rr-profile-menu button {
+  color: #e5e7ff;
+}
+
+html[data-theme="dark"] .rr-profile-menu a:hover,
+html[data-theme="dark"] .rr-profile-menu button:hover {
+  color: #ffffff !important;
+  background-color: #252354 !important;
+}
+
+html[data-theme="dark"] .rr-profile-menu button.text-alert-700,
+html[data-theme="dark"] .rr-profile-menu button.text-alert-700 .text-alert-600 {
+  color: #fda4af !important;
+}
+
+/* Align cyan/signal primary actions with the login button. Other semantic
+   colors (amber, red, green, neutral) remain intentionally unchanged. */
+.rr-theme-content :is(button, a, [role="button"]):is(
+  [class~="bg-cyan-300"], [class~="bg-cyan-400"], [class~="bg-cyan-500"], [class~="bg-cyan-600"], [class~="bg-cyan-700"],
+  [class~="bg-signal-400"], [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"]
+) {
+  background: linear-gradient(110deg, #171b4a 0%, #242260 56%, #163e68 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+}
+
+.rr-theme-content :is(button, a, [role="button"]):is(
+  [class~="bg-cyan-300"], [class~="bg-cyan-400"], [class~="bg-cyan-500"], [class~="bg-cyan-600"], [class~="bg-cyan-700"],
+  [class~="bg-signal-400"], [class~="bg-signal-500"], [class~="bg-signal-600"], [class~="bg-signal-700"]
+):is(:hover, :focus-visible) {
+  background: linear-gradient(110deg, #20245a 0%, #302d7a 56%, #1d527f 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(23, 27, 74, .22);
+}
+
+.rr-theme-content .rr-apply-action {
+  background: linear-gradient(110deg, #171b4a 0%, #242260 56%, #163e68 100%) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+
+.rr-theme-content .rr-apply-action:hover,
+.rr-theme-content .rr-apply-action:focus-visible {
+  background: linear-gradient(110deg, #20245a 0%, #302d7a 56%, #1d527f 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(23, 27, 74, .24);
+  transform: translateY(-1px);
+}
+
+.rr-onboarding-card {
+  width: min(600px, 70vw);
+  max-width: 600px;
+  overflow: hidden;
+  border-color: rgba(20, 40, 78, .14);
+  border-radius: 32px;
+  box-shadow: 0 24px 70px rgba(23, 27, 74, .12);
+  animation: rr-portal-rise .32s ease-out both;
+}
+
+.rr-onboarding-card section {
+  padding: 1.25rem;
+  border: 1px solid #e2e5f1;
+  border-radius: 1rem;
+  background: #fafbff;
+}
+
+.rr-onboarding-card label { color: #3f4666; }
+.rr-onboarding-card :is(input, select, textarea) { border-color: #cdd2e6; }
+.rr-onboarding-card :is(input, select, textarea):focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, .14); }
+
+.rr-onboarding-heading {
+  margin: -1.25rem -1.25rem 0;
+  padding: 1.75rem 1.25rem 1.5rem;
+  border-radius: 0;
+  background: linear-gradient(135deg, #1b1b50 0%, #29266b 100%);
+  color: white;
+}
+
+.rr-onboarding-heading h1 { color: white !important; }
+.rr-onboarding-heading h1 { font-size: 30px; line-height: 42px; }
+.rr-onboarding-heading p { color: #cbd5e1 !important; }
+.rr-onboarding-heading .text-indigo-700 { color: #67e8f9 !important; }
+.rr-onboarding-heading .bg-slate-100 { background: rgba(255, 255, 255, .18); }
+.rr-onboarding-heading .bg-indigo-600 { background: #67e8f9; }
+.rr-onboarding-heading .bg-indigo-50 { background: rgba(103, 232, 249, .14); color: #67e8f9; }
+.rr-onboarding-card > button[type="submit"] { background: linear-gradient(110deg, #171b4a 0%, #242260 56%, #163e68 100%); transition: transform .2s, box-shadow .2s; }
+.rr-onboarding-card > button[type="submit"]:hover { background: linear-gradient(110deg, #20245a 0%, #302d7a 56%, #1d527f 100%); transform: translateY(-2px); box-shadow: 0 8px 18px rgba(23, 27, 74, .24); }
+
+@media (min-width: 640px) {
+  .rr-onboarding-heading { margin-left: -2rem; margin-right: -2rem; margin-top: -2rem; padding-left: 2rem; padding-right: 2rem; }
+}
+
+@media (max-width: 640px) {
+  .rr-onboarding-card { width: calc(100vw - 32px); }
+}
+
+/* Enterprise dark theme layer ------------------------------------------------
+   This intentionally sits last so shared surfaces across feature pages,
+   modals, cards, and navigation converge on one neutral palette. */
+html[data-theme="dark"] {
+  --bg-app: #0b0f17;
+  --bg-sidebar: #0e1420;
+  --bg-surface: #161f30;
+  --bg-surface-hover: #1e2a40;
+  --bg-inset: #0e1420;
+  --text-heading: #f8fafc;
+  --text-primary: #cbd5e1;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --rr-canvas: #0b0f17;
+  --rr-surface: #161f30;
+  --rr-surface-muted: #0e1420;
+  --rr-surface-hover: #1e2a40;
+  --rr-border: rgba(255, 255, 255, .07);
+  --rr-border-active: rgba(59, 130, 246, .4);
+  --rr-text-primary: #f8fafc;
+  --rr-text-body: #cbd5e1;
+  --rr-text-secondary: #94a3b8;
+  --rr-text-muted: #64748b;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .rr-workspace-scale {
+  background: var(--rr-canvas) !important;
+  color: var(--rr-text-body);
+}
+
+html[data-theme="dark"] .rr-main-canvas {
+  background: var(--rr-canvas) !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] .rr-sidebar,
+html[data-theme="dark"] .rr-mobile-header {
+  background: #0e1420 !important;
+  border-color: rgba(255, 255, 255, .06) !important;
+  color: var(--rr-text-body) !important;
+}
+
+html[data-theme="dark"] .rr-topbar {
+  background: #0e1420 !important;
+  border-color: rgba(255, 255, 255, .07) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .025) !important;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a {
+  color: #94a3b8 !important;
+  border-left: 2px solid transparent;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a:hover {
+  color: #cbd5e1 !important;
+  background: rgba(255, 255, 255, .04) !important;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a[aria-current="page"] {
+  color: #f8fafc !important;
+  background: rgba(255, 255, 255, .06) !important;
+  border-left: 2px solid #3b82f6 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a svg,
+html[data-theme="dark"] .rr-sidebar button svg {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rr-sidebar nav a[aria-current="page"] svg {
+  color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"],
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class*="bg-slate-900"][class*="rounded-"],
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class*="bg-ink-950"][class*="rounded-"] {
+  background: #161f30 !important;
+  border: 1px solid rgba(255, 255, 255, .07) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .16) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) [class~="bg-white"][class*="rounded-"]:hover {
+  border-color: rgba(59, 130, 246, .4) !important;
+  background: #1e2a40 !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main:not(.rr-copilot-canvas) :is(
+  [class~="bg-ink-50"], [class*="bg-ink-50/"], [class~="bg-ink-100"], [class*="bg-ink-100/"],
+  [class~="bg-slate-50"], [class*="bg-slate-50/"], [class~="bg-slate-100"], [class*="bg-slate-100/"],
+  [class~="bg-gray-50"], [class*="bg-gray-50/"], [class~="bg-gray-100"], [class*="bg-gray-100/"]
+) {
+  background: #0e1420 !important;
+  border-color: rgba(255, 255, 255, .07) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main :is(h1, h2, h3, h4, h5, h6),
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-950"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-900"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-slate-100"] {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-700"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-600"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-slate-700"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-slate-600"] {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-500"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-ink-400"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-slate-500"],
+html[data-theme="dark"] .rr-theme-content main [class*="text-slate-400"] {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main :is(input, select, textarea) {
+  background: #0e1420 !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, .1) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main :is(input, select, textarea):focus {
+  border-color: rgba(59, 130, 246, .4) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .14) !important;
+}
+
+/* Muted badge and tag families. */
+html[data-theme="dark"] .rr-theme-content main :is(
+  [class~="bg-indigo-50"], [class~="bg-blue-50"], [class~="bg-sky-50"], [class~="bg-signal-50"],
+  [class*="bg-signal-500/"], [class*="bg-indigo-500/"]
+) {
+  background: rgba(59, 130, 246, .12) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, .25) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main :is(
+  [class~="bg-emerald-50"], [class~="bg-green-50"], [class*="bg-emerald-500/"], [class*="bg-green-500/"]
+) {
+  background: rgba(34, 197, 94, .12) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34, 197, 94, .25) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main :is(
+  [class~="bg-slate-100"], [class~="bg-slate-50"], [class~="bg-gray-100"], [class~="bg-gray-50"]
+) {
+  background: rgba(255, 255, 255, .06) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(255, 255, 255, .08) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [class*="border-slate-"],
+html[data-theme="dark"] .rr-theme-content main [class*="border-ink-"],
+html[data-theme="dark"] .rr-theme-content main [class*="border-gray-"] {
+  border-color: rgba(255, 255, 255, .07) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [class*="divide-ink-"] > :not(:last-child),
+html[data-theme="dark"] .rr-theme-content main [class*="divide-slate-"] > :not(:last-child) {
+  border-color: rgba(255, 255, 255, .07) !important;
+}
+
+/* Neutral secondary tags and step/tab controls. */
+html[data-theme="dark"] .rr-theme-content main :is(
+  [class~="bg-white/10"], [class~="bg-slate-800"], [class~="bg-slate-700"]
+) {
+  background: rgba(255, 255, 255, .08) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(255, 255, 255, .1) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [aria-selected="true"],
+html[data-theme="dark"] .rr-theme-content main [aria-pressed="true"] {
+  background: rgba(255, 255, 255, .08) !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, .12) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [aria-selected="false"],
+html[data-theme="dark"] .rr-theme-content main [aria-pressed="false"] {
+  background: transparent !important;
+  color: #94a3b8 !important;
+}
+
+/* Replace heavy panel shadows with restrained enterprise elevation. */
+html[data-theme="dark"] .rr-theme-content main [class*="shadow-xl"],
+html[data-theme="dark"] .rr-theme-content main [class*="shadow-2xl"],
+html[data-theme="dark"] .rr-theme-content main [class*="shadow-2xl"] {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .22) !important;
+}
+
+html[data-theme="dark"] .rr-theme-content main [class*="radial-gradient"] {
+  opacity: .14;
 }

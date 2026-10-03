@@ -21,17 +21,17 @@ function CareerLoopHub() {
   ];
 
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-5 mb-6 shadow-xs card-hover">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 mb-5 shadow-sm transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
-          <span className="p-1 rounded-md bg-signal-500/10 text-signal-700">
+          <span className="p-1 rounded-md bg-indigo-50 text-indigo-600">
             <Sparkles size={14} />
           </span>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-ink-700">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
             Connected Career Acceleration Loop
           </h2>
         </div>
-        <span className="text-[11px] font-semibold text-signal-700 bg-signal-500/10 px-2.5 py-0.5 rounded-full border border-signal-500/20">
+        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200/60">
           6-Stage Integrated Engine
         </span>
       </div>
@@ -43,23 +43,23 @@ function CareerLoopHub() {
             <Link
               key={st.to}
               to={st.to}
-              className="group p-3 rounded-xl border border-ink-100 bg-ink-50/50 hover:bg-white hover:border-signal-500/50 hover:shadow-sm transition-all duration-200 flex flex-col justify-between"
+              className="rr-interactive-card group flex flex-col justify-between rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm"
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono font-bold text-ink-400 group-hover:text-signal-600">
+                  <span className="text-[10px] font-mono font-semibold text-indigo-600">
                     0{idx + 1}
                   </span>
                   <Icon size={16} className={`${st.color} transition-transform group-hover:scale-110`} />
                 </div>
-                <p className="text-xs font-bold text-ink-900 group-hover:text-signal-700 leading-tight">
+                <p className="text-xs font-bold leading-tight text-slate-900 group-hover:text-indigo-700">
                   {st.label}
                 </p>
-                <p className="text-[11px] text-ink-500 mt-1 leading-snug">
+                <p className="mt-1 text-[11px] leading-snug text-slate-500">
                   {st.desc}
                 </p>
               </div>
-              <span className="text-[10px] font-semibold text-signal-600 mt-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="mt-2.5 flex items-center gap-1 text-[10px] font-semibold text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100">
                 Open <ArrowRight size={10} />
               </span>
             </Link>
@@ -85,9 +85,9 @@ function DashboardSkeleton() {
 }
 
 function getMatchScoreStyle(score: number): string {
-  if (score > 70) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (score >= 50) return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-slate-200 bg-slate-100 text-slate-600";
+  if (score > 70) return "border-emerald-200 bg-emerald-50 text-emerald-600";
+  if (score >= 50) return "border-amber-200 bg-amber-50 text-amber-600";
+  return "border-rose-200 bg-rose-50 text-rose-600";
 }
 
 export function Dashboard() {
@@ -102,50 +102,49 @@ export function Dashboard() {
   const targetRole = profile?.target_roles?.[0] || "Software Engineer";
 
   return (
-    <div className="max-w-5xl space-y-6 animate-fade-in-up">
+    <div className="max-w-6xl space-y-5 animate-fade-in-up">
       {/* 1. Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-ink-950 via-ink-900 to-ink-950 p-6 sm:p-7 text-white shadow-md">
-        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-signal-500/20 blur-3xl animate-pulse-soft" />
-        <div className="absolute right-32 bottom-0 w-32 h-32 rounded-full bg-signal-400/15 blur-2xl" />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-r from-indigo-50/60 to-white p-6 text-slate-900 shadow-sm sm:p-7 dark:border-ink-200 dark:from-ink-950 dark:via-ink-900 dark:to-ink-950 dark:text-white">
+        <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-indigo-300/20 blur-3xl animate-pulse-soft dark:bg-signal-500/20" />
+        <div className="absolute right-32 bottom-0 h-32 w-32 rounded-full bg-indigo-200/30 blur-2xl dark:bg-signal-400/15" />
 
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-2.5">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-signal-300">
-                <span className="w-2 h-2 rounded-full bg-signal-400 animate-ping" />
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/60 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 dark:border-white/15 dark:bg-white/10 dark:text-signal-300">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping dark:bg-signal-400" />
                 <span>RoleRadar Intelligence Active</span>
               </div>
               <Link
                 to="/growth/skill-gaps"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-signal-500/20 hover:bg-signal-500/30 border border-signal-400/30 text-[11px] font-semibold text-signal-200 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/60 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 dark:border-signal-400/30 dark:bg-signal-500/20 dark:text-signal-200 dark:hover:bg-signal-500/30"
                 title="View canonical career skill map and gaps for this role"
               >
-                <Target size={11} className="text-signal-400" />
+                <Target size={11} className="text-indigo-600 dark:text-signal-400" />
                 <span>Targeting: {targetRole}</span>
               </Link>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl text-white font-bold tracking-tight">
-              Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
+            <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+              Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}
             </h1>
-            <p className="text-ink-300 text-xs sm:text-sm mt-1 max-w-xl">
+            <p className="mt-1 max-w-xl text-xs text-slate-600 sm:text-sm dark:text-ink-300">
               {data.resume_uploaded
                 ? `Track your ATS screening fit for ${targetRole}, discover verified live job openings, and tailor resumes in seconds.`
                 : `Upload your resume to begin ATS analysis for ${targetRole}, discover live job openings, and tailor your resume in seconds.`}
             </p>
           </div>
 
-          {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <Link
               to="/opportunities/jobs"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-signal-500 hover:bg-signal-600 text-white text-xs font-semibold shadow-sm transition-transform active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-[0.98]"
             >
               <Compass size={14} />
               <span>Explore Jobs</span>
             </Link>
             <Link
               to="/growth/interview"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-[0.98] dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
             >
               <Zap size={14} className="text-amber-400" />
               <span>Mock Interview</span>
@@ -241,14 +240,14 @@ export function Dashboard() {
           {/* 5. Top Live Matches & Applications Tracker Grid */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Top Matches Widget */}
-            <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md sm:p-6">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Briefcase size={16} className="text-signal-600" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-ink-700">Top Recommended Matches</h3>
                 </div>
                 <Link to="/opportunities/jobs" className="shrink-0 text-xs font-semibold text-signal-600 hover:underline">
-                  View all ↗
+                  View all <ArrowRight size={12} />
                 </Link>
               </div>
 
@@ -301,7 +300,7 @@ export function Dashboard() {
             </div>
 
             {/* Saved Opportunities Widget */}
-            <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md sm:p-6">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Bookmark size={16} className="text-amber-500" />
@@ -311,7 +310,7 @@ export function Dashboard() {
                 </div>
                 {totalApplications > 0 && (
                   <Link to="/applications?tab=SAVED" className="shrink-0 text-xs font-semibold text-signal-600 hover:underline">
-                    View all ↗
+                    View all <ArrowRight size={12} />
                   </Link>
                 )}
               </div>
