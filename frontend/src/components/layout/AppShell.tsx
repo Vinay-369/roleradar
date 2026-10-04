@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
+import { createPortal } from "react-dom";
 import {
-  Menu, Target, ArrowLeft, LogOut,
+  Menu, Target, ArrowLeft, ArrowUp, LogOut,
   User, Bot, Sun, Moon,
 } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -36,7 +37,9 @@ export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mainScrollRef = useRef<HTMLElement>(null);
 
   const isHome = location.pathname === "/" || location.pathname === "/dashboard";
   const pageTitle = getPageTitle(location.pathname);
@@ -51,6 +54,25 @@ export function AppShell() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const scrollContainer = mainScrollRef.current;
+    const handleScroll = () => {
+      const nestedScrollTop = scrollContainer?.scrollTop ?? 0;
+      const documentScrollTop = document.documentElement.scrollTop || document.body.scrollTop || 0;
+      setShowBackToTop(Math.max(nestedScrollTop, documentScrollTop, window.scrollY) > 8);
+    };
+
+    scrollContainer?.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      scrollContainer?.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [location.pathname]);
 
   const handleBack = () => {
     if (window.history.length > 1 && !isHome) {
@@ -68,6 +90,13 @@ export function AppShell() {
         .toUpperCase()
         .slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() || "RR";
+
+  const scrollWorkspaceToTop = () => {
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+    document.body.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="rr-workspace-scale flex h-screen overflow-hidden flex-col md:flex-row bg-ink-50">
@@ -222,11 +251,29 @@ export function AppShell() {
         </header>
 
         {/* Scrollable Page Body */}
-        <main className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-5 md:px-6 md:py-6 lg:px-8 bg-ink-50"}`}>
+        <main
+          ref={mainScrollRef}
+          onScroll={(event) => setShowBackToTop(event.currentTarget.scrollTop > 8)}
+          onWheel={(event) => {
+            if (event.deltaY > 0) setShowBackToTop(true);
+          }}
+          className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-5 md:px-6 md:py-6 lg:px-8 bg-ink-50"}`}
+        >
           <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "rr-app-page w-full max-w-[1400px] mx-auto"} rr-page-transition`}>
             <Outlet />
           </div>
         </main>
+        {showBackToTop && !location.pathname.startsWith("/copilot") && createPortal(
+          <button
+            type="button"
+            className="rr-back-to-top"
+            onClick={scrollWorkspaceToTop}
+            aria-label="Back to top"
+            title="Back to top"
+          >
+            <ArrowUp size={17} />
+          </button>
+        , document.body)}
       </div>
     </div>
   );

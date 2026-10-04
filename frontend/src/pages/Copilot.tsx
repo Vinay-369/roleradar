@@ -274,6 +274,7 @@ export function Copilot() {
   // Voice Input State
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const voiceBaseInputRef = useRef("");
 
   // Navigation Context Focus
   const urlPrompt = searchParams.get("prompt");
@@ -482,13 +483,19 @@ export function Copilot() {
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = "en-US";
+      voiceBaseInputRef.current = input.trim();
 
       recognition.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        setInput((prev) => (prev ? `${prev} ${transcript}`.trim() : transcript.trim()));
+        // Web Speech emits the same phrase repeatedly while it upgrades an
+        // interim result to a final result. Rebuild the complete transcript
+        // from the current result list instead of appending every event.
+        const transcript = Array.from(event.results as ArrayLike<any>)
+          .map((result: any) => result[0]?.transcript || "")
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const base = voiceBaseInputRef.current;
+        setInput(base ? `${base} ${transcript}`.trim() : transcript);
       };
 
       recognition.onerror = (err: any) => {
@@ -499,6 +506,7 @@ export function Copilot() {
 
       recognition.onend = () => {
         setIsRecording(false);
+        recognitionRef.current = null;
       };
 
       recognition.start();

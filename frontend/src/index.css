@@ -1768,9 +1768,9 @@ html[data-theme="dark"] .rr-sidebar nav a:hover { background: #202348; }
 /* Keep the signed-in workspace at native scale and contained by the viewport.
    Individual page bodies own their scrolling inside AppShell. */
 .rr-workspace-scale {
-  zoom: 1;
+  zoom: .9;
   width: 100%;
-  height: 100%;
+  height: 111.111111%;
 }
 
 .rr-main-canvas {
@@ -1781,6 +1781,39 @@ html[data-theme="dark"] .rr-sidebar nav a:hover { background: #202348; }
 .rr-app-page {
   min-width: 0;
   max-width: 100%;
+}
+
+.rr-back-to-top {
+  position: fixed;
+  right: .65rem;
+  bottom: 1.25rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid rgba(79, 70, 229, .22);
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #171b4a, #2563eb);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(23, 27, 74, .22);
+  transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+}
+
+.rr-back-to-top:hover,
+.rr-back-to-top:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(23, 27, 74, .3);
+}
+
+html[data-theme="dark"] .rr-back-to-top {
+  border-color: rgba(96, 165, 250, .35);
+  background: linear-gradient(135deg, #1e2a4a, #2563eb);
+}
+
+@media (max-width: 767px) {
+  .rr-back-to-top { right: .75rem; bottom: 1rem; }
 }
 
 .rr-profile-menu,
@@ -2115,4 +2148,32 @@ html[data-theme="dark"] .rr-theme-content main [class*="shadow-2xl"] {
 
 html[data-theme="dark"] .rr-theme-content main [class*="radial-gradient"] {
   opacity: .14;
+}
+
+html:not([data-theme="dark"]),
+html:not([data-theme="dark"]) body,
+html:not([data-theme="dark"]) #root {
+  min-height: 100%;
+  background: #f4f5fb;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  min-height: 100%;
+  background: #0b0f17;
+}
+
+.rr-workspace-scale {
+  min-height: 111.111111%;
+  background: #f4f5fb;
+}
+
+.rr-workspace-scale .rr-theme-content,
+.rr-workspace-scale .rr-sidebar {
+  height: 111.111111% !important;
+}
+
+html[data-theme="dark"] .rr-workspace-scale {
+  background: #0b0f17;
 }
