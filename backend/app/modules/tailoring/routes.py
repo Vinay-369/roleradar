@@ -10,7 +10,11 @@ from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.tailoring import repositories as repo
 from app.modules.tailoring import services
-from app.modules.tailoring.export import generate_docx, generate_pdf
+from app.modules.tailoring.export import (
+    generate_docx,
+    generate_pdf,
+    verify_export_against_structured_resume,
+)
 from app.modules.tailoring.schemas import (
     ChangeStatusUpdate,
     GenerateTailoringRequest,
@@ -174,6 +178,8 @@ async def update_resume(
         )
     except services.VersionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except services.NoMasterResumeError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     return _to_out(version)
 
 
@@ -188,10 +194,19 @@ async def finalize(
         version = await services.finalize_tailoring(db, str(current_user["_id"]), version_id, settings=settings)
     except services.VersionNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except services.NoMasterResumeError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except services.TailoredResumeValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     return _to_out(version)
 
 
 def _require_exportable(version: dict) -> None:
+    if not version.get("is_finalized"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Resume must be finalized before export.",
+        )
     if not version.get("parsed") and not version.get("final_text"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -202,7 +217,7 @@ def _require_exportable(version: dict) -> None:
 @router.get("/{version_id}/export/pdf")
 async def export_pdf(
     version_id: str,
-    template: str = Query(default="modern", description="modern | classic | technical | harvard | minimal"),
+    template: str | None = Query(default=None, description="modern | classic | technical | harvard | minimal"),
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -212,8 +227,18 @@ async def export_pdf(
     _require_exportable(version)
 
     content = version.get("parsed") or version.get("final_text")
+    strategy = (content.get("_strategy", {}) if isinstance(content, dict) else {}) or version.get("resume_strategy", {}) or {}
+    template = template or strategy.get("template_variant") or "modern"
     candidate_name = current_user.get("full_name", "")
     pdf_bytes = generate_pdf(content, candidate_name=candidate_name, template=template)
+    export_valid, export_report = verify_export_against_structured_resume(
+        pdf_bytes, content, file_type="pdf"
+    )
+    if not export_valid:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Generated PDF failed resume integrity validation.", "report": export_report},
+        )
     company_slug = version.get("company", "Company").replace(" ", "_")
     filename = f"resume_{company_slug}_{template}.pdf"
     return Response(
@@ -226,7 +251,7 @@ async def export_pdf(
 @router.get("/{version_id}/export/docx")
 async def export_docx(
     version_id: str,
-    template: str = Query(default="modern", description="modern | classic | technical | harvard | minimal"),
+    template: str | None = Query(default=None, description="modern | classic | technical | harvard | minimal"),
     current_user: dict = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
@@ -236,8 +261,18 @@ async def export_docx(
     _require_exportable(version)
 
     content = version.get("parsed") or version.get("final_text")
+    strategy = (content.get("_strategy", {}) if isinstance(content, dict) else {}) or version.get("resume_strategy", {}) or {}
+    template = template or strategy.get("template_variant") or "modern"
     candidate_name = current_user.get("full_name", "")
     docx_bytes = generate_docx(content, candidate_name=candidate_name, template=template)
+    export_valid, export_report = verify_export_against_structured_resume(
+        docx_bytes, content, file_type="docx"
+    )
+    if not export_valid:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Generated DOCX failed resume integrity validation.", "report": export_report},
+        )
     company_slug = version.get("company", "Company").replace(" ", "_")
     filename = f"resume_{company_slug}_{template}.docx"
     return Response(

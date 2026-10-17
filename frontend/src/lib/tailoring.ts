@@ -63,7 +63,10 @@ export type CandidateClassification = {
 export type ResumeStrategy = {
   candidate_type: string;
   template_variant: string;
+  template_family?: string;
+  section_order?: string[];
   highlight_education_top: boolean;
+  page_budget?: number;
   section_priority: string[];
   max_bullets_per_entry: number;
   emphasize_projects: boolean;
@@ -323,4 +326,3 @@ export async function finalizeTailoring(versionId: string): Promise<TailoredResu
 export async function deleteTailoredVersion(versionId: string): Promise<void> {
   await apiClient.delete(`/tailoring/${versionId}`);
 }
-

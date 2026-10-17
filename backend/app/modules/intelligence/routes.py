@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -171,8 +173,11 @@ async def get_dashboard(
     settings: Settings = Depends(get_settings),
 ):
     user_id = str(current_user["_id"])
-    profile = await profile_repo.get_profile(db, user_id)
-    resume = await resume_repo.get_active_master_resume(db, user_id)
+    profile, resume, applications = await asyncio.gather(
+        profile_repo.get_profile(db, user_id),
+        resume_repo.get_active_master_resume(db, user_id),
+        applications_repo.list_applications(db, user_id),
+    )
 
     onboarding_completed = current_user.get("onboarding_completed", False)
     resume_uploaded = resume is not None
@@ -181,6 +186,18 @@ async def get_dashboard(
     if profile is not None and resume is not None:
         jobs = await jobs_services.search_jobs(db, {"limit": 100}, user_id=user_id)
         matches = await matching_services.get_or_compute_matches(db, user_id, resume, profile, jobs, settings)
+        # The matching feed has a broader discovery ranking (eligibility,
+        # geography, freshness, source trust, etc.). The dashboard's contract
+        # is specifically "top matches", so rank this summary by the score
+        # displayed to the user before taking the first five.
+        matches = sorted(
+            matches,
+            key=lambda match: (
+                -float(match.get("overall_score") or 0),
+                int(match.get("posted_days_ago") or 0),
+                str(match.get("job_id") or ""),
+            ),
+        )
         top_matches = [
             {
                 "job_id": m["job_id"],
@@ -193,7 +210,6 @@ async def get_dashboard(
             for m in matches[:5]
         ]
 
-    applications = await applications_repo.list_applications(db, user_id)
     counts: dict[str, int] = {}
     for a in applications:
         counts[a["status"]] = counts.get(a["status"], 0) + 1

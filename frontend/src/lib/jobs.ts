@@ -110,6 +110,20 @@ export type JobMatch = {
   end_date?: string | null;
 };
 
+/**
+ * Orders matches by the score the user sees on the card. Missing scores are
+ * kept at the end, with newer postings breaking otherwise equal scores.
+ */
+export function sortMatchesByScore(matches: JobMatch[]): JobMatch[] {
+  return [...matches].sort((a, b) => {
+    const aScore = a.overall_score ?? Number.NEGATIVE_INFINITY;
+    const bScore = b.overall_score ?? Number.NEGATIVE_INFINITY;
+    return bScore - aScore
+      || (a.posted_days_ago ?? Infinity) - (b.posted_days_ago ?? Infinity)
+      || a.job_id.localeCompare(b.job_id);
+  });
+}
+
 export function isWithinPostingAge(job: JobMatch, maxAgeDays: number): boolean {
   if (job.posted_at) {
     const postedAt = Date.parse(job.posted_at);

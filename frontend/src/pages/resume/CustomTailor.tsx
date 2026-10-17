@@ -58,22 +58,21 @@ export function CustomTailor() {
   });
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-4xl py-5 sm:py-8">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-8">
-        <div className="mb-6 flex items-start gap-3.5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300">
-            <Sparkles size={21} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
-              Analyze External Job Description
-            </h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              Paste a job description to inspect requirements, eligibility, technical alignment, and skill gaps.
-            </p>
-          </div>
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 py-3 sm:py-4">
+      <div className="mb-5 flex items-start gap-3.5">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300">
+          <Sparkles size={21} />
+        </span>
+        <div className="min-w-0">
+          <h1 className="font-display text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+            Analyze External Job Description
+          </h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            Paste a job description to inspect requirements, eligibility, technical alignment, and skill gaps.
+          </p>
         </div>
-
+      </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-8">
         {!isCheckingResume && !masterResume && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-signal-500/20 bg-signal-500/5 p-4 dark:bg-signal-950/25">
             <AlertCircle size={19} className="mt-0.5 shrink-0 text-signal-600 dark:text-signal-300" />

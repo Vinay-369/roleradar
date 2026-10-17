@@ -400,7 +400,7 @@ export function Interview() {
     : 0;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4">
       <div>
         <div className="mb-1 flex items-center gap-2">
           <MessageCircleQuestion size={22} className="shrink-0 text-signal-600" />

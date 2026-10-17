@@ -15,10 +15,12 @@ import { SkeletonCard } from "../../components/ui/SkeletonLoaders";
 function DownloadButton({
   versionId,
   company,
+  template,
   format,
 }: {
   versionId: string;
   company: string;
+  template: string;
   format: "pdf" | "docx";
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -31,7 +33,7 @@ function DownloadButton({
         localStorage.getItem("roleradar_token") ||
         sessionStorage.getItem("roleradar_token");
       const res = await fetch(
-        `/api/tailoring/${versionId}/export/${format}?template=modern`,
+        `/api/tailoring/${versionId}/export/${format}?template=${encodeURIComponent(template)}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
@@ -39,7 +41,7 @@ function DownloadButton({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `resume_${company.replace(/\s+/g, "_")}.${format}`;
+      a.download = `resume_${company.replace(/\s+/g, "_")}_${template}.${format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -265,6 +267,7 @@ export function TailoredVersions() {
                             versionId={v.id}
                             company={v.company}
                             jobTitle={v.job_title}
+                            initialTemplate={v.resume_strategy?.template_variant || "modern"}
                             triggerButton={
                               <button
                                 type="button"
@@ -312,8 +315,18 @@ export function TailoredVersions() {
                   <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 bg-slate-50/70 px-4 py-3 sm:px-5">
                     <Download size={12} className="text-ink-400" />
                     <span className="mr-1 text-[11px] font-medium text-ink-500">Download tailored resume</span>
-                    <DownloadButton versionId={v.id} company={v.company} format="pdf" />
-                    <DownloadButton versionId={v.id} company={v.company} format="docx" />
+                    <DownloadButton
+                      versionId={v.id}
+                      company={v.company}
+                      template={v.resume_strategy?.template_variant || "modern"}
+                      format="pdf"
+                    />
+                    <DownloadButton
+                      versionId={v.id}
+                      company={v.company}
+                      template={v.resume_strategy?.template_variant || "modern"}
+                      format="docx"
+                    />
                   </div>
                 )}
               </div>

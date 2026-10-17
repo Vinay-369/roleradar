@@ -6,6 +6,7 @@ Provides deterministic checks for:
 3. Code-Enforced Protected Section Isolation
 4. Deterministic 1-Page PDF Fit Measurement & Trimming
 """
+import copy
 import io
 import re
 from typing import Any
@@ -645,17 +646,97 @@ def validate_final_tailored_resume(
     """
     errors: list[str] = []
 
+    def first_present(data: dict, *keys: str) -> Any:
+        for key in keys:
+            if key in data and data[key] is not None:
+                return data[key]
+        return None
+
+    # These fields are not editable in the tailoring workflow. Keep them
+    # byte-for-byte equivalent at the structured-data level.
+    protected_fields = (
+        ("personal/contact information", ("personal", "personal_info")),
+        ("education", ("education_raw", "education")),
+        ("certifications", ("certifications", "certifications_raw")),
+        ("achievements", ("achievements", "achievements_raw", "awards")),
+        ("publications", ("publications",)),
+        ("research", ("research",)),
+        ("languages", ("languages", "languages_raw", "languages_known")),
+        ("links", ("links",)),
+        ("additional sections", ("additional_sections",)),
+    )
+    for label, aliases in protected_fields:
+        source_value = first_present(master_parsed, *aliases)
+        final_value = first_present(final_parsed, *aliases)
+        if source_value != final_value:
+            errors.append(f"Protected {label} changed in the final tailored resume.")
+
     # 1. Protected Section Integrity (Education & Personal Contact)
     is_prot_valid, prot_errors = validate_protected_sections(master_parsed, final_parsed)
     if not is_prot_valid:
         errors.extend(prot_errors)
 
     # 2. Certification Integrity (Certifications cannot be fabricated)
-    master_certs = {c.strip().lower() for c in master_parsed.get("certifications", []) if c.strip()}
-    final_certs = {c.strip().lower() for c in final_parsed.get("certifications", []) if c.strip()}
+    master_certs = {str(c).strip().lower() for c in (master_parsed.get("certifications") or []) if str(c).strip()}
+    final_certs = {str(c).strip().lower() for c in (final_parsed.get("certifications") or []) if str(c).strip()}
     new_certs = final_certs - master_certs
     if new_certs:
         errors.append(f"Unsupported certification added without evidence: {', '.join(new_certs)}")
+
+    # A final skill may be reordered or omitted, but a newly asserted skill
+    # needs a match in independently stored source resume content. Missing
+    # JD wording is not interpreted as evidence that the candidate lacks it.
+    from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
+
+    def collect_strings(value: Any) -> list[str]:
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, dict):
+            return [part for child in value.values() for part in collect_strings(child)]
+        if isinstance(value, (list, tuple, set)):
+            return [part for child in value for part in collect_strings(child)]
+        return []
+
+    source_text = "\n".join(collect_strings(master_parsed))
+    source_text_lower = source_text.lower()
+    source_skills = {
+        canonicalize_skill_name(str(skill)).lower()
+        for skill in (master_parsed.get("skills") or []) + (master_parsed.get("skills_explicit") or [])
+        if canonicalize_skill_name(str(skill))
+    }
+    source_skills.update(extract_technical_terms(source_text))
+    final_skills = [
+        str(skill).strip()
+        for skill in (final_parsed.get("skills") or [])
+        if str(skill).strip()
+    ]
+    unsupported_skills = []
+    for skill in final_skills:
+        canonical = canonicalize_skill_name(skill)
+        if not canonical:
+            continue
+        if canonical.lower() in source_skills:
+            continue
+        pattern = r"(?<!\w)" + re.escape(skill.lower()) + r"(?!\w)"
+        if not re.search(pattern, source_text_lower):
+            unsupported_skills.append(skill)
+    if unsupported_skills:
+        errors.append(
+            "Final tailored resume asserts skills without independent master-resume evidence: "
+            + ", ".join(sorted(set(unsupported_skills)))
+        )
+
+    # Reject newly introduced technologies anywhere in the structured final
+    # document. Per-evidence checks below additionally bind rewrites to their
+    # original entity so a claim cannot borrow another project's metric.
+    source_tech = extract_technical_terms(source_text)
+    final_tech = extract_technical_terms("\n".join(collect_strings(final_parsed)))
+    added_tech = final_tech - source_tech
+    if added_tech:
+        errors.append(
+            "Final tailored resume contains unsupported technologies: "
+            + ", ".join(sorted(added_tech))
+        )
 
     # 3. Full Document Metric & Percentage Verification
     def collect_all_metrics(data: Any) -> set[str]:
@@ -678,7 +759,69 @@ def validate_final_tailored_resume(
     if invented_metrics:
         errors.append(f"Final tailored resume contains invented or altered metrics not found in source resume: {', '.join(sorted(invented_metrics))}")
 
+    # Compare employment and project identity facts after parsing the raw
+    # sections. The canonical `experience`/`projects` values can be stale in
+    # a tailored dict because approved bullet edits are applied to *_raw.
+    source_profile = candidate_profile or build_tailoring_validation_profile(master_parsed)
+    final_profile = build_tailoring_validation_profile(final_parsed)
+
+    def experience_facts(profile: Any) -> list[tuple[Any, ...]]:
+        facts = []
+        for section, entries in (("EXPERIENCE", profile.experience), ("INTERNSHIPS", profile.internships)):
+            facts.extend(
+                (
+                    section,
+                    exp.company,
+                    exp.role,
+                    exp.location,
+                    exp.dates,
+                    exp.start_date,
+                    exp.end_date,
+                    tuple((role.title, role.dates, role.start_date, role.end_date) for role in exp.progression),
+                )
+                for exp in entries
+            )
+        return facts
+
+    def project_facts(profile: Any) -> list[tuple[Any, ...]]:
+        def technologies(project: Any) -> tuple[str, ...]:
+            # Strategy rendering serializes a project with both `tech_stack`
+            # and `technologies`. Rebuilding a profile from that raw mapping
+            # may infer the same stack from `technologies`, changing a None
+            # stack into (for example) "Go". Compare the underlying technology
+            # facts, not that representation detail.
+            values = [str(value) for value in (project.technologies or []) if str(value).strip()]
+            if not values and project.tech_stack:
+                values = sorted(extract_technical_terms(str(project.tech_stack)))
+            normalized = {_canonicalize_skill(value) for value in values}
+            return tuple(sorted(value for value in normalized if value))
+
+        return [
+            (proj.title, technologies(proj), proj.dates, proj.url)
+            for proj in profile.projects
+        ]
+
+    if experience_facts(source_profile) != experience_facts(final_profile):
+        errors.append("Employment companies, titles, locations, or dates changed in the final tailored resume.")
+    if project_facts(source_profile) != project_facts(final_profile):
+        errors.append("Project titles, technology headers, dates, or links changed in the final tailored resume.")
+
     return len(errors) == 0, errors
+
+
+def build_tailoring_validation_profile(parsed_resume: dict) -> Any:
+    """Rebuild evidence from the final editable sections, avoiding stale entity copies."""
+    from app.modules.resume.models import CandidateProfile
+
+    data = copy.deepcopy(parsed_resume or {})
+    if "experience_raw" in data:
+        data.pop("experience", None)
+        data.pop("experience_entities", None)
+    if "projects_raw" in data:
+        data.pop("projects", None)
+        data.pop("projects_entities", None)
+    data.pop("evidence_units", None)
+    return CandidateProfile.from_parsed_dict(data)
 
 
 class IntegrityAuditReport(BaseModel):
@@ -734,11 +877,24 @@ def validate_source_evidence_ledger(
                 final_bullets.extend(pe.bullets)
 
     plan_changes = []
+    plan_decisions = {}
     if tailoring_plan:
         if isinstance(tailoring_plan, dict):
             plan_changes = tailoring_plan.get("changes", [])
+            decisions = tailoring_plan.get("evidence_decisions", []) or tailoring_plan.get("decisions", [])
         elif hasattr(tailoring_plan, "changes"):
             plan_changes = getattr(tailoring_plan, "changes")
+            decisions = getattr(tailoring_plan, "evidence_decisions", []) or getattr(tailoring_plan, "decisions", [])
+        else:
+            decisions = []
+        for decision in decisions:
+            decision_id = (
+                decision.get("evidence_id", "")
+                if isinstance(decision, dict)
+                else getattr(decision, "evidence_id", "")
+            )
+            if decision_id:
+                plan_decisions[decision_id] = decision
 
     preserved = 0
     condensed = 0
@@ -767,6 +923,34 @@ def validate_source_evidence_ledger(
         reason = None
         final_text = matched_final or orig_text
 
+        if not matched_final:
+            # Approved rewrites need not retain literal substrings from the
+            # source sentence. Bind their proposed text to the source evidence
+            # named by the approved change, then verify that proposal is in
+            # the final experience/project content.
+            clean_orig_norm = " ".join(clean_orig.lower().split())
+            final_body_norm = " ".join(" ".join(final_bullets).lower().split())
+            for change in plan_changes:
+                get_value = change.get if isinstance(change, dict) else lambda key, default=None: getattr(change, key, default)
+                if str(get_value("status", "")).upper() != "APPROVED" or get_value("applied_safely", True) is False:
+                    continue
+                change_section = str(get_value("section", "EXPERIENCE")).upper()
+                if section.upper() not in change_section and change_section not in section.upper():
+                    continue
+                change_original = re.sub(
+                    r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+",
+                    "",
+                    str(get_value("original", "")),
+                ).strip().lower()
+                if not clean_orig_norm or not change_original or not (
+                    clean_orig_norm in change_original or change_original in clean_orig_norm
+                ):
+                    continue
+                proposed = " ".join(str(get_value("proposed", "")).lower().split())
+                if proposed and proposed in final_body_norm:
+                    matched_final = str(get_value("proposed", ""))
+                    break
+
         if matched_final:
             if clean_orig == re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", matched_final).strip():
                 action = "PRESERVE"
@@ -778,18 +962,45 @@ def validate_source_evidence_ledger(
                 action = "REWRITE"
                 rewritten += 1
         else:
-            # Check if explicitly removed in plan
-            explicit_removal = False
-            for chg in plan_changes:
-                chg_orig = chg.get("original", "") if isinstance(chg, dict) else getattr(chg, "original", "")
-                chg_act = chg.get("action", "") if isinstance(chg, dict) else getattr(chg, "action", "")
-                if clean_orig and clean_orig in chg_orig and chg_act.upper() == "REMOVE":
-                    action = "REMOVE"
-                    reason = chg.get("reason", "") if isinstance(chg, dict) else getattr(chg, "reason", "")
+            # Check an explicit evidence decision (including deterministic
+            # page-budget trimming) before treating absence as accidental loss.
+            decision = plan_decisions.get(ev_id)
+            decision_action = (
+                decision.get("action", "")
+                if isinstance(decision, dict)
+                else getattr(decision, "action", "")
+            )
+            decision_action = getattr(decision_action, "value", decision_action)
+            decision_reason = (
+                decision.get("reason", "")
+                if isinstance(decision, dict)
+                else getattr(decision, "reason", "")
+            )
+            explicit_removal = bool(
+                decision
+                and str(decision_action).upper() in {"REMOVE", "CONDENSE"}
+                and str(decision_reason).strip()
+            )
+            if not explicit_removal:
+                for change in plan_changes:
+                    get_value = change.get if isinstance(change, dict) else lambda key, default=None: getattr(change, key, default)
+                    change_action = str(get_value("action", "")).upper()
+                    change_original = str(get_value("original", ""))
+                    if clean_orig and clean_orig in change_original and change_action == "REMOVE":
+                        change_reason = str(get_value("reason", "")).strip()
+                        if change_reason:
+                            action = "REMOVE"
+                            reason = change_reason
+                            removed += 1
+                            explicit_removal = True
+                            final_text = None
+                        break
+            if explicit_removal:
+                if decision:
+                    action = str(decision_action).upper()
+                    reason = str(decision_reason)
                     removed += 1
-                    explicit_removal = True
                     final_text = None
-                    break
 
             if not explicit_removal:
                 action = "ACCIDENTAL_LOSS"

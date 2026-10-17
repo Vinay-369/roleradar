@@ -50,7 +50,7 @@ export function Settings() {
   const tierLabel = tier.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6 pb-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 pb-8">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-700 dark:text-signal-300">Account settings</p>
         <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-ink-950 dark:text-white">Profile</h1>

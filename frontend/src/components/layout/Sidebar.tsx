@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Copy, Target,
   Briefcase, GraduationCap, ClipboardCheck,
-  Map, MessageCircleQuestion, Bot, X, Bookmark, Settings, Sun, Moon,
+  Map, MessageCircleQuestion, Bot, X, Settings, Sun, Moon,
   PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -11,14 +11,20 @@ type NavItem = { label: string; to: string; icon: React.ComponentType<{ size?: n
 type NavGroup = { label: string; items: NavItem[] };
 
 const groups: NavGroup[] = [
-  { label: "", items: [{ label: "Dashboard", to: "/dashboard", icon: LayoutDashboard }] },
+  {
+    label: "",
+    items: [
+      { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
+      { label: "Master Resume", to: "/resume/master", icon: FileText },
+    ],
+  },
   {
     label: "Explore",
     items: [
       { label: "Jobs For You", to: "/opportunities/jobs", icon: Briefcase },
       { label: "Internships", to: "/opportunities/internships", icon: GraduationCap },
-      { label: "Saved Opportunities", to: "/opportunities/saved", icon: Bookmark },
       { label: "Paste External JD", to: "/resume/tailor-custom", icon: FileText },
+      { label: "Tailored Resumes", to: "/resume/versions", icon: Copy },
     ],
   },
   {
@@ -27,13 +33,6 @@ const groups: NavGroup[] = [
       { label: "Skill Map & Gaps", to: "/growth/skill-gaps", icon: Target },
       { label: "Learning Roadmap", to: "/growth/roadmap", icon: Map },
       { label: "Interview Preparation", to: "/growth/interview", icon: MessageCircleQuestion },
-    ],
-  },
-  {
-    label: "Resume",
-    items: [
-      { label: "Master Resume", to: "/resume/master", icon: FileText },
-      { label: "Tailored Resumes", to: "/resume/versions", icon: Copy },
     ],
   },
   {

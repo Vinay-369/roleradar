@@ -2049,8 +2049,23 @@ def verify_export_text_integrity(
             doc.close()
         elif file_type.lower() in ("docx", "doc"):
             from docx import Document
+            from docx.table import Table as DocxTable
+            from docx.text.paragraph import Paragraph
+
             doc = Document(io.BytesIO(file_bytes))
-            extracted_text = "\n".join(p.text for p in doc.paragraphs)
+
+            def iter_docx_text(parent):
+                body = parent.element.body if hasattr(parent, "element") else parent._tc
+                for child in body.iterchildren():
+                    if child.tag.endswith("}p"):
+                        yield Paragraph(child, parent).text
+                    elif child.tag.endswith("}tbl"):
+                        table = DocxTable(child, parent)
+                        for row in table.rows:
+                            for cell in row.cells:
+                                yield from iter_docx_text(cell)
+
+            extracted_text = "\n".join(iter_docx_text(doc))
         else:
             extracted_text = file_bytes.decode("utf-8", errors="ignore")
     except Exception as e:
@@ -2144,6 +2159,13 @@ def verify_export_against_structured_resume(
         if email_raw not in extracted_text.lower() and email_norm not in norm_extracted:
             report["missing_facts"].append(f"Candidate Email: {email}")
 
+    phone = personal.get("phone")
+    if phone:
+        phone_digits = re.sub(r"\D", "", str(phone))
+        extracted_digits = re.sub(r"\D", "", extracted_text)
+        if phone_digits and phone_digits not in extracted_digits:
+            report["missing_facts"].append(f"Candidate Phone: {phone}")
+
     # 3. Technical Skills
     skills_cat = data.get("skills_categorized", [])
     if skills_cat and isinstance(skills_cat, list):
@@ -2175,6 +2197,11 @@ def verify_export_against_structured_resume(
             comp_norm = " ".join(re.sub(r"[^\w\s]", " ", comp).strip().lower().split())
             if comp_norm and comp_norm not in norm_extracted:
                 report["missing_facts"].append(f"Company: {comp}")
+            for fact_label, fact in (("Role", exp.get("role", "")), ("Experience dates", exp.get("dates", ""))):
+                fact_norm = " ".join(re.sub(r"[^\w\s]", " ", str(fact)).strip().lower().split())
+                fact_words = fact_norm.split()
+                if fact_norm and fact_norm not in norm_extracted and not all(word in norm_words for word in fact_words):
+                    report["missing_facts"].append(f"{fact_label}: {fact}")
             for bullet in exp.get("bullets", []):
                 b_clean = re.sub(r"^[•\-\*\s]+", "", str(bullet)).strip()
                 words = re.sub(r"[^\w\s]", " ", b_clean).split()
@@ -2203,6 +2230,16 @@ def verify_export_against_structured_resume(
             title_norm = " ".join(re.sub(r"[^\w\s]", " ", title).strip().lower().split())
             if title_norm and title_norm not in norm_extracted:
                 report["project_integrity_issues"].append(f"Project title missing: {title}")
+            for fact_label, fact in (
+                ("Project technology", proj.get("tech_stack") or proj.get("technologies", "")),
+                ("Project dates", proj.get("dates", "")),
+            ):
+                if isinstance(fact, (list, tuple)):
+                    fact = " ".join(str(item) for item in fact)
+                fact_norm = " ".join(re.sub(r"[^\w\s]", " ", str(fact)).strip().lower().split())
+                fact_words = fact_norm.split()
+                if fact_norm and fact_norm not in norm_extracted and not all(word in norm_words for word in fact_words):
+                    report["project_integrity_issues"].append(f"{fact_label} missing: {fact}")
             for bullet in proj.get("bullets", []):
                 b_clean = re.sub(r"^[•\-\*\s]+", "", str(bullet)).strip()
                 words = re.sub(r"[^\w\s]", " ", b_clean).split()
@@ -2228,6 +2265,15 @@ def verify_export_against_structured_resume(
             inst_norm = " ".join(re.sub(r"[^\w\s]", " ", inst).strip().lower().split())
             if inst_norm and inst_norm not in norm_extracted:
                 report["education_integrity_issues"].append(f"Education institution missing: {inst}")
+            for fact_label, fact in (
+                ("Education degree", edu.get("degree", "")),
+                ("Education dates", edu.get("dates", "")),
+                ("Education grade", edu.get("cgpa") or edu.get("gpa") or edu.get("percentage", "")),
+            ):
+                fact_norm = " ".join(re.sub(r"[^\w\s]", " ", str(fact)).strip().lower().split())
+                fact_words = fact_norm.split()
+                if fact_norm and fact_norm not in norm_extracted and not all(word in norm_words for word in fact_words):
+                    report["education_integrity_issues"].append(f"{fact_label} missing: {fact}")
         elif isinstance(edu, str) and edu.strip():
             words = re.sub(r"[^\w\s]", " ", edu.strip()).split()
             if len(words) >= 3:

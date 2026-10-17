@@ -4,6 +4,7 @@ Keyed by (user_id, job_id, resume_version).
 """
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import UpdateOne
 
 from app.db.mongo import Collections
 
@@ -38,6 +39,7 @@ async def save_cached_matches(
     if not matches_to_cache:
         return
     now = datetime.now(timezone.utc)
+    operations = []
     for m in matches_to_cache:
         doc = {
             "user_id": user_id,
@@ -47,11 +49,15 @@ async def save_cached_matches(
             "overall_score": m["match_data"].get("overall_score", 0),
             "updated_at": now,
         }
-        await db[Collections.JOB_MATCHES].update_one(
-            {"user_id": user_id, "job_id": m["job_id"]},
-            {"$set": doc, "$setOnInsert": {"created_at": now}},
-            upsert=True,
+        operations.append(
+            UpdateOne(
+                {"user_id": user_id, "job_id": m["job_id"]},
+                {"$set": doc, "$setOnInsert": {"created_at": now}},
+                upsert=True,
+            )
         )
+
+    await db[Collections.JOB_MATCHES].bulk_write(operations, ordered=False)
 
 
 async def invalidate_user_matches(db: AsyncIOMotorDatabase, user_id: str) -> None:

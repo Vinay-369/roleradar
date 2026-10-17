@@ -170,7 +170,7 @@ export function Applications() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8 animate-fade-in-up">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 animate-fade-in-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">

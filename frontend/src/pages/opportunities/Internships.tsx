@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { GraduationCap, Sparkles, Search, FileText, RotateCcw, X, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { GraduationCap, Sparkles, FileText, RotateCcw, RefreshCw, SlidersHorizontal } from "lucide-react";
 import {
   getRecommendedMatches,
   isWithinPostingAge,
   MAX_ACTIVE_POSTING_AGE_DAYS,
   syncLiveJobs,
+  sortMatchesByScore,
   type JobMatch,
 } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
@@ -52,7 +53,6 @@ export function Internships() {
   const [regionScope, setRegionScope] = useState<"india" | "global">(restoredState?.regionScope ?? "india");
 
   // Core Discovery Controls
-  const [searchQuery, setSearchQuery] = useState<string>(restoredState?.searchQuery ?? "");
   const [selectedRole, setSelectedRole] = useState<string>(restoredState?.selectedRole ?? "ALL");
   const [locationPreset, setLocationPreset] = useState<string>(restoredState?.locationPreset ?? "ALL");
   const [stageFilter, setStageFilter] = useState<string>(restoredState?.stageFilter ?? "ALL");
@@ -65,13 +65,6 @@ export function Internships() {
         ? "match"
         : "recent"
   );
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
-    return () => window.clearTimeout(timer);
-  }, [searchQuery]);
-
   // Progressive Loading State
   const [page, setPage] = useState<number>(restoredState?.page ?? 1);
   const [loadedInternships, setLoadedInternships] = useState<JobMatch[]>(
@@ -119,7 +112,6 @@ export function Internships() {
       locationPreset,
       stageFilter,
       workplaceFilter,
-      debouncedSearchQuery,
       sortBy,
     ],
     queryFn: () =>
@@ -129,7 +121,6 @@ export function Internships() {
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: 1,
@@ -167,7 +158,6 @@ export function Internships() {
   const handleSaveListState = () => {
     saveListState("internships", {
       regionScope,
-      searchQuery,
       selectedRole,
       locationPreset,
       stageFilter,
@@ -188,7 +178,6 @@ export function Internships() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (searchQuery.trim()) count++;
     if (selectedRole !== "ALL") count++;
     if (locationPreset !== "ALL") count++;
     if (stageFilter !== "ALL") count++;
@@ -196,11 +185,10 @@ export function Internships() {
     if (onlyEligible) count++;
     if (regionScope !== "india") count++;
     return count;
-  }, [searchQuery, selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible, regionScope]);
+  }, [selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible, regionScope]);
 
   const resetAllFilters = () => {
     clearListState("internships");
-    setSearchQuery("");
     setSelectedRole("ALL");
     setLocationPreset("ALL");
     setStageFilter("ALL");
@@ -223,7 +211,6 @@ export function Internships() {
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: nextPage,
@@ -258,16 +245,14 @@ export function Internships() {
         })
       : loadedInternships;
 
-    if (sortBy !== "match") return eligibleInternships;
-    return [...eligibleInternships].sort((a, b) => {
-      const aScore = a.overall_score ?? Number.NEGATIVE_INFINITY;
-      const bScore = b.overall_score ?? Number.NEGATIVE_INFINITY;
-      return bScore - aScore || (a.posted_days_ago ?? Infinity) - (b.posted_days_ago ?? Infinity);
-    });
+    // Eligibility is a personalized view, so surface the strongest eligible
+    // match first even when the discovery list is otherwise sorted by recency.
+    if (!onlyEligible && sortBy !== "match") return eligibleInternships;
+    return sortMatchesByScore(eligibleInternships);
   }, [loadedInternships, onlyEligible, hasResume, sortBy]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pt-4 pb-8 sm:px-6">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 pb-6 animate-fade-in-up">
       {/* Header Bar */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -356,24 +341,8 @@ export function Internships() {
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-signal-600" />
             <h2 className="text-sm font-bold text-ink-900 dark:text-slate-100">Find your internship</h2>
-            <span className="hidden sm:inline text-xs text-ink-400">Search and narrow results</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
-              <span>Sort by</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "recent" | "stipend" | "match")}
-                className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                aria-label="Sort internships"
-              >
-                <option value="recent">Most recent</option>
-                <option value="stipend">Highest compensation</option>
-                <option value="match" disabled={!hasResume}>
-                  Highest matching score{hasResume ? "" : " (resume required)"}
-                </option>
-              </select>
-            </label>
             {activeFilterCount > 0 && (
               <button
                 type="button"
@@ -388,32 +357,7 @@ export function Internships() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="relative">
-            <label htmlFor="internship-search-input" className="mb-1.5 block text-[11px] font-semibold text-ink-600">Keywords</label>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-              <input
-                id="internship-search-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Role, company, skill or location"
-                aria-label="Search internships by role, company, skill, or location"
-                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-9 text-sm text-slate-900 shadow-2xs outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-[calc(50%+1px)] -translate-y-1/2 rounded-full p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-700"
-                  title="Clear search"
-                  aria-label="Clear search input"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
+          <div className="lg:col-span-2">
             <RoleDropdownSelector
               label="Role"
               selectedRole={selectedRole}
@@ -421,7 +365,7 @@ export function Internships() {
               roles={roleOptions}
               includeAllOption={true}
               allOptionLabel="All internship roles"
-              className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_label]:tracking-normal [&_input[role=combobox]]:h-10 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:py-2 [&_input[role=combobox]]:focus:ring-indigo-500/15 [&>div:last-child]:gap-0"
+              className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_input[role=combobox]]:h-10 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:focus:ring-indigo-500/15 [&>div:last-child]:gap-0"
             />
           </div>
           <label className="block text-[11px] font-semibold text-ink-600">
@@ -429,7 +373,7 @@ export function Internships() {
             <select
               value={locationPreset}
               onChange={(e) => setLocationPreset(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="ALL">All locations</option>
               <option value="Bengaluru">Bengaluru</option>
@@ -445,7 +389,7 @@ export function Internships() {
             <select
               value={stageFilter}
               onChange={(e) => setStageFilter(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               {CANONICAL_CAREER_STAGES.map((stage) => (
                 <option key={stage.value} value={stage.value}>
@@ -459,12 +403,25 @@ export function Internships() {
             <select
               value={workplaceFilter}
               onChange={(e) => setWorkplaceFilter(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="ALL">Any arrangement</option>
               <option value="remote">Remote</option>
               <option value="hybrid">Hybrid</option>
               <option value="on_site">On-site</option>
+            </select>
+          </label>
+          <label className="block text-[11px] font-semibold text-ink-600">
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "recent" | "stipend" | "match")}
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              aria-label="Sort internships"
+            >
+              <option value="recent">Most recent</option>
+              <option value="stipend">Highest compensation</option>
+              <option value="match" disabled={!hasResume}>Highest matching score{hasResume ? "" : " (resume required)"}</option>
             </select>
           </label>
         </div>

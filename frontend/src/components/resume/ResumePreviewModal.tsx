@@ -6,6 +6,7 @@ interface ResumePreviewModalProps {
   company?: string;
   jobTitle?: string;
   initialTemplate?: string;
+  onTemplateChange?: (template: string) => void;
   triggerButton?: React.ReactNode;
   isOpen?: boolean;
   onClose?: () => void;
@@ -23,6 +24,7 @@ export function ResumePreviewModal({
   company = "Company",
   jobTitle = "Tailored Resume",
   initialTemplate = "modern",
+  onTemplateChange,
   triggerButton,
   isOpen,
   onClose,
@@ -32,6 +34,10 @@ export function ResumePreviewModal({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTemplate(initialTemplate);
+  }, [initialTemplate]);
 
   const open = isOpen !== undefined ? isOpen : internalOpen;
   const setOpen = (val: boolean) => {
@@ -142,7 +148,10 @@ export function ResumePreviewModal({
                   {TEMPLATES.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setTemplate(t.id)}
+                      onClick={() => {
+                        setTemplate(t.id);
+                        onTemplateChange?.(t.id);
+                      }}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
                         template === t.id
                           ? "bg-ink-950 text-white shadow-2xs"

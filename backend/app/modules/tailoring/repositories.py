@@ -113,7 +113,12 @@ async def update_change_status(db: AsyncIOMotorDatabase, user_id: str, version_i
         if change["change_id"] == change_id:
             change["status"] = status
     await db[Collections.RESUME_VERSIONS].update_one(
-        {"_id": version["_id"]}, {"$set": {"changes": version["changes"]}}
+        {"_id": version["_id"]},
+        {"$set": {
+            "changes": version["changes"],
+            "is_finalized": False,
+            "final_text": None,
+        }},
     )
     return await get_version(db, user_id, version_id)
 
@@ -127,6 +132,7 @@ async def update_parsed_resume(
     truth_guard_audit: dict | None = None,
     ats_readability_findings: dict | None = None,
     verification_status: str | None = None,
+    manual_edits: dict[str, Any] | None = None,
 ) -> dict | None:
     version = await get_version(db, user_id, version_id)
     if version is None:
@@ -134,6 +140,8 @@ async def update_parsed_resume(
     set_fields: dict[str, Any] = {
         "parsed": parsed,
         "user_modified": user_modified,
+        "is_finalized": False,
+        "final_text": None,
     }
     if truth_guard_audit is not None:
         set_fields["truth_guard_audit"] = truth_guard_audit
@@ -141,6 +149,8 @@ async def update_parsed_resume(
         set_fields["ats_readability_findings"] = ats_readability_findings
     if verification_status is not None:
         set_fields["verification_status"] = verification_status
+    if manual_edits is not None:
+        set_fields["manual_edits"] = manual_edits
 
     await db[Collections.RESUME_VERSIONS].update_one(
         {"_id": version["_id"]}, {"$set": set_fields}
@@ -159,6 +169,7 @@ async def finalize_version(
     tailored_scores: dict | None = None,
     validation_summary: dict | None = None,
     one_page_fit: bool | None = None,
+    truth_guard_audit: dict[str, Any] | None = None,
     candidate_classification: dict | None = None,
     resume_strategy: dict | None = None,
     evidence_mapping: list[dict] | None = None,
@@ -183,6 +194,8 @@ async def finalize_version(
         set_fields["validation_summary"] = validation_summary
     if one_page_fit is not None:
         set_fields["one_page_fit"] = one_page_fit
+    if truth_guard_audit is not None:
+        set_fields["truth_guard_audit"] = truth_guard_audit
     if candidate_classification is not None:
         set_fields["candidate_classification"] = candidate_classification
     if resume_strategy is not None:
@@ -199,6 +212,31 @@ async def finalize_version(
         set_fields["ats_readability_findings"] = ats_readability_findings
     await db[Collections.RESUME_VERSIONS].update_one(
         {"_id": version["_id"]}, {"$set": set_fields}
+    )
+    return await get_version(db, user_id, version_id)
+
+
+async def record_validation_failure(
+    db: AsyncIOMotorDatabase,
+    user_id: str,
+    version_id: str,
+    validation_summary: dict[str, Any],
+    truth_guard_audit: dict[str, Any],
+) -> dict | None:
+    """Persist a failed finalization audit while keeping the version non-exportable."""
+    version = await get_version(db, user_id, version_id)
+    if version is None:
+        return None
+    await db[Collections.RESUME_VERSIONS].update_one(
+        {"_id": version["_id"], "user_id": user_id},
+        {
+            "$set": {
+                "is_finalized": False,
+                "final_text": None,
+                "validation_summary": validation_summary,
+                "truth_guard_audit": truth_guard_audit,
+            }
+        },
     )
     return await get_version(db, user_id, version_id)
 
@@ -230,4 +268,3 @@ async def delete_version(db: AsyncIOMotorDatabase, user_id: str, version_id: str
         return False
     res = await db[Collections.RESUME_VERSIONS].delete_one({"_id": oid, "user_id": user_id})
     return res.deleted_count > 0
-

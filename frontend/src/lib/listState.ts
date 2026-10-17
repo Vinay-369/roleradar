@@ -3,7 +3,6 @@ import type { JobMatch } from "./jobs";
 export interface OpportunityListState {
   regionScope: "india" | "global";
   includeBenchmarks?: boolean;
-  searchQuery: string;
   selectedRole: string;
   locationPreset: string;
   stageFilter: string;

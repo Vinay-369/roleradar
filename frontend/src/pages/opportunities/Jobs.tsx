@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Briefcase, Sparkles, Search, FileText, RotateCcw, X, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Briefcase, Sparkles, FileText, RotateCcw, RefreshCw, SlidersHorizontal } from "lucide-react";
 import {
   getRecommendedMatches,
   isWithinPostingAge,
   MAX_ACTIVE_POSTING_AGE_DAYS,
   syncLiveJobs,
+  sortMatchesByScore,
   type JobMatch,
 } from "../../lib/jobs";
 import { JobMatchCard } from "../../components/jobs/JobMatchCard";
@@ -48,7 +49,6 @@ export function Jobs() {
   const [regionScope, setRegionScope] = useState<"india" | "global">(restoredState?.regionScope ?? "india");
 
   // Core Discovery Controls
-  const [searchQuery, setSearchQuery] = useState<string>(restoredState?.searchQuery ?? "");
   const [selectedRole, setSelectedRole] = useState<string>(restoredState?.selectedRole ?? "ALL");
   const [locationPreset, setLocationPreset] = useState<string>(restoredState?.locationPreset ?? "ALL");
   const [stageFilter, setStageFilter] = useState<string>(restoredState?.stageFilter ?? "ALL");
@@ -61,13 +61,6 @@ export function Jobs() {
         ? "match"
         : "recent"
   );
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
-    return () => window.clearTimeout(timer);
-  }, [searchQuery]);
-
   // Progressive Loading State
   const [page, setPage] = useState<number>(restoredState?.page ?? 1);
   const [loadedJobs, setLoadedJobs] = useState<JobMatch[]>(
@@ -100,7 +93,6 @@ export function Jobs() {
       locationPreset,
       stageFilter,
       workplaceFilter,
-      debouncedSearchQuery,
       sortBy,
     ],
     queryFn: () =>
@@ -110,7 +102,6 @@ export function Jobs() {
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: 1,
@@ -146,7 +137,6 @@ export function Jobs() {
   const handleSaveListState = () => {
     saveListState("jobs", {
       regionScope,
-      searchQuery,
       selectedRole,
       locationPreset,
       stageFilter,
@@ -167,7 +157,6 @@ export function Jobs() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (searchQuery.trim()) count++;
     if (selectedRole !== "ALL") count++;
     if (locationPreset !== "ALL") count++;
     if (stageFilter !== "ALL") count++;
@@ -175,11 +164,10 @@ export function Jobs() {
     if (onlyEligible) count++;
     if (regionScope !== "india") count++;
     return count;
-  }, [searchQuery, selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible, regionScope]);
+  }, [selectedRole, locationPreset, stageFilter, workplaceFilter, onlyEligible, regionScope]);
 
   const resetAllFilters = () => {
     clearListState("jobs");
-    setSearchQuery("");
     setSelectedRole("ALL");
     setLocationPreset("ALL");
     setStageFilter("ALL");
@@ -202,7 +190,6 @@ export function Jobs() {
         locationPreset: locationPreset !== "ALL" ? locationPreset : undefined,
         stage: stageFilter !== "ALL" ? stageFilter : undefined,
         workplaceType: workplaceFilter !== "ALL" ? workplaceFilter : undefined,
-        search: debouncedSearchQuery.trim() || undefined,
         sortBy,
         maxPostedDays: MAX_ACTIVE_POSTING_AGE_DAYS,
         page: nextPage,
@@ -233,16 +220,14 @@ export function Jobs() {
         })
       : loadedJobs;
 
-    if (sortBy !== "match") return eligibleJobs;
-    return [...eligibleJobs].sort((a, b) => {
-      const aScore = a.overall_score ?? Number.NEGATIVE_INFINITY;
-      const bScore = b.overall_score ?? Number.NEGATIVE_INFINITY;
-      return bScore - aScore || (a.posted_days_ago ?? Infinity) - (b.posted_days_ago ?? Infinity);
-    });
+    // Eligibility is a personalized view, so surface the strongest eligible
+    // match first even when the discovery list is otherwise sorted by recency.
+    if (!onlyEligible && sortBy !== "match") return eligibleJobs;
+    return sortMatchesByScore(eligibleJobs);
   }, [loadedJobs, onlyEligible, hasResume, sortBy]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pt-4 pb-8 sm:px-6">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 pb-6 animate-fade-in-up">
       {/* Header Bar */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -306,24 +291,8 @@ export function Jobs() {
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-signal-600" />
             <h2 className="text-sm font-bold text-ink-900 dark:text-slate-100">Find the right opening</h2>
-            <span className="hidden sm:inline text-xs text-ink-400">Search and narrow results</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-xs font-medium text-ink-700 cursor-pointer">
-              <span>Sort by</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "recent" | "salary" | "match")}
-                className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                aria-label="Sort jobs"
-              >
-                <option value="recent">Most recent</option>
-                <option value="salary">Highest compensation</option>
-                <option value="match" disabled={!hasResume}>
-                  Highest matching score{hasResume ? "" : " (resume required)"}
-                </option>
-              </select>
-            </label>
             {activeFilterCount > 0 && (
               <button
                 type="button"
@@ -338,32 +307,7 @@ export function Jobs() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="relative">
-            <label htmlFor="job-search-input" className="mb-1.5 block text-[11px] font-semibold text-ink-600">Keywords</label>
-            <div className="relative">
-              <Search size={15} className="absolute left-3 top-[calc(50%+1px)] -translate-y-1/2 text-ink-400" />
-              <input
-                id="job-search-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Job title, company, skill or location"
-                aria-label="Search jobs by title, company, skill, or location"
-                className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-9 text-sm text-slate-900 shadow-2xs outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-[calc(50%+1px)] -translate-y-1/2 rounded-full p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-700"
-                  title="Clear search"
-                  aria-label="Clear search input"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
+          <div className="lg:col-span-2">
             <RoleDropdownSelector
               label="Role"
               selectedRole={selectedRole}
@@ -374,9 +318,6 @@ export function Jobs() {
               className="[&_label]:mb-1.5 [&_label]:text-[11px] [&_label]:font-semibold [&_label]:normal-case [&_label]:tracking-normal [&_input[role=combobox]]:h-10 [&_input[role=combobox]]:bg-slate-50 [&_input[role=combobox]]:dark:bg-slate-800 [&_input[role=combobox]]:focus:ring-indigo-500/15 [&>div:last-child]:gap-0"
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-3 dark:border-slate-800">
           <label className="block text-[11px] font-semibold text-ink-600">
             Location
             <select
@@ -393,6 +334,9 @@ export function Jobs() {
               <option value="Chennai">Chennai</option>
             </select>
           </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block text-[11px] font-semibold text-ink-600">
             Career stage
             <select
@@ -418,6 +362,19 @@ export function Jobs() {
               <option value="remote">Remote</option>
               <option value="hybrid">Hybrid</option>
               <option value="on_site">On-site</option>
+            </select>
+          </label>
+          <label className="block text-[11px] font-semibold text-ink-600">
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "recent" | "salary" | "match")}
+              className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              aria-label="Sort jobs"
+            >
+              <option value="recent">Most recent</option>
+              <option value="salary">Highest compensation</option>
+              <option value="match" disabled={!hasResume}>Highest matching score{hasResume ? "" : " (resume required)"}</option>
             </select>
           </label>
         </div>

@@ -223,19 +223,17 @@ export function MasterResume() {
   }
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-5">
+    <div
+      className="mx-auto w-full min-w-0 max-w-6xl space-y-5 animate-fade-in-up"
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+    >
       {/* Header and top-level actions */}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        className={`rounded-xl border bg-white px-4 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all sm:px-5 ${
-          isDragging ? "border-signal-500 bg-signal-500/5 ring-2 ring-signal-500/20" : "border-slate-200"
-        }`}
-      >
+      <div className="space-y-4">
         <input
           ref={fileInputRef}
           type="file"
@@ -243,18 +241,25 @@ export function MasterResume() {
           onChange={handleFileChange}
           className="hidden"
         />
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-display text-2xl font-bold text-ink-900">Master Resume</h1>
-            <p className="mt-0.5 text-sm text-ink-500">
-            Enterprise 4-Pillar ATS benchmark, strict pass/fail filtering evaluation, and categorized competencies.
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-signal-500/20 bg-signal-500/10 text-signal-700">
+              <FileText size={18} />
+            </span>
+            <div className="min-w-0 max-w-xl">
+              <div className="mb-1 flex items-center gap-2">
+              <h1 className="font-display text-xl font-bold text-ink-950 sm:text-2xl">Master Resume</h1>
+              </div>
+            <p className="text-xs leading-relaxed text-ink-500 sm:text-sm">
+              Enterprise 4-Pillar ATS benchmark, strict pass/fail filtering evaluation, and categorized competencies.
             </p>
+            </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
             {resume && (
               <Link
                 to="/resume/tailor-custom"
-                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-signal-500/25 bg-signal-500 px-3.5 text-xs font-bold text-white shadow-xs transition-colors hover:border-signal-600 hover:bg-signal-600"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-indigo-950 bg-[#17245b] px-3.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#111b4a]"
               >
                 <FileText size={14} />
                 Paste JD &amp; Tailor
@@ -264,7 +269,7 @@ export function MasterResume() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={upload.isPending}
-            className="group inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-xs font-semibold text-ink-800 shadow-2xs transition-all hover:border-signal-500/50 hover:bg-slate-50 hover:text-signal-800 disabled:cursor-wait disabled:opacity-60"
+            className="group inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-ink-800 shadow-sm transition-all hover:border-signal-500/50 hover:bg-slate-50 hover:text-signal-800 disabled:cursor-wait disabled:opacity-60"
           >
             <UploadCloud size={15} className={upload.isPending ? "animate-pulse-soft text-signal-600" : "text-signal-600 transition-transform group-hover:-translate-y-0.5"} />
             <span>{upload.isPending ? "Uploading & Analyzing…" : resume ? "Upload Updated Resume" : "Upload Master Resume"}</span>
@@ -275,8 +280,10 @@ export function MasterResume() {
           </button>
           </div>
         </div>
-        {(resume || upload.isPending || isDragging) && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
+        {resume && (resume || upload.isPending || isDragging) && (
+          <div className={`hidden flex flex-wrap items-center justify-between gap-2 rounded-2xl border bg-white px-5 py-4 shadow-sm transition-all sm:px-6 ${
+            isDragging ? "border-signal-500 bg-signal-500/5 ring-2 ring-signal-500/20" : "border-slate-200/80"
+          }`}>
             {resume && (
               <span className="text-[11px] font-medium text-ink-500">
                 Version {resume.version} · {resume.file_type.toUpperCase()}
@@ -296,7 +303,7 @@ export function MasterResume() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-alert-600/10 border border-alert-600/20 p-4 text-xs text-alert-700 flex items-start gap-2.5 shadow-2xs">
+        <div className="rounded-2xl bg-alert-600/10 border border-alert-600/20 p-4 text-xs text-alert-700 flex items-start gap-2.5 shadow-sm">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <div>
             <strong className="font-bold">Upload Error:</strong> {error}
@@ -309,7 +316,7 @@ export function MasterResume() {
           {/* ========================================================================= */}
           {/* 1. STRICT ENTERPRISE ATS SCORE HERO CARD                                 */}
           {/* ========================================================================= */}
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
               <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <ScoreGauge value={strictATSScore} />
@@ -433,7 +440,7 @@ export function MasterResume() {
           {/* ========================================================================= */}
           {/* 3. IDENTIFIED TECHNICAL SKILLS (Separated Strictly by Lines / Groups)     */}
           {/* ========================================================================= */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] sm:p-5">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-ink-100">
               <div className="flex items-center gap-2">
                 <Layers size={18} className="text-signal-600" />

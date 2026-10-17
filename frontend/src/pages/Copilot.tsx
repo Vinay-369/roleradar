@@ -413,10 +413,24 @@ export function Copilot() {
   const deleteConvMutation = useMutation({
     mutationFn: (convId: string) => deleteConversation(convId),
     onSuccess: (_, deletedId) => {
+      const cachedConversations = queryClient.getQueryData<ConversationSummary[]>(["copilot-conversations"]) || [];
+      const remainingConversations = cachedConversations.filter((conversation) => conversation.id !== deletedId);
+      queryClient.setQueryData(["copilot-conversations"], remainingConversations);
       queryClient.invalidateQueries({ queryKey: ["copilot-conversations"] });
-      if (activeConvId === deletedId) {
+
+      if (remainingConversations.length > 0) {
+        if (activeConvId === deletedId) {
+          setActiveConvId(remainingConversations[0].id);
+          setMessages([WELCOME]);
+          setActiveAttachment(null);
+        }
+      } else {
+        // Keep Copilot usable after the last conversation is deleted: clear
+        // the deleted transcript first, then create a clean new session.
         setActiveConvId(null);
         setMessages([WELCOME]);
+        setActiveAttachment(null);
+        createConvMutation.mutate(undefined);
       }
       toast.info("Conversation deleted.");
     },
@@ -680,19 +694,19 @@ export function Copilot() {
   }
 
   return (
-    <div className="flex h-full w-full select-text overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <div className="flex h-full w-full select-text overflow-hidden bg-slate-100 dark:bg-slate-950">
       {/* ------------------------------------------------------------------ */}
       {/* Left Sidebar: Multi-Session Conversation Threads */}
       {/* ------------------------------------------------------------------ */}
       <div
-        className={`z-10 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xs transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
+        className={`z-10 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white/95 shadow-md transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 ${
           sidebarOpen ? "w-64 sm:w-72" : "w-0 p-0 border-0 overflow-hidden"
         }`}
       >
         {sidebarOpen && (
           <>
             {/* Sidebar Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-2">
                 <MessageSquare size={15} className="text-signal-600" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-ink-900 dark:text-slate-100">Conversations</h2>
@@ -712,7 +726,7 @@ export function Copilot() {
               <button
                 onClick={() => createConvMutation.mutate(undefined)}
                 disabled={createConvMutation.isPending}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-signal-600 px-3 py-2 text-xs font-bold text-white shadow-2xs transition-all hover:bg-signal-700 active:scale-95 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-signal-600 px-3 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-signal-700 active:scale-95 disabled:opacity-50"
               >
                 <Plus size={14} />
                 <span>New Chat</span>
@@ -827,33 +841,32 @@ export function Copilot() {
       {/* ------------------------------------------------------------------ */}
       <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-slate-900">
         {/* Sleek Compact Header Bar */}
-        <header className="min-h-14 px-3 sm:px-6 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-between gap-3 shrink-0 z-10 dark:border-slate-800 dark:bg-slate-900/95">
+        <header className="min-h-14 px-3 sm:px-6 border-b border-slate-200 bg-white/95 shadow-xs backdrop-blur-sm flex items-center justify-between gap-3 shrink-0 z-10 dark:border-slate-800 dark:bg-slate-900/95">
           <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              onClick={() => toggleSidebar(!sidebarOpen)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-slate-100 hover:text-ink-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-              title={sidebarOpen ? "Collapse conversation sidebar" : "Open conversation sidebar"}
-              aria-label={sidebarOpen ? "Collapse conversation sidebar" : "Open conversation sidebar"}
-            >
-              {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-            </button>
+            {!sidebarOpen && (
+              <button
+                onClick={() => toggleSidebar(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-slate-100 hover:text-ink-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                title="Open conversation sidebar"
+                aria-label="Open conversation sidebar"
+              >
+                <PanelLeftOpen size={16} />
+              </button>
+            )}
 
-            <div className="w-8 h-8 rounded-lg bg-signal-500/10 text-signal-700 flex items-center justify-center shrink-0 font-bold border border-signal-500/20 dark:text-signal-300">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-signal-500/20 bg-signal-500/10 font-bold text-signal-700 dark:text-signal-300">
               <Bot size={15} />
             </div>
 
             <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-              <h1 className="font-display text-sm font-bold text-ink-950 truncate dark:text-white">
+              <h1 className="font-display text-base font-bold tracking-tight text-ink-950 truncate dark:text-white">
                 Career Copilot
               </h1>
-              <span className="inline-flex w-fit items-center rounded-full border border-signal-200 bg-signal-50 px-2 py-0.5 text-[9px] font-semibold text-signal-700 dark:border-signal-900 dark:bg-signal-950/50 dark:text-signal-300">
-                Engineering Mentor v4
-              </span>
             </div>
           </div>
 
           {/* Top Actions */}
-          <div className="flex shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+          <div className="flex shrink-0 items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 shadow-2xs dark:border-slate-700 dark:bg-slate-800">
             <button
               onClick={() => handleOpenShare()}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-ink-600 transition-colors hover:bg-white hover:text-signal-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
@@ -906,8 +919,8 @@ export function Copilot() {
         )}
 
         {/* Expansive Message Stream */}
-        <div className="flex-1 snap-y snap-proximity overflow-y-auto bg-slate-50/60 px-3 py-5 sm:px-8 sm:py-6 dark:bg-slate-950/40">
-          <div className="max-w-4xl mx-auto space-y-4">
+        <div className="flex-1 snap-y snap-proximity overflow-y-auto bg-slate-50/80 px-3 py-2 sm:px-8 sm:py-2 dark:bg-slate-950/40">
+          <div className="mx-auto max-w-4xl space-y-0">
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -915,7 +928,8 @@ export function Copilot() {
                 className={`flex snap-start ${m.role === "user" ? "justify-end pl-8 sm:pl-16" : "justify-start pr-2"} animate-fade-in-up`}
               >
                 {m.role === "user" ? (
-                  <div className="max-w-xl w-fit rounded-2xl rounded-br-sm border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs leading-relaxed text-white shadow-sm sm:px-4 sm:py-3 dark:border-slate-700 dark:bg-slate-800">
+                  <div className="group max-w-xl w-fit">
+                    <div className="relative rounded-2xl rounded-br-sm border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs leading-relaxed text-white shadow-sm sm:px-4 sm:py-3 dark:border-slate-700 dark:bg-slate-800">
                     {m.attachment && (
                       <div className="mb-2 p-2 rounded-xl bg-ink-900 border border-ink-800 flex items-center justify-between text-[11px] text-ink-200 gap-2">
                         <div className="flex items-center gap-1.5 truncate">
@@ -928,9 +942,20 @@ export function Copilot() {
                       </div>
                     )}
                     <p className="whitespace-pre-wrap font-medium">{m.text}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(m.text, i)}
+                      className="ml-auto mt-2 flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 opacity-0 shadow-sm transition-all hover:bg-slate-50 hover:text-signal-700 group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-signal-300"
+                      aria-label={copiedIndex === i ? "Copied user message" : "Copy user message"}
+                      title={copiedIndex === i ? "Copied" : "Copy message"}
+                    >
+                      {copiedIndex === i ? <Check size={13} className="text-signal-600" /> : <Copy size={13} />}
+                    </button>
                   </div>
                 ) : (
-                  <div className={`w-full max-w-4xl rounded-2xl rounded-bl-sm border p-4 text-xs leading-relaxed shadow-sm transition-all sm:p-5 ${
+                  <div className="group w-full max-w-2xl">
+                  <div className={`w-full rounded-2xl rounded-bl-sm border p-3 text-xs leading-relaxed shadow-sm transition-all sm:p-4 ${
                     m.text.toLowerCase().includes("local ai connection notice")
                       ? "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100"
                       : "border-slate-200 bg-white text-ink-800 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
@@ -966,34 +991,33 @@ export function Copilot() {
                       </div>
                     )}
 
-                    {/* Copy Button Footer */}
-                    <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-200/80 pt-3 dark:border-slate-700">
-                      <span className="text-[10px] font-semibold text-ink-400 dark:text-slate-400">RoleRadar Grounded Mentor</span>
-                      <div className="flex items-center gap-1.5">
+                    </div>
+
+                    {/* Reply actions */}
+                    <div className="mt-1 flex items-center justify-start gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                         {i > 0 && messages.slice(0, i).some((message) => message.role === "user") && (
                           <button
                             onClick={() => handleRegenerate(i)}
                             disabled={isGenerating || sendMutation.isPending}
-                            className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-ink-600 transition-colors hover:bg-slate-50 hover:text-signal-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-ink-500 transition-colors hover:bg-slate-50 hover:text-signal-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                            aria-label="Regenerate"
+                            title="Regenerate"
                           >
-                            <RotateCcw size={11} /> Regenerate
+                            <RotateCcw size={13} />
                           </button>
                         )}
                         <button
                           onClick={() => handleCopy(m.text, i)}
-                          className="inline-flex h-7 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-medium text-ink-600 transition-colors hover:bg-slate-50 hover:text-signal-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-ink-500 transition-colors hover:bg-slate-50 hover:text-signal-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                          aria-label={copiedIndex === i ? "Copied" : "Copy"}
+                          title={copiedIndex === i ? "Copied" : "Copy"}
                         >
                           {copiedIndex === i ? (
-                            <>
-                              <Check size={11} className="text-signal-600" /> Copied
-                            </>
+                            <Check size={13} className="text-signal-600" />
                           ) : (
-                            <>
-                              <Copy size={11} /> Copy
-                            </>
+                            <Copy size={13} />
                           )}
                         </button>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -1016,7 +1040,7 @@ export function Copilot() {
         {/* ------------------------------------------------------------------ */}
         {/* Streamlined Bottom Input Dock */}
         {/* ------------------------------------------------------------------ */}
-        <div className="shrink-0 border-t border-slate-200 bg-white/95 px-3 pt-2.5 pb-3.5 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 sm:px-8">
+        <div className="shrink-0 border-t border-slate-200 bg-white/95 px-3 pt-1.5 pb-2 shadow-[0_-4px_16px_rgba(15,23,42,0.04)] backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 sm:px-8">
           <div className="max-w-4xl mx-auto space-y-2">
 
             {/* Active Attachment Chip (When attached before sending) */}

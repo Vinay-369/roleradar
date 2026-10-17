@@ -1,286 +1,143 @@
-# RoleRadar — AI Resume Intelligence & Career Acceleration Platform
+# RoleRadar
 
-RoleRadar is an enterprise-grade AI career copilot and resume intelligence platform designed to eliminate rejection by ATS screening algorithms (Workday, Taleo, Greenhouse). Rather than generic scoring, RoleRadar utilizes multi-phase semantic document reconstruction, strict 8-tier evidence-ledger verification, and candidate-grounded tailoring to produce high-impact, 1-page resumes without fabricating credentials.
+RoleRadar is a career-support web application for managing resumes, evaluating job fit, preparing applications, and practicing interviews. It combines a React and TypeScript single-page app with a FastAPI backend and MongoDB. Optional AI providers support features such as resume tailoring and the career copilot.
 
----
+## What it does
 
-## 🏛️ System Architecture
+- **Resume workspace:** upload and parse resumes, review ATS-oriented feedback, and create job-specific resume versions with PDF or DOCX export.
+- **Job discovery and matching:** browse job and internship listings, save opportunities, and review match information.
+- **Application tracking:** organize opportunities and follow application progress.
+- **Career development:** review skill gaps, follow learning roadmaps, and practice role-focused interview questions.
+- **Career copilot:** get assistance with career and application tasks using a configured AI provider.
 
-```
-React 19 + Vite (TypeScript)  ──────►  FastAPI (Python 3.12)  ──────►  Modular Processing Pipeline
-                                                                               │
-                                  ┌────────────────────────────────────────────┴────────────────────────────────────────────┐
-                                  ▼                                                                                         ▼
-               Document & Semantic Intelligence Layer                                                    AI & Tailoring Orchestrator
-           ┌─────────────────────────────────────────────────────────┐                              ┌─────────────────────────────────────────┐
-           │ Phase 1: 5-Gate Geometric Reading-Order Engine         │                              │ Truth Guard Grounded Tailoring Engine   │
-           │ Phase 2: Canonical Resume Semantic Entity Structurer    │                              │ Deterministic Fallback & JSON Repair    │
-           │ Phase 3: Generalized JD Reconstruction & Taxonomy       │                              │ 8-Tier Evidence Ledger Matcher          │
-           │ Phase 4: Deterministic ATS & RRI Scoring Engine         │                              │ 1-Page ReportLab / DOCX Renderer        │
-           └─────────────────────────────────────────────────────────┘                              └─────────────────────────────────────────┘
-                                  │                                                                                         │
-                                  ▼                                                                                         ▼
-                              MongoDB                                                                               AI Providers Layer
-                          (Motor Async)                                                                        (Ollama / LM Studio / Cloud)
-```
+The backend is organized into feature modules for authentication, profiles, resumes, jobs, matching, tailoring, intelligence, applications, learning, interviews, and the copilot. Deterministic parsing and matching code handles structured analysis; AI services are provided through a configurable provider layer.
 
-### Technology Stack Decisions
+## Technology
 
-| Layer | Technology | Rationale & Capabilities |
-|---|---|---|
-| **Frontend** | React 19, Vite, TypeScript | Fast client-side rendering with React Query state caching, typed API integrations, and route-level code-splitting |
-| **Styling** | Vanilla CSS + Tailwind CSS | SaaS Light design system with Sora/Inter typography, card hover physics, and micro-animations |
-| **Backend** | FastAPI + Pydantic v2 | High-throughput asynchronous REST API with strict runtime schema validation and modular routing |
-| **Document Geometry** | PyMuPDF (fitz) + PDFMiner | Coordinate-aware block extraction, 5-gate column detection, gutter analysis, and reading-order normalization |
-| **Document Export** | ReportLab + python-docx | Pixel-precise 1-page vertical budget PDF and DOCX generation (`harvard`, `stanford`, `modern`, `classic`) |
-| **Database** | MongoDB + Motor | Document storage for canonical profiles, structured JD requirements, evidence ledger mappings, and applications |
-| **AI Strategy** | `AIService` Provider Layer | Provider-agnostic abstraction (Ollama, LM Studio, Cloud fallback) with automated JSON repair-retry loop and deterministic fallback |
-| **Test Suite** | Pytest + pytest-asyncio | **495+ automated tests (100% pass rate)** covering geometry, semantic parsing, taxonomy, and end-to-end tailoring |
+- **Frontend:** React, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS
+- **Backend:** Python, FastAPI, Pydantic, Motor (MongoDB)
+- **Resume processing and export:** PyMuPDF, spaCy, ReportLab, python-docx
+- **AI providers:** Ollama, LM Studio, or a configured cloud provider
+- **Tests:** pytest and pytest-asyncio (backend)
 
----
+## Requirements
 
-## 🌟 Core Pipeline & Engineering Innovations
+- Python 3.11 or 3.12
+- Node.js and npm
+- MongoDB 7 (local installation or Docker)
+- An AI provider is optional for the application overall, but required for features that make AI requests.
 
-### 1. 📐 Phase 1 — Generalized Document Geometry & Reading Order Engine
-- **5-Gate Column Detection**: Replaces fragile midpoint assumptions with continuous vertical-overlap tracking, gutter width thresholds, column height ratios, and bounding-box geometry.
-- **Hanging Header & Multi-Column Support**: Accurately handles asymmetric two-column resumes, single-column indented headers, and complex PDF stream orderings.
-- **Coordinate-Preserving Normalization**: Maps raw PDF text blocks into normalized page models (`NormalizedDocument`, `LayoutBlock`) with absolute bounding coordinates and reading indices.
+## Run locally
 
-### 2. 🧬 Phase 2 — Canonical Semantic Resume Reconstruction
-- **Canonical Entity Models**: Eliminates lossy string-flattening by structuring resumes directly into typed entities: `WorkExperienceEntity`, `ProjectEntity`, `EducationCredentialEntity`, and `SkillCategoryEntity`.
-- **Atomic Evidence Ledger (`EvidenceLedger`)**: Extracts verifiable, immutable candidate claims (`EvidenceUnit`) tagged with source section, entity ID, normalized text, and detected technologies.
-- **Implicit Skill Extraction**: Discovers candidate technologies embedded inside bullet point narratives and projects even when omitted from explicit skills lists.
+### 1. Configure the backend
 
-### 3. 🎯 Phase 3 — Generalized JD Reconstruction & Analysis
-- **Semantic Section Zoning**: Partitions arbitrary JDs into semantic zones (`COMPANY_OVERVIEW`, `ROLE_OVERVIEW`, `RESPONSIBILITIES`, `REQUIREMENTS_MUST_HAVE`, `REQUIREMENTS_PREFERRED`, `QUALIFICATIONS`, `BENEFITS`, `EEO_LEGAL`).
-- **Compound Heading Toleration**: Seamlessly resolves slashed, hyphenated, and ampersand-delimited headings (e.g. *"Nice-to-Have / Preferred"*, *"What You Bring / Minimum Qualifications"*).
-- **Multi-Word Experience Extractor**: Accurately parses tenure with intervening qualifiers (e.g. *"3+ years of professional software development experience"* $\rightarrow$ `min_years = 3.0`) while shielding against company marketing claims (e.g. *"25 years in business"*).
-- **Anchored Seniority & Weighted Domain Inference**: Anchors seniority strictly to target titles and quantitative requirements (ignoring incidental mentions like *"collaborating with architects"*), and computes multi-zone weighted domain scoring (Title $3\times$, Responsibilities $2\times$, Skills $1.5\times$).
-- **Context & Boilerplate Quarantine**: Guarantees that company overviews, benefits, and EEO statements never become phantom candidate requirements.
-
-### 4. ⚖️ 8-Tier Deterministic Evidence-to-JD Mapping
-- Maps candidate evidence units against structured JD requirements without semantic inflation:
-  - `EXACT_MATCH` (1.00) — Direct verbatim technology/credential match in candidate experience.
-  - `STRONG_MATCH` (0.90) — Exact synonym match supported by high-impact delivery evidence.
-  - `SUPPORTED` (0.85) — Verified evidence unit demonstrating equivalent core competency.
-  - `RELATED` (0.70) — Adjacent transferable technology cluster (e.g., FastAPI for Django requirement).
-  - `PARTIAL` (0.50) — High semantic narrative overlap across candidate projects.
-  - `WEAK` (0.30) — Minimal keyword overlap.
-  - `MISSING` (0.00) — Qualification absent from candidate history (isolated into gap roadmap).
-  - `CONFLICTING` (0.00) — Contradictory requirement (e.g., active Top Secret clearance absent).
-
-### 5. 🛡️ Truth Guard Resume Tailoring & 1-Page Export
-- **Grounded Bullet Generation**: Constrains LLM tailoring to candidate source evidence units; prevents hallucination of unworked technologies.
-- **Deterministic 1-Page Budget Engine**: Dynamically calculates content density and enforces line-budget constraints per experience item.
-- **Enterprise PDF/DOCX Templates**:
-  - `harvard` — Classic serif with horizontal rule dividers and right-aligned dates.
-  - `stanford` / `technical` — Modern high-density sans-serif with bold tech keywords.
-  - `modern` / `classic` — Balanced spacing with prominent headers and section accents.
-
-### 6. 💼 Real-Time Filterable Jobs & Internships
-- **Deterministic 3-Tier Match Engine**:
-  - 50% Required Skill Match (exact token + semantic alias overlap).
-  - 30% Role Title Semantic Similarity.
-  - 20% Experience Level & Location Fit.
-- **WhyScoreModal**: Complete mathematical formula breakdown explaining score calculations.
-- **Multi-Filter Search**: Target Role, LPA/Stipend, Workplace (`Remote Only`, `Hybrid`, `Onsite`), and Freshness.
-
-### 7. 🎙️ Top 20 Discipline-Specific Interview Preparation
-- Curated Top 20 question banks across 6 technical tracks (*Full Stack*, *Backend*, *Frontend*, *Data Science/ML*, *DevOps/Cloud*, *Core Software Engineering*).
-- 3 structured interview rounds (Technical, Managerial, HR) with STAR hints, strategy breakdowns, sample answers, and pitfalls.
-- Interactive 2-minute mock answer practice timer with a scratchpad and browser-persisted bookmarking.
-
-### 8. 🤖 Career Copilot & CRM Application Pipeline
-- **Conversational Career Strategist**: Grounded assistant for STAR formatting, cold outreach scripts, and resume bullet metric quantification.
-- **Kanban Pipeline CRM**: Tracks applications through authentic workflow states (`SAVED` $\rightarrow$ `TAILORED` $\rightarrow$ `APPLIED` $\rightarrow$ `INTERVIEW` $\rightarrow$ `OFFER`).
-
----
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-- **Python 3.12+**
-- **Node.js 20+** & **npm**
-- **MongoDB** (Local instance or Docker container)
-- *(Optional)* [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai) for local LLM inference
-
----
-### 🔐 Secret Management
-
-The project uses environment files (`.env`) to store secrets such as API keys, database credentials, and AI provider tokens.
-
-- **Never commit real `.env` files** – they are listed in `.gitignore` and ignored by Git.
-- **Provide a template**: `backend/.env.example` contains placeholder keys and usage instructions.
-- **Setup**: after cloning, copy the template and fill in your values:
+From the repository root, create the backend environment file:
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-- **Version control**: only the example file is tracked; the generated `.env` remains local and is excluded from pushes.
+On Windows PowerShell, use:
 
----
-
-### 1. Database (MongoDB)
-
-```bash
-# Start MongoDB via Docker Compose
-docker compose up -d
+```powershell
+Copy-Item backend/.env.example backend/.env
 ```
 
----
+Review `backend/.env` and set values for the services you intend to use. The defaults point MongoDB to `mongodb://localhost:27017`. Choose an AI provider and configure its model/service; cloud providers also need their API key. For production, set `ENV=production` and replace `JWT_SECRET` with a strong secret of at least 16 characters.
 
-### 2. Backend (FastAPI)
+### 2. Start MongoDB
+
+With Docker Compose:
 
 ```bash
-# Navigate to backend directory
+docker compose up -d mongo
+```
+
+Alternatively, start a local MongoDB instance that listens on the URI configured in `backend/.env`.
+
+### 3. Install and start the backend
+
+```bash
 cd backend
-
-# Create and activate virtual environment
 python -m venv .venv
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-# source .venv/bin/activate
+```
 
-# Install Python dependencies
+Activate the environment, then install dependencies and start the API:
+
+```bash
+# macOS/Linux
+source .venv/bin/activate
+
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
-
-# Configure environment variables
-cp .env.example .env
-
-# Run full automated test suite (495+ tests)
-pytest
-
-# Start FastAPI development server
 uvicorn app.main:app --reload --port 8000
 ```
 
-- **API Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check Endpoint**: [http://localhost:8000/api/health](http://localhost:8000/api/health)
+The API serves interactive documentation at [http://localhost:8000/docs](http://localhost:8000/docs). Check service and database status at [http://localhost:8000/api/health](http://localhost:8000/api/health).
 
----
+### 4. Install and start the frontend
 
-### 3. Frontend (React + Vite)
+In a second terminal, from the repository root:
 
 ```bash
-# Navigate to frontend directory in a new terminal
 cd frontend
-
-# Install Node dependencies
 npm install
-
-# Start Vite dev server
 npm run dev
 ```
 
-- **Frontend Application**: [http://localhost:5173](http://localhost:5173)
+Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` requests to the backend on port 8000.
 
----
+In development mode, backend startup seeds the job data and creates a demo user if one does not already exist. Use the credentials shown in the login screen or the backend seed implementation; change demo credentials and secrets before any production deployment. Production mode does not automatically create the demo user.
 
-### 4. 📦 Production Build & Run (Single-Port Unified Serving)
+## Build and checks
 
-To run RoleRadar in unified production mode where FastAPI serves the compiled React SPA:
+Run these from their respective directories:
 
 ```bash
-# 1. Build the frontend bundle
-cd frontend
-npm install
+# Backend tests
+cd backend
+pytest
+
+# Frontend production build and lint
+cd ../frontend
 npm run build
-
-# 2. Configure production secrets in backend/.env
-# Set ENV=production and a strong JWT_SECRET (minimum 16 characters)
-
-# 3. Start the production ASGI server
-cd ../backend
-# Linux / Docker Container Production (Multi-Worker):
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
-
-# Windows Local Production-Mode Validation (Single-Worker):
-uvicorn app.main:app --host 127.0.0.1 --port 8000
+npm run lint
 ```
 
-- **Unified Production URL**: [http://localhost:8000](http://localhost:8000)
-- **API Endpoints**: [http://localhost:8000/api](http://localhost:8000/api)
-- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+`npm run build` runs the TypeScript project build before creating the Vite bundle. When `frontend/dist` exists, FastAPI can serve the built single-page application as well as the API.
 
----
+## Configuration
 
-### 5. ⚡ 1-Click Quick Demo Sign-In
+Backend settings are read from environment variables and `.env`; see [`backend/.env.example`](backend/.env.example) for the full list. Common settings include:
 
-1. Open [http://localhost:5173/login](http://localhost:5173/login).
-2. Click **"⚡ 1-Click Sign In as Demo Candidate"** (or enter `demo@example.com` / `Password123!`).
-3. The dashboard loads instantly with pre-computed ATS scores, tailored resumes, top job matches, and interview preparation tracks.
+| Variable | Purpose |
+| --- | --- |
+| `MONGO_URI`, `MONGO_DB_NAME` | MongoDB connection and database |
+| `JWT_SECRET`, `ENV` | Authentication secret and runtime environment |
+| `AI_PROVIDER` | Select `ollama`, `lmstudio`, or `cloud_fallback` |
+| `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | Local Ollama endpoint and model |
+| `LMSTUDIO_BASE_URL`, `LMSTUDIO_MODEL` | Local LM Studio endpoint and model |
+| `CLOUD_FALLBACK_PROVIDER`, `CLOUD_FALLBACK_API_KEY`, `CLOUD_FALLBACK_MODEL` | Cloud provider configuration |
+| `JOB_SOURCE_MODE` and provider settings | Job feed behavior and configured sources |
+| `UPLOAD_DIR`, `GENERATED_DIR`, `MAX_UPLOAD_MB` | Resume file storage and upload limit |
 
----
+Keep real credentials in your local environment file or deployment secret store. Do not commit them to version control.
 
-## 📁 Repository Structure
+## Project layout
 
-```
-roleradar/
-├── backend/
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── config.py             # Environment configurations
-│   │   │   ├── security.py           # JWT generation & bcrypt password hashing
-│   │   │   └── ai_service/           # Provider-agnostic AI service, prompts & repair engine
-│   │   ├── db/
-│   │   │   └── mongo.py              # Motor MongoDB async client & index definitions
-│   │   ├── modules/
-│   │   │   ├── auth/                 # Authentication, JWT tokens & demo user auto-seed
-│   │   │   ├── profile/              # Candidate profile, preferences & target roles
-│   │   │   ├── resume/               # Phase 1 Geometry & Phase 2 Semantic Structurer
-│   │   │   │   ├── models.py         # Canonical CandidateProfile & EvidenceUnit models
-│   │   │   │   ├── ledger.py         # Atomic Evidence Ledger & provenance tracking
-│   │   │   │   ├── parsing/          # 5-gate column detector & reading-order normalizer
-│   │   │   │   └── export/           # ReportLab PDF & python-docx 1-page renderers
-│   │   │   ├── jobs/                 # Phase 3 JD Reconstruction, Taxonomy & Skill Vocabulary
-│   │   │   │   ├── taxonomy.py       # Generalized section reconstructor & JD analyzer
-│   │   │   │   └── skill_vocabulary.py # Multi-domain technology taxonomy graph
-│   │   │   ├── matching/             # Phase 4 Deterministic 8-Tier Evidence-to-JD Matcher
-│   │   │   ├── tailoring/            # Truth Guard tailoring & validation engine
-│   │   │   ├── applications/         # Kanban application tracker CRM
-│   │   │   ├── learning/             # 4-sprint skill gap bridge & learning roadmaps
-│   │   │   ├── interview/            # Role-specific question banks & practice timer
-│   │   │   ├── chatbot/              # Career Copilot conversational AI strategist
-│   │   │   └── intelligence/         # Role Readiness Index (RRI) & ATS scoring metrics
-│   │   └── main.py                   # FastAPI application & startup lifecycle
-│   ├── seeds/                        # Curated seed datasets
-│   ├── tests/                        # Pytest automated test suite (495+ tests)
-│   └── requirements.txt              # Backend Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/               # AppShell, Sidebar, AuthBrandPanel
-│   │   │   ├── jobs/                 # JobMatchCard & WhyScoreModal
-│   │   │   ├── resume/               # ResumePreviewModal, ATSScoreRadar, SkillBadgeGrid
-│   │   │   └── ui/                   # ScoreRing, modals, buttons
-│   │   ├── context/                  # AuthContext state management
-│   │   ├── lib/                      # Axios API clients & typed service methods
-│   │   ├── pages/                    # Lazy-loaded page components (Dashboard, Resume, Jobs, etc.)
-│   │   ├── App.tsx                   # Route definitions & React.lazy code-splitting
-│   │   ├── index.css                 # Clean SaaS light design system & micro-animations
-│   │   └── main.tsx                  # Application bootstrap entry point
-│   ├── package.json                  # Frontend dependencies
-│   └── vite.config.ts                # Vite build & proxy configuration
-└── docker-compose.yml                # MongoDB container orchestration
+```text
+backend/
+  app/              FastAPI application, shared services, and feature modules
+  seeds/            Seed data used by the application
+  tests/            Backend tests
+  requirements.txt  Python dependencies
+frontend/
+  src/              React pages, components, routes, and API clients
+  package.json      Frontend scripts and dependencies
+docs/
+  operations.md     Backup, restore, and deployment operations guide
+docker-compose.yml  Local MongoDB service
 ```
 
----
-
-## 🔬 Technical Implementation Principles
-
-1. **Deterministic Foundations Over LLM Guesswork**:
-   - Parsing, layout geometry, section zoning, ATS scoring, and evidence mapping are strictly deterministic. LLMs are reserved solely for creative phrasing and natural language feedback.
-2. **Provenance & Traceability**:
-   - Every candidate evidence unit and JD requirement traces directly back to its originating document position, section heading, and raw text.
-3. **Truth Guard Integrity**:
-   - Master resumes remain immutable. Tailoring operations create isolated versions with strict hallucination checks against the candidate's verified evidence ledger.
-4. **Offline-Safe Architecture**:
-   - Deterministic rule engines ensure that all parsing, matching, ATS auditing, and template rendering functions operate fully offline without external cloud dependencies.
-
----
-
-## 🚀 Operations & Deployment Runbook
-
-For production backup procedures (`mongodump`/`mongorestore`), Single Page Application (SPA) reverse proxy routing (Nginx / Cloudflare), and production configuration checklists, refer to the [Operations Runbook](file:///c:/VINAY/roleradar/docs/operations.md).
+For database backup and restore guidance and deployment notes, see the [Operations Runbook](docs/operations.md).

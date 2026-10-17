@@ -272,7 +272,7 @@ export function LearningRoadmap() {
   }, [canonicalRoles]);
 
   return (
-    <div className="rr-learning-roadmap mx-auto w-full min-w-0 max-w-5xl">
+    <div className="rr-learning-roadmap mx-auto w-full min-w-0 max-w-6xl">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <MapIcon size={22} className="shrink-0 text-signal-600" />

@@ -19,7 +19,6 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/opportunities/jobs")) return "Jobs For You";
   if (pathname.startsWith("/opportunities/internships")) return "Internships";
   if (pathname.startsWith("/applications")) return "Applications Tracker";
-  if (pathname.startsWith("/opportunities/saved")) return "Saved Opportunities";
   if (pathname.startsWith("/opportunities/job")) return "Opportunity Details";
   if (pathname.startsWith("/growth/roadmap")) return "Learning Roadmap";
   if (pathname.startsWith("/growth/interview")) return "Interview Preparation";
@@ -193,14 +192,17 @@ export function AppShell() {
                     <p className="text-[11px] text-ink-500 truncate">{user?.email}</p>
                   </div>
 
-                  <Link
-                    to="/settings"
-                    onClick={() => setUserDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-ink-700 hover:bg-ink-50 transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      navigate("/settings");
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-medium text-ink-700 hover:bg-ink-50 transition-colors"
                   >
                     <User size={14} className="text-ink-500" />
                     <span>Profile</span>
-                  </Link>
+                  </button>
 
                   <div className="h-px bg-ink-100 my-1" />
 

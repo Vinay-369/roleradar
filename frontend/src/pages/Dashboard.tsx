@@ -72,7 +72,7 @@ function CareerLoopHub() {
 
 function DashboardSkeleton() {
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-5">
       <div className="rr-skeleton h-28 rounded-2xl" />
       <div className="rr-skeleton h-36 rounded-2xl" />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -333,7 +333,7 @@ export function Dashboard() {
                 <div className="min-h-40 rounded-xl border border-ink-100 bg-ink-50/40 p-4">
                   <div className="space-y-2">
                     <p className="text-xs text-ink-600 font-medium">
-                      You have <strong className="text-ink-950">{totalApplications}</strong> bookmarked {totalApplications === 1 ? "role" : "roles"} ready for tailored resume reviews and direct applications.
+                    You have <strong className="text-ink-950">{totalApplications}</strong> bookmarked {totalApplications === 1 ? "role" : "roles"} ready for tailored resume reviews and direct applications.
                     </p>
                   </div>
                 </div>

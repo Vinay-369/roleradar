@@ -44,6 +44,7 @@ from app.modules.tailoring.export import (
 from app.modules.tailoring.validation import (
     PROTECTED_SECTION_NAMES,
     _canonicalize_skill,
+    build_tailoring_validation_profile,
     compute_deterministic_skill_reorder,
     detect_fabricated_claims,
     detect_dropped_source_skills,
@@ -56,6 +57,9 @@ from app.modules.tailoring.validation import (
     is_target_in_protected_section,
     measure_and_enforce_one_page_fit,
     validate_protected_sections,
+    validate_final_tailored_resume,
+    validate_source_evidence_ledger,
+    validate_tailored_profile_truth_guard,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,6 +82,10 @@ class VersionNotFoundError(Exception):
 
 
 class InvalidChangeStatusError(Exception):
+    pass
+
+
+class TailoredResumeValidationError(Exception):
     pass
 
 
@@ -578,14 +586,18 @@ async def generate_tailoring(
 
             sk_lower = sk_clean.lower()
             sk_canon = _canonicalize_skill(sk_clean)
+            # Only resume content is trusted for grounding. The model's
+            # source_evidence is retained for review but cannot verify itself.
             is_grounded = (
                 sk_lower in all_master_text or
-                sk_canon in all_master_text or
-                (bool(addition.source_evidence) and sk_lower in addition.source_evidence.lower())
+                sk_canon in all_master_text
             )
 
             status = ChangeStatus.PENDING.value if is_grounded else ChangeStatus.NEEDS_USER_INPUT.value
-            fab_warning = None if is_grounded else f"Skill '{sk_clean}' was inferred by AI and not explicitly found in master resume text. Requires candidate approval."
+            fab_warning = None if is_grounded else (
+                f"Skill '{sk_clean}' could not be independently verified in the master resume. "
+                "This does not mean you lack the skill; add supporting evidence to your master resume or leave it out."
+            )
             confidence = 0.90 if is_grounded else 0.50
 
             add_chg = {
@@ -677,8 +689,18 @@ async def generate_tailoring(
     sections_changed = list(dict.fromkeys([c.get("section", "EXPERIENCE").upper() for c in changes]))
     unmatched_gaps = list(dict.fromkeys(result.unmatched_gaps + unmatched_jd_skills))
 
-    # Initial pure-data merge
-    initial_parsed = _merge_structured_tailoring(master_parsed, result_dict, approved_change_ids=None)
+    # The review/editor baseline contains only changes already approved by the
+    # user. Pending and rejected proposals remain in the change list for review.
+    approved_change_ids = {
+        change["change_id"]
+        for change in changes
+        if change.get("status") == ChangeStatus.APPROVED.value
+    }
+    initial_parsed = _merge_structured_tailoring(
+        master_parsed,
+        result_dict,
+        approved_change_ids=approved_change_ids,
+    )
 
     # 6. Compute Rich Intelligence Artifacts
     from app.modules.resume.classification import classify_candidate_profile
@@ -774,9 +796,16 @@ async def finalize_tailoring(
     if version is None:
         raise VersionNotFoundError(f"Version {version_id} not found.")
 
-    resume = await resume_repo.get_active_master_resume(db, user_id)
+    resume = await resume_repo.get_master_resume_version(
+        db,
+        user_id,
+        version.get("master_resume_id"),
+        version.get("master_resume_version"),
+    )
     if not resume:
-        raise NoMasterResumeError("Master resume not found.")
+        raise NoMasterResumeError(
+            "The master resume version used to generate this tailored version is unavailable."
+        )
 
     master_parsed = resume.get("parsed") or {}
     master_raw_text = resume.get("raw_text", "")
@@ -845,7 +874,24 @@ async def finalize_tailoring(
                 elif sec == "PROJECTS":
                     clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
                     replaced = False
-                    for idx, b in enumerate(final_parsed.get("projects_raw", [])):
+                    for idx, project in enumerate(final_parsed.get("projects_raw", [])):
+                        if isinstance(project, dict):
+                            bullets = project.get("bullets", [])
+                            for bullet_idx, bullet in enumerate(bullets):
+                                if not isinstance(bullet, str):
+                                    continue
+                                if (orig and orig in bullet) or (
+                                    clean_orig and clean_orig.lower() in bullet.lower()
+                                ):
+                                    project["bullets"][bullet_idx] = prop
+                                    replaced = True
+                                    break
+                            if replaced:
+                                break
+                            continue
+                        if not isinstance(project, str):
+                            continue
+                        b = project
                         if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
                             orig_sub_lines = [l.strip() for l in b.split("\n") if l.strip()]
                             if len(orig_sub_lines) > 1:
@@ -860,6 +906,37 @@ async def finalize_tailoring(
                             break
                     if not replaced and prop:
                         final_parsed.setdefault("projects_raw", []).append(prop)
+
+    # Manual edits are stored as an explicit delta from the master resume.
+    # Never use the draft `parsed` snapshot here: it may contain stale or
+    # unapproved proposal content.
+    manual_edits = version.get("manual_edits") or {}
+    if "summary" in manual_edits:
+        final_parsed["summary"] = manual_edits["summary"]
+    if "skills" in manual_edits:
+        final_parsed["skills"] = copy.deepcopy(manual_edits["skills"])
+    if manual_edits:
+        final_text = render_text_from_structured(final_parsed)
+
+    manual_conflicts = []
+    for change in changes_list:
+        if change.get("status") == ChangeStatus.APPROVED.value:
+            continue
+        section = str(change.get("section") or "").upper()
+        change_type = change.get("change_type")
+        proposed = str(change.get("proposed") or "").strip()
+        if not proposed:
+            continue
+        if section == "SUMMARY" and manual_edits.get("summary", object()) == proposed:
+            manual_conflicts.append(change.get("change_id", "summary change"))
+        elif change_type == ChangeType.KEYWORD_INJECTION.value:
+            manual_skills = {str(skill).strip().casefold() for skill in manual_edits.get("skills", [])}
+            if proposed.casefold() in manual_skills:
+                manual_conflicts.append(change.get("change_id", proposed))
+        elif change_type == ChangeType.SKILL_REORDER.value:
+            proposed_order = change.get("after_order") or []
+            if manual_edits.get("skills") == proposed_order:
+                manual_conflicts.append(change.get("change_id", "skill reorder"))
 
     # Apply approved text replacements to final_text if master_raw_text exists
     if final_text and changes_list:
@@ -880,11 +957,17 @@ async def finalize_tailoring(
     strategy_info = version.get("resume_strategy", {}) if isinstance(version.get("resume_strategy"), dict) else {}
     page_budget = strategy_info.get("page_budget", 1)
     template_variant = strategy_info.get("template_variant", "modern")
+    if strategy_info.get("section_order"):
+        final_parsed["_strategy"] = copy.deepcopy(strategy_info)
+        final_parsed["_ordered_sections"] = list(strategy_info["section_order"])
 
     candidate_name = final_parsed.get("personal", {}).get("name") or "Candidate"
     job = await jobs_repo.get_job_by_id(db, version.get("job_id", ""))
     job_jd = job.get("jd_text", "") if job else ""
     required_tech = list(extract_technical_terms(job_jd))
+
+    source_validation_profile = build_tailoring_validation_profile(master_parsed)
+    pre_fit_validation_profile = build_tailoring_validation_profile(final_parsed)
 
     final_parsed, fits_budget, page_count = measure_and_enforce_one_page_fit(
         final_parsed,
@@ -893,6 +976,129 @@ async def finalize_tailoring(
         max_pages=page_budget,
         required_skills=required_tech,
     )
+    if manual_edits:
+        final_text = render_text_from_structured(final_parsed)
+
+    final_validation_profile = build_tailoring_validation_profile(final_parsed)
+    source_evidence_ids = {ev.id for ev in source_validation_profile.evidence_units}
+    pre_fit_evidence_ids = {ev.id for ev in pre_fit_validation_profile.evidence_units}
+    final_evidence_ids = {ev.id for ev in final_validation_profile.evidence_units}
+    trimmed_evidence_ids = (source_evidence_ids & pre_fit_evidence_ids) - final_evidence_ids
+
+    from types import SimpleNamespace
+    from app.modules.resume.models import TailoringAction, TailoringDecision
+
+    trim_decisions = [
+        TailoringDecision(
+            evidence_id=evidence_id,
+            action=TailoringAction.REMOVE,
+            reason="Omitted by the existing deterministic page-budget fit step.",
+        )
+        for evidence_id in sorted(trimmed_evidence_ids)
+    ]
+    validation_plan = SimpleNamespace(evidence_decisions=trim_decisions, changes=changes_list)
+
+    _, truth_guard_report = validate_tailored_profile_truth_guard(
+        source_validation_profile,
+        final_validation_profile,
+        tailoring_plan=validation_plan,
+        auto_revert=False,
+    )
+    final_resume_valid, final_resume_errors = validate_final_tailored_resume(
+        master_parsed,
+        final_parsed,
+        candidate_profile=source_validation_profile,
+    )
+
+    # This ledger currently covers delivery bullets only. Other final facts
+    # are checked by the profile Truth Guard and final-resume validator.
+    body_evidence_profile = source_validation_profile.model_copy(update={
+        "evidence_units": [
+            ev for ev in source_validation_profile.evidence_units
+            if ev.section.upper() in {"EXPERIENCE", "PROJECTS"}
+        ]
+    })
+    evidence_ledger = validate_source_evidence_ledger(
+        body_evidence_profile,
+        final_parsed,
+        tailoring_plan=validation_plan,
+    )
+
+    whole_document_errors = list(final_resume_errors) + list(truth_guard_report.violations)
+    if manual_conflicts:
+        whole_document_errors.append(
+            "Manual edits repeat changes that are not approved: "
+            + ", ".join(str(change_id) for change_id in manual_conflicts)
+        )
+    manual_audit = version.get("truth_guard_audit") or {}
+    if version.get("user_modified") and manual_audit.get("is_valid") is False:
+        whole_document_errors.extend(
+            str(error) for error in (manual_audit.get("violations") or [])
+        )
+        if not manual_audit.get("violations"):
+            whole_document_errors.append("Saved manual edits failed Truth Guard validation.")
+    approved_changes_with_warnings = [
+        str(change.get("change_id", "unknown"))
+        for change in changes_list
+        if change.get("status") == ChangeStatus.APPROVED.value
+        and change.get("fabrication_warning")
+    ]
+    if approved_changes_with_warnings:
+        whole_document_errors.append(
+            "Approved changes still carry unresolved Truth Guard warnings: "
+            + ", ".join(approved_changes_with_warnings)
+        )
+    if evidence_ledger.accidental_loss_count:
+        whole_document_errors.append(
+            f"Source evidence ledger found {evidence_ledger.accidental_loss_count} unaccounted experience/project claims."
+        )
+    whole_document_errors.extend(evidence_ledger.fragment_violations)
+    whole_document_errors = list(dict.fromkeys(whole_document_errors))
+    whole_document_valid = (
+        final_resume_valid
+        and truth_guard_report.is_valid
+        and evidence_ledger.is_valid
+        and not approved_changes_with_warnings
+        and not whole_document_errors
+    )
+    truth_guard_audit = {
+        **truth_guard_report.model_dump(mode="json"),
+        "is_valid": whole_document_valid,
+        "violations": whole_document_errors,
+        "final_resume_errors": final_resume_errors,
+        "source_evidence_ledger": evidence_ledger.model_dump(mode="json"),
+        "whole_document_errors": whole_document_errors,
+    }
+
+    if not whole_document_valid:
+        failed_summary = {
+            "protected_sections_intact": not any(
+                "protected" in error.lower()
+                or "education" in error.lower()
+                or "contact" in error.lower()
+                or "employment companies" in error.lower()
+                or "project titles" in error.lower()
+                for error in whole_document_errors
+            ),
+            "anti_fabrication_passed": False,
+            "whole_document_truth_guard_passed": False,
+            "one_page_fit": fits_budget,
+            "page_count": page_count,
+            "page_budget": page_budget,
+            "all_checks_passed": False,
+            "errors": whole_document_errors,
+        }
+        await repo.record_validation_failure(
+            db,
+            user_id,
+            version_id,
+            validation_summary=failed_summary,
+            truth_guard_audit=truth_guard_audit,
+        )
+        raise TailoredResumeValidationError(
+            "Final tailored resume failed whole-document Truth Guard validation: "
+            + "; ".join(whole_document_errors[:5])
+        )
 
     # 3. 4-Pillar Quality Audit
     parseability = analyze_parseability(final_text, blocks=[], file_type="docx", has_tables=False)
@@ -1009,21 +1215,26 @@ async def finalize_tailoring(
     }
 
     # 6. Whole-Document 4-Point Validation Dashboard
-    has_unconfirmed_fabrication = any(
-        c.get("fabrication_warning") for c in changes_list if c.get("status") == ChangeStatus.APPROVED.value
-    )
+    has_unconfirmed_fabrication = bool(approved_changes_with_warnings)
     score_improved = (tailored_ats.overall >= master_ats.overall) if master_ats else True
-    all_passed = prot_ok and fits_budget and (not has_unconfirmed_fabrication) and (score_warning is None)
+    anti_fabrication_passed = whole_document_valid and not has_unconfirmed_fabrication
+    all_passed = (
+        prot_ok
+        and fits_budget
+        and anti_fabrication_passed
+        and score_warning is None
+    )
 
     validation_summary = {
         "protected_sections_intact": prot_ok,
-        "anti_fabrication_passed": not has_unconfirmed_fabrication,
+        "anti_fabrication_passed": anti_fabrication_passed,
+        "whole_document_truth_guard_passed": whole_document_valid,
         "one_page_fit": fits_budget,
         "page_count": page_count,
         "page_budget": page_budget,
         "score_improvement": score_improved,
         "all_checks_passed": all_passed,
-        "errors": prot_errors,
+        "errors": list(dict.fromkeys(prot_errors + whole_document_errors)),
     }
 
     from app.modules.intelligence.ats_readability_validator import evaluate_ats_and_readability
@@ -1040,6 +1251,7 @@ async def finalize_tailoring(
         changes=changes_list,
         tailored_scores=tailored_scores,
         validation_summary=validation_summary,
+        truth_guard_audit=truth_guard_audit,
         one_page_fit=fits_budget,
         ats_readability_findings=final_ats_findings,
     ) or version
@@ -1156,9 +1368,18 @@ async def update_parsed_resume(
     if version is None:
         raise VersionNotFoundError(f"Version {version_id} not found.")
 
-    resume = await resume_repo.get_active_master_resume(db, user_id)
-    master_parsed = (resume.get("parsed") or {}) if resume else {}
-    master_raw_text = (resume.get("raw_text") or "") if resume else ""
+    resume = await resume_repo.get_master_resume_version(
+        db,
+        user_id,
+        version.get("master_resume_id"),
+        version.get("master_resume_version"),
+    )
+    if not resume:
+        raise NoMasterResumeError(
+            "The master resume version used to generate this tailored version is unavailable."
+        )
+    master_parsed = resume.get("parsed") or {}
+    master_raw_text = resume.get("raw_text") or ""
 
     from app.modules.resume.models import CandidateProfile
     from app.modules.intelligence.ats_readability_validator import evaluate_ats_and_readability
@@ -1186,6 +1407,17 @@ async def update_parsed_resume(
     ats_audit = evaluate_ats_and_readability(parsed, master_data=master_parsed)
     ats_findings_dict = ats_audit.model_dump(mode="json")
 
+    manual_edits: dict[str, Any] = {}
+    master_summary = master_parsed.get("summary") or ""
+    submitted_summary = parsed.get("summary") or ""
+    if submitted_summary != master_summary:
+        manual_edits["summary"] = submitted_summary
+
+    master_skills = master_parsed.get("skills") or []
+    submitted_skills = parsed.get("skills") or []
+    if submitted_skills != master_skills:
+        manual_edits["skills"] = copy.deepcopy(submitted_skills)
+
     updated = await repo.update_parsed_resume(
         db,
         user_id,
@@ -1195,6 +1427,7 @@ async def update_parsed_resume(
         truth_guard_audit=truth_guard_audit_dict,
         ats_readability_findings=ats_findings_dict,
         verification_status=verification_status,
+        manual_edits=manual_edits,
     )
     if updated is None:
         raise VersionNotFoundError(f"Version {version_id} not found.")

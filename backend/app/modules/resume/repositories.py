@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.mongo import Collections
@@ -57,6 +58,26 @@ async def create_master_resume(
 
 async def get_active_master_resume(db: AsyncIOMotorDatabase, user_id: str) -> dict | None:
     return await db[Collections.MASTER_RESUMES].find_one({"user_id": user_id, "is_active": True})
+
+
+async def get_master_resume_version(
+    db: AsyncIOMotorDatabase,
+    user_id: str,
+    master_resume_id: str | None,
+    version: int | None,
+) -> dict | None:
+    """Fetch the exact user-owned master resume recorded on a tailored version."""
+    if not master_resume_id or version is None:
+        return None
+    try:
+        resume_oid = ObjectId(master_resume_id)
+    except Exception:
+        return None
+    return await db[Collections.MASTER_RESUMES].find_one({
+        "_id": resume_oid,
+        "user_id": user_id,
+        "version": version,
+    })
 
 
 # --- Achievement Journal (Feature 18) ---

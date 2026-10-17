@@ -143,7 +143,7 @@ export function TailorReview() {
   const effectiveVersionId = routeVersionId || versionQuery || null;
   const effectiveJobId = jobId || searchParams.get("jobId") || null;
 
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("modern");
+  const [templateSelection, setTemplateSelection] = useState<{ versionId: string; template: string } | null>(null);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(effectiveVersionId);
@@ -209,6 +209,9 @@ export function TailorReview() {
     queryFn: () => getTailoredVersion(activeVersionId!),
     enabled: !!activeVersionId,
   });
+  const selectedTemplate = templateSelection?.versionId === activeVersionId
+    ? templateSelection.template
+    : version?.resume_strategy?.template_variant || "modern";
 
   // Synchronize local editable resume state
   useEffect(() => {
@@ -420,7 +423,7 @@ export function TailorReview() {
   const evidenceBadge = getEvidenceBadge(version);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6 bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:py-8">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-5 bg-slate-50 px-4 py-3 text-slate-900 dark:bg-slate-950 dark:text-slate-100 sm:px-6 sm:py-4">
       {/* 1. Header Banner & Disclaimers */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 sm:p-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-lg dark:shadow-slate-950/10">
         <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
@@ -909,7 +912,7 @@ export function TailorReview() {
           <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
             <div>
               <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100">10. Final Editable Resume Preview</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Edit any section directly before final PDF/DOCX rendering.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Saved summary and skill edits are checked against your master resume and included when you finalize.</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1079,7 +1082,7 @@ export function TailorReview() {
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
-              onClick={() => setSelectedTemplate(t.id)}
+              onClick={() => activeVersionId && setTemplateSelection({ versionId: activeVersionId, template: t.id })}
               aria-pressed={selectedTemplate === t.id}
               className={`p-3.5 rounded-xl border text-left transition-all ${
                 selectedTemplate === t.id
@@ -1211,6 +1214,7 @@ export function TailorReview() {
           company={version.company}
           jobTitle={version.job_title}
           initialTemplate={selectedTemplate}
+          onTemplateChange={(template) => setTemplateSelection({ versionId: activeVersionId, template })}
         />
       )}
 
