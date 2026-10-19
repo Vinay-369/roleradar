@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status as http_status
+import logging
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import Settings, get_settings
@@ -6,11 +7,85 @@ from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import services as jobs_services
 from app.modules.matching import services as matching_services
-from app.modules.matching.schemas import JobMatchOut
+from app.modules.matching.schemas import JobMatchLookupOut, JobMatchOut
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
 
 router = APIRouter()
+logger = logging.getLogger("roleradar.matching")
+
+
+@router.get("/job/{job_id}", response_model=JobMatchLookupOut)
+async def match_single_job(
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """Compute or retrieve the signed-in user's match for one opportunity."""
+    user_id = str(current_user["_id"])
+    job = await jobs_services.get_job(db, job_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    resume = await resume_repo.get_active_master_resume(db, user_id)
+    if resume is None:
+        return JobMatchLookupOut(
+            status="RESUME_REQUIRED",
+            message="Upload a readable master resume to calculate technical alignment and compatibility.",
+        )
+
+    raw_text = str(resume.get("raw_text") or "")
+    parsed = resume.get("parsed")
+    if not raw_text.strip() and not (isinstance(parsed, dict) and any(parsed.values())):
+        return JobMatchLookupOut(
+            status="RESUME_UNREADABLE",
+            resume_version=resume.get("version"),
+            message="The active master resume has no readable text or parsed evidence. Re-upload a readable PDF or DOCX.",
+        )
+
+    try:
+        requirements = await jobs_services.get_canonical_job_requirements(db, job)
+        if requirements:
+            job["structured_requirements"] = requirements.model_dump(mode="json")
+            extracted_skills = list(dict.fromkeys(requirements.must_have_skills or requirements.required_skills))
+            job["skills_required"] = extracted_skills if extracted_skills else list(job.get("skills_required") or [])
+            job["skills_nice_to_have"] = list(dict.fromkeys(requirements.preferred_skills))
+
+        profile = await profile_repo.get_profile(db, user_id) or {
+            "target_roles": [],
+            "experience_years": 0,
+            "preferred_locations": [],
+            "remote_preference": "any",
+            "min_lpa": None,
+            "min_stipend": None,
+            "category": "FRESHER",
+        }
+        matches = await matching_services.get_or_compute_matches(
+            db, user_id, resume, profile, [job], settings
+        )
+    except Exception as exc:
+        import logging
+
+        logging.getLogger("roleradar.matching").exception(
+            "Single-job match computation failed (%s)", type(exc).__name__
+        )
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Matching is temporarily unavailable. Opportunity details are still available; please retry.",
+        ) from exc
+
+    if not matches:
+        return JobMatchLookupOut(
+            status="UNAVAILABLE",
+            resume_version=resume.get("version"),
+            message="A match could not be calculated from the active resume. Check the resume parse results and retry.",
+        )
+    return JobMatchLookupOut(
+        status="READY",
+        match=JobMatchOut(**matches[0]),
+        resume_version=resume.get("version"),
+    )
 
 
 def _sort_matches_by_score(matches: list[dict]) -> list[dict]:
@@ -245,3 +320,72 @@ async def recommended_matches(
             **matching_services._get_role_metadata(j),
         ))
     return results
+
+
+@router.get("/job/{job_id}", response_model=JobMatchLookupOut)
+async def match_single_job(
+    job_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+):
+    """Compute or retrieve the signed-in user's match for one opportunity."""
+    user_id = str(current_user["_id"])
+    job = await jobs_services.get_job(db, job_id, user_id=user_id)
+    if job is None:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    resume = await resume_repo.get_active_master_resume(db, user_id)
+    if resume is None:
+        return JobMatchLookupOut(
+            status="RESUME_REQUIRED",
+            message="Upload a readable master resume to calculate technical alignment and compatibility.",
+        )
+
+    raw_text = str(resume.get("raw_text") or "")
+    parsed = resume.get("parsed")
+    if not raw_text.strip() and not (isinstance(parsed, dict) and any(parsed.values())):
+        return JobMatchLookupOut(
+            status="RESUME_UNREADABLE",
+            resume_version=resume.get("version"),
+            message="The active master resume has no readable text or parsed evidence. Re-upload a readable PDF or DOCX.",
+        )
+
+    try:
+        requirements = await jobs_services.get_canonical_job_requirements(db, job)
+        if requirements:
+            job["structured_requirements"] = requirements.model_dump(mode="json")
+            extracted_skills = list(dict.fromkeys(requirements.must_have_skills or requirements.required_skills))
+            job["skills_required"] = extracted_skills if extracted_skills else list(job.get("skills_required") or [])
+            job["skills_nice_to_have"] = list(dict.fromkeys(requirements.preferred_skills))
+
+        profile = await profile_repo.get_profile(db, user_id) or {
+            "target_roles": [],
+            "experience_years": 0,
+            "preferred_locations": [],
+            "remote_preference": "any",
+            "min_lpa": None,
+            "min_stipend": None,
+            "category": "FRESHER",
+        }
+        matches = await matching_services.get_or_compute_matches(
+            db, user_id, resume, profile, [job], settings
+        )
+    except Exception as exc:
+        logger.exception("Single-job match computation failed (%s)", type(exc).__name__)
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Matching is temporarily unavailable. Opportunity details are still available; please retry.",
+        ) from exc
+
+    if not matches:
+        return JobMatchLookupOut(
+            status="UNAVAILABLE",
+            resume_version=resume.get("version"),
+            message="A match could not be calculated from the active resume. Check the resume parse results and retry.",
+        )
+    return JobMatchLookupOut(
+        status="READY",
+        match=JobMatchOut(**matches[0]),
+        resume_version=resume.get("version"),
+    )
