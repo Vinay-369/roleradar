@@ -96,6 +96,39 @@ def extract_technical_terms(text: str) -> set[str]:
     return found
 
 
+def detect_entity_technology_violations(proposed_text: str, source_entity_text: str) -> list[str]:
+    proposed_terms = extract_technical_terms(proposed_text)
+    source_terms = extract_technical_terms(source_entity_text)
+    return sorted(proposed_terms - source_terms)
+
+
+_SUMMARY_EXPERIENCE_QUALIFIER_RE = re.compile(
+    r"\b(?:solid|extensive|substantial|significant|proven|deep|broad)\s+(?:professional\s+)?experience\b",
+    re.IGNORECASE,
+)
+_SUMMARY_SCOPE_CLAIM_RE = re.compile(
+    r"\b(?:tooling|pipelines?|platforms?|infrastructure|architecture|production)\b",
+    re.IGNORECASE,
+)
+
+
+def detect_unsupported_summary_claims(
+    proposed_summary: str, source_resume_text: str
+) -> list[str]:
+    """Flag summary scope/experience claims whose wording is absent from source evidence."""
+    source_normalized = " ".join(source_resume_text.casefold().split())
+    violations: list[str] = []
+    for match in _SUMMARY_EXPERIENCE_QUALIFIER_RE.finditer(proposed_summary):
+        claim = " ".join(match.group(0).casefold().split())
+        if claim not in source_normalized:
+            violations.append(f"Experience-strength claim ({match.group(0)}) is not present in source evidence")
+    for match in _SUMMARY_SCOPE_CLAIM_RE.finditer(proposed_summary):
+        claim = match.group(0).casefold()
+        if not re.search(rf"\b{re.escape(claim)}\b", source_normalized):
+            violations.append(f"Summary scope claim ({match.group(0)}) is not present in source evidence")
+    return sorted(set(violations))
+
+
 def detect_fabricated_claims(
     original: str, proposed: str, jd_text: str, candidate_skills: list[str]
 ) -> list[str]:
@@ -268,9 +301,7 @@ def detect_unsupported_action_verbs_and_scope(original: str, proposed: str) -> l
     # 4. Architecture escalation
     for v in ARCHITECTURE_VERBS:
         if v in prop_words and not any(k in orig_lower for k in [
-            "architect", "design", "system", "infrastruct", "framework",
-            "pipeline", "engine", "api", "backend", "service", "app",
-            "parser", "database", "platform", "microservice", "distributed"
+            "architect", "design", "system architecture", "infrastruct", "framework"
         ]):
             violations.append(f"Architecture claim ({v}) introduced without source evidence")
 
@@ -820,6 +851,9 @@ def build_tailoring_validation_profile(parsed_resume: dict) -> Any:
     if "projects_raw" in data:
         data.pop("projects", None)
         data.pop("projects_entities", None)
+    if "internships_raw" in data:
+        data.pop("internships", None)
+        data.pop("internships_entities", None)
     data.pop("evidence_units", None)
     return CandidateProfile.from_parsed_dict(data)
 
@@ -903,6 +937,10 @@ def validate_source_evidence_ledger(
     accidental_loss = 0
     ledger_entries = []
     fragment_violations = []
+    # Baseline source text per final bullet, so the structural scan can tell a
+    # bullet that actually lost its leading verb from a source bullet that
+    # never had one.
+    bullet_baselines: dict[str, str] = {}
 
     for idx, ev in enumerate(evidence_units):
         orig_text = ev.original_text if hasattr(ev, "original_text") else str(ev)
@@ -917,7 +955,9 @@ def validate_source_evidence_ledger(
             clean_fb = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", fb).strip()
             if clean_orig and (clean_orig in clean_fb or clean_fb in clean_orig):
                 matched_final = fb
+                bullet_baselines[fb] = clean_orig
                 break
+
 
         action = "PRESERVE"
         reason = None
@@ -949,6 +989,11 @@ def validate_source_evidence_ledger(
                 proposed = " ".join(str(get_value("proposed", "")).lower().split())
                 if proposed and proposed in final_body_norm:
                     matched_final = str(get_value("proposed", ""))
+                    for fb in final_bullets:
+                        clean_fb = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", fb).strip()
+                        if proposed and proposed in " ".join(clean_fb.lower().split()):
+                            bullet_baselines[fb] = clean_orig
+                            break
                     break
 
         if matched_final:
@@ -1019,7 +1064,12 @@ def validate_source_evidence_ledger(
 
     # Validate final bullets for structural fragments
     for fb in final_bullets:
-        frags = detect_sentence_fragments_and_truncation("", fb)
+        # Use the matched source bullet as the baseline when one exists, so a
+        # bullet that never carried a leading verb in the source resume is not
+        # reported as having "lost" one. Bullets without a source baseline are
+        # still checked against the empty baseline.
+        baseline = bullet_baselines.get(fb, "")
+        frags = detect_sentence_fragments_and_truncation(baseline, fb)
         if frags:
             fragment_violations.extend([f'"{fb[:40]}...": {f}' for f in frags])
 
@@ -1214,6 +1264,46 @@ def validate_tailored_profile_truth_guard(
                 unsupported_technologies.extend(unsupported_tech)
                 violations.append(f"EvidenceUnit '{t_id}' contains ungrounded technologies: {', '.join(unsupported_tech)}")
                 unit_has_violation = True
+
+            source_entity_id = getattr(s_ev, "entity_id", "") or ""
+            source_section = (getattr(s_ev, "section", "") or "").upper()
+            entity_collection = {
+                "PROJECTS": "projects",
+                "EXPERIENCE": "experience",
+                "INTERNSHIPS": "internships",
+            }.get(source_section)
+            source_entity = next(
+                (
+                    entity for entity in getattr(source_profile, entity_collection, [])
+                    if getattr(entity, "id", "") == source_entity_id
+                ),
+                None,
+            ) if entity_collection else None
+            if source_entity:
+                source_entity_values = [
+                    getattr(source_entity, "title", ""),
+                    getattr(source_entity, "company", ""),
+                    getattr(source_entity, "role", ""),
+                    getattr(source_entity, "tech_stack", ""),
+                    getattr(source_entity, "location", ""),
+                    getattr(source_entity, "dates", ""),
+                ]
+                source_entity_values.extend(getattr(source_entity, "technologies", []) or [])
+                source_entity_values.extend(getattr(source_entity, "bullets", []) or [])
+                for progression in getattr(source_entity, "progression", []) or []:
+                    source_entity_values.append(getattr(progression, "title", ""))
+                    source_entity_values.extend(getattr(progression, "bullets", []) or [])
+                source_entity_text = " ".join(str(value) for value in source_entity_values if value)
+                entity_tech_violations = detect_entity_technology_violations(
+                    prop_text, source_entity_text
+                )
+                if entity_tech_violations:
+                    unsupported_technologies.extend(entity_tech_violations)
+                    violations.append(
+                        f"EvidenceUnit '{t_id}' introduces technologies not evidenced for its resume entity: "
+                        f"{', '.join(entity_tech_violations)}"
+                    )
+                    unit_has_violation = True
 
             # b. Metric Alteration / Inflation Check (e.g. 50% -> 60%)
             unsupported_mets = detect_unsupported_metrics(norm_orig, prop_text)
