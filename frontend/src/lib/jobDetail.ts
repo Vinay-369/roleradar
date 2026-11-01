@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import type { JobMatch } from "./jobs";
 
 export type JobDetail = {
   id: string;
@@ -8,8 +9,11 @@ export type JobDetail = {
   company_description?: string | null;
   industry: string;
   description: string;
+  jd_evidence_status?: "COMPLETE" | "INCOMPLETE" | string;
+  jd_evidence_source?: string | null;
   skills_required: string[];
   skills_nice_to_have: string[];
+  inferred_skills?: string[];
   experience_min: number | null;
   experience_max: number | null;
   experience_text?: string | null;
@@ -34,6 +38,7 @@ export type JobDetail = {
   fresher_friendly: boolean;
   posted_days_ago: number;
   apply_url: string;
+  source_url?: string | null;
   responsibilities: string[];
   qualifications?: string[];
   eligibility_text?: string | null;
@@ -61,6 +66,7 @@ export type JobDetail = {
   } | null;
   match?: {
     overall_score: number;
+    skill_score?: number | null;
     skills_score?: number;
     experience_score?: number;
     matched_skills?: string[];
@@ -72,13 +78,27 @@ export type JobDetail = {
   fresher_eligible?: boolean;
   completeness_status?: string | null;
   recommendation_quality?: string | null;
+  missing_required_information?: string[];
+  available_information?: string[];
   seniority?: string | null;
   registration_closing_date?: string | null;
   application_deadline?: string | null;
   end_date?: string | null;
 };
 
+export type JobMatchLookup = {
+  status: "READY" | "RESUME_REQUIRED" | "RESUME_UNREADABLE" | "UNAVAILABLE";
+  match: JobMatch | null;
+  resume_version: number | null;
+  message: string | null;
+};
+
 export async function getJobDetail(jobId: string): Promise<JobDetail> {
   const res = await apiClient.get<JobDetail>(`/jobs/${jobId}`);
+  return res.data;
+}
+
+export async function getJobMatch(jobId: string): Promise<JobMatchLookup> {
+  const res = await apiClient.get<JobMatchLookup>(`/matches/job/${jobId}`);
   return res.data;
 }

@@ -7,6 +7,9 @@ from app.modules.profile.schemas import OnboardingRequest
 
 async def complete_onboarding(db: AsyncIOMotorDatabase, user_id: str, body: OnboardingRequest) -> dict:
     profile = await repo.upsert_profile(db, user_id, body.model_dump(mode="json"))
+    from app.modules.matching import repositories as matching_repo
+
+    await matching_repo.invalidate_user_matches(db, user_id)
     await db[Collections.USERS].update_one(
         {"_id": _as_object_id(user_id)}, {"$set": {"onboarding_completed": True}}
     )

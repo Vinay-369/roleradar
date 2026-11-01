@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     ENV: str = "development"
     DEBUG: bool = True
     API_PREFIX: str = "/api"
+    LOG_LEVEL: str = "INFO"
 
     # --- CORS ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
@@ -37,6 +38,10 @@ class Settings(BaseSettings):
     # --- Database ---
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB_NAME: str = "roleradar"
+    MONGO_SERVER_SELECTION_TIMEOUT_MS: int = 5_000
+    MONGO_CONNECT_TIMEOUT_MS: int = 5_000
+    MONGO_MAX_POOL_SIZE: int = 100
+    MONGO_MIN_POOL_SIZE: int = 0
 
     # --- File storage ---
     UPLOAD_DIR: str = "./storage/uploads"
@@ -69,6 +74,9 @@ class Settings(BaseSettings):
     #   external config, matches the originally tested/demoed behavior).
     # "hybrid": also fetches real listings from Adzuna and merges them in.
     JOB_SOURCE_MODE: str = "direct_ats"
+    JOB_REFRESH_TIMEOUT_SECONDS: float = 75.0
+    JOB_PROVIDER_SYNC_TIMEOUT_SECONDS: float = 25.0
+    JOB_PROVIDER_BOARD_CONCURRENCY: int = 8
     GREENHOUSE_ENABLED: bool = True
     GREENHOUSE_COMPANIES: str = ""
     GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
@@ -78,6 +86,9 @@ class Settings(BaseSettings):
     SMARTRECRUITERS_ENABLED: bool = True
     SMARTRECRUITERS_COMPANIES: str = ""
     SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS: int = 15
+    SMARTRECRUITERS_DETAIL_ENRICHMENT_LIMIT: int = 100
+    SMARTRECRUITERS_DETAIL_REQUEST_INTERVAL_SECONDS: float = 0.2
+    SMARTRECRUITERS_DETAIL_REQUEST_TIMEOUT_SECONDS: float = 5.0
     SMARTRECRUITERS_COUNTRY: str = "in"
     ASHBY_ENABLED: bool = True
     ASHBY_COMPANIES: str = ""
@@ -104,6 +115,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
+        if self.MONGO_SERVER_SELECTION_TIMEOUT_MS <= 0 or self.MONGO_CONNECT_TIMEOUT_MS <= 0:
+            raise ValueError("MongoDB timeout settings must be greater than zero.")
+        if self.MONGO_MAX_POOL_SIZE < 1 or self.MONGO_MIN_POOL_SIZE < 0:
+            raise ValueError("MongoDB pool settings are invalid.")
+        if self.MONGO_MIN_POOL_SIZE > self.MONGO_MAX_POOL_SIZE:
+            raise ValueError("MONGO_MIN_POOL_SIZE cannot exceed MONGO_MAX_POOL_SIZE.")
+        if self.MAX_UPLOAD_MB < 1:
+            raise ValueError("MAX_UPLOAD_MB must be at least 1.")
         if self.ENV.lower() == "production":
             insecure_defaults = {
                 "change-me-in-env",
@@ -113,7 +132,7 @@ class Settings(BaseSettings):
                 "",
             }
             raw_secret = (self.JWT_SECRET or "").strip()
-            if not raw_secret or raw_secret in insecure_defaults or len(raw_secret) < 16:
+            if not raw_secret or raw_secret in insecure_defaults or len(raw_secret) < 32:
                 raise ValueError(
                     "Production configuration error: A strong, non-default JWT_SECRET "
                     "environment variable must be configured when ENV=production."

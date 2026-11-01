@@ -45,6 +45,7 @@ export type JobMatch = {
   partial_skills: string[];
   missing_skills: string[];
   skills_required?: string[];
+  inferred_skills?: string[];
   apply_readiness?: "ready" | "fix_gaps" | "learn_first" | null;
   job_type: string;
   source: string;
@@ -99,8 +100,10 @@ export type JobMatch = {
   canonical_role_key?: string | null;
   role_domain?: string | null;
   contextual_requirements?: string[];
-  completeness_status?: string | null;
   quality_tier?: "PRIMARY" | "SECONDARY" | string | null;
+  completeness_status?: string | null;
+  missing_required_information?: string[];
+  available_information?: string[];
   role_confidence?: string | null;
   recommendation_quality?: string | null;
   seniority?: string | null;
@@ -161,8 +164,30 @@ export type RecommendedMatchesResult = {
   total: number;
 };
 
-export async function syncLiveJobs(): Promise<{ status: string; added_count: number }> {
-  const res = await apiClient.post<{ status: string; added_count: number }>("/jobs/sync");
+export type LiveProviderSync = {
+  provider: string;
+  status: "success" | "partial" | "failed" | "timed_out" | "not_configured" | string;
+  total_boards: number;
+  fetched: number;
+  verified_active: number;
+  unique_requisitions: number;
+  errors: string[];
+  results?: Array<{ board: string; status: string; errors?: string[] }>;
+};
+
+export type LiveSyncReport = {
+  status: "success" | "partial" | "failed" | "not_configured" | string;
+  added_count: number;
+  unique_requisitions: number;
+  errors: string[];
+  detail_enriched: number;
+  detail_enrichment_failed: number;
+  detail_enrichment_skipped: number;
+  providers: LiveProviderSync[];
+};
+
+export async function syncLiveJobs(): Promise<LiveSyncReport> {
+  const res = await apiClient.post<LiveSyncReport>("/jobs/sync", undefined, { timeout: 85_000 });
   return res.data;
 }
 

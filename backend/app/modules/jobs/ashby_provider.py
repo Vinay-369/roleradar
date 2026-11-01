@@ -13,6 +13,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 import html
 import logging
@@ -117,12 +118,15 @@ class AshbyJobProvider:
                 resp = await client.get(url, headers=headers)
                 if resp.status_code == 404:
                     logger.warning(f"Ashby board '{clean_token}' returned 404 Not Found.")
-                    return []
+                    raise ValueError(f"Configured Ashby board was not found (HTTP 404): {clean_token}")
                 resp.raise_for_status()
-                data = resp.json()
+                data = await asyncio.to_thread(resp.json)
                 if not isinstance(data, dict):
-                    return []
-                return data.get("jobs", [])
+                    raise ValueError("Malformed Ashby response: expected an object.")
+                jobs = data.get("jobs")
+                if not isinstance(jobs, list):
+                    raise ValueError("Malformed Ashby response: jobs must be an array.")
+                return jobs
         except httpx.TimeoutException as exc:
             logger.error(f"Timeout fetching Ashby board '{clean_token}': {exc}")
             raise AshbyNetworkError(f"Timeout connecting to Ashby board '{clean_token}'") from exc
@@ -291,7 +295,7 @@ class AshbyJobProvider:
             description=clean_desc,
             experience_min=0 if is_intern else None,
             experience_max=2 if is_intern else None,
-            job_type_hint="internship" if is_intern else "",
+            job_type_hint=job_type,
         )
 
         # Requirements analysis & Skill extraction
@@ -422,6 +426,7 @@ class AshbyJobProvider:
             "board": clean_token,
             "fetched": 0,
             "verified_active": 0,
+            "unique_requisitions": 0,
             "closed": 0,
             "retained": 0,
             "internships": 0,
@@ -450,7 +455,13 @@ class AshbyJobProvider:
                 continue
             current_job_ids.add(jid)
 
-            job_doc = self.normalize_ashby_job(item, clean_token, company_name=company_name, now=now)
+            job_doc = await asyncio.to_thread(
+                self.normalize_ashby_job,
+                item,
+                clean_token,
+                company_name=company_name,
+                now=now,
+            )
 
             # Check if direct requisition and active
             if (
@@ -494,6 +505,7 @@ class AshbyJobProvider:
         # Step 3: Upsert active openings into MongoDB with first_seen_at preservation
         if active_normalized:
             deduped = deduplicate_opportunities(active_normalized)
+            stats["unique_requisitions"] = len(deduped)
             for doc in deduped:
                 doc_to_save = dict(doc)
                 doc_id = doc_to_save.pop("id")

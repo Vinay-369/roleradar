@@ -13,6 +13,8 @@ that don't require network access:
 You must verify the actual live HTTP call works once you have real
 Adzuna credentials -- see the README.
 """
+import asyncio
+
 import httpx
 import pytest
 from mongomock_motor import AsyncMongoMockClient
@@ -79,8 +81,9 @@ def test_transform_maps_real_job_correctly(configured_settings):
     assert job["title"] == "Python Backend Developer"
     assert job["company"] == "Real Company Pvt Ltd"
     assert job["apply_url"] == "https://www.adzuna.in/land/ad/4567890123?se=abc123"
-    assert "Python" in job["skills_required"]
-    assert "FastAPI" in job["skills_required"] or "FastAPI" in job["skills_nice_to_have"]
+    assert job["skills_required"] == []
+    assert "Python" in job["inferred_skills"]
+    assert "FastAPI" in job["inferred_skills"]
     assert job["fresher_friendly"] is True
     assert job["job_type"] == "full_time"
     # Salary converted from raw INR to LPA.
@@ -110,7 +113,7 @@ def test_transform_extracts_salary_from_description_when_adzuna_has_no_salary(co
     assert job["salary_min"] == 8
     assert job["salary_max"] == 12
     assert job["salary_disclosed"] is True
-    assert job["compensation_text"] == "₹8.0–12.0 LPA"
+    assert job["compensation_text"] == "₹8–12 LPA"
 
 
 def test_transform_extracts_monthly_internship_stipend(configured_settings):
@@ -199,6 +202,169 @@ async def test_refresh_live_jobs_is_a_safe_noop_in_curated_only_mode(db):
 
 
 @pytest.mark.asyncio
+async def test_refresh_live_jobs_report_preserves_provider_and_detail_errors(db, monkeypatch):
+    settings = Settings(JOB_SOURCE_MODE="direct_ats")
+
+    async def board_result(*args, **kwargs):
+        return {
+            "total_boards": 1,
+            "verified_active": 2,
+            "errors": ["Provider request failed."],
+            "detail_enriched": 1,
+            "detail_enrichment_failed": 3,
+            "detail_enrichment_skipped": 4,
+            "results": [{"board": "sample", "status": "partial", "verified_active": 2, "errors": ["Provider request failed."]}],
+        }
+
+    for provider in ("ashby", "greenhouse", "lever", "smartrecruiters"):
+        monkeypatch.setattr(f"app.modules.jobs.services.sync_all_{provider}_boards", board_result)
+
+    report = await jobs_services.refresh_live_jobs(db, settings, {}, include_report=True)
+    assert report["added_count"] == 8
+    assert report["status"] == "partial"
+    assert len(report["providers"]) == 4
+    assert all(result["status"] == "partial" for result in report["providers"])
+    assert all("Provider" in error for error in report["errors"])
+    assert report["detail_enriched"] == 4
+    assert report["detail_enrichment_failed"] == 12
+    assert report["detail_enrichment_skipped"] == 16
+
+
+@pytest.mark.asyncio
+async def test_sync_configured_board_timeout_is_bounded_and_cancels_provider(db):
+    settings = Settings(
+        GREENHOUSE_COMPANIES="slow-board",
+        GREENHOUSE_ENABLED=True,
+        JOB_PROVIDER_SYNC_TIMEOUT_SECONDS=0.01,
+    )
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    class SlowProvider:
+        def __init__(self, settings):
+            pass
+
+        async def sync_company_openings(self, db, board, **kwargs):
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+
+    result = await jobs_services._sync_configured_boards(
+        db, settings, SlowProvider, "GREENHOUSE_COMPANIES", "GREENHOUSE_ENABLED"
+    )
+
+    assert started.is_set()
+    assert cancelled.is_set()
+    assert result["results"][0]["status"] == "failed"
+    assert result["results"][0]["errors"] == ["Board synchronization exceeded its time limit."]
+
+
+@pytest.mark.asyncio
+async def test_refresh_retains_successful_provider_results_when_another_provider_fails(db, monkeypatch):
+    settings = Settings(JOB_SOURCE_MODE="direct_ats", JOB_REFRESH_TIMEOUT_SECONDS=1)
+
+    async def successful(*args, **kwargs):
+        return {
+            "total_boards": 1,
+            "fetched": 3,
+            "verified_active": 2,
+            "unique_requisitions": 2,
+            "errors": [],
+            "results": [{"board": "ok-board", "status": "success", "verified_active": 2}],
+        }
+
+    async def failed(*args, **kwargs):
+        raise RuntimeError("provider secret details must not escape")
+
+    monkeypatch.setattr(jobs_services, "sync_all_ashby_boards", successful)
+    monkeypatch.setattr(jobs_services, "sync_all_greenhouse_boards", failed)
+    monkeypatch.setattr(jobs_services, "sync_all_lever_boards", successful)
+    monkeypatch.setattr(jobs_services, "sync_all_smartrecruiters_boards", successful)
+
+    report = await jobs_services.refresh_live_jobs(db, settings, {}, include_report=True)
+
+    assert report["status"] == "partial"
+    assert report["added_count"] == 6
+    assert next(p for p in report["providers"] if p["provider"] == "Greenhouse")["status"] == "failed"
+    assert any("Greenhouse" in error for error in report["errors"])
+    assert all("secret details" not in error for error in report["errors"])
+
+
+@pytest.mark.asyncio
+async def test_refresh_global_deadline_cancels_slow_provider_without_losing_completed_provider(db, monkeypatch):
+    settings = Settings(JOB_SOURCE_MODE="direct_ats", JOB_REFRESH_TIMEOUT_SECONDS=0.02)
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def slow(*args, **kwargs):
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    async def successful(*args, **kwargs):
+        return {
+            "total_boards": 1,
+            "fetched": 1,
+            "verified_active": 1,
+            "unique_requisitions": 1,
+            "errors": [],
+            "results": [{"board": "ok-board", "status": "success", "verified_active": 1}],
+        }
+
+    monkeypatch.setattr(jobs_services, "sync_all_ashby_boards", slow)
+    monkeypatch.setattr(jobs_services, "sync_all_greenhouse_boards", successful)
+    monkeypatch.setattr(jobs_services, "sync_all_lever_boards", successful)
+    monkeypatch.setattr(jobs_services, "sync_all_smartrecruiters_boards", successful)
+
+    report = await jobs_services.refresh_live_jobs(db, settings, {}, include_report=True)
+
+    assert started.is_set() and cancelled.is_set()
+    assert report["added_count"] == 3
+    assert report["status"] == "partial"
+    assert next(p for p in report["providers"] if p["provider"] == "Ashby")["status"] == "timed_out"
+
+
+@pytest.mark.asyncio
+async def test_concurrent_refresh_requests_share_one_provider_run(db, monkeypatch):
+    settings = Settings(JOB_SOURCE_MODE="direct_ats", JOB_REFRESH_TIMEOUT_SECONDS=1)
+    release = asyncio.Event()
+    started = asyncio.Event()
+    calls = {"count": 0}
+
+    async def shared(*args, **kwargs):
+        calls["count"] += 1
+        started.set()
+        await release.wait()
+        return {
+            "total_boards": 1,
+            "fetched": 1,
+            "verified_active": 0,
+            "unique_requisitions": 0,
+            "errors": [],
+            "results": [{"board": "empty-board", "status": "success", "verified_active": 0}],
+        }
+
+    for provider in ("ashby", "greenhouse", "lever", "smartrecruiters"):
+        monkeypatch.setattr(jobs_services, f"sync_all_{provider}_boards", shared)
+
+    first = asyncio.create_task(jobs_services.refresh_live_jobs(db, settings, {}, include_report=True))
+    await started.wait()
+    second = asyncio.create_task(jobs_services.refresh_live_jobs(db, settings, {}, include_report=True))
+    await asyncio.sleep(0)
+    release.set()
+    first_report, second_report = await asyncio.gather(first, second)
+
+    assert calls["count"] == 4
+    assert first_report == second_report
+
+
+@pytest.mark.asyncio
 async def test_refresh_live_jobs_is_a_safe_noop_when_hybrid_but_unconfigured(db):
     """hybrid mode without real credentials must degrade gracefully,
     not throw and break the jobs page."""
@@ -216,10 +382,8 @@ async def test_refresh_live_jobs_is_a_safe_noop_when_hybrid_but_unconfigured(db)
 
 
 @pytest.mark.asyncio
-async def test_upserted_live_jobs_appear_in_normal_curated_search(db):
-    """Once upserted, a live job must be discoverable through the exact
-    same search path as curated jobs -- proving downstream consumers
-    (matching, ATS, dashboard) need no special-case code for it."""
+async def test_aggregator_jobs_remain_outside_direct_ats_curated_search(db):
+    """Aggregator listings do not enter the strict direct-ATS discovery feed."""
     from app.modules.jobs import repositories as jobs_repo
     from app.modules.jobs.providers import CuratedJobProvider
 
@@ -232,7 +396,7 @@ async def test_upserted_live_jobs_appear_in_normal_curated_search(db):
 
     provider = CuratedJobProvider(db)
     results = await provider.search({})
-    assert any(j["id"] == "adzuna_4567890123" for j in results)
+    assert not any(j["id"] == "adzuna_4567890123" for j in results)
 
 
 @pytest.mark.asyncio

@@ -169,3 +169,55 @@ async def test_cache_invalidation(db, sample_candidate, sample_jobs):
     # Invalidate cache
     await matching_repo.invalidate_user_matches(db, user_id)
     assert await db[Collections.JOB_MATCHES].count_documents({"user_id": user_id}) == 0
+
+
+@pytest.mark.asyncio
+async def test_changed_job_requirements_recompute_cached_match(db, sample_candidate, sample_jobs, monkeypatch):
+    settings = Settings(EMBEDDING_PROVIDER="mock")
+    job = dict(sample_jobs[0])
+    await get_or_compute_matches(db, "user_changed_jd", sample_candidate["resume"], sample_candidate["profile"], [job], settings)
+
+    from app.modules.matching.engine import compute_match as real_compute_match
+    calls = 0
+
+    def counting_compute_match(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return real_compute_match(*args, **kwargs)
+
+    monkeypatch.setattr("app.modules.matching.services.compute_match", counting_compute_match)
+    job["skills_required"] = ["Python", "Kubernetes"]
+    job["description"] = "Requires Python and Kubernetes."
+    await get_or_compute_matches(db, "user_changed_jd", sample_candidate["resume"], sample_candidate["profile"], [job], settings)
+
+    assert calls == 1
+    cached = await db[Collections.JOB_MATCHES].find_one({"user_id": "user_changed_jd", "job_id": job["id"]})
+    assert cached["job_fingerprint"] == matching_repo.job_match_fingerprint(job)
+
+
+@pytest.mark.asyncio
+async def test_new_active_resume_version_does_not_reuse_previous_version_match(db, sample_candidate, sample_jobs, monkeypatch):
+    settings = Settings(EMBEDDING_PROVIDER="mock")
+    user_id = "user_resume_version_changed"
+    old_resume = {**sample_candidate["resume"], "version": 1}
+    await get_or_compute_matches(db, user_id, old_resume, sample_candidate["profile"], [sample_jobs[0]], settings)
+
+    computed = 0
+    from app.modules.matching.engine import compute_match as real_compute_match
+
+    def counting_compute_match(*args, **kwargs):
+        nonlocal computed
+        computed += 1
+        return real_compute_match(*args, **kwargs)
+
+    monkeypatch.setattr("app.modules.matching.services.compute_match", counting_compute_match)
+    new_resume = {
+        **sample_candidate["resume"],
+        "version": 2,
+        "parsed": {"skills": ["Python", "FastAPI", "Docker", "PostgreSQL", "Kubernetes"]},
+    }
+    await get_or_compute_matches(db, user_id, new_resume, sample_candidate["profile"], [sample_jobs[0]], settings)
+
+    assert computed == 1
+    cached = await db[Collections.JOB_MATCHES].find_one({"user_id": user_id, "job_id": sample_jobs[0]["id"]})
+    assert cached["resume_version"] == 2

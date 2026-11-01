@@ -35,6 +35,42 @@ STANDARD_ATS_HEADINGS: dict[str, str] = {
 }
 
 
+def _append_populated_sections(parsed_data: dict, section_order: list | tuple) -> list:
+    ordered = list(section_order)
+    aliases = {
+        "objective": "summary",
+        "technical skills": "skills",
+        "competencies": "skills",
+        "core competencies": "skills",
+        "work_experience": "experience",
+        "professional experience": "experience",
+        "projects": "projects",
+        "honors & awards": "achievements",
+        "awards": "achievements",
+        "publications & research": "publications",
+        "research experience": "research",
+    }
+    present = {aliases.get(str(section).lower(), str(section).lower()) for section in ordered}
+    fields = {
+        "summary": ("summary", "objective"),
+        "skills": ("skills_categorized", "skills"),
+        "experience": ("experience_raw", "experience", "work_experience"),
+        "internships": ("internships_raw", "internships"),
+        "projects": ("projects_raw", "projects"),
+        "education": ("education_raw", "education"),
+        "certifications": ("certifications", "certifications_raw", "certificates"),
+        "achievements": ("achievements", "achievements_raw", "awards"),
+        "publications": ("publications_raw", "publications"),
+        "research": ("research_raw", "research"),
+        "languages": ("languages", "languages_raw", "languages_known"),
+    }
+    for section, keys in fields.items():
+        if section not in present and any(parsed_data.get(key) for key in keys):
+            ordered.append(section)
+            present.add(section)
+    return ordered
+
+
 def _sanitize_text(text: str) -> str:
     """Normalizes Unicode dashes, spaces, and quotes to standard ASCII for perfect ATS parser extraction."""
     if not text:
@@ -240,6 +276,50 @@ def render_text_from_structured(parsed_data: dict) -> str:
                     lines.append(f"• {b_clean}")
             lines.append("")
 
+    internships = parsed_data.get("internships", []) or parsed_data.get("internships_raw", [])
+    if internships:
+        lines.append("INTERNSHIPS")
+        internship_entities = (
+            internships
+            if isinstance(internships, list) and internships and isinstance(internships[0], dict)
+            else parse_experience_section(internships)
+        )
+        for internship in internship_entities:
+            if isinstance(internship, str):
+                item = re.sub(r"^[•\-\*\s]+", "", internship).strip()
+                if item:
+                    lines.append(f"• {item}")
+                continue
+            if isinstance(internship, dict):
+                company = internship.get("company", "")
+                location = internship.get("location", "")
+                progression = internship.get("progression", [])
+                role = internship.get("role", "")
+                dates = internship.get("dates", "")
+                bullets = internship.get("bullets", [])
+            else:
+                company = getattr(internship, "company", "")
+                location = getattr(internship, "location", "")
+                progression = getattr(internship, "progression", [])
+                role = getattr(internship, "role", "")
+                dates = getattr(internship, "dates", "")
+                bullets = getattr(internship, "bullets", [])
+            if company:
+                lines.append(f"{company} — {location}" if location else company)
+            if progression:
+                for item in progression:
+                    title = item.get("title", "") if isinstance(item, dict) else getattr(item, "title", "")
+                    item_dates = item.get("dates", "") if isinstance(item, dict) else getattr(item, "dates", "")
+                    if title:
+                        lines.append(f"{title} ({item_dates})" if item_dates else title)
+            elif role:
+                lines.append(f"{role} ({dates})" if dates else role)
+            for bullet in bullets:
+                item = re.sub(r"^[•\-\*\s]+", "", str(bullet)).strip()
+                if item:
+                    lines.append(f"• {item}")
+            lines.append("")
+
     # Education
     edu = parsed_data.get("education_raw", []) or parsed_data.get("education", [])
     if edu:
@@ -298,6 +378,77 @@ def render_text_from_structured(parsed_data: dict) -> str:
         else:
             lines.append(str(langs))
         lines.append("")
+
+    optional_sections = (
+        ("PUBLICATIONS", parsed_data.get("publications_raw", []) or parsed_data.get("publications", [])),
+        ("RESEARCH EXPERIENCE", parsed_data.get("research_raw", []) or parsed_data.get("research", [])),
+    )
+    for heading, items in optional_sections:
+        if items:
+            lines.append(heading)
+            for item in items:
+                value = str(item).strip()
+                if value:
+                    lines.append(f"• {value}")
+            lines.append("")
+
+    for section in parsed_data.get("additional_sections", []) or []:
+        heading = (
+            section.get("heading") or section.get("title") or "ADDITIONAL INFORMATION"
+            if isinstance(section, dict)
+            else getattr(section, "heading", "") or getattr(section, "title", "") or "ADDITIONAL INFORMATION"
+        )
+        content = section.get("content", section.get("items", [])) if isinstance(section, dict) else getattr(section, "content", getattr(section, "items", []))
+        lines.append(str(heading).strip().upper())
+        values = content if isinstance(content, (list, tuple)) else [content]
+        lines.extend(str(value).strip() for value in values if str(value).strip())
+        lines.append("")
+
+    section_order = parsed_data.get("_ordered_sections") or (
+        parsed_data.get("_strategy", {}).get("section_order", [])
+        if isinstance(parsed_data.get("_strategy"), dict)
+        else []
+    )
+    if section_order:
+        heading_to_key = {
+            "PROFESSIONAL SUMMARY": "summary",
+            "TECHNICAL SKILLS": "skills",
+            "PROFESSIONAL EXPERIENCE": "experience",
+            "TECHNICAL PROJECTS": "projects",
+            "INTERNSHIPS": "internships",
+            "EDUCATION": "education",
+            "CERTIFICATIONS": "certifications",
+            "ACHIEVEMENTS": "achievements",
+            "LANGUAGES": "languages",
+            "PUBLICATIONS": "publications",
+            "RESEARCH EXPERIENCE": "research",
+        }
+        key_aliases = {
+            "objective": "summary",
+            "technical skills": "skills",
+            "work_experience": "experience",
+            "professional experience": "experience",
+            "technical projects": "projects",
+            "honors & awards": "achievements",
+            "awards": "achievements",
+            "publications & research": "publications",
+            "research experience": "research",
+        }
+        section_starts = [
+            (index, heading_to_key[line.strip().upper()])
+            for index, line in enumerate(lines)
+            if line.strip().upper() in heading_to_key
+        ]
+        if section_starts:
+            preamble = lines[:section_starts[0][0]]
+            blocks = {}
+            for position, (start, key) in enumerate(section_starts):
+                end = section_starts[position + 1][0] if position + 1 < len(section_starts) else len(lines)
+                blocks[key] = lines[start:end]
+            requested_keys = [key_aliases.get(str(key).lower(), str(key).lower()) for key in section_order]
+            ordered_keys = [key for key in requested_keys if key in blocks]
+            ordered_keys.extend(key for key in blocks if key not in ordered_keys)
+            lines = preamble + [line for key in ordered_keys for line in blocks[key]]
 
     return "\n".join(lines).strip()
 
@@ -637,6 +788,7 @@ def render_pdf_from_structured(
         or strategy_info.get("section_order")
         or ["summary", "skills", "experience", "internships", "projects", "education", "certifications", "achievements", "publications", "research", "languages"]
     )
+    section_order = _append_populated_sections(parsed_data, section_order)
     std_headings = strategy_info.get("standard_ats_headings", {}) or STANDARD_ATS_HEADINGS
 
     rendered_sections = set()
@@ -696,7 +848,7 @@ def render_pdf_from_structured(
 
         # Professional Experience
         elif sec_lower in ("experience", "work_experience", "professional experience") and "experience" not in rendered_sections:
-            exp = parsed_data.get("experience", []) or parsed_data.get("experience_raw", []) or parsed_data.get("work_experience", [])
+            exp = parsed_data.get("experience_raw", []) or parsed_data.get("experience", []) or parsed_data.get("work_experience", [])
             if exp:
                 heading_title = std_headings.get("experience", "PROFESSIONAL EXPERIENCE")
                 add_section_header(heading_title)
@@ -1142,6 +1294,23 @@ def generate_pdf(content: str | dict | Any, candidate_name: str = "", template: 
     return render_pdf_from_structured(structured, candidate_name=candidate_name, template=template, experience_level=experience_level)
 
 
+def mark_pdf_as_draft_preview(pdf_bytes: bytes) -> bytes:
+    import pymupdf
+
+    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    for page in document:
+        page.insert_text(
+            (36, page.rect.height - 14),
+            "DRAFT PREVIEW - NOT FINALIZED",
+            fontsize=7,
+            color=(0.38, 0.38, 0.38),
+            overlay=True,
+        )
+    marked_pdf = document.tobytes()
+    document.close()
+    return marked_pdf
+
+
 def _set_run_color(run, hex_color: str):
     run.font.color.rgb = RGBColor.from_string(hex_color.lstrip("#"))
 
@@ -1182,7 +1351,7 @@ def render_docx_from_structured(
     document = Document()
 
     # Set margins
-    margin_size = 0.35 if template in ("compact", "executive") else 0.45
+    margin_size = 0.35 if template in ("compact", "executive", "standard") else 0.45
     for section in document.sections:
         section.top_margin = Inches(margin_size)
         section.bottom_margin = Inches(margin_size)
@@ -1217,7 +1386,7 @@ def render_docx_from_structured(
         font_name = "Calibri"
         accent_color = SIGNAL_600
         alignment = WD_ALIGN_PARAGRAPH.CENTER
-        body_font_pt = Pt(9.5)
+        body_font_pt = Pt(9.0)
 
     normal = document.styles["Normal"]
     normal.font.name = font_name
@@ -1267,7 +1436,7 @@ def render_docx_from_structured(
 
     def add_section_header(title: str):
         p_head = document.add_paragraph()
-        p_head.paragraph_format.space_before = Pt(8 if template == "compact" else 10)
+        p_head.paragraph_format.space_before = Pt(3 if template in ("compact", "standard") else 10)
         p_head.paragraph_format.space_after = Pt(2)
         p_head.paragraph_format.keep_with_next = True
         r_head = p_head.add_run(title.upper())
@@ -1282,6 +1451,7 @@ def render_docx_from_structured(
         or strategy_info.get("section_order")
         or ["summary", "skills", "experience", "internships", "projects", "education", "certifications", "achievements", "publications", "research", "languages"]
     )
+    section_order = _append_populated_sections(parsed_data, section_order)
     std_headings = strategy_info.get("standard_ats_headings", {}) or STANDARD_ATS_HEADINGS
     rendered_sections = set()
 
@@ -1385,7 +1555,7 @@ def render_docx_from_structured(
 
         # Experience
         elif sec_lower in ("experience", "work_experience", "professional experience") and "experience" not in rendered_sections:
-            exp = parsed_data.get("experience", []) or parsed_data.get("experience_raw", []) or parsed_data.get("work_experience", [])
+            exp = parsed_data.get("experience_raw", []) or parsed_data.get("experience", []) or parsed_data.get("work_experience", [])
             if exp:
                 add_section_header(std_headings.get("experience", "PROFESSIONAL EXPERIENCE"))
                 if isinstance(exp, list) and exp and all(isinstance(x, dict) and "company" in x and ("bullets" in x or "progression" in x) for x in exp):

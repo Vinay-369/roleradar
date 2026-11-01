@@ -11,8 +11,11 @@ class JobOut(BaseModel):
     company_description: str | None = None
     industry: str | None = None
     description: str | None = None
+    jd_evidence_status: str | None = None
+    jd_evidence_source: str | None = None
     skills_required: list[str] = []
     skills_nice_to_have: list[str] = []
+    inferred_skills: list[str] = []
     experience_min: float | None = None
     experience_max: float | None = None
     experience_text: str | None = None
@@ -76,6 +79,9 @@ class JobOut(BaseModel):
     contextual_requirements: list[str] = []
     completeness_status: str | None = None
     quality_tier: str | None = None
+    recommendation_quality: str | None = None
+    missing_required_information: list[str] = []
+    available_information: list[str] = []
     role_confidence: str | None = None
     rejection_reason: str | None = None
     structured_requirements: dict | None = None

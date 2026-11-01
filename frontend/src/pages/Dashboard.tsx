@@ -165,7 +165,7 @@ export function Dashboard() {
             <div className="flex-1">
               <h3 className="text-sm font-bold text-ink-900 mb-1">Upload Your Master Resume to Unlock AI Match Scoring</h3>
               <p className="text-xs text-ink-600 mb-4 max-w-xl leading-relaxed">
-                {data.recommended_next_action || "Upload your PDF or DOCX resume to get an instant strict enterprise ATS score, identify missing skills, and unlock 1-click tailoring."}
+                {data.recommended_next_action || "Upload your PDF or DOCX resume to get an ATS readiness score, identify evidence-based skill gaps, and unlock 1-click tailoring."}
               </p>
               <Link
                 to="/resume/master"

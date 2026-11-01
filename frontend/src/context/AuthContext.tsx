@@ -46,6 +46,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearToken();
+      setUser(null);
+    };
+    window.addEventListener("roleradar:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("roleradar:session-expired", handleSessionExpired);
+  }, []);
+
   async function login(email: string, password: string) {
     const token = await loginRequest({ email, password });
     setToken(token);

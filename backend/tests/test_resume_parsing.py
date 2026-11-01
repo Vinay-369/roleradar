@@ -121,6 +121,90 @@ def test_one_skill_per_line_is_not_collapsed_into_one_string():
     assert structured["skills"] == ["Python", "FastAPI", "MongoDB", "Docker"]
 
 
+def test_categorized_skill_subheadings_are_preserved_separately_from_spoken_languages():
+    text = """Jordan Lee
+TECHNICAL SKILLS
+Languages
+Python, Java, SQL
+Backend
+FastAPI, Flask
+Databases and Tools
+PostgreSQL, Git
+Core Concepts
+Data Structures, Operating Systems
+PROJECTS
+Course Planner
+Built a course planner.
+LANGUAGES
+English, Kannada, Hindi
+"""
+    structured = structure_resume_text(text)
+
+    assert structured["skills_categorized"] == [
+        "Languages: Python, Java, SQL",
+        "Backend: FastAPI, Flask",
+        "Databases and Tools: PostgreSQL, Git",
+        "Core Concepts: Data Structures, Operating Systems",
+    ]
+    assert structured["languages"] == ["English", "Kannada", "Hindi"]
+
+
+def test_structural_skill_subheadings_contacts_projects_and_internships_parse_consistently():
+    resume_text = """
+    Jordan Lee
+    Bengaluru, Karnataka, India | jordan@example.com | +91 90000 12345
+
+    EDUCATION
+    Bachelor of Science in Information Systems
+    Example University, Bengaluru | Aug 2021 - May 2025
+    Pre-University Course (Science)
+    Example Pre-University College, Karnataka | Jun 2019 - May 2021
+    Percentage: 91.2%
+
+    TECHNICAL SKILLS
+    Languages
+    Python, Java, TypeScript
+    Backend
+    FastAPI, Flask
+    Databases and Tools
+    PostgreSQL, Git, pytest
+
+    PROJECTS
+    Service Monitor - Reliability Dashboard
+    Jan 2025 - Apr 2025 | Python, FastAPI, PostgreSQL
+    Built a service monitor for distributed application health.
+
+    INTERNSHIP EXPERIENCE
+    Software Development Intern - Example Labs
+    May 2024 - Jul 2024 | Hybrid
+    Implemented two API endpoints using Flask and SQLite.
+
+    ADDITIONAL INFORMATION
+    Availability
+    Available for entry-level full-time roles from August 2025.
+    Languages
+    English, Kannada, Hindi
+    """
+
+    structured = structure_resume_text(resume_text)
+
+    assert structured["personal"]["name"] == "Jordan Lee"
+    assert structured["personal"]["location"] == "Bengaluru, Karnataka, India"
+    assert structured["personal"]["phone"] == "+91 90000 12345"
+    assert structured["education"][1]["degree"] == "Pre-University Course (Science)"
+    assert "Pre-University College" in structured["education"][1]["institution"]
+    assert "Backend" not in structured["skills"]
+    assert "Databases and Tools" not in structured["skills"]
+    assert set(structured["languages"]) == {"English", "Kannada", "Hindi"}
+    assert structured["projects"][0]["dates"] == "Jan 2025 - Apr 2025"
+    assert "Python" in structured["projects"][0]["tech_stack"]
+    assert len(structured["internships"]) == 1
+    assert structured["internships"][0]["company"] == "Example Labs"
+    assert structured["internships"][0]["role"] == "Software Development Intern"
+    assert structured["internships"][0]["dates"] == "May 2024 - Jul 2024"
+    assert structured["internships"][0]["location"] == "Hybrid"
+
+
 @pytest.mark.asyncio
 async def test_four_pillar_audit_integration():
     from mongomock_motor import AsyncMongoMockClient

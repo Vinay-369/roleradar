@@ -4,6 +4,7 @@ Living here (not in a feature module) because AIService itself validates
 against these before ever handing output back to a module.
 """
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -97,6 +98,8 @@ class StructuredTailoringResult(BaseModel):
     sections_evaluated: list[str] = Field(default_factory=list)
     sections_changed: list[str] = Field(default_factory=list)
     changes: list[TailoringChange] = Field(default_factory=list)
+    generation_mode: Literal["MODEL", "FALLBACK"] = "MODEL"
+    generation_notice: str | None = None
 
 
 class TailoringResult(BaseModel):

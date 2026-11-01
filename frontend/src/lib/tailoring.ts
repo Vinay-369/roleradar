@@ -133,6 +133,8 @@ export type TailoredResume = {
   missing_skills?: string[] | null;
   partial_skills?: string[] | null;
   ats_readability_findings?: ATSReadabilityFindings | null;
+  generation_notice?: string | null;
+  recommendation_note?: string | null;
   user_modified?: boolean | null;
   created_at: string;
 };

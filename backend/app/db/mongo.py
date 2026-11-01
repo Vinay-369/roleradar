@@ -14,16 +14,25 @@ _db: AsyncIOMotorDatabase | None = None
 async def connect_to_mongo() -> None:
     global _client, _db
     settings = get_settings()
-    _client = AsyncIOMotorClient(settings.MONGO_URI)
+    _client = AsyncIOMotorClient(
+        settings.MONGO_URI,
+        serverSelectionTimeoutMS=settings.MONGO_SERVER_SELECTION_TIMEOUT_MS,
+        connectTimeoutMS=settings.MONGO_CONNECT_TIMEOUT_MS,
+        maxPoolSize=settings.MONGO_MAX_POOL_SIZE,
+        minPoolSize=settings.MONGO_MIN_POOL_SIZE,
+        appname=settings.APP_NAME,
+    )
     _db = _client[settings.MONGO_DB_NAME]
     # Fail fast on startup if Mongo isn't reachable, rather than on first request.
     await _client.admin.command("ping")
 
 
 async def close_mongo_connection() -> None:
-    global _client
+    global _client, _db
     if _client is not None:
         _client.close()
+    _client = None
+    _db = None
 
 
 def get_db() -> AsyncIOMotorDatabase:

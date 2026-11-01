@@ -10,6 +10,7 @@ still counts as a match without requiring exact string equality.
 from dataclasses import dataclass, field
 
 from app.core.embeddings.base import EmbeddingProvider
+from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
 
 # Default weights — Feature 6 requires these to be configurable, not
 # fixed at the code level for one category, so they're passed in
@@ -45,7 +46,7 @@ class SkillMatchDetail:
 @dataclass
 class MatchResult:
     overall_score: int
-    skill_score: int
+    skill_score: int | None
     role_score: int
     experience_score: int
     location_score: int
@@ -59,15 +60,18 @@ class MatchResult:
 
 def _skill_match(
     candidate_skills: list[str], required_skills: list[str], embedder: EmbeddingProvider, threshold: float = 0.55
-) -> tuple[int, SkillMatchDetail]:
+) -> tuple[int | None, SkillMatchDetail]:
     if not required_skills:
-        return 100, SkillMatchDetail()
+        return None, SkillMatchDetail()
 
-    candidate_lower = [s.lower().strip() for s in candidate_skills]
+    def canonical_key(value: str) -> str:
+        return canonicalize_skill_name(value).casefold().strip()
+
+    candidate_lower = [canonical_key(s) for s in candidate_skills if str(s).strip()]
     detail = SkillMatchDetail()
 
     for req in required_skills:
-        req_lower = req.lower().strip()
+        req_lower = canonical_key(req)
         if req_lower in candidate_lower:
             detail.matched.append(req)
             continue
@@ -206,20 +210,28 @@ def compute_match(
 
     industry_score = _industry_match(candidate.get("industries", []), job.get("industry", ""))
 
-    overall = round(
-        skill_score * weights["skill"]
-        + role_score * weights["role"]
-        + experience_score * weights["experience"]
-        + location_score * weights["location"]
-        + salary_score * weights["salary"]
-        + industry_score * weights["industry"]
-    )
+    applicable_weights = dict(weights)
+    if skill_score is None:
+        applicable_weights.pop("skill", None)
+    weight_total = sum(applicable_weights.values())
+    effective_weights = {key: value / weight_total for key, value in applicable_weights.items()}
+    scores = {
+        "skill": skill_score,
+        "role": role_score,
+        "experience": experience_score,
+        "location": location_score,
+        "salary": salary_score,
+        "industry": industry_score,
+    }
+    overall = round(sum(scores[key] * weight for key, weight in effective_weights.items()))
 
     explanation = (
-        f"Deterministic score calculated from {round(weights['skill'] * 100)}% skills, "
-        f"{round(weights['role'] * 100)}% role title, {round(weights['experience'] * 100)}% experience, "
-        f"{round(weights['location'] * 100)}% location, {round(weights['salary'] * 100)}% compensation, "
-        f"and {round(weights['industry'] * 100)}% industry alignment."
+        "Deterministic overall compatibility score calculated from "
+        + ", ".join(
+            f"{round(weight * 100)}% {'skills' if key == 'skill' else key.replace('_', ' ')}"
+            for key, weight in effective_weights.items()
+        )
+        + (". No explicit skill requirements were available; technical skill alignment is not scored." if skill_score is None else ".")
     )
 
     return MatchResult(
@@ -232,6 +244,6 @@ def compute_match(
         industry_score=industry_score,
         skill_match=skill_detail,
         apply_readiness=_apply_readiness(overall),
-        factor_weights=dict(weights),
+        factor_weights=effective_weights,
         score_explanation=explanation,
     )

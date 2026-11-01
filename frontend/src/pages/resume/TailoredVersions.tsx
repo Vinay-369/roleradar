@@ -5,7 +5,7 @@ import {
   ArrowRight, Trash2, Loader2, Copy, Sparkles, Eye,
   FileText, FileCode2, Download, CheckCircle2, XCircle, Target, GitCompare, ShieldCheck,
 } from "lucide-react";
-import { listTailoredVersions, deleteTailoredVersion } from "../../lib/tailoring";
+import { listTailoredVersions, deleteTailoredVersion, finalizeTailoring } from "../../lib/tailoring";
 import { ResumeDiffModal } from "../../components/resume/ResumeDiffModal";
 import { ResumePreviewModal } from "../../components/resume/ResumePreviewModal";
 import { useToast } from "../../context/ToastContext";
@@ -17,11 +17,15 @@ function DownloadButton({
   company,
   template,
   format,
+  isFinalized,
+  onFinalized,
 }: {
   versionId: string;
   company: string;
   template: string;
   format: "pdf" | "docx";
+  isFinalized?: boolean;
+  onFinalized?: () => void;
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const toast = useToast();
@@ -29,6 +33,11 @@ function DownloadButton({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
+      if (isFinalized === false) {
+        toast.info("Finalizing resume before generating download...");
+        await finalizeTailoring(versionId);
+        if (onFinalized) onFinalized();
+      }
       const token =
         localStorage.getItem("roleradar_token") ||
         sessionStorage.getItem("roleradar_token");
@@ -36,7 +45,10 @@ function DownloadButton({
         `/api/tailoring/${versionId}/export/${format}?template=${encodeURIComponent(template)}`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
-      if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.detail || `Export failed: ${res.statusText}`);
+      }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -320,12 +332,16 @@ export function TailoredVersions() {
                       company={v.company}
                       template={v.resume_strategy?.template_variant || "modern"}
                       format="pdf"
+                      isFinalized={v.is_finalized}
+                      onFinalized={() => queryClient.invalidateQueries({ queryKey: ["tailored-versions"] })}
                     />
                     <DownloadButton
                       versionId={v.id}
                       company={v.company}
                       template={v.resume_strategy?.template_variant || "modern"}
                       format="docx"
+                      isFinalized={v.is_finalized}
+                      onFinalized={() => queryClient.invalidateQueries({ queryKey: ["tailored-versions"] })}
                     />
                   </div>
                 )}

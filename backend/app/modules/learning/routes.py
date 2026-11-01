@@ -10,6 +10,7 @@ from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
 from app.modules.jobs import repositories as jobs_repo
 from app.modules.jobs.services import get_canonical_job_requirements
+from app.modules.jobs.skill_vocabulary import canonicalize_skill_name
 from app.modules.learning.engine import (
     build_roadmap,
     compute_skill_gaps,
@@ -44,6 +45,11 @@ from app.modules.learning.role_taxonomy import (
 )
 
 router = APIRouter()
+
+
+def _skill_key(value: str) -> str:
+    """Canonical comparison key shared by gap analysis and job matching."""
+    return canonicalize_skill_name(str(value or "")).casefold().strip()
 
 # ---------------------------------------------------------------------------
 # Internal: provenance descriptor produced by _compute_gaps
@@ -348,12 +354,12 @@ async def _compute_gaps(
             )
         else:
             embedder = build_embedding_provider(settings)
-            candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
+            candidate_skills_lower = {_skill_key(s) for s in candidate_skills if _skill_key(s)}
             missing_required = []
             partial_required = []
             candidate_status_map = {}
             for req_skill in must_haves:
-                r_low = req_skill.lower().strip()
+                r_low = _skill_key(req_skill)
                 if r_low in candidate_skills_lower:
                     candidate_status_map[req_skill] = "MATCHED"
                     continue
@@ -367,7 +373,7 @@ async def _compute_gaps(
 
             missing_preferred = []
             for pref_skill in preferreds:
-                p_low = pref_skill.lower().strip()
+                p_low = _skill_key(pref_skill)
                 if p_low in candidate_skills_lower:
                     candidate_status_map[pref_skill] = "MATCHED"
                     continue
@@ -389,13 +395,13 @@ async def _compute_gaps(
     else:
         # JOB GAP: StructuredJobRequirements against CandidateProfile
         embedder = build_embedding_provider(settings)
-        candidate_skills_lower = {s.lower().strip() for s in candidate_skills}
+        candidate_skills_lower = {_skill_key(s) for s in candidate_skills if _skill_key(s)}
         missing_required = []
         partial_required = []
         candidate_status_map = {}
 
         for req_skill in must_haves:
-            r_low = req_skill.lower().strip()
+            r_low = _skill_key(req_skill)
             if r_low in candidate_skills_lower:
                 candidate_status_map[req_skill] = "MATCHED"
                 continue
@@ -409,7 +415,7 @@ async def _compute_gaps(
 
         missing_preferred = []
         for pref_skill in preferreds:
-            p_low = pref_skill.lower().strip()
+            p_low = _skill_key(pref_skill)
             if p_low in candidate_skills_lower:
                 candidate_status_map[pref_skill] = "MATCHED"
                 continue

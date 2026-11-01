@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import copy
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -8,11 +10,13 @@ from app.core.config import Settings, get_settings
 from app.core.rate_limit import rate_limit
 from app.db.mongo import get_db
 from app.modules.auth.dependencies import get_current_user
+from app.modules.resume import repositories as resume_repo
 from app.modules.tailoring import repositories as repo
 from app.modules.tailoring import services
 from app.modules.tailoring.export import (
     generate_docx,
     generate_pdf,
+    mark_pdf_as_draft_preview,
     verify_export_against_structured_resume,
 )
 from app.modules.tailoring.schemas import (
@@ -60,6 +64,8 @@ def _to_out(doc: dict) -> TailoredResumeOut:
         opportunity_type=doc.get("opportunity_type"),
         opportunity_id=doc.get("opportunity_id"),
         jd_analysis_summary=doc.get("jd_analysis_summary"),
+        generation_notice=doc.get("generation_notice"),
+        recommendation_note=doc.get("recommendation_note"),
         created_at=doc["created_at"].isoformat() if hasattr(doc["created_at"], "isoformat") else str(doc["created_at"]),
     )
 
@@ -214,6 +220,96 @@ def _require_exportable(version: dict) -> None:
         )
 
 
+@router.get("/{version_id}/preview/pdf")
+async def preview_pdf(
+    version_id: str,
+    template: str | None = Query(default=None, description="modern | classic | technical | harvard | minimal"),
+    current_user: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    version = await repo.get_version(db, str(current_user["_id"]), version_id)
+    if version is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Version not found.")
+
+    is_finalized = bool(version.get("is_finalized"))
+    excluded_change_ids: list[str] = []
+    if is_finalized:
+        _require_exportable(version)
+        content = version.get("parsed") or version.get("final_text")
+    else:
+        content = None
+        master = await resume_repo.get_master_resume_version(
+            db,
+            str(current_user["_id"]),
+            version.get("master_resume_id"),
+            version.get("master_resume_version"),
+        )
+        if master is not None:
+            master_raw_text = master.get("raw_text") or ""
+            if master_raw_text:
+                master_parsed = services.canonical_master_parsed(master)
+            else:
+                master_parsed = copy.deepcopy(master.get("parsed") or {})
+            approved_change_ids, excluded_change_ids = services.approved_preview_change_ids(
+                master_parsed,
+                version.get("changes", []),
+                source_resume_text=master_raw_text,
+            )
+            preview_changes = services._merge_structured_tailoring(
+                master_parsed,
+                version.get("structured") or {},
+                approved_change_ids=approved_change_ids,
+            )
+            content = master_parsed
+            content.update(preview_changes)
+            if isinstance(version.get("resume_strategy"), dict):
+                content["_strategy"] = copy.deepcopy(version["resume_strategy"])
+                content["_ordered_sections"] = copy.deepcopy(
+                    version["resume_strategy"].get("section_order")
+                )
+            audit = version.get("truth_guard_audit") or {}
+            if audit.get("is_valid"):
+                manual_edits = version.get("manual_edits") or {}
+                for field in ("summary", "skills"):
+                    if field in manual_edits:
+                        content[field] = copy.deepcopy(manual_edits[field])
+        else:
+            content = version.get("parsed") or version.get("final_text")
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Resume content not available for preview.",
+        )
+    strategy = (content.get("_strategy", {}) if isinstance(content, dict) else {}) or version.get("resume_strategy", {}) or {}
+    template = template or strategy.get("template_variant") or "modern"
+    candidate_name = current_user.get("full_name", "")
+    pdf_bytes = await asyncio.to_thread(generate_pdf, content, candidate_name=candidate_name, template=template)
+    export_valid, export_report = await asyncio.to_thread(
+        verify_export_against_structured_resume,
+        pdf_bytes,
+        content,
+        file_type="pdf",
+    )
+    if not export_valid:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Generated preview PDF failed resume integrity validation.", "report": export_report},
+        )
+    if not is_finalized:
+        pdf_bytes = await asyncio.to_thread(mark_pdf_as_draft_preview, pdf_bytes)
+    company_slug = version.get("company", "Company").replace(" ", "_")
+    filename = f"preview_{company_slug}_{template}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "X-Resume-Finalized": str(is_finalized).lower(),
+            "X-Resume-Excluded-Changes": ",".join(excluded_change_ids) if not is_finalized else "",
+        },
+    )
+
+
 @router.get("/{version_id}/export/pdf")
 async def export_pdf(
     version_id: str,
@@ -230,9 +326,12 @@ async def export_pdf(
     strategy = (content.get("_strategy", {}) if isinstance(content, dict) else {}) or version.get("resume_strategy", {}) or {}
     template = template or strategy.get("template_variant") or "modern"
     candidate_name = current_user.get("full_name", "")
-    pdf_bytes = generate_pdf(content, candidate_name=candidate_name, template=template)
-    export_valid, export_report = verify_export_against_structured_resume(
-        pdf_bytes, content, file_type="pdf"
+    pdf_bytes = await asyncio.to_thread(generate_pdf, content, candidate_name=candidate_name, template=template)
+    export_valid, export_report = await asyncio.to_thread(
+        verify_export_against_structured_resume,
+        pdf_bytes,
+        content,
+        file_type="pdf",
     )
     if not export_valid:
         raise HTTPException(
@@ -264,9 +363,12 @@ async def export_docx(
     strategy = (content.get("_strategy", {}) if isinstance(content, dict) else {}) or version.get("resume_strategy", {}) or {}
     template = template or strategy.get("template_variant") or "modern"
     candidate_name = current_user.get("full_name", "")
-    docx_bytes = generate_docx(content, candidate_name=candidate_name, template=template)
-    export_valid, export_report = verify_export_against_structured_resume(
-        docx_bytes, content, file_type="docx"
+    docx_bytes = await asyncio.to_thread(generate_docx, content, candidate_name=candidate_name, template=template)
+    export_valid, export_report = await asyncio.to_thread(
+        verify_export_against_structured_resume,
+        docx_bytes,
+        content,
+        file_type="docx",
     )
     if not export_valid:
         raise HTTPException(

@@ -15,6 +15,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 import html
 import logging
@@ -182,12 +183,12 @@ class LeverJobProvider:
                 resp = await client.get(url, headers=headers)
                 if resp.status_code == 404:
                     logger.warning(f"Lever board '{clean_token}' returned 404 Not Found.")
-                    return []
+                    raise ValueError(f"Configured Lever board was not found (HTTP 404): {clean_token}")
                 resp.raise_for_status()
-                data = resp.json()
+                data = await asyncio.to_thread(resp.json)
                 if isinstance(data, list):
                     return data
-                return []
+                raise ValueError("Malformed Lever response: expected an array.")
         except httpx.TimeoutException as exc:
             logger.error(f"Timeout fetching Lever board '{clean_token}': {exc}")
             raise LeverNetworkError(f"Timeout connecting to Lever board '{clean_token}'") from exc
@@ -357,7 +358,7 @@ class LeverJobProvider:
             description=clean_desc,
             experience_min=0 if is_intern else None,
             experience_max=2 if is_intern else None,
-            job_type_hint="internship" if is_intern else "",
+            job_type_hint=job_type,
         )
 
         # Country extraction and India relevance
@@ -493,6 +494,7 @@ class LeverJobProvider:
             "board": clean_token,
             "fetched": 0,
             "verified_active": 0,
+            "unique_requisitions": 0,
             "closed": 0,
             "retained": 0,
             "internships": 0,
@@ -521,7 +523,13 @@ class LeverJobProvider:
                 continue
             current_job_ids.add(jid)
 
-            job_doc = self.normalize_lever_job(item, clean_token, company_name=company_name, now=now)
+            job_doc = await asyncio.to_thread(
+                self.normalize_lever_job,
+                item,
+                clean_token,
+                company_name=company_name,
+                now=now,
+            )
 
             # Check if direct requisition
             if job_doc.get("url_type") == ApplicationUrlType.DIRECT_REQUISITION.value:
@@ -562,6 +570,7 @@ class LeverJobProvider:
         # Step 3: Upsert active openings into MongoDB with first_seen_at preservation
         if active_normalized:
             deduped = deduplicate_opportunities(active_normalized)
+            stats["unique_requisitions"] = len(deduped)
             for doc in deduped:
                 doc_to_save = dict(doc)
                 doc_id = doc_to_save.pop("id")

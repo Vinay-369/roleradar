@@ -104,3 +104,15 @@ async def test_missing_or_invalid_version_ids_keep_existing_not_found_behavior(d
             await exporter(version_id, template="modern", current_user={"_id": "test-user"}, db=db)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == "Version not found."
+
+
+@pytest.mark.asyncio
+async def test_unfinalized_version_can_be_previewed_as_pdf(db):
+    version = await _create_version(db, finalized=False)
+    response = await tailoring_routes.preview_pdf(
+        str(version["_id"]), template="modern", current_user={"_id": "test-user"}, db=db
+    )
+    assert response.status_code == 200
+    assert response.media_type == "application/pdf"
+    assert response.body
+

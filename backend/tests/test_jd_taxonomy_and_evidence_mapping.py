@@ -125,3 +125,94 @@ def test_ml_specialist_jd_taxonomy():
     assert len(reqs.qualifications) >= 1
     assert "communication" in [s.lower() for s in reqs.soft_skills] or "problem solving" in [s.lower() for s in reqs.soft_skills]
 
+def test_inline_prose_requirement_headings_keep_explicit_and_inferred_evidence_distinct():
+    from app.modules.jobs.taxonomy import RequirementCategory, analyze_job_description
+
+    text = (
+        "What you'll doDesign and maintain production Python services.\n"
+        "What we're looking for (must-have)Strong professional experience building software with Python and Git.\n"
+        "Nice-to-haveExperience with Kubernetes."
+    )
+    parsed = analyze_job_description(text, "Platform Engineer")
+    assert "Python" in parsed.must_have_skills
+    assert "Git" in parsed.must_have_skills
+    assert "Kubernetes" in parsed.preferred_skills
+    assert any(req.evidence_type == "EXPLICIT" and req.category == RequirementCategory.MUST_HAVE for req in parsed.requirements)
+    assert any(req.evidence_type == "INFERRED" and req.category == RequirementCategory.RESPONSIBILITY for req in parsed.requirements)
+
+
+def test_bare_inline_preferred_heading_keeps_skill_list_out_of_required_skills():
+    text = (
+        "## Must-have\nExperience with Python and numerical methods.\n"
+        "Preferred: PyTorch, NumPy, SciPy, Bayesian optimization, and HPC."
+    )
+    parsed = analyze_job_description(text, "Applied ML Research Engineer")
+
+    assert "Python" in parsed.must_have_skills
+    assert {"PyTorch", "NumPy", "SciPy"}.issubset(set(parsed.preferred_skills))
+    assert not {"PyTorch", "NumPy", "SciPy"}.intersection(parsed.must_have_skills)
+    assert any(row.category == RequirementCategory.PREFERRED for row in parsed.requirements)
+
+
+def test_role_overview_requirement_predicate_is_explicit_but_technology_mentions_are_not():
+    text = (
+        "## Job Description\n"
+        "The role works with Python and Linux services.\n"
+        "Candidates should have strong experience with Java and PostgreSQL.\n"
+        "## Responsibilities\n"
+        "Build and maintain software using Docker."
+    )
+    parsed = analyze_job_description(text, "Platform Engineer")
+
+    explicit_rows = [row for row in parsed.requirements if row.evidence_type == "EXPLICIT"]
+    inferred_rows = [row for row in parsed.requirements if row.evidence_type == "INFERRED"]
+    assert any("Java" in row.skills_detected and "PostgreSQL" in row.skills_detected for row in explicit_rows)
+    assert any(row.category == RequirementCategory.RESPONSIBILITY and "Docker" in row.skills_detected for row in inferred_rows)
+    assert "Java" in parsed.must_have_skills
+    assert "PostgreSQL" in parsed.must_have_skills
+
+
+def test_unclassified_jd_does_not_receive_a_default_software_domain():
+    from app.modules.jobs.taxonomy import analyze_job_description
+
+    assert analyze_job_description("We value curiosity and communication.").domain is None
+
+
+def test_inline_mixed_requirements_are_split_with_local_provenance():
+    text = (
+        "## Job Description\n"
+        "The team uses Kafka and Python in its internal tools. Must-have Experience with Linux. "
+        "Nice-to-have Experience with Kubernetes. Responsibilities: Design and maintain reliable services."
+    )
+    parsed = analyze_job_description(text, "Platform Engineer")
+    explicit = [row for row in parsed.requirements if row.evidence_type == "EXPLICIT"]
+    inferred = [row for row in parsed.requirements if row.evidence_type == "INFERRED"]
+
+    assert parsed.must_have_skills == ["Linux"]
+    assert parsed.preferred_skills == ["Kubernetes"]
+    assert all(row.category == RequirementCategory.MUST_HAVE for row in explicit if "Linux" in row.skills_detected)
+    assert all(row.category == RequirementCategory.PREFERRED for row in explicit if "Kubernetes" in row.skills_detected)
+    assert all("Kafka" not in row.skills_detected and "Python" not in row.skills_detected for row in explicit)
+    assert any(row.category == RequirementCategory.RESPONSIBILITY and row.text.startswith("Design and maintain") for row in inferred)
+
+
+def test_ambiguous_technology_mentions_remain_unclassified():
+    parsed = analyze_job_description(
+        "## Job Description\nThe team uses Python, Kafka, and Kubernetes across its services.",
+        "Platform Engineer",
+    )
+
+    assert parsed.must_have_skills == []
+    assert parsed.preferred_skills == []
+    assert not any(row.evidence_type == "EXPLICIT" for row in parsed.requirements)
+
+
+def test_missing_skill_requirements_are_not_invented():
+    parsed = analyze_job_description(
+        "## Job Description\nBuild and maintain reliable internal products.",
+        "Software Engineer",
+    )
+
+    assert parsed.must_have_skills == []
+    assert parsed.preferred_skills == []
+    assert not any(row.category in (RequirementCategory.MUST_HAVE, RequirementCategory.PREFERRED) for row in parsed.requirements)

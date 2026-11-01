@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { getJobDetail } from "../../lib/jobDetail";
+import { getJobDetail, getJobMatch } from "../../lib/jobDetail";
+import { getApiErrorMessage } from "../../lib/apiClient";
 import { formatCompensation } from "../../lib/compensation";
 import { normalizeJobDescriptionPresentation } from "../../lib/descriptionNormalization";
 import { recordApplicationSubmission } from "../../lib/applications";
@@ -38,6 +39,12 @@ export function JobDetail() {
     queryFn: () => getJobDetail(jobId!),
     enabled: !!jobId,
     retry: 1,
+  });
+  const jobMatchQuery = useQuery({
+    queryKey: ["job-match", jobId],
+    queryFn: () => getJobMatch(jobId!),
+    enabled: !!jobId && !!job && !isLoading && !isError,
+    retry: 0,
   });
   const markAppliedMutation = useMutation({
     mutationFn: () => recordApplicationSubmission(jobId!),
@@ -134,6 +141,10 @@ export function JobDetail() {
     ).values(),
   ];
   const requiredSkills = uniqueSkills(job.skills_required);
+  const requiredSkillKeys = new Set(requiredSkills.map((skill) => skill.toLowerCase().replace(/[^a-z0-9]/g, "")));
+  const preferredSkills = uniqueSkills(job.skills_nice_to_have || []).filter(
+    (skill) => !requiredSkillKeys.has(skill.toLowerCase().replace(/[^a-z0-9]/g, ""))
+  );
 
   const isVerifiedActive = job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply;
   const isBenchmark = job.verification_status === "MARKET_BENCHMARK";
@@ -158,7 +169,7 @@ export function JobDetail() {
     return "Not specified by employer";
   })();
 
-  const isSafeHttpUrl = (url?: string) => Boolean(url && (url.startsWith("https://") || url.startsWith("http://")));
+  const isSafeHttpUrl = (url?: string | null) => Boolean(url && (url.startsWith("https://") || url.startsWith("http://")));
   const hasDirectApply = Boolean(isVerifiedActive && isSafeHttpUrl(job.apply_url) && !job.apply_url.includes("example.com"));
   const isAggregatorListing = ["adzuna", "jsearch", "jooble"].includes(job.source);
   const hasProviderApply = Boolean(isVerifiedActive && isAggregatorListing && isSafeHttpUrl(job.apply_url));
@@ -200,7 +211,7 @@ export function JobDetail() {
   const backLabel = job.job_type === "internship" ? "Back to Internships" : "Back to Jobs";
 
   const eligibility = job.eligibility;
-  const match = job.match;
+  const match = jobMatchQuery.data?.status === "READY" ? jobMatchQuery.data.match : null;
   const matchScore = Math.max(0, Math.min(100, match?.overall_score ?? 0));
   const matchAccent = matchScore >= 70 ? "#059669" : matchScore >= 50 ? "#d97706" : "#e11d48";
   const hasEligibilityMismatch = eligibility?.status === "INELIGIBLE"
@@ -279,6 +290,16 @@ export function JobDetail() {
                 </>
               )}
             </div>
+            {isSafeHttpUrl(job.source_url) && (
+              <a
+                href={job.source_url!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+              >
+                Original job posting <ExternalLink size={12} />
+              </a>
+            )}
           </div>
 
           {/* Primary Action Buttons */}
@@ -422,6 +443,16 @@ export function JobDetail() {
         </div>
       </div>
 
+      {job.missing_required_information?.length ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-bold">Employer did not disclose</p>
+          <p className="mt-1 leading-relaxed">
+            {job.missing_required_information.map((item) => item.replaceAll("_", " ")).join(", ")}.
+            RoleRadar does not estimate missing employer information.
+          </p>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-4 flex items-center gap-2">
@@ -429,8 +460,8 @@ export function JobDetail() {
               <Sparkles size={15} />
             </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">Technical alignment</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Resume-to-role compatibility</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">Overall compatibility</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Role and opportunity fit</p>
             </div>
             {match && (
               <span className="ml-auto text-xl font-bold tabular-nums" style={{ color: matchAccent }}>
@@ -443,7 +474,7 @@ export function JobDetail() {
               <div
                 className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
                 role="progressbar"
-                aria-label="Technical alignment"
+                aria-label="Overall compatibility"
                 aria-valuenow={matchScore}
                 aria-valuemin={0}
                 aria-valuemax={100}
@@ -453,8 +484,9 @@ export function JobDetail() {
               {hasExplicitSkills ? (
                 <>
                   <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                    Skill overlap between your master resume and the employer’s requirements.
+                    Overall compatibility includes role, experience, location, compensation, industry, and explicit technical requirements.
                   </p>
+                  {match.skill_score != null && <p className="mt-2 text-xs font-semibold text-slate-700 dark:text-slate-200">Technical requirements match: {match.skill_score}%</p>}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
                       {match.matched_skills?.length ?? 0} skills matched
@@ -466,12 +498,33 @@ export function JobDetail() {
                 </>
               ) : (
                 <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  Overall compatibility reflects role title, experience level, and location. The employer did not provide explicit technical skills to evaluate.
+                  Overall compatibility reflects available role and opportunity metadata. Technical alignment is unavailable because no explicit employer skill requirements were found.
                 </p>
               )}
             </>
+          ) : jobMatchQuery.isLoading ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400" role="status">Checking your active resume and calculating this opportunity match…</p>
+          ) : jobMatchQuery.isError ? (
+            <div className="mt-2 space-y-2" role="alert">
+              <p className="text-xs text-rose-700 dark:text-rose-300">
+                {getApiErrorMessage(jobMatchQuery.error, "Matching is temporarily unavailable. Job details remain available.")}
+              </p>
+              <button type="button" onClick={() => void jobMatchQuery.refetch()} className="text-xs font-semibold text-indigo-700 underline dark:text-indigo-300">Retry match</button>
+            </div>
+          ) : jobMatchQuery.data?.status === "RESUME_REQUIRED" ? (
+            <div className="mt-2 space-y-2" role="status">
+              <p className="text-xs text-slate-600 dark:text-slate-400">{jobMatchQuery.data.message}</p>
+              <Link to="/resume/master" className="text-xs font-semibold text-indigo-700 underline dark:text-indigo-300">Upload master resume</Link>
+            </div>
+          ) : jobMatchQuery.data?.status === "RESUME_UNREADABLE" ? (
+            <div className="mt-2 space-y-2" role="status">
+              <p className="text-xs text-amber-800 dark:text-amber-300">{jobMatchQuery.data.message}</p>
+              <Link to="/resume/master" className="text-xs font-semibold text-indigo-700 underline dark:text-indigo-300">Review or replace master resume</Link>
+            </div>
+          ) : jobMatchQuery.data?.status === "UNAVAILABLE" ? (
+            <p className="mt-2 text-xs text-amber-800 dark:text-amber-300" role="status">{jobMatchQuery.data.message}</p>
           ) : (
-            <p className="text-xs italic text-slate-500 dark:text-slate-400">Upload your resume to calculate technical skill alignment.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400" role="status">Match information is unavailable.</p>
           )}
         </section>
 
@@ -524,7 +577,7 @@ export function JobDetail() {
             || job.student_eligible !== undefined && job.student_eligible !== null
             || job.fresher_eligible !== undefined && job.fresher_eligible !== null) && (
             <div className="mt-4 border-t border-amber-200/80 pt-3 dark:border-amber-800/70">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Employer criteria</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Candidate eligibility classification</p>
               <div className="flex flex-wrap gap-1.5">
                 {job.degree_requirements?.map((degree) => (
                   <span key={degree} className="rounded-full border border-amber-200 bg-white/70 px-2.5 py-1 text-[11px] text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">{degree}</span>
@@ -540,7 +593,7 @@ export function JobDetail() {
                       ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-amber-200 bg-white/70 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                   }`}>
-                    Students {job.student_eligible ? "eligible" : "not eligible"}
+                    Students: {job.student_eligible ? "classified as eligible" : "not classified as eligible"}
                   </span>
                 )}
                 {job.fresher_eligible !== undefined && job.fresher_eligible !== null && (
@@ -549,7 +602,7 @@ export function JobDetail() {
                       ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
                       : "border-amber-200 bg-white/70 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                   }`}>
-                    Freshers {job.fresher_eligible ? "eligible" : "not eligible"}
+                    Freshers: {job.fresher_eligible ? "classified as eligible" : "not classified as eligible"}
                   </span>
                 )}
               </div>
@@ -557,6 +610,12 @@ export function JobDetail() {
           )}
         </section>
       </div>
+
+      {job.jd_evidence_status === "INCOMPLETE" && (
+        <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          The employer’s full job description is unavailable. Requirements and technical alignment may be incomplete.
+        </div>
+      )}
 
       {summaryItems.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -689,6 +748,26 @@ export function JobDetail() {
           </div>
         ) : (
           <p className="text-xs text-slate-500 dark:text-slate-400">The employer has not specified required skills for this role.</p>
+        )}
+        {job.inferred_skills?.length ? (
+          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <p className="mb-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Technologies mentioned in the posting (not confirmed requirements)</p>
+            <div className="flex flex-wrap gap-2">
+              {uniqueSkills(job.inferred_skills).map((skill) => (
+                <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{skill}</span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {preferredSkills.length > 0 && (
+          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+            <p className="mb-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">Preferred skills (not required)</p>
+            <div className="flex flex-wrap gap-2">
+              {preferredSkills.map((skill) => (
+                <span key={skill} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{skill}</span>
+              ))}
+            </div>
+          </div>
         )}
       </section>
 

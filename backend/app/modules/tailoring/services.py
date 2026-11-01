@@ -9,6 +9,7 @@ Holistic, multi-section ATS tailoring pipeline with:
 - Real ReportLab PDF page-count measurement and priority-ordered trimming
 - Whole-document 4-point validation dashboard
 """
+import asyncio
 import copy
 import json
 import logging
@@ -25,6 +26,7 @@ from app.core.embeddings.factory import build_embedding_provider
 from app.modules.intelligence.ats_score import compute_ats_score
 from app.modules.jobs import repositories as jobs_repo
 from app.modules.jobs import services as jobs_services
+from app.modules.jobs.skill_vocabulary import extract_skills_from_text
 from app.modules.matching.engine import compute_match
 from app.modules.profile import repositories as profile_repo
 from app.modules.resume import repositories as resume_repo
@@ -48,8 +50,10 @@ from app.modules.tailoring.validation import (
     compute_deterministic_skill_reorder,
     detect_fabricated_claims,
     detect_dropped_source_skills,
+    detect_entity_technology_violations,
     detect_entity_boundary_violations,
     detect_sentence_fragments_and_truncation,
+    detect_unsupported_summary_claims,
     detect_unsupported_action_verbs_and_scope,
     detect_unsupported_metrics,
     extract_technical_terms,
@@ -89,6 +93,19 @@ class TailoredResumeValidationError(Exception):
     pass
 
 
+def is_meaningful_tailoring_change(change: dict) -> bool:
+    """Return False for proposals that do not alter resume content."""
+    change_type = str(change.get("change_type") or "TEXT_REWRITE").upper()
+    if change_type == ChangeType.SKILL_REORDER.value:
+        before = change.get("before_order")
+        after = change.get("after_order")
+        if before is not None and after is not None:
+            return [str(item).strip() for item in before] != [str(item).strip() for item in after]
+    original = re.sub(r"\s+", " ", str(change.get("original") or "")).strip()
+    proposed = re.sub(r"\s+", " ", str(change.get("proposed") or "")).strip()
+    return original != proposed
+
+
 from app.modules.resume.metrics import extract_quantified_metrics, _extract_quantified_metrics
 
 
@@ -114,6 +131,8 @@ def _truth_guard_warning(
     require_verbatim_evidence: bool = False,
     entity_id: str = "",
     all_evidence_units: list[Any] | None = None,
+    entity_source_text: str = "",
+    source_resume_text: str = "",
 ) -> str | None:
     """Reject new tools, unverified metrics, ungrounded scope escalations, and sentence fragments."""
     unsupported_terms = detect_fabricated_claims(original, proposed, jd_text, master_skills)
@@ -121,6 +140,12 @@ def _truth_guard_warning(
     unsupported_scope = detect_unsupported_action_verbs_and_scope(original, proposed)
     dropped_skills = detect_dropped_source_skills(original, proposed)
     boundary_violations = detect_entity_boundary_violations(entity_id, proposed, all_evidence_units) if entity_id else []
+    entity_technology_violations = detect_entity_technology_violations(proposed, entity_source_text) if entity_source_text else []
+    summary_claim_violations = (
+        detect_unsupported_summary_claims(proposed, source_resume_text)
+        if source_resume_text
+        else []
+    )
     fragment_violations = detect_sentence_fragments_and_truncation(original, proposed)
 
     messages: list[str] = []
@@ -134,11 +159,112 @@ def _truth_guard_warning(
         messages.extend(fragment_violations)
     if boundary_violations:
         messages.extend(boundary_violations)
+    if entity_technology_violations:
+        messages.append(
+            f"Technology ({', '.join(entity_technology_violations)}) is not evidenced for this resume entity"
+        )
+    if summary_claim_violations:
+        messages.extend(summary_claim_violations)
     if dropped_skills:
         messages.append(f"Source competency ({', '.join(dropped_skills)}) was removed from the rewritten bullet")
     if require_verbatim_evidence and not has_verbatim_source_evidence(original, source_evidence):
         messages.append("Source evidence must quote the original bullet before this rewrite can be applied")
     return ". ".join(messages) if messages else None
+
+
+def _resume_entity_source_text(candidate_profile: Any, original_bullet: str, section: str) -> str:
+    collection_name = {
+        "PROJECTS": "projects",
+        "EXPERIENCE": "experience",
+        "INTERNSHIPS": "internships",
+    }.get(section.upper())
+    if not collection_name:
+        return ""
+    target = original_bullet.strip().casefold()
+    for entity in getattr(candidate_profile, collection_name, []):
+        bullets = [str(bullet).strip() for bullet in getattr(entity, "bullets", [])]
+        bullets.extend(
+            str(bullet).strip()
+            for progression in getattr(entity, "progression", [])
+            for bullet in getattr(progression, "bullets", [])
+        )
+        if not any(target and (target == bullet.casefold() or target in bullet.casefold() or bullet.casefold() in target) for bullet in bullets):
+            continue
+        values = [
+            getattr(entity, "title", ""),
+            getattr(entity, "company", ""),
+            getattr(entity, "role", ""),
+            getattr(entity, "location", ""),
+            getattr(entity, "dates", ""),
+            getattr(entity, "tech_stack", ""),
+        ]
+        values.extend(getattr(entity, "technologies", []) or [])
+        values.extend(bullets)
+        return " ".join(str(value) for value in values if value)
+    return ""
+
+
+def canonical_master_parsed(master_resume: dict) -> dict:
+    raw_text = master_resume.get("raw_text") or ""
+    if not raw_text:
+        return copy.deepcopy(master_resume.get("parsed") or {})
+
+    from app.modules.resume.models import CandidateProfile
+
+    source_structure = structure_resume_text(raw_text)
+    source_parsed = CandidateProfile.from_parsed_dict(source_structure, raw_text).to_parsed_dict()
+    merged = copy.deepcopy(master_resume.get("parsed") or {})
+    if not isinstance(merged, dict):
+        merged = {}
+    stored_personal = copy.deepcopy(merged.get("personal") or merged.get("personal_info") or {})
+    source_personal = source_parsed.get("personal") or {}
+    if isinstance(stored_personal, dict) and isinstance(source_personal, dict):
+        stored_personal.update({
+            key: copy.deepcopy(value)
+            for key, value in source_personal.items()
+            if value not in (None, "", [])
+        })
+        merged["personal"] = stored_personal
+
+    def stored_section_matches_source(section: str) -> bool:
+        stored = merged.get(section)
+        source = source_parsed.get(section)
+        if not stored:
+            return not source
+        if isinstance(stored, list) and all(isinstance(item, str) for item in stored):
+            raw_normalized = re.sub(r"\s+", " ", raw_text).casefold()
+            return all(
+                re.sub(r"\s+", " ", item).casefold() in raw_normalized
+                for item in stored
+            )
+        if not isinstance(stored, list) or not isinstance(source, list) or len(stored) != len(source):
+            return False
+        fields = {
+            "education": ("institution", "degree", "dates", "gpa"),
+            "education_raw": ("institution", "degree", "dates", "cgpa", "percentage"),
+            "internships": ("company", "role", "dates", "location", "bullets"),
+            "internships_raw": ("company", "role", "dates", "location", "bullets"),
+            "projects": ("title", "tech_stack", "dates", "bullets"),
+            "projects_raw": ("title", "tech_stack", "dates", "bullets"),
+        }.get(section, ())
+        for stored_item, source_item in zip(stored, source):
+            for field in fields:
+                stored_value = stored_item.get(field) if isinstance(stored_item, dict) else getattr(stored_item, field, None)
+                source_value = source_item.get(field) if isinstance(source_item, dict) else getattr(source_item, field, None)
+                if stored_value != source_value:
+                    return False
+        return True
+
+    canonical_sections = (
+        "education", "education_raw", "internships", "internships_raw",
+        "projects", "projects_raw", "languages", "skills_categorized",
+    )
+    for section in canonical_sections:
+        if section not in source_parsed:
+            continue
+        if section in {"languages", "skills_categorized"} or not stored_section_matches_source(section):
+            merged[section] = copy.deepcopy(source_parsed[section])
+    return merged
 
 
 def _validate_and_apply_change(text: str, original: str, proposed: str, change_id: str = "") -> tuple[str, bool, str | None]:
@@ -388,6 +514,68 @@ def _merge_structured_tailoring(
     return merged
 
 
+def approved_preview_change_ids(
+    master_parsed: dict,
+    changes: list[dict],
+    source_resume_text: str = "",
+) -> tuple[set[str], list[str]]:
+    from app.modules.resume.models import CandidateProfile
+
+    profile = CandidateProfile.from_parsed_dict(master_parsed, "")
+    allowed_ids: set[str] = set()
+    excluded_ids: list[str] = []
+    verified_skills = profile.get_all_demonstrated_skills(include_inferred=False)
+    source_text = source_resume_text or _flatten_texts(master_parsed)
+
+    for change in changes:
+        change_id = change.get("change_id")
+        if change.get("status") != ChangeStatus.APPROVED.value or not change_id:
+            continue
+        section = (change.get("section") or "").upper()
+        original = str(change.get("original", ""))
+        proposed = str(change.get("proposed", ""))
+        if change.get("change_type") == ChangeType.SKILL_REORDER.value:
+            source_text_folded = source_text.casefold()
+            source_skills = {
+                _canonicalize_skill(skill)
+                for skill in extract_skills_from_text(source_text)
+            }
+            source_skills.update(_canonicalize_skill(skill) for skill in verified_skills)
+            after_order = change.get("after_order")
+            if isinstance(after_order, list) and after_order and all(
+                isinstance(skill, str)
+                and skill.strip()
+                and (
+                    skill.strip().casefold() in source_text_folded
+                    or _canonicalize_skill(skill) in source_skills
+                )
+                for skill in after_order
+            ):
+                allowed_ids.add(change_id)
+            else:
+                excluded_ids.append(change_id)
+            continue
+        entity_source = _resume_entity_source_text(profile, original, section)
+        if section in {"PROJECTS", "EXPERIENCE", "INTERNSHIPS"}:
+            if not entity_source and proposed.strip() != original.strip():
+                excluded_ids.append(change_id)
+                continue
+        warning = _truth_guard_warning(
+            original,
+            proposed,
+            "",
+            verified_skills,
+            entity_source_text=entity_source,
+            source_resume_text=source_text if section == "SUMMARY" else "",
+        )
+        if warning:
+            excluded_ids.append(change_id)
+            continue
+        allowed_ids.add(change_id)
+
+    return allowed_ids, excluded_ids
+
+
 async def generate_tailoring(
     db: AsyncIOMotorDatabase,
     ai_service: AIService,
@@ -427,36 +615,15 @@ async def generate_tailoring(
         raise MissingJobOrJDError("Provide either job_id or a pasted custom_jd_text.")
 
     from app.core.caching import (
-        get_cached_candidate_profile,
         set_cached_candidate_profile,
     )
     from app.modules.resume.models import CandidateProfile
 
     master_raw_text = resume.get("raw_text", "")
-    candidate_profile = None
-    
-    # Safely extract parsed resume dictionary
-    resume_parsed = resume.get("parsed") or {}
-    if isinstance(resume_parsed, str):
-        try:
-            resume_parsed = json.loads(resume_parsed)
-        except json.JSONDecodeError:
-            resume_parsed = {}
-            
+    master_parsed = canonical_master_parsed(resume)
+    candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, master_raw_text)
     if master_raw_text:
-        cached_prof = get_cached_candidate_profile(master_raw_text)
-        master_parsed = structure_resume_text(master_raw_text)
-        for k, v in resume_parsed.items():
-            if v:
-                master_parsed[k] = copy.deepcopy(v)
-        if cached_prof:
-            candidate_profile = cached_prof
-        else:
-            candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, master_raw_text)
-            set_cached_candidate_profile(master_raw_text, candidate_profile)
-    else:
-        master_parsed = resume_parsed
-        candidate_profile = CandidateProfile.from_parsed_dict(master_parsed, "")
+        set_cached_candidate_profile(master_raw_text, candidate_profile)
     master_skills = candidate_profile.get_all_demonstrated_skills() if hasattr(candidate_profile, "get_all_demonstrated_skills") else master_parsed.get("skills", [])
 
     # Canonical Phase 3 JD Analysis
@@ -673,12 +840,26 @@ async def generate_tailoring(
                     require_verbatim_evidence=True,
                     entity_id=f"proj_{proj_b.bullet_index}",
                     all_evidence_units=candidate_profile.evidence_units,
+                    entity_source_text=_resume_entity_source_text(
+                        candidate_profile, proj_b.original, "PROJECTS"
+                    ),
                 )
                 if warning:
                     b_chg["status"] = ChangeStatus.NEEDS_USER_INPUT.value
                     b_chg["fabrication_warning"] = warning
                     b_chg["confidence"] = min(b_chg["confidence"], 0.60)
             changes.append(b_chg)
+
+
+    changes = [change for change in changes if is_meaningful_tailoring_change(change)]
+
+    generation_notice = result.generation_notice
+    recommendation_note = None
+    if not changes:
+        recommendation_note = (
+            "No meaningful evidence-supported edits were found for this job. "
+            "Your active master resume remains unchanged."
+        )
 
     # 5. Compute Sections and Gaps
     present_sections = ["SUMMARY", "SKILLS", "EXPERIENCE", "PROJECTS", "EDUCATION"]
@@ -752,6 +933,8 @@ async def generate_tailoring(
             "must_haves_count": len(jd_reqs.must_have_skills),
             "preferred_count": len(jd_reqs.preferred_skills),
         },
+        generation_notice=generation_notice,
+        recommendation_note=recommendation_note,
     )
     return version
 
@@ -807,15 +990,15 @@ async def finalize_tailoring(
             "The master resume version used to generate this tailored version is unavailable."
         )
 
-    master_parsed = resume.get("parsed") or {}
+    master_parsed = canonical_master_parsed(resume)
     master_raw_text = resume.get("raw_text", "")
-    if master_raw_text and (not master_parsed.get("personal") or not master_parsed.get("education_raw")):
-        structured_fallback = structure_resume_text(master_raw_text)
-        for k, v in structured_fallback.items():
-            if not master_parsed.get(k):
-                master_parsed[k] = v
 
     changes_list = version.get("changes", [])
+    _, excluded_change_ids = approved_preview_change_ids(
+        master_parsed,
+        changes_list,
+        source_resume_text=master_raw_text,
+    )
     approved_ids = {c["change_id"] for c in changes_list if c.get("status") == ChangeStatus.APPROVED.value}
 
     final_parsed = copy.deepcopy(master_parsed)
@@ -861,16 +1044,48 @@ async def finalize_tailoring(
                 elif chg_type == ChangeType.KEYWORD_INJECTION.value:
                     if prop and prop not in final_parsed.get("skills", []):
                         final_parsed.setdefault("skills", []).append(prop)
-                elif sec == "EXPERIENCE":
+                elif sec in {"EXPERIENCE", "INTERNSHIPS"}:
+                    raw_key = "experience_raw" if sec == "EXPERIENCE" else "internships_raw"
+                    entity_key = "experience" if sec == "EXPERIENCE" else "internships"
                     clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
                     replaced = False
-                    for idx, b in enumerate(final_parsed.get("experience_raw", [])):
-                        if (orig and orig in b) or (clean_orig and clean_orig.lower() in b.lower()):
-                            final_parsed["experience_raw"][idx] = prop
+                    for idx, bullet in enumerate(final_parsed.get(raw_key, [])):
+                        if isinstance(bullet, str) and ((orig and orig in bullet) or (clean_orig and clean_orig.lower() in bullet.lower())):
+                            final_parsed[raw_key][idx] = prop
                             replaced = True
                             break
                     if not replaced and prop:
-                        final_parsed.setdefault("experience_raw", []).append(prop)
+                        final_parsed.setdefault(raw_key, []).append(prop)
+
+                    entity_replaced = False
+                    for entity in final_parsed.get(entity_key, []):
+                        if not isinstance(entity, dict):
+                            continue
+                        for collection_key in ("bullets", "responsibility_groups", "progression"):
+                            entries = entity.get(collection_key, [])
+                            for entry_index, entry in enumerate(entries):
+                                if isinstance(entry, str):
+                                    entry_text = entry
+                                    if (orig and orig in entry_text) or (clean_orig and clean_orig.lower() in entry_text.lower()):
+                                        entries[entry_index] = prop
+                                        entity_replaced = True
+                                        break
+                                elif isinstance(entry, dict):
+                                    for nested_key in ("bullets",):
+                                        nested_entries = entry.get(nested_key, [])
+                                        for nested_index, nested in enumerate(nested_entries):
+                                            if isinstance(nested, str) and ((orig and orig in nested) or (clean_orig and clean_orig.lower() in nested.lower())):
+                                                nested_entries[nested_index] = prop
+                                                entity_replaced = True
+                                                break
+                                        if entity_replaced:
+                                            break
+                                if entity_replaced:
+                                    break
+                            if entity_replaced:
+                                break
+                        if entity_replaced:
+                            break
                 elif sec == "PROJECTS":
                     clean_orig = re.sub(r"^[\u2022\u25cf\u25e6\u2023\u2043\u2219\-\*\s]+", "", orig).strip()
                     replaced = False
@@ -906,6 +1121,14 @@ async def finalize_tailoring(
                             break
                     if not replaced and prop:
                         final_parsed.setdefault("projects_raw", []).append(prop)
+
+                    for project in final_parsed.get("projects", []):
+                        if not isinstance(project, dict):
+                            continue
+                        for bullet_index, bullet in enumerate(project.get("bullets", [])):
+                            if isinstance(bullet, str) and ((orig and orig in bullet) or (clean_orig and clean_orig.lower() in bullet.lower())):
+                                project["bullets"][bullet_index] = prop
+                                break
 
     # Manual edits are stored as an explicit delta from the master resume.
     # Never use the draft `parsed` snapshot here: it may contain stale or
@@ -969,7 +1192,8 @@ async def finalize_tailoring(
     source_validation_profile = build_tailoring_validation_profile(master_parsed)
     pre_fit_validation_profile = build_tailoring_validation_profile(final_parsed)
 
-    final_parsed, fits_budget, page_count = measure_and_enforce_one_page_fit(
+    final_parsed, fits_budget, page_count = await asyncio.to_thread(
+        measure_and_enforce_one_page_fit,
         final_parsed,
         candidate_name=candidate_name,
         template=template_variant,
@@ -1025,6 +1249,11 @@ async def finalize_tailoring(
     )
 
     whole_document_errors = list(final_resume_errors) + list(truth_guard_report.violations)
+    if excluded_change_ids:
+        whole_document_errors.append(
+            "Approved changes failed source validation and must be reviewed before finalization: "
+            + ", ".join(excluded_change_ids)
+        )
     if manual_conflicts:
         whole_document_errors.append(
             "Manual edits repeat changes that are not approved: "
@@ -1178,11 +1407,13 @@ async def finalize_tailoring(
             master_match = compute_match(master_candidate, job, embedder, category=profile.get("category", "FRESHER"))
             master_ats = compute_ats_score(
                 resume_text=resume.get("raw_text", ""),
-                jd_text=job.get("jd_text", ""),
+                jd_text=job.get("jd_text") or job.get("description") or "",
                 parseability_score=resume.get("parseability", {}).get("score", 75),
                 recruiter_impact_score=resume.get("recruiter_impact", {}).get("score", 50),
                 skill_match_score=master_match.skill_score if master_match else 0,
                 role_match_score=master_match.role_score if master_match else 0,
+                required_skills=job.get("skills_required") or [],
+                preferred_skills=job.get("skills_nice_to_have") or [],
             )
 
     tailored_ats = compute_ats_score(
@@ -1192,6 +1423,8 @@ async def finalize_tailoring(
         recruiter_impact_score=recruiter_impact.score,
         skill_match_score=tailored_match.skill_score if tailored_match else 0,
         role_match_score=tailored_match.role_score if tailored_match else 0,
+        required_skills=job.get("skills_required") if job else None,
+        preferred_skills=job.get("skills_nice_to_have") if job else None,
     )
 
     score_warning = None

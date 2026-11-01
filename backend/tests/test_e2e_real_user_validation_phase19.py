@@ -56,6 +56,7 @@ from app.modules.resume.models import (
     EvidenceUnit,
     ClaimType,
 )
+from app.modules.resume.parsing.structurer import parse_experience_section
 from app.modules.resume.classification import (
     classify_candidate_profile,
     CareerClassification,
@@ -517,6 +518,11 @@ def jd_staff_engineer():
 def test_scenario_06_senior_multi_role(profile_senior_multi_role, jd_staff_engineer):
     """SCENARIO 6: Staff engineer with multi-role progression at single company."""
     result = _run_full_pipeline(profile_senior_multi_role, jd_staff_engineer, "Elena Rodriguez")
+    serialized_experience = parse_experience_section(profile_senior_multi_role.to_parsed_dict()["experience_raw"])
+    assert len(serialized_experience) == 1
+    assert serialized_experience[0].company == "Google"
+    assert serialized_experience[0].location == "Mountain View, CA"
+    assert len(serialized_experience[0].progression) == 3
     # All three roles should appear in text output
     assert "Staff" in result["text_output"] or "Senior" in result["text_output"]
     # Must preserve $8M metric from promotion-level bullet

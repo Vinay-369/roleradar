@@ -138,6 +138,7 @@ export function MasterResume() {
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["master-resume"] });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["job-match"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["skill-gaps"] });
       queryClient.invalidateQueries({ queryKey: ["career-alignment"] });
@@ -205,10 +206,10 @@ export function MasterResume() {
 
   const atsStatus = resume?.ats_status ?? (
     strictATSScore >= 80
-      ? { status: "passed", label: "PASSED ATS FILTER — Shortlist Ready", color: "text-signal-700 bg-signal-500/10 border-signal-500/30" }
+      ? { status: "passed", label: "STRONG ATS READINESS — Review Before Applying", color: "text-signal-700 bg-signal-500/10 border-signal-500/30" }
       : strictATSScore >= 65
-      ? { status: "review", label: "REVIEW QUEUE — Optimization Recommended", color: "text-amber-700 bg-amber-500/10 border-amber-500/30" }
-      : { status: "at_risk", label: "AT RISK OF AUTO-REJECTION — Critical Issues Found", color: "text-alert-700 bg-alert-600/10 border-alert-600/30" }
+      ? { status: "review", label: "ATS READINESS REVIEW — Optimization Recommended", color: "text-amber-700 bg-amber-500/10 border-amber-500/30" }
+      : { status: "at_risk", label: "ATS READINESS AT RISK — Critical Issues Found", color: "text-alert-700 bg-alert-600/10 border-alert-600/30" }
   );
 
   const StatusIcon = atsStatus.status === "passed" ? CheckCircle2 : atsStatus.status === "review" ? AlertTriangle : XCircle;
@@ -314,7 +315,7 @@ export function MasterResume() {
       {resume && (
         <div className="space-y-6">
           {/* ========================================================================= */}
-          {/* 1. STRICT ENTERPRISE ATS SCORE HERO CARD                                 */}
+           {/* 1. ATS READINESS SCORE HERO CARD                                         */}
           {/* ========================================================================= */}
           <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
@@ -333,7 +334,7 @@ export function MasterResume() {
                     Enterprise ATS Screening Benchmark
                   </h2>
                   <p className="text-xs text-ink-500 max-w-md leading-relaxed mt-0.5">
-                    Evaluated strictly against Workday, Taleo, and Greenhouse screening filters: single-column layout, contact detection, bullet metrics, and core skill breadth.
+                     Uses common ATS parsing and recruiter-review signals. Each employer’s proprietary ranking model can differ.
                   </p>
                 </div>
               </div>

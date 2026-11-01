@@ -115,7 +115,7 @@ def _get_role_metadata(job: dict) -> dict:
     return {
         "canonical_role": title or None,
         "canonical_role_key": None,
-        "role_domain": job.get("industry") or "Technology",
+        "role_domain": job.get("industry"),
     }
 
 
@@ -140,7 +140,10 @@ async def get_or_compute_matches(
     job_ids = [j["id"] for j in jobs]
 
     # 1. Fetch existing valid cache entries
-    cached_map = await repo.get_cached_matches_for_jobs(db, user_id, resume_version, job_ids)
+    job_fingerprints = {j["id"]: repo.job_match_fingerprint(j) for j in jobs}
+    cached_map = await repo.get_cached_matches_for_jobs(
+        db, user_id, resume_version, job_ids, job_fingerprints
+    )
 
     from app.modules.resume.models import CandidateProfile
     cand_profile = CandidateProfile.from_parsed_dict(resume.get("parsed") or {}, resume.get("raw_text", ""))
@@ -206,6 +209,8 @@ async def get_or_compute_matches(
                 "posted_days_ago": job.get("posted_days_ago", 0),
                 "created_at": created_str,
                 "skills_required": job.get("skills_required", []),
+                "inferred_skills": job.get("inferred_skills", []),
+                "jd_evidence_status": job.get("jd_evidence_status"),
                 "has_match": True,
                 "source_job_id": job.get("source_job_id"),
                 "source_url": job.get("source_url"),
@@ -218,6 +223,10 @@ async def get_or_compute_matches(
                 "is_direct_apply": job.get("is_direct_apply", job.get("url_type") == "DIRECT_REQUISITION"),
                 "posted_at": job.get("posted_at"),
                 "quality_tier": job.get("quality_tier", "PRIMARY"),
+                "completeness_status": job.get("completeness_status"),
+                "recommendation_quality": job.get("recommendation_quality"),
+                "missing_required_information": job.get("missing_required_information", []),
+                "available_information": job.get("available_information", []),
                 "role_confidence": job.get("role_confidence"),
                 "contextual_requirements": job.get("contextual_requirements", []),
                 **_get_role_metadata(job),
@@ -251,6 +260,7 @@ async def get_or_compute_matches(
             }
             newly_computed_to_cache.append({
                 "job_id": job["id"],
+                "job_fingerprint": job_fingerprints[job["id"]],
                 "match_data": match_data,
             })
             created_val = job.get("created_at") or job.get("created")
@@ -294,6 +304,8 @@ async def get_or_compute_matches(
                 "posted_days_ago": job.get("posted_days_ago", 0),
                 "created_at": created_str,
                 "skills_required": job.get("skills_required", []),
+                "inferred_skills": job.get("inferred_skills", []),
+                "jd_evidence_status": job.get("jd_evidence_status"),
                 "has_match": True,
                 "source_job_id": job.get("source_job_id"),
                 "source_url": job.get("source_url"),
@@ -306,6 +318,10 @@ async def get_or_compute_matches(
                 "is_direct_apply": job.get("is_direct_apply", job.get("url_type") == "DIRECT_REQUISITION"),
                 "posted_at": job.get("posted_at"),
                 "quality_tier": job.get("quality_tier", "PRIMARY"),
+                "completeness_status": job.get("completeness_status"),
+                "recommendation_quality": job.get("recommendation_quality"),
+                "missing_required_information": job.get("missing_required_information", []),
+                "available_information": job.get("available_information", []),
                 "role_confidence": job.get("role_confidence"),
                 "contextual_requirements": job.get("contextual_requirements", []),
                 **_get_role_metadata(job),

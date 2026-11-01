@@ -629,7 +629,7 @@ export function SkillGaps() {
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-ink-100 bg-ink-50 px-2.5 py-1.5 text-[11px] font-medium text-ink-600">
                     <BookOpen size={12} className="text-signal-600" />
-                    ~{gap.estimated_days} days study
+                    Estimated study: ~{gap.estimated_days} days
                   </span>
                   <button
                     onClick={() => toggleCard(gap.skill)}

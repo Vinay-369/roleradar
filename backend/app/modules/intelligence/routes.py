@@ -49,6 +49,13 @@ async def get_ats_score(
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
 
+    # Use the canonical JD analysis rather than whatever partial skill list a
+    # provider happened to persist. This keeps ATS scoring and skill matching
+    # aligned with the same required/preferred evidence model.
+    requirements = await jobs_services.get_canonical_job_requirements(db, job)
+    ats_required_skills = list(requirements.must_have_skills or requirements.required_skills or job.get("skills_required") or [])
+    ats_preferred_skills = list(requirements.preferred_skills or job.get("skills_nice_to_have") or [])
+
     profile = await profile_repo.get_profile(db, user_id) or {}
 
     tailored_version = None
@@ -97,6 +104,8 @@ async def get_ats_score(
             recruiter_impact_score=ri.score,
             skill_match_score=tailored_match.skill_score,
             role_match_score=tailored_match.role_score,
+            required_skills=ats_required_skills,
+            preferred_skills=ats_preferred_skills,
         )
 
         target_platform = platform if isinstance(platform, str) and platform else detect_platform_from_url(job.get("apply_url", ""))
@@ -118,6 +127,8 @@ async def get_ats_score(
             recruiter_impact_score=resume["recruiter_impact"]["score"],
             skill_match_score=match.get("skill_score", 0),
             role_match_score=match.get("role_score", 0),
+            required_skills=ats_required_skills,
+            preferred_skills=ats_preferred_skills,
         )
 
         target_platform = platform if isinstance(platform, str) and platform else detect_platform_from_url(job.get("apply_url", ""))

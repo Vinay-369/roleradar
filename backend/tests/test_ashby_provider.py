@@ -201,7 +201,17 @@ def test_05_internship_classification():
         employmentType="FullTime",
     )
     norm_title = provider.normalize_ashby_job(intern_title_raw, "cartesia")
-    assert norm_title["job_type"] == "internship"
+    assert norm_title["job_type"] == "full_time"
+    assert norm_title["opportunity_type"] == "FULL_TIME"
+    assert norm_title["student_friendly"] is False
+
+    # With no structured employment type, the title remains the available signal.
+    title_only_raw = make_raw_ashby_job(
+        title="Machine Learning Intern",
+        employmentType=None,
+    )
+    norm_title_only = provider.normalize_ashby_job(title_only_raw, "cartesia")
+    assert norm_title_only["job_type"] == "internship"
 
     # Case C: STRICT RULE: Description mentions intern/internship, but title and type are full-time
     not_intern_raw = make_raw_ashby_job(
@@ -373,14 +383,14 @@ async def test_14_malformed_response_handling():
 # --- 15. EMPTY RESPONSE / 404 HANDLING ---
 @pytest.mark.asyncio
 async def test_15_empty_and_404_handling():
-    """15. Empty response & 404: Returns empty list without raising exception."""
+    """15. Empty HTTP 200 is success; an unknown configured board is an error."""
     provider = AshbyJobProvider()
 
     # 404 Not Found
     with patch("httpx.AsyncClient.get") as mock_get:
         mock_get.return_value = MagicMock(status_code=404)
-        jobs = await provider.fetch_company_openings("nonexistent-board")
-        assert jobs == []
+        with pytest.raises(AshbyProviderError, match="HTTP 404"):
+            await provider.fetch_company_openings("nonexistent-board")
 
     # 200 with empty jobs
     with patch("httpx.AsyncClient.get") as mock_get:

@@ -352,16 +352,16 @@ def test_10_full_time_experience_integrity():
 # --- 7. FAILURE MODES & NETWORK HANDLING ---
 
 @pytest.mark.asyncio
-async def test_11_fetch_company_openings_404_returns_empty():
-    """11. 404 response on unknown board returns empty list gracefully."""
+async def test_11_fetch_company_openings_404_reports_missing_board():
+    """A board-level 404 must not masquerade as an authoritative empty feed."""
     provider = LeverJobProvider()
     with patch("httpx.AsyncClient.get") as mock_get:
         mock_resp = MagicMock()
         mock_resp.status_code = 404
         mock_get.return_value = mock_resp
 
-        jobs = await provider.fetch_company_openings("nonexistent_company_token_xyz")
-        assert jobs == []
+        with pytest.raises(LeverProviderError, match="HTTP 404"):
+            await provider.fetch_company_openings("nonexistent_company_token_xyz")
 
 
 @pytest.mark.asyncio
@@ -522,6 +522,7 @@ async def test_17_multi_provider_coexistence():
         "location": "Bengaluru, India",
         "is_india_opportunity": True,
         "is_direct_apply": True,
+        "url_type": "DIRECT_REQUISITION",
         "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
         "last_verified_at": now_iso,
         "apply_url": "https://boards.greenhouse.io/postman/jobs/12345",
@@ -539,6 +540,7 @@ async def test_17_multi_provider_coexistence():
         "location": "Bangalore, India",
         "is_india_opportunity": True,
         "is_direct_apply": True,
+        "url_type": "DIRECT_REQUISITION",
         "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
         "last_verified_at": now_iso,
         "apply_url": "https://jobs.lever.co/meesho/67890/apply",
@@ -580,6 +582,7 @@ async def test_18_user_isolation_preserved():
         "title": "Backend Engineer",
         "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
         "is_direct_apply": True,
+        "url_type": "DIRECT_REQUISITION",
         "country": "India",
     })
 

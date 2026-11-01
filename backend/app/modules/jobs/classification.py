@@ -40,6 +40,32 @@ class OpportunityClassification(BaseModel):
     experience_max: int | None = None
 
 
+_STUDENT_EXCLUSION_RE = re.compile(
+    r"\b(?:students?|interns?)\s+(?:(?:are|is)\s+)?(?:not eligible|ineligible|cannot apply|can't apply|not allowed to apply)\b"
+    r"|\bnot\s+open\s+to\s+(?:students?|interns?)\b",
+    re.IGNORECASE,
+)
+_FRESHER_EXCLUSION_RE = re.compile(
+    r"\b(?:freshers?|fresh graduates?|new graduates?)\s+(?:(?:are|is)\s+)?(?:not eligible|ineligible|cannot apply|can't apply|not allowed to apply)\b"
+    r"|\bnot\s+open\s+to\s+(?:freshers?|fresh graduates?|new graduates?)\b",
+    re.IGNORECASE,
+)
+_EXPERIENCED_ONLY_RE = re.compile(
+    r"\bonly\s+(?:experienced|senior|mid[- ]level)\s+(?:candidates?|applicants?)\s+(?:may|can)\s+apply\b",
+    re.IGNORECASE,
+)
+
+
+def has_explicit_student_exclusion(description: str | None) -> bool:
+    text = description or ""
+    return bool(_STUDENT_EXCLUSION_RE.search(text) or _EXPERIENCED_ONLY_RE.search(text))
+
+
+def has_explicit_fresher_exclusion(description: str | None) -> bool:
+    text = description or ""
+    return bool(_FRESHER_EXCLUSION_RE.search(text) or _EXPERIENCED_ONLY_RE.search(text))
+
+
 # Known degree recognition patterns
 DEGREE_PATTERNS = [
     ("B.Tech", re.compile(r"\b(?:b\.?\s*tech|bachelor\s+of\s+technology)\b", re.IGNORECASE)),
@@ -93,7 +119,9 @@ def classify_opportunity_type(
     job_type_hint: str | None = None,
 ) -> OpportunityType:
     """
-    Classifies opportunity type based on semantic signals across title and description.
+    Classifies from explicit employment metadata before title signals. An explicit
+    full-time value overrides an "Intern" title marker; absent that metadata,
+    title-based internship classification remains available.
     """
     title_lower = (title or "").lower().strip()
     desc_lower = (description or "").lower()
@@ -106,6 +134,9 @@ def classify_opportunity_type(
     # 2. Graduate Trainee / Campus Hire Programs
     if re.search(r"\b(?:graduate\s+engineer\s+trainee|management\s+trainee|graduate\s+trainee|\bget\b|\bmt\b|campus\s+hire|campus\s+recruitment|new\s+grad|fresh\s+graduate)\b", title_lower):
         return OpportunityType.GRADUATE_PROGRAM
+
+    if job_type_lower in {"full_time", "full time", "fulltime", "permanent", "regular"}:
+        return OpportunityType.FULL_TIME
 
     # 3. Internship
     if job_type_lower == "internship" or re.search(r"\b(?:intern|internship|trainee|co-op|summer\s+analyst|student\s+worker)\b", title_lower):
@@ -234,6 +265,10 @@ def classify_opportunity(
             or (experience_min is not None and experience_min <= 1 and (experience_max is None or experience_max <= 2))
         )
     )
+    if has_explicit_student_exclusion(description):
+        student_eligible = False
+    if has_explicit_fresher_exclusion(description):
+        fresher_eligible = False
 
     degrees = extract_degree_requirements(description)
     grad_years = extract_graduation_years(description)

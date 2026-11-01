@@ -562,17 +562,26 @@ class CandidateProfile(BaseModel):
         expected by master_parsed, export, matching, and tailoring.
         """
         exp_raw: list[str] = []
+
+        def append_experience_bullet(bullet: str) -> None:
+            value = str(bullet).strip()
+            if value and not value.startswith(("•", "-", "*", "–", "—")):
+                value = f"• {value}"
+            if value:
+                exp_raw.append(value)
+
         for exp in self.experience:
             if exp.progression and len(exp.progression) > 1:
                 # Multi-role progression under the same company
-                exp_raw.append(exp.company)
+                company_header = exp.company
+                if exp.location:
+                    company_header = f"{company_header} - {exp.location}"
+                exp_raw.append(company_header)
                 for p in exp.progression:
                     p_str = f"{p.title} ({p.dates})" if p.dates else p.title
                     exp_raw.append(p_str)
                     for b in p.bullets:
-                        exp_raw.append(b)
-                if exp.location:
-                    exp_raw.append(exp.location)
+                        append_experience_bullet(b)
             else:
                 header_parts = []
                 is_dummy_company = not exp.company or exp.company.lower() in ("work experience", "company")
@@ -595,10 +604,10 @@ class CandidateProfile(BaseModel):
                     if grp.heading:
                         exp_raw.append(grp.heading)
                     for b in grp.bullets:
-                        exp_raw.append(b)
+                        append_experience_bullet(b)
             else:
                 for b in exp.bullets:
-                    exp_raw.append(b)
+                    append_experience_bullet(b)
 
         proj_raw: list[dict[str, Any]] = []
         for p in self.projects:
@@ -631,7 +640,9 @@ class CandidateProfile(BaseModel):
             "skills_categorized": list(self.skills_categorized),
             "skills_by_tier": self.get_skills_by_evidence_tier(),
             "experience": [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in self.experience],
-            "experience_raw": exp_raw if exp_raw else [b for exp in self.experience for b in exp.bullets],
+            "experience_raw": exp_raw if exp_raw else [
+                f"• {bullet}" for exp in self.experience for bullet in exp.bullets
+            ],
             "internships": [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in self.internships],
             "internships_raw": [b for intern in self.internships for b in intern.bullets],
             "projects": [p.model_dump() if hasattr(p, "model_dump") else dict(p) for p in self.projects],

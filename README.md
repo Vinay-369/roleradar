@@ -43,7 +43,7 @@ On Windows PowerShell, use:
 Copy-Item backend/.env.example backend/.env
 ```
 
-Review `backend/.env` and set values for the services you intend to use. The defaults point MongoDB to `mongodb://localhost:27017`. Choose an AI provider and configure its model/service; cloud providers also need their API key. For production, set `ENV=production` and replace `JWT_SECRET` with a strong secret of at least 16 characters.
+Review `backend/.env` and set values for the services you intend to use. The defaults point MongoDB to `mongodb://localhost:27017`. Choose an AI provider and configure its model/service; cloud providers also need their API key. For production, set `ENV=production` and replace `JWT_SECRET` with a cryptographically random secret of at least 32 characters.
 
 ### 2. Start MongoDB
 
@@ -74,7 +74,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-The API serves interactive documentation at [http://localhost:8000/docs](http://localhost:8000/docs). Check service and database status at [http://localhost:8000/api/health](http://localhost:8000/api/health).
+The API serves interactive documentation at [http://localhost:8000/docs](http://localhost:8000/docs). Check service status at [http://localhost:8000/api/health/live](http://localhost:8000/api/health/live) and dependency readiness at [http://localhost:8000/api/health/ready](http://localhost:8000/api/health/ready).
 
 ### 4. Install and start the frontend
 
@@ -141,3 +141,13 @@ docker-compose.yml  Local MongoDB service
 ```
 
 For database backup and restore guidance and deployment notes, see the [Operations Runbook](docs/operations.md).
+
+## Production container
+
+Build and run the self-contained release image with Docker Compose:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Set `JWT_SECRET`, `MONGO_INITDB_ROOT_PASSWORD`, and `CORS_ORIGINS` in a deployment secret store or an untracked `.env` file first. The image serves the compiled SPA and API together; terminate TLS and configure the public hostname at the reverse proxy or managed load balancer.

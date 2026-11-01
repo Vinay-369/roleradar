@@ -83,7 +83,10 @@ class CuratedJobProvider:
         if filters.get("fresher_friendly_only"):
             mongo_filter["fresher_friendly"] = True
         if filters.get("skill"):
-            mongo_filter["skills_required"] = {"$regex": filters["skill"], "$options": "i"}
+            and_clauses.append({"$or": [
+                {"skills_required": {"$regex": filters["skill"], "$options": "i"}},
+                {"inferred_skills": {"$regex": filters["skill"], "$options": "i"}},
+            ]})
         if filters.get("min_lpa") is not None:
             sal_clause = [
                 {"salary_disclosed": False},
@@ -230,6 +233,7 @@ class CuratedJobProvider:
                 {"title": {"$regex": q_re, "$options": "i"}},
                 {"company": {"$regex": q_re, "$options": "i"}},
                 {"skills_required": {"$regex": q_re, "$options": "i"}},
+                {"inferred_skills": {"$regex": q_re, "$options": "i"}},
                 {"location": {"$regex": q_re, "$options": "i"}},
             ]})
 

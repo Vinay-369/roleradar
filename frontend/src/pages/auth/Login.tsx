@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { getApiErrorMessage } from "../../lib/apiClient";
 import { requestPasswordReset, resetPassword } from "../../lib/auth";
 
 function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -67,8 +68,8 @@ export function Login() {
     try {
       await login(targetEmail, targetPassword);
       navigate("/dashboard");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? "Invalid email or password. Please check your credentials or register.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Invalid email or password. Please check your credentials or register."));
     } finally {
       setSubmitting(false);
     }
@@ -104,8 +105,8 @@ export function Login() {
       const result = await requestPasswordReset(recoveryEmail);
       setRecoveryMessage(result.message);
       setRecoveryToken(result.reset_token ?? null);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? "We could not start password recovery. Please try again.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "We could not start password recovery. Please try again."));
     } finally {
       setRecoverySubmitting(false);
     }
@@ -121,8 +122,8 @@ export function Login() {
       setRecoveryOpen(false);
       setRecoveryToken(null);
       setRecoveryPassword("");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? "We could not update your password. Please request a new reset link.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "We could not update your password. Please request a new reset link."));
     } finally {
       setRecoverySubmitting(false);
     }

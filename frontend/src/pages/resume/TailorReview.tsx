@@ -338,11 +338,18 @@ export function TailorReview() {
   const handleDownload = async (format: "pdf" | "docx") => {
     if (!activeVersionId) return;
     try {
+      if (!version?.is_finalized) {
+        toastInfo("Finalizing resume before generating download...", "Finalizing");
+        await finalizeMutation.mutateAsync();
+      }
       const token = localStorage.getItem("roleradar_token") || sessionStorage.getItem("roleradar_token");
       const res = await fetch(`/api/tailoring/${activeVersionId}/export/${format}?template=${selectedTemplate}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.detail || `Export failed: ${res.statusText}`);
+      }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -503,9 +510,19 @@ export function TailorReview() {
         <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50 p-3.5 text-[11px] leading-relaxed text-slate-600 dark:border-slate-700/80 dark:bg-slate-800/60 dark:text-slate-400">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
           <span>
-            <strong className="text-slate-900 dark:text-slate-200">RoleRadar Guarantee Notice:</strong> We guarantee factual accuracy against your uploaded master resume and ATS layout compliance. We do not claim guaranteed shortlisting or automatic hiring outcomes; hiring decisions remain with human recruiters.
+            <strong className="text-slate-900 dark:text-slate-200">Truth Guard:</strong> Proposed edits are checked against your uploaded resume evidence. Review each change before finalizing; this analysis does not predict hiring outcomes.
           </span>
         </div>
+        {version.generation_notice && (
+          <div role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            {version.generation_notice}
+          </div>
+        )}
+        {version.recommendation_note && (
+          <div role="status" className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            {version.recommendation_note}
+          </div>
+        )}
       </div>
 
       {/* 2. Top Intelligence Grid (Analysis, Classification, Strategy) */}
@@ -836,6 +853,11 @@ export function TailorReview() {
           {/* Section B: All Tailoring Changes (8. Changes Made) */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">8. Proposed Transformations & Improvements</h3>
+            {changes.length === 0 && (
+              <p role="status" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                {version.recommendation_note || "No meaningful evidence-supported edits were found. Your active master resume remains unchanged."}
+              </p>
+            )}
             {changes.map((c) => (
               <div key={c.change_id} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center justify-between">
@@ -1025,10 +1047,17 @@ export function TailorReview() {
               </p>
             </div>
             <div className="text-right">
-              <span className="text-3xl font-bold font-display text-signal-700">
-                {atsFindings?.ats_format_validation?.overall_ats_score || 85}%
-              </span>
-              <p className="text-[10px] text-ink-400 uppercase font-bold">ATS Format Score</p>
+              {(() => {
+                const formatScore = atsFindings?.ats_format_validation?.overall_ats_score;
+                return (
+                  <>
+                    <span className="text-3xl font-bold font-display text-signal-700">
+                      {typeof formatScore === "number" ? `${formatScore}%` : "Pending"}
+                    </span>
+                    <p className="text-[10px] text-ink-400 uppercase font-bold">ATS Format Score</p>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -1036,19 +1065,19 @@ export function TailorReview() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
               <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Standard Headings</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.standard_headings_score || 100}%</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{typeof atsFindings?.ats_format_validation?.standard_headings_score === "number" ? `${atsFindings.ats_format_validation.standard_headings_score}%` : "—"}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
               <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Section Order</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.section_order_score || 100}%</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{typeof atsFindings?.ats_format_validation?.section_order_score === "number" ? `${atsFindings.ats_format_validation.section_order_score}%` : "—"}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
               <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Bullet Quality</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.bullet_consistency_score || 95}%</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{typeof atsFindings?.ats_format_validation?.bullet_consistency_score === "number" ? `${atsFindings.ats_format_validation.bullet_consistency_score}%` : "—"}</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800">
               <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Date Consistency</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{atsFindings?.ats_format_validation?.date_consistency_score || 100}%</p>
+                <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{typeof atsFindings?.ats_format_validation?.date_consistency_score === "number" ? `${atsFindings.ats_format_validation.date_consistency_score}%` : "—"}</p>
             </div>
           </div>
 

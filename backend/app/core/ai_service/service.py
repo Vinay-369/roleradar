@@ -93,13 +93,14 @@ class AIService:
 
         model_name = getattr(self._provider, "_model", self._settings.OLLAMA_MODEL)
         provider_name = self._provider.__class__.__name__
+        cache_model_key = f"{model_name}:{provider_name}"
         prof_hash = compute_sha256(master_resume_json)
         jd_hash = compute_sha256(jd_text + f":{company}:{role}")
 
         # Check Cache (<10ms instant response on identical inputs for production local/cloud providers)
         use_cache = provider_name in ("OllamaProvider", "LMStudioProvider", "CloudFallbackProvider")
         if use_cache:
-            cached_result = get_cached_tailoring_plan(prof_hash, jd_hash, f"{model_name}:{provider_name}")
+            cached_result = get_cached_tailoring_plan(prof_hash, jd_hash, cache_model_key)
             if cached_result is not None:
                 return cached_result
 
@@ -117,14 +118,18 @@ class AIService:
             )
             result = self._reconstruct_structured_result(master_resume_json, compact_plan, company=company, role=role)
             if use_cache:
-                set_cached_tailoring_plan(prof_hash, jd_hash, f"{model_name}:{provider_name}", result)
+                set_cached_tailoring_plan(prof_hash, jd_hash, cache_model_key, result)
 
-            changes_count = (
-                (1 if result.summary else 0)
-                + len(result.skills.additions)
-                + len(result.experience_bullets)
-                + len(result.project_bullets)
-            )
+            changes_count = sum(
+                1
+                for change in (
+                    ([result.summary] if result.summary else [])
+                    + list(result.experience_bullets)
+                    + list(result.project_bullets)
+                )
+                if str(getattr(change, "proposed", "") or "").strip()
+                != str(getattr(change, "original", "") or "").strip()
+            ) + sum(1 for skill in result.skills.additions if skill.skill.strip())
             await self._log_operation(
                 operation="generate_resume_rewrite",
                 user_id=user_id,
@@ -134,14 +139,22 @@ class AIService:
             return result
         except Exception as exc:
             import logging
-            logging.getLogger("roleradar.ai").warning("LLM tailoring failed (%s) — activating intelligent Truth-Guard structured fallback", exc)
+            logging.getLogger("roleradar.ai").warning(
+                "LLM tailoring failed (%s) — activating deterministic Truth-Guard fallback",
+                type(exc).__name__,
+            )
             fallback = self._fallback_resume_rewrite(master_resume_json, jd_text, company=company, role=role)
-            set_cached_tailoring_plan(prof_hash, jd_hash, model_name, fallback)
+            fallback.generation_mode = "FALLBACK"
+            fallback.generation_notice = (
+                "The AI model was unavailable. A deterministic, source-grounded fallback was used; "
+                "review the proposed changes against your resume evidence."
+            )
+            set_cached_tailoring_plan(prof_hash, jd_hash, cache_model_key, fallback)
             await self._log_operation(
                 operation="generate_resume_rewrite",
                 user_id=user_id,
                 status="fallback_success",
-                meta={"prompt_version": TAILORING_PROMPT_VERSION, "error": str(exc)},
+                meta={"prompt_version": TAILORING_PROMPT_VERSION, "error_type": type(exc).__name__},
             )
             return fallback
 

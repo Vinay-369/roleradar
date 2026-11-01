@@ -17,13 +17,17 @@ from app.core.config import Settings
 from app.modules.auth import services as auth_services
 from app.modules.jobs import services as jobs_services
 from app.modules.resume import services as resume_services
+from app.modules.resume.models import CandidateProfile
+from app.modules.resume.parsing.structurer import structure_resume_text
 from app.modules.tailoring import services as tailoring_services
 from app.modules.tailoring.validation import (
     detect_dropped_source_skills,
     detect_sentence_fragments_and_truncation,
+    detect_unsupported_summary_claims,
     detect_unsupported_action_verbs_and_scope,
     detect_unsupported_metrics,
     has_verbatim_source_evidence,
+    validate_tailored_profile_truth_guard,
 )
 
 
@@ -36,6 +40,100 @@ def db():
 @pytest.fixture
 def settings():
     return Settings(JWT_SECRET="test-secret", EMBEDDING_PROVIDER="mock")
+
+
+def test_truth_guard_rejects_technology_borrowed_from_another_project():
+    source_text = """Jordan Lee
+SKILLS
+Python, Java, SQL
+PROJECTS
+Web Analytics Dashboard
+Technologies: Python, FastAPI
+Built a dashboard using Python and FastAPI.
+Library Records CLI
+Technologies: Java, MySQL
+Created a command-line application using prepared SQL statements.
+"""
+    source = CandidateProfile.from_parsed_dict(
+        structure_resume_text(source_text), source_text
+    )
+    tailored = source.model_copy(deep=True)
+    target_project = tailored.projects[1]
+    proposed_bullet = "Built a Python-based CLI using prepared SQL statements."
+    target_project.bullets[0] = proposed_bullet
+    target_project.evidence_units[0].original_text = proposed_bullet
+    target_project.evidence_units[0].normalized_text = proposed_bullet
+    target_evidence = next(
+        evidence for evidence in tailored.evidence_units
+        if evidence.entity_id == target_project.id
+    )
+    target_evidence.original_text = proposed_bullet
+    target_evidence.normalized_text = proposed_bullet
+
+    _, audit = validate_tailored_profile_truth_guard(source, tailored, auto_revert=False)
+
+    assert not audit.is_valid
+    assert "python" in {technology.lower() for technology in audit.unsupported_technologies}
+    assert any("not evidenced for its resume entity" in violation for violation in audit.violations)
+
+
+def test_project_proposal_gate_does_not_treat_global_skills_as_project_evidence():
+    original = "Created a command-line application using prepared SQL statements."
+    proposed = "Built a Python-based CLI using prepared SQL statements."
+    warning = tailoring_services._truth_guard_warning(
+        original,
+        proposed,
+        "The target role requests Python.",
+        ["Python", "Java", "SQL"],
+        source_evidence=original,
+        require_verbatim_evidence=True,
+        entity_source_text=(
+            "Library Records CLI Java MySQL Created a command-line application "
+            "using prepared SQL statements."
+        ),
+    )
+
+    assert warning is not None
+    assert "not evidenced for this resume entity" in warning
+
+
+def test_summary_scope_and_experience_claims_need_resume_evidence():
+    proposed = (
+        "Software engineer with solid experience building developer tooling, "
+        "data processing pipelines, and backend platforms."
+    )
+    source = "Final-year student with project experience building web applications and REST APIs."
+
+    violations = detect_unsupported_summary_claims(proposed, source)
+
+    assert any("Experience-strength claim" in item for item in violations)
+    assert any("tooling" in item.lower() for item in violations)
+    assert any("pipelines" in item.lower() for item in violations)
+    assert any("platforms" in item.lower() for item in violations)
+    assert detect_unsupported_summary_claims(
+        "Candidate has solid experience building developer tooling, data pipelines, and backend platforms.",
+        "Candidate has solid experience building developer tooling, data pipelines, and backend platforms.",
+    ) == []
+
+
+def test_approved_skill_reorder_accepts_canonical_source_abbreviations():
+    source_text = "TECHNICAL SKILLS\nCore Concepts\nOOP"
+    change = {
+        "change_id": "skill-reorder",
+        "section": "SKILLS",
+        "change_type": "SKILL_REORDER",
+        "status": "APPROVED",
+        "after_order": ["Object-Oriented Programming"],
+    }
+
+    allowed, excluded = tailoring_services.approved_preview_change_ids(
+        {"skills": ["OOP"]},
+        [change],
+        source_resume_text=source_text,
+    )
+
+    assert allowed == {"skill-reorder"}
+    assert excluded == []
 
 
 class FakeTailoringProvider:
@@ -100,6 +198,53 @@ async def _setup_user_with_resume_and_job(db, settings):
     job = jobs[0]
 
     return user_id, job["id"]
+
+
+@pytest.mark.asyncio
+async def test_identical_tailoring_proposals_are_omitted_and_noop_finalization_preserves_master(db, settings):
+    from app.core.ai_service.schemas import SkillsTailoring, StructuredTailoringResult, SummaryTailoring
+    from app.modules.resume import repositories as resume_repo
+
+    user_id, _ = await _setup_user_with_resume_and_job(db, settings)
+
+    class UnchangedTailoringService:
+        async def generate_resume_rewrite(self, master_resume_json, **_kwargs):
+            payload = json.loads(master_resume_json)
+            summary = str(payload.get("summary") or "")
+            return StructuredTailoringResult(
+                summary=SummaryTailoring(
+                    original=summary,
+                    proposed=summary,
+                    reason="Reviewed against the target JD.",
+                    source_evidence=summary,
+                ) if summary else None,
+                skills=SkillsTailoring(ordered_skills=list(payload.get("skills") or [])),
+            )
+
+    master_before = await resume_repo.get_active_master_resume(db, user_id)
+    version = await tailoring_services.generate_tailoring(
+        db,
+        UnchangedTailoringService(),
+        user_id,
+        custom_company="No-op Research Lab",
+        custom_role_title="Backend Engineer",
+        custom_jd_text="Research general backend role fit without adding requirements absent from the candidate resume.",
+    )
+
+    assert version["changes"] == []
+    assert "No meaningful evidence-supported edits" in version["recommendation_note"]
+
+    finalized = await tailoring_services.finalize_tailoring(
+        db, user_id, str(version["_id"]), settings=settings
+    )
+    master_after = await resume_repo.get_master_resume_version(
+        db, user_id, str(master_before["_id"]), master_before["version"]
+    )
+
+    assert finalized["is_finalized"] is True
+    assert finalized["parsed"] == tailoring_services.canonical_master_parsed(master_before)
+    assert master_after["raw_text"] == master_before["raw_text"]
+    assert master_after["parsed"] == master_before["parsed"]
 
 
 @pytest.mark.asyncio
@@ -362,6 +507,14 @@ def test_detect_unsupported_action_verbs_and_scope_audit():
     violations_arch = detect_unsupported_action_verbs_and_scope(source_cataract, unsupported_arch)
     assert any("Architecture claim (architected)" in v for v in violations_arch)
 
+    api_implementation_source = "Created REST routes for listing products and documented API requests."
+    architecture_escalation = "Architected RESTful backend services and documented API requests."
+    architecture_violations = detect_unsupported_action_verbs_and_scope(
+        api_implementation_source,
+        architecture_escalation,
+    )
+    assert any("Architecture claim (architected)" in v for v in architecture_violations)
+
     # 4. Verified faithful paraphrase with neutral engineering verb
     verified_developed = (
         "Developed a Convolutional Neural Network (CNN) image classification model using Python, "
@@ -420,5 +573,4 @@ def test_truth_guard_rejects_sentence_fragments_and_headless_bullets():
     )
     assert warning is not None
     assert any(term in warning.lower() for term in ["fragment", "lowercase", "action verb"])
-
 

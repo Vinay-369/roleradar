@@ -14,6 +14,7 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 import html
 import logging
@@ -113,10 +114,12 @@ class GreenhouseJobProvider:
                 resp = await client.get(url, headers=headers)
                 if resp.status_code == 404:
                     logger.warning(f"Greenhouse board '{clean_token}' returned 404 Not Found.")
-                    return []
+                    raise ValueError(f"Configured Greenhouse board was not found (HTTP 404): {clean_token}")
                 resp.raise_for_status()
-                data = resp.json()
-                return data.get("jobs", [])
+                data = await asyncio.to_thread(resp.json)
+                if not isinstance(data, dict) or not isinstance(data.get("jobs"), list):
+                    raise ValueError("Malformed Greenhouse response: jobs must be an array.")
+                return data["jobs"]
         except httpx.TimeoutException as exc:
             logger.error(f"Timeout fetching Greenhouse board '{clean_token}': {exc}")
             raise GreenhouseNetworkError(f"Timeout connecting to Greenhouse board '{clean_token}'") from exc
@@ -342,6 +345,7 @@ class GreenhouseJobProvider:
             "board": clean_token,
             "fetched": 0,
             "verified_active": 0,
+            "unique_requisitions": 0,
             "closed": 0,
             "retained": 0,
             "internships": 0,
@@ -370,7 +374,13 @@ class GreenhouseJobProvider:
                 continue
             current_job_ids.add(jid)
 
-            job_doc = self.normalize_greenhouse_job(item, clean_token, company_name=company_name, now=now)
+            job_doc = await asyncio.to_thread(
+                self.normalize_greenhouse_job,
+                item,
+                clean_token,
+                company_name=company_name,
+                now=now,
+            )
 
             # Check if direct requisition
             if job_doc.get("url_type") == ApplicationUrlType.DIRECT_REQUISITION.value:
@@ -411,6 +421,7 @@ class GreenhouseJobProvider:
         # Step 3: Upsert active openings into MongoDB with first_seen_at preservation
         if active_normalized:
             deduped = deduplicate_opportunities(active_normalized)
+            stats["unique_requisitions"] = len(deduped)
             for doc in deduped:
                 doc_to_save = dict(doc)
                 doc_id = doc_to_save.pop("id")

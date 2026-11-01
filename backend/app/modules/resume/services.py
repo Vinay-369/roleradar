@@ -83,13 +83,13 @@ def compute_strict_ats_benchmark(
     elif strict_score >= 65:
         status_info = {
             "status": "review",
-            "label": "REVIEW QUEUE — Optimization Recommended",
+            "label": "ATS READINESS REVIEW — Optimization Recommended",
             "color": "text-amber-700 bg-amber-500/10 border-amber-500/30",
         }
     else:
         status_info = {
             "status": "at_risk",
-            "label": "AT RISK OF AUTO-REJECTION — Critical Issues Found",
+            "label": "ATS READINESS AT RISK — Critical Issues Found",
             "color": "text-alert-700 bg-alert-600/10 border-alert-600/30",
         }
 

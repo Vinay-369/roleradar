@@ -184,7 +184,24 @@ def evaluate_eligibility(
     # -------------------------------------------------------------
     # 1. Experience Check (P0-02 Safety Rules)
     # -------------------------------------------------------------
-    if exp_min is not None and exp_min > 0:
+    explicit_student_exclusion = bool(re.search(
+        r"\b(?:students?|interns?)\s+(?:(?:are|is)\s+)?(?:not eligible|ineligible|cannot apply|can't apply|not allowed to apply)\b",
+        description,
+        re.IGNORECASE,
+    ))
+    explicit_fresher_exclusion = bool(re.search(
+        r"\b(?:freshers?|fresh graduates?|new graduates?)\s+(?:(?:are|is)\s+)?(?:not eligible|ineligible|cannot apply|can't apply|not allowed to apply)\b",
+        description,
+        re.IGNORECASE,
+    ))
+
+    if (is_student_cand and explicit_student_exclusion) or (is_fresher_cand and explicit_fresher_exclusion):
+        checks["experience"] = "FAIL"
+        if is_student_cand and explicit_student_exclusion:
+            reasons.append("Employer explicitly excludes students")
+        if is_fresher_cand and explicit_fresher_exclusion:
+            reasons.append("Employer explicitly excludes freshers / new graduates")
+    elif exp_min is not None and exp_min > 0:
         if cand_exp_years is not None:
             if cand_exp_years < (exp_min - 0.5):
                 checks["experience"] = "FAIL"

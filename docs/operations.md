@@ -187,6 +187,12 @@ Before launching the production stack, ensure the following environment variable
 | `AUTH_RATE_LIMIT_WINDOW_SECONDS`| Sliding rate limit window duration in seconds | `60` |
 | `MAX_UPLOAD_MB` | Maximum allowed resume upload size | `5` |
 
+The container image exposes separate health probes for orchestrators:
+- `GET /api/health/live` confirms the process is running and does not require MongoDB.
+- `GET /api/health/ready` returns `503` until MongoDB responds to a ping.
+
+Use `docker-compose.prod.yml` for a repeatable container deployment. Keep MongoDB off the public network, supply secrets through the deployment environment, and put TLS termination in front of the application. The local in-process rate limiter is suitable for a single API instance; deployments with multiple API replicas should enforce shared rate limits at the gateway or add a shared limiter before scaling out.
+
 ---
 
 ## 5. Live Opportunity Provider Synchronization (Decoupled in Phase 16C)

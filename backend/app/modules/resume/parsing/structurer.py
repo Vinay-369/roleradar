@@ -108,6 +108,10 @@ _CATEGORY_PREFIX_RE = re.compile(
     r"^(?:languages|programming languages|frameworks\s*&\s*tools|frameworks\s+and\s+tools|tools\s*&\s*technologies|tools\s+and\s+technologies|languages\s*&\s*frameworks|languages\s+and\s+frameworks|frameworks|libraries|tools|databases|cloud|devops|backend|frontend|methodologies|web technologies|platforms|technologies|os|operating systems|core competencies)\s*:\s*",
     re.IGNORECASE,
 )
+_CATEGORY_HEADING_RE = re.compile(
+    r"^(?:programming languages|frameworks(?:\s*&\s*tools|\s+and\s+tools)?|tools(?:\s*&\s*technologies|\s+and\s+technologies)?|languages(?:\s*&\s*frameworks|\s+and\s+frameworks)?|libraries|databases(?:\s+and\s+tools)?|cloud|devops|backend|frontend|methodologies|web technologies|platforms|technologies|os|operating systems|core concepts|core competencies)\s*:?$",
+    re.IGNORECASE,
+)
 
 _INSTITUTION_RE = re.compile(
     r"\b(?:institute|college|university|school|academy|polytechnic|vidyalaya|campus)\b",
@@ -143,6 +147,8 @@ def _split_into_sections(lines: list[str]) -> dict[str, Any]:
             if re.match(pattern, normalized, re.IGNORECASE):
                 matched = key
                 break
+        if matched == "languages" and current == "skills" and normalized.casefold() == "languages":
+            matched = None
         if matched:
             current = matched
             continue
@@ -266,7 +272,7 @@ def _extract_location_from_text(lines: list[str]) -> str | None:
             seg_lower = seg.lower()
             if EMAIL_RE.search(seg) or PHONE_RE.search(seg) or URL_RE.search(seg):
                 continue
-            if any(loc in seg_lower for loc in KNOWN_LOCATIONS):
+            if any(re.search(rf"(?<!\w){re.escape(loc)}(?!\w)", seg_lower) for loc in KNOWN_LOCATIONS):
                 if len(seg) >= 3 and len(seg) <= 60:
                     return seg
 
@@ -544,9 +550,25 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
                 current_location = clean
                 continue
 
+        if not has_bullet and has_date and current_company and current_progression:
+            remainder = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|,;")
+            date_prefix = clean[:date_m.start()].strip(" ()–-—|,:;").casefold()
+            if (
+                not any(w in ROLE_KEYWORDS for w in words)
+                and len(remainder.split()) <= 6
+                and date_prefix in {"", "date", "dates", "period"}
+                and " at " not in remainder.lower()
+            ):
+                current_dates = dates_val or current_dates
+                current_progression[-1].dates = dates_val or current_progression[-1].dates
+                if remainder and not current_location:
+                    current_location = remainder
+                    current_progression[-1].location = remainder
+                continue
+
         # 3. Delimited line with Role, Company, Date, Location
         # E.g. 'Senior Java Developer | Jan 2021 - Present', 'Senior Backend Engineer at CloudScale Technologies (2022 - Present) - Bangalore', 'TechCorp — Lead AI Engineer (2022 - Present)'
-        has_delimiter = any(d in clean for d in [" at ", " — ", " – ", " | ", "|", " —", " –"]) or ("," in clean and (has_date or any(w in ROLE_KEYWORDS for w in words)))
+        has_delimiter = any(d in clean for d in [" at ", " - ", " — ", " – ", " | ", "|", " —", " –"]) or ("," in clean and (has_date or any(w in ROLE_KEYWORDS for w in words)))
         if not has_bullet and has_delimiter and (any(w in ROLE_KEYWORDS for w in words) or has_date):
             clean_nodate = _DATE_RANGE_RE.sub("", clean).strip(" ()–-—|")
             
@@ -557,9 +579,9 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
             if " at " in clean_lower:
                 r_sub, _, c_sub = clean_nodate.partition(" at ")
                 role_cand = r_sub.strip(" ()–-—|")
-                comp_cand = c_sub.strip(" ()–-—|")
+                comp_cand = re.sub(r"\(\s*\)", "", c_sub).strip(" –-—|")
             else:
-                seps = [" — ", " – ", " | ", "|", " —", " –"]
+                seps = [" - ", " — ", " – ", " | ", "|", " —", " –"]
                 used_sep = next((s for s in seps if s in clean_nodate), None)
                 if used_sep:
                     parts = [p.strip(" ()–-—|") for p in clean_nodate.split(used_sep) if p.strip(" ()–-—|")]
@@ -580,7 +602,7 @@ def parse_experience_section(lines: list[str]) -> list[Any]:
                     if s in comp_cand:
                         c_only, _, l_only = comp_cand.partition(s)
                         if _is_location_text(l_only):
-                            comp_cand = c_only.strip(" ()–-—|")
+                            comp_cand = re.sub(r"\(\s*\)", "", c_only).strip(" –-—|")
                             loc_cand = l_only.strip(" ()–-—|")
                             break
 
@@ -854,6 +876,10 @@ def parse_projects_section(lines: list[str]) -> list[Any]:
         # Tech stack metadata line
         if _is_tech_stack_or_meta(clean) or (not has_bullet and re.match(r"^(?:Python|Java|C\+\+|React|TensorFlow|Go|Node|Swift|JavaScript|HTML|SQL|OpenCV|Keras|Streamlit)\b", clean) and len(clean.split()) <= 10 and "," in clean):
             tech_val = re.sub(r"^(?:technologies|tech stack|tools & technologies|tools|frameworks & tools|stack|languages & frameworks)\s*:\s*", "", clean, flags=re.IGNORECASE).strip()
+            date_match = _DATE_RANGE_RE.search(tech_val)
+            if date_match:
+                current_dates = date_match.group(0).strip()
+                tech_val = (tech_val[:date_match.start()] + " " + tech_val[date_match.end():]).strip(" -–—|,;")
             current_tech = (current_tech + ", " + tech_val).strip(", ") if current_tech else tech_val
             continue
 
@@ -1088,7 +1114,7 @@ def _structure_education(lines: list[str]) -> list[str]:
 
 DEGREE_PATTERNS = [
     re.compile(
-        r"\b(?:master\s+of\s+science|bachelor\s+of\s+science|master\s+of\s+arts|bachelor\s+of\s+arts|master\s+of\s+engineering|bachelor\s+of\s+engineering|master\s+of\s+technology|bachelor\s+of\s+technology|master\s+of\s+business|bachelor\s+of\s+business|doctor\s+of\s+philosophy|master\s+of\s+commerce|bachelor\s+of\s+commerce|master(?:\'s)?|bachelor(?:\'s)?|ph\.?d\.?|doctorate|m\.?s\.?|b\.?s\.?|b\.?tech\.?|m\.?tech\.?|b\.?e\.?|m\.?e\.?|b\.?sc\.?|m\.?sc\.?|b\.?a\.?|m\.?a\.?|b\.?com\.?|m\.?com\.?|b\.?eng\.?|m\.?eng\.?|diploma|associate(?:\s+of|\s+degree)?|certificate(?:\s+in)?|degree)\b",
+        r"\b(?:pre-university\s+course|master\s+of\s+science|bachelor\s+of\s+science|master\s+of\s+arts|bachelor\s+of\s+arts|master\s+of\s+engineering|bachelor\s+of\s+engineering|master\s+of\s+technology|bachelor\s+of\s+technology|master\s+of\s+business|bachelor\s+of\s+business|doctor\s+of\s+philosophy|master\s+of\s+commerce|bachelor\s+of\s+commerce|master(?:\'s)?|bachelor(?:\'s)?|ph\.?d\.?|doctorate|m\.?s\.?|b\.?s\.?|b\.?tech\.?|m\.?tech\.?|b\.?e\.?|m\.?e\.?|b\.?sc\.?|m\.?sc\.?|b\.?a\.?|m\.?a\.?|b\.?com\.?|m\.?com\.?|b\.?eng\.?|m\.?eng\.?|diploma|associate(?:\s+of|\s+degree)?|certificate(?:\s+in)?|degree)\b",
         re.IGNORECASE,
     ),
 ]
@@ -1164,7 +1190,7 @@ def parse_education_section(lines: list[str]) -> list[Any]:
             clean_text = _DATE_RANGE_RE.sub("", clean_text)
             clean_text = _MINOR_RE.sub("", clean_text)
             clean_text = re.sub(r"\b(?:graduation|expected|dates?)\s*:\s*", "", clean_text, flags=re.IGNORECASE)
-            clean_text = clean_text.strip(" *#=_~|•-–—\t\r\n,()")
+            clean_text = clean_text.strip(" *#=_~|•-–—\t\r\n,")
 
             if not clean_text:
                 continue
@@ -1315,14 +1341,25 @@ def _is_location_or_contact_line(text: str) -> bool:
 
 
 def _extract_categorized_skills(lines: list[str]) -> list[str]:
-    """Preserves categorized skill lines (e.g. 'Languages: Python, Java', 'Databases: PostgreSQL')."""
+    """Preserves skill categories written as labels or label/value pairs."""
     cat_lines: list[str] = []
+    pending_category = ""
     for line in lines:
         cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
-        if not cleaned or _is_location_or_contact_line(cleaned):
+        if not cleaned:
+            pending_category = ""
+            continue
+        if _is_location_or_contact_line(cleaned):
             continue
         if ":" in cleaned and len(cleaned.split(":")[0].split()) <= 6:
             cat_lines.append(cleaned)
+            pending_category = ""
+            continue
+        if _CATEGORY_HEADING_RE.fullmatch(cleaned):
+            pending_category = cleaned.rstrip(":")
+            continue
+        if pending_category:
+            cat_lines.append(f"{pending_category}: {cleaned}")
     return cat_lines
 
 
@@ -1335,6 +1372,8 @@ def _split_skills_explicit(lines: list[str]) -> list[str]:
     for line in lines:
         cleaned = _BULLET_PREFIX_RE.sub("", line).strip()
         if not cleaned or _is_location_or_contact_line(cleaned):
+            continue
+        if _CATEGORY_HEADING_RE.match(cleaned):
             continue
         cleaned = _CATEGORY_PREFIX_RE.sub("", cleaned).strip()
 

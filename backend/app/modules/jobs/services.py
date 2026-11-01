@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import threading
 import uuid
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -25,6 +26,25 @@ from app.modules.jobs.verification import (
 
 SEED_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "seeds", "jobs_seed.json")
 logger = logging.getLogger("roleradar.jobs.sync")
+
+_live_refresh_guard = threading.Lock()
+_live_refresh_tasks: dict[tuple[int, int], asyncio.Task[dict]] = {}
+
+
+def _public_provider_error(message: object) -> str:
+    """Map provider exceptions to useful, credential-safe status text."""
+    text = str(message or "").casefold()
+    if "404" in text or "not found" in text:
+        return "Configured employer board was not found (HTTP 404)."
+    if "429" in text or "rate limit" in text or "rate-limit" in text:
+        return "Provider rate-limited this board (HTTP 429)."
+    if "timeout" in text or "timed out" in text:
+        return "Provider request timed out."
+    if "json" in text or "malformed" in text or "invalid response" in text:
+        return "Provider returned a malformed response."
+    if "network" in text or "connect" in text or "requesterror" in text:
+        return "Provider could not be reached."
+    return "Provider synchronization failed."
 
 
 async def ensure_seed_loaded(db: AsyncIOMotorDatabase) -> int:
@@ -98,32 +118,64 @@ async def _sync_configured_boards(
     country: str | None = None,
 ) -> dict:
     boards = _configured_board_tokens(settings, companies_attribute)
-    summary = {"total_boards": len(boards), "fetched": 0, "verified_active": 0, "closed": 0, "internships": 0, "errors": [], "results": []}
-    if not getattr(settings, enabled_attribute, False) or not boards:
+    summary = {"total_boards": len(boards), "fetched": 0, "verified_active": 0, "unique_requisitions": 0, "closed": 0, "internships": 0, "detail_enriched": 0, "detail_enrichment_failed": 0, "detail_enrichment_skipped": 0, "errors": [], "results": []}
+    if not getattr(settings, enabled_attribute, False):
+        summary["status"] = "disabled"
+        return summary
+    if not boards:
+        summary["status"] = "not_configured"
         return summary
 
     provider = provider_class(settings)
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore(max(1, int(getattr(settings, "JOB_PROVIDER_BOARD_CONCURRENCY", 8))))
+    board_timeout = max(0.1, float(getattr(settings, "JOB_PROVIDER_SYNC_TIMEOUT_SECONDS", 25.0)))
 
     async def sync_board(board: str):
         async with semaphore:
             try:
                 kwargs = {"country": country} if country else {}
-                return await provider.sync_company_openings(db, board, **kwargs)
+                result = await asyncio.wait_for(
+                    provider.sync_company_openings(db, board, **kwargs),
+                    timeout=board_timeout,
+                )
+                result = dict(result or {})
+                result.setdefault("board", board)
+                raw_errors = list(result.get("errors") or [])
+                if result.get("error"):
+                    raw_errors.append(result["error"])
+                if result.get("network_error") and not raw_errors:
+                    raw_errors.append("Provider network error")
+                result["errors"] = list(dict.fromkeys(_public_provider_error(error) for error in raw_errors))
+                result["status"] = "partial" if result["errors"] and result.get("verified_active", 0) else (
+                    "failed" if result["errors"] else "success"
+                )
+                return result
+            except asyncio.CancelledError:
+                raise
+            except asyncio.TimeoutError:
+                logger.warning("Provider sync timed out for configured board %s", board)
+                return {
+                    "board": board,
+                    "status": "failed",
+                    "errors": ["Board synchronization exceeded its time limit."],
+                }
             except Exception as exc:
-                logger.warning("Provider sync failed for configured board %s: %s", board, exc)
-                return {"board": board, "errors": [str(exc)]}
+                logger.warning("Provider sync failed for configured board %s (%s)", board, type(exc).__name__)
+                return {
+                    "board": board,
+                    "status": "failed",
+                    "errors": [_public_provider_error(exc)],
+                }
 
     results = await asyncio.gather(*(sync_board(board) for board in boards))
     summary["results"] = results
     for result in results:
-        for key in ("fetched", "verified_active", "closed", "internships"):
+        for key in ("fetched", "verified_active", "unique_requisitions", "closed", "internships", "detail_enriched", "detail_enrichment_failed", "detail_enrichment_skipped"):
             summary[key] += int(result.get(key) or 0)
-        summary["errors"].extend(result.get("errors") or [])
-        if result.get("error"):
-            summary["errors"].append(result["error"])
-        if result.get("network_error"):
-            summary["errors"].append(f"{result.get('board')}: network error")
+        summary["errors"].extend(
+            f"{result.get('board') or 'configured board'}: {error}"
+            for error in (result.get("errors") or [])
+        )
     return summary
 
 
@@ -155,18 +207,182 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
 
 
 
-async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict) -> int:
-    """Synchronize only explicitly configured, direct employer ATS boards."""
-    if getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats":
-        return 0
+async def _run_provider_sync(provider_name: str, sync_coro) -> dict:
+    try:
+        result = await sync_coro
+        if result.get("status") in {"disabled", "not_configured"}:
+            return {"provider": provider_name, **result}
+        errors = list(result.get("errors") or [])
+        configured = int(result.get("total_boards") or 0)
+        failed = sum(1 for row in result.get("results", []) if row.get("status") == "failed")
+        status = (
+            "not_configured" if configured == 0 and not errors
+            else "failed" if configured == 0 or failed == configured
+            else "partial" if errors or failed
+            else "success"
+        )
+        return {"provider": provider_name, "status": status, **result}
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        logger.exception("Provider synchronization failed for %s (%s)", provider_name, type(exc).__name__)
+        return {
+            "provider": provider_name,
+            "status": "failed",
+            "total_boards": 0,
+            "fetched": 0,
+            "verified_active": 0,
+            "unique_requisitions": 0,
+            "closed": 0,
+            "internships": 0,
+            "detail_enriched": 0,
+            "detail_enrichment_failed": 0,
+            "detail_enrichment_skipped": 0,
+            "errors": [_public_provider_error(exc)],
+            "results": [],
+        }
 
-    sync_results = await asyncio.gather(
-        sync_all_ashby_boards(db, settings),
-        sync_all_greenhouse_boards(db, settings),
-        sync_all_lever_boards(db, settings),
-        sync_all_smartrecruiters_boards(db, settings),
+
+async def _perform_live_job_refresh(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
+    provider_calls = {
+        "Ashby": sync_all_ashby_boards,
+        "Greenhouse": sync_all_greenhouse_boards,
+        "Lever": sync_all_lever_boards,
+        "SmartRecruiters": sync_all_smartrecruiters_boards,
+    }
+    provider_tasks = {
+        asyncio.create_task(_run_provider_sync(name, call(db, settings))): name
+        for name, call in provider_calls.items()
+    }
+    refresh_timeout = max(0.1, float(getattr(settings, "JOB_REFRESH_TIMEOUT_SECONDS", 75.0)))
+    try:
+        done, pending = await asyncio.wait(provider_tasks, timeout=refresh_timeout)
+    except asyncio.CancelledError:
+        for task in provider_tasks:
+            task.cancel()
+        await asyncio.gather(*provider_tasks, return_exceptions=True)
+        raise
+
+    provider_results = []
+    for task in done:
+        name = provider_tasks[task]
+        if task.cancelled():
+            provider_results.append({
+                "provider": name,
+                "status": "failed",
+                "total_boards": 0,
+                "fetched": 0,
+                "verified_active": 0,
+                "unique_requisitions": 0,
+                "closed": 0,
+                "internships": 0,
+                "detail_enriched": 0,
+                "detail_enrichment_failed": 0,
+                "detail_enrichment_skipped": 0,
+                "errors": ["Provider task was cancelled."],
+                "results": [],
+            })
+            continue
+        try:
+            provider_results.append(task.result())
+        except Exception as exc:
+            logger.exception("Provider task failed for %s (%s)", name, type(exc).__name__)
+            provider_results.append({
+                "provider": name,
+                "status": "failed",
+                "total_boards": 0,
+                "fetched": 0,
+                "verified_active": 0,
+                "unique_requisitions": 0,
+                "closed": 0,
+                "internships": 0,
+                "detail_enriched": 0,
+                "detail_enrichment_failed": 0,
+                "detail_enrichment_skipped": 0,
+                "errors": [_public_provider_error(exc)],
+                "results": [],
+            })
+    for task in pending:
+        name = provider_tasks[task]
+        task.cancel()
+        provider_results.append({
+            "provider": name,
+            "status": "timed_out",
+            "total_boards": 0,
+            "fetched": 0,
+            "verified_active": 0,
+            "unique_requisitions": 0,
+            "closed": 0,
+            "internships": 0,
+            "detail_enriched": 0,
+            "detail_enrichment_failed": 0,
+            "detail_enrichment_skipped": 0,
+            "errors": ["Provider did not finish before the refresh deadline."],
+            "results": [],
+        })
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+
+    provider_results.sort(key=lambda result: result["provider"])
+    errors = [
+        f"{provider['provider']}: {error}"
+        for provider in provider_results
+        for error in provider.get("errors", [])
+    ]
+    active = sum(int(result.get("verified_active") or 0) for result in provider_results)
+    providers_configured = [
+        result for result in provider_results
+        if result.get("status") not in {"not_configured", "disabled"}
+    ]
+    status = "not_configured" if not providers_configured else (
+        "failed" if all(result.get("status") in {"failed", "timed_out"} for result in providers_configured)
+        else "partial" if errors
+        else "success"
     )
-    return sum(result["verified_active"] for result in sync_results)
+    return {
+        "status": status,
+        "added_count": active,
+        "unique_requisitions": sum(int(result.get("unique_requisitions") or 0) for result in provider_results),
+        "errors": errors,
+        "detail_enriched": sum(int(result.get("detail_enriched") or 0) for result in provider_results),
+        "detail_enrichment_failed": sum(int(result.get("detail_enrichment_failed") or 0) for result in provider_results),
+        "detail_enrichment_skipped": sum(int(result.get("detail_enrichment_skipped") or 0) for result in provider_results),
+        "providers": provider_results,
+    }
+
+
+async def refresh_live_jobs(db: AsyncIOMotorDatabase, settings: Settings, filters: dict, include_report: bool = False) -> int | dict:
+    """Refresh configured ATS feeds with bounded, single-flight provider work."""
+    if getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats":
+        report = {
+            "status": "not_configured",
+            "added_count": 0,
+            "unique_requisitions": 0,
+            "errors": [],
+            "detail_enriched": 0,
+            "detail_enrichment_failed": 0,
+            "detail_enrichment_skipped": 0,
+            "providers": [],
+        }
+        return report if include_report else 0
+
+    loop = asyncio.get_running_loop()
+    task_key = (id(db), id(settings))
+    with _live_refresh_guard:
+        task = _live_refresh_tasks.get(task_key)
+        if task is None or task.done() or task.get_loop() is not loop:
+            task = loop.create_task(_perform_live_job_refresh(db, settings))
+            _live_refresh_tasks[task_key] = task
+
+            def remove_completed(done_task: asyncio.Task, key: tuple[int, int] = task_key) -> None:
+                with _live_refresh_guard:
+                    if _live_refresh_tasks.get(key) is done_task:
+                        _live_refresh_tasks.pop(key, None)
+
+            task.add_done_callback(remove_completed)
+
+    report = await asyncio.shield(task)
+    return report if include_report else int(report["added_count"])
 
 
 async def reverify_active_opportunities(db: AsyncIOMotorDatabase, now: datetime | None = None) -> dict:

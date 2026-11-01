@@ -2,6 +2,7 @@ import pytest
 from mongomock_motor import AsyncMongoMockClient
 
 from app.core.config import Settings
+from app.db.mongo import Collections
 from app.modules.auth import services as auth_services
 from app.modules.profile import repositories as profile_repo
 from app.modules.profile import services as profile_services
@@ -47,6 +48,32 @@ async def test_onboarding_creates_profile_and_flips_completed_flag(db, settings)
     assert updated_user["onboarding_completed"] is True
 
 
+@pytest.mark.asyncio
+async def test_profile_update_invalidates_cached_job_matches(db, settings):
+    user, _ = await auth_services.register_user(
+        db, settings, "profile-cache@example.com", "supersecret1", "Ananya", None
+    )
+    user_id = str(user["_id"])
+    await db[Collections.JOB_MATCHES].insert_one({
+        "user_id": user_id,
+        "job_id": "old-profile-match",
+        "resume_version": 1,
+        "job_fingerprint": "fingerprint",
+        "match_data": {"overall_score": 90},
+    })
+    body = OnboardingRequest(
+        category=CandidateCategory.EXPERIENCED,
+        experience_years=5,
+        target_roles=["Research Engineer"],
+        preferred_locations=["Bengaluru"],
+        consent_text="I consent.",
+    )
+
+    await profile_services.complete_onboarding(db, user_id, body)
+
+    assert await db[Collections.JOB_MATCHES].count_documents({"user_id": user_id}) == 0
+
+
 def test_onboarding_requires_at_least_one_target_role():
     with pytest.raises(Exception):
         OnboardingRequest(
@@ -68,4 +95,3 @@ def test_legacy_profile_response_defaults():
     assert resp.category == CandidateCategory.FRESHER
     assert resp.consent_text == "Standard candidate registration consent."
     assert resp.target_roles == ["Software Engineer"]
-

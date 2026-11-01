@@ -29,19 +29,69 @@ from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
+import httpx
+import mongomock_motor
 import pytest
 
 from app.core.config import Settings
 from app.modules.jobs.greenhouse_provider import (
     GreenhouseJobProvider,
     GreenhouseNetworkError,
+    GreenhouseProviderError,
     is_internship_opportunity,
 )
 from app.modules.jobs.providers import CuratedJobProvider
 from app.modules.jobs.services import sync_all_greenhouse_boards
 from app.modules.jobs.url_classifier import ApplicationUrlType, classify_application_url
 from app.modules.jobs.verification import OpportunityLifecycleStatus
+from app.db.mongo import Collections
 from app.modules.matching.routes import recommended_matches
+
+
+@pytest.mark.asyncio
+async def test_greenhouse_board_404_is_not_treated_as_an_empty_inventory():
+    provider = GreenhouseJobProvider(Settings())
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = MagicMock(status_code=404)
+        with pytest.raises(GreenhouseProviderError, match="HTTP 404"):
+            await provider.fetch_company_openings("missing-board")
+
+
+@pytest.mark.asyncio
+async def test_greenhouse_malformed_inventory_is_reported_not_empty():
+    provider = GreenhouseJobProvider(Settings())
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: {"unexpected": []})
+        with pytest.raises(GreenhouseProviderError, match="jobs must be an array"):
+            await provider.fetch_company_openings("malformed-board")
+
+
+@pytest.mark.asyncio
+async def test_greenhouse_board_404_retains_previously_verified_jobs():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["greenhouse_board_404_retention_test"]
+    await db[Collections.JOBS].insert_one({
+        "id": "greenhouse_missing_board_existing_job",
+        "source": "greenhouse",
+        "company_board": "missing-board",
+        "source_job_id": "existing-job",
+        "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
+        "is_direct_apply": True,
+    })
+    provider = GreenhouseJobProvider()
+    response = httpx.Response(
+        404,
+        request=httpx.Request("GET", "https://boards-api.greenhouse.io/v1/boards/missing-board/jobs"),
+    )
+
+    with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=response):
+        stats = await provider.sync_company_openings(db, "missing-board")
+
+    stored = await db[Collections.JOBS].find_one({"id": "greenhouse_missing_board_existing_job"})
+    assert stats["closed"] == 0
+    assert stats["errors"]
+    assert stored["verification_status"] == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value
+    client.close()
 
 
 def make_raw_gh_job(**overrides):

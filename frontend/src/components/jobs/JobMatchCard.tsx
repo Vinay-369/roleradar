@@ -66,6 +66,24 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
       ? "Remote"
       : null;
 
+  const sourceLabel = job.source === "greenhouse"
+    ? "Greenhouse"
+    : job.source === "lever"
+      ? "Lever"
+      : job.source === "ashby"
+        ? "Ashby"
+        : job.source === "smartrecruiters"
+          ? "SmartRecruiters"
+          : job.source || "Employer ATS";
+  const verifiedLabel = job.last_verified_at || job.verified_at
+    ? (() => {
+        const date = new Date(job.last_verified_at || job.verified_at || "");
+        return Number.isNaN(date.getTime())
+          ? "Verified"
+          : `Verified ${date.toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`;
+      })()
+    : "Verified active";
+
   const freshnessLabel = (() => {
     if (job.posted_days_ago !== undefined && job.posted_days_ago !== null) {
       if (job.posted_days_ago === 0) return "Posted today";
@@ -146,14 +164,18 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
           >
             {job.job_title}
           </Link>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
             <span className="inline-flex items-center gap-1.5 font-semibold text-ink-700 dark:text-slate-200">
               <Building2 size={13} className="text-slate-400" /> {job.company}
             </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock3 size={12} className="text-slate-400" /> {freshnessLabel}
-            </span>
-          </div>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock3 size={12} className="text-slate-400" /> {freshnessLabel}
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              Source: {sourceLabel} · {verifiedLabel}
+              {job.quality_tier === "SECONDARY" ? " · Partial employer disclosure" : ""}
+            </div>
         </div>
 
         <div className="flex shrink-0 items-start gap-2">

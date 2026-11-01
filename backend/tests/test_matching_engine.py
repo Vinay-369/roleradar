@@ -1,3 +1,5 @@
+import pytest
+
 from app.core.embeddings.tfidf_provider import TfidfEmbeddingProvider
 from app.modules.matching.engine import compute_match
 
@@ -50,6 +52,17 @@ def test_missing_required_skill_is_never_reported_as_matched():
     assert "AWS" not in result.skill_match.matched
 
 
+def test_skill_aliases_are_not_reported_as_false_gaps():
+    result = compute_match(
+        make_candidate(skills=["Node.js", "Postgres", "ReactJS"]),
+        make_job(skills_required=["node", "PostgreSQL", "React"]),
+        embedder,
+    )
+    assert result.skill_match.missing == []
+    assert result.skill_match.partial == []
+    assert set(result.skill_match.matched) == {"node", "PostgreSQL", "React"}
+
+
 def test_completely_unrelated_job_scores_low():
     candidate = make_candidate(skills=["Photoshop", "Illustrator"], target_roles=["Graphic Designer"])
     job = make_job(skills_required=["Kubernetes", "Terraform", "AWS"], title="DevOps Engineer")
@@ -62,6 +75,15 @@ def test_undisclosed_salary_is_neutral_not_penalized():
     job = make_job(salary_disclosed=False, salary_max=None)
     result = compute_match(make_candidate(), job, embedder)
     assert result.salary_score == 50
+
+
+def test_missing_employer_skills_are_not_scored_as_perfect_alignment():
+    result = compute_match(make_candidate(), make_job(skills_required=[]), embedder)
+    assert result.skill_score is None
+    assert result.skill_match.matched == []
+    assert "No explicit skill requirements" in result.score_explanation
+    assert "skill" not in result.factor_weights
+    assert sum(result.factor_weights.values()) == pytest.approx(1.0)
 
 
 def test_experience_below_minimum_reduces_score_gracefully():

@@ -139,14 +139,17 @@ def _attach_compensation_meta(job: dict) -> None:
 
 
 def _attach_completeness_meta(job: dict) -> None:
-    if not job.get("completeness_status") or not job.get("quality_tier"):
+    if not job.get("completeness_status") or not job.get("quality_tier") or "available_information" not in job:
         from app.modules.jobs.completeness import evaluate_opportunity_completeness
         comp_eval = evaluate_opportunity_completeness(job)
-        job.setdefault("completeness_status", comp_eval.recommendation_quality.value)
-        job.setdefault("quality_tier", comp_eval.quality_tier.value)
+        job["completeness_status"] = comp_eval.source_completeness.value
+        job["quality_tier"] = comp_eval.quality_tier.value
+        job["recommendation_quality"] = comp_eval.recommendation_quality.value
+        job["missing_required_information"] = comp_eval.missing_required_information
+        job["available_information"] = comp_eval.available_information
         if comp_eval.rejection_reason:
             rej_val = comp_eval.rejection_reason.value if hasattr(comp_eval.rejection_reason, "value") else str(comp_eval.rejection_reason)
-            job.setdefault("rejection_reason", rej_val)
+            job["rejection_reason"] = rej_val
 
 
 def _strip_for_list(job: dict) -> dict:
@@ -281,8 +284,10 @@ async def sync_live_jobs(
     """
     Explicit on-demand synchronization of configured direct employer ATS boards.
     """
-    synced_count = await services.refresh_live_jobs(db, settings, {})
-    return {"status": "success", "added_count": synced_count}
+    sync_result = await services.refresh_live_jobs(db, settings, {}, include_report=True)
+    if isinstance(sync_result, dict):
+        return {"status": "success", **sync_result}
+    return {"status": "success", "added_count": sync_result, "errors": []}
 
 
 @router.post(
@@ -370,7 +375,11 @@ async def get_job(
 
         if resume:
             cached = await matching_repo.get_cached_matches_for_jobs(
-                db, user_id, resume.get("version", 1), [job_id]
+                db,
+                user_id,
+                resume.get("version", 1),
+                [job_id],
+                {job_id: matching_repo.job_match_fingerprint(job)},
             )
             if job_id in cached:
                 job["match"] = cached[job_id].get("match_data")

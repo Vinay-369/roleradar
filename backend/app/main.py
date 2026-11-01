@@ -1,14 +1,24 @@
 from contextlib import asynccontextmanager
+import logging
+import os
+from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.db.mongo import connect_to_mongo, close_mongo_connection, ensure_indexes, get_db
 
+logger = logging.getLogger("roleradar.api")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings = get_settings()
+    Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+    Path(settings.GENERATED_DIR).mkdir(parents=True, exist_ok=True)
     await connect_to_mongo()
     await ensure_indexes()
 
@@ -16,7 +26,6 @@ async def lifespan(app: FastAPI):
     await ensure_seed_loaded(get_db())
 
     from app.modules.auth.services import ensure_demo_user
-    settings = get_settings()
     if settings.ENV.lower() != "production":
         await ensure_demo_user(get_db())
 
@@ -26,8 +35,15 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
 
-    app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+    app = FastAPI(
+        title=settings.APP_NAME,
+        lifespan=lifespan,
+        docs_url="/docs" if settings.ENV.lower() != "production" else None,
+        redoc_url="/redoc" if settings.ENV.lower() != "production" else None,
+        openapi_url="/openapi.json" if settings.ENV.lower() != "production" else None,
+    )
 
     app.add_middleware(
         CORSMiddleware,
@@ -38,27 +54,62 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
-    async def add_security_headers(request, call_next):
+    async def add_security_headers(request: Request, call_next):
+        supplied_request_id = request.headers.get("X-Request-ID", "")
+        request_id = (
+            supplied_request_id
+            if supplied_request_id
+            and len(supplied_request_id) <= 128
+            and all(32 <= ord(char) <= 126 for char in supplied_request_id)
+            else str(uuid4())
+        )
+        request.state.request_id = request_id
         response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        if settings.ENV.lower() == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
+
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(request: Request, exc: Exception):
+        request_id = getattr(request.state, "request_id", str(uuid4()))
+        logger.exception("Unhandled request error request_id=%s path=%s", request_id, request.url.path)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An unexpected server error occurred.", "request_id": request_id},
+            headers={"X-Request-ID": request_id},
+        )
+
+    async def database_status() -> str:
+        try:
+            db = get_db()
+            await db.command("ping")
+            return "connected"
+        except Exception:
+            return "disconnected"
+
+    @app.get(f"{settings.API_PREFIX}/health/live")
+    async def liveness():
+        return {"status": "ok", "app": settings.APP_NAME}
+
+    @app.get(f"{settings.API_PREFIX}/health/ready")
+    async def readiness():
+        from fastapi import HTTPException
+
+        db_status = await database_status()
+        if db_status != "connected":
+            raise HTTPException(status_code=503, detail={"status": "not_ready", "database": db_status})
+        return {"status": "ok", "app": settings.APP_NAME, "dependencies": {"database": db_status}}
 
     @app.get(f"{settings.API_PREFIX}/health")
     async def health():
-        from app.db.mongo import get_db
-        db_status = "unknown"
-        try:
-            db = get_db()
-            if db is not None:
-                await db.command("ping")
-                db_status = "connected"
-            else:
-                db_status = "disconnected"
-        except Exception:
-            db_status = "disconnected"
+        db_status = await database_status()
 
         is_healthy = (db_status == "connected")
         return {
@@ -98,7 +149,6 @@ def create_app() -> FastAPI:
     # Phase 8 is UI polish only -- no new backend routers.
 
     # SPA Static Serving & Route Rewriting (Phase 10 Production Support)
-    import os
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
@@ -115,9 +165,10 @@ def create_app() -> FastAPI:
             if clean_path.startswith("api") or clean_path == "api" or clean_path in ("docs", "redoc", "openapi.json"):
                 from fastapi import HTTPException
                 raise HTTPException(status_code=404, detail="Endpoint not found")
-            target = os.path.join(dist_dir, clean_path)
-            if clean_path and os.path.isfile(target):
-                return FileResponse(target)
+            dist_root = Path(dist_dir).resolve()
+            target = (dist_root / clean_path).resolve() if clean_path else dist_root
+            if clean_path and dist_root in target.parents and target.is_file():
+                return FileResponse(str(target))
             return FileResponse(os.path.join(dist_dir, "index.html"))
 
     return app

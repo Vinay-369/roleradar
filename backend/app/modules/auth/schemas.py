@@ -3,14 +3,16 @@ from pydantic import BaseModel, EmailStr, Field
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
-    full_name: str = Field(min_length=1)
-    phone: str | None = None
+    # bcrypt only uses 72 bytes; bounding this avoids silently hashing a
+    # password suffix that can never participate in authentication.
+    password: str = Field(min_length=8, max_length=72)
+    full_name: str = Field(min_length=1, max_length=200)
+    phone: str | None = Field(default=None, max_length=40)
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=72)
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -23,8 +25,8 @@ class ForgotPasswordResponse(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str = Field(min_length=20)
-    new_password: str = Field(min_length=8)
+    token: str = Field(min_length=20, max_length=256)
+    new_password: str = Field(min_length=8, max_length=72)
 
 
 class TokenResponse(BaseModel):

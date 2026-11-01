@@ -17,10 +17,12 @@ Strictly adheres to RoleRadar Direct Requisition Policies:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 import html
 import logging
 import re
+import time
 from typing import Any
 
 import httpx
@@ -182,7 +184,13 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
             ("qualifications", "Qualifications"),
             ("additionalInformation", "Additional Information"),
         ]
-        for key, default_title in section_order:
+        known_keys = {key for key, _ in section_order}
+        ordered_sections = section_order + [
+            (key, str((value or {}).get("title") or key.replace("_", " ").title()))
+            for key, value in sections.items()
+            if key not in known_keys and isinstance(value, dict)
+        ]
+        for key, default_title in ordered_sections:
             sec = sections.get(key)
             if isinstance(sec, dict):
                 text = sec.get("text")
@@ -208,12 +216,13 @@ def _build_smartrecruiters_description(raw: dict) -> tuple[str, str]:
     emp_dict = raw.get("typeOfEmployment") or {}
     emp_label = emp_dict.get("label") if isinstance(emp_dict, dict) else ""
 
-    summary_lines = [
-        f"{name} at {company_name}.",
-        f"Role Function: {function_label or 'Not specified'}.",
-        f"Industry: {industry_label or 'Technology'}.",
-        f"Employment Type: {emp_label or 'Full-time'}.",
-    ]
+    summary_lines = [f"{name} at {company_name}."]
+    if function_label:
+        summary_lines.append(f"Role Function: {function_label}.")
+    if industry_label:
+        summary_lines.append(f"Industry: {industry_label}.")
+    if emp_label:
+        summary_lines.append(f"Employment Type: {emp_label}.")
 
     custom_fields = raw.get("customField")
     if isinstance(custom_fields, list):
@@ -239,6 +248,37 @@ class SmartRecruitersJobProvider:
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or get_settings()
         self._timeout = float(getattr(self._settings, "SMARTRECRUITERS_REQUEST_TIMEOUT_SECONDS", 15))
+        self._detail_limit = max(0, int(getattr(self._settings, "SMARTRECRUITERS_DETAIL_ENRICHMENT_LIMIT", 50)))
+        self._detail_interval = max(0.0, float(getattr(self._settings, "SMARTRECRUITERS_DETAIL_REQUEST_INTERVAL_SECONDS", 0.2)))
+        self._detail_timeout = max(0.1, float(getattr(self._settings, "SMARTRECRUITERS_DETAIL_REQUEST_TIMEOUT_SECONDS", 5.0)))
+        self._last_detail_request = 0.0
+        self._detail_rate_lock = asyncio.Lock()
+        self._detail_budget_lock = asyncio.Lock()
+        self._detail_semaphore = asyncio.Semaphore(5)
+        self._detail_claimed = 0
+
+    async def _claim_detail_enrichment(self) -> bool:
+        async with self._detail_budget_lock:
+            if self._detail_claimed >= self._detail_limit:
+                return False
+            self._detail_claimed += 1
+            return True
+
+    async def _fetch_detail_rate_limited(self, board_token: str, job_id: str) -> dict[str, Any] | None:
+        async with self._detail_semaphore:
+            async with self._detail_rate_lock:
+                wait = self._detail_interval - (time.monotonic() - self._last_detail_request)
+                if wait > 0:
+                    await asyncio.sleep(wait)
+                self._last_detail_request = time.monotonic()
+            try:
+                return await asyncio.wait_for(
+                    self.fetch_specific_opening(board_token, job_id),
+                    timeout=self._detail_timeout,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("SmartRecruiters detail lookup timed out for %s/%s", board_token, job_id)
+                return None
 
     async def fetch_company_openings(
         self,
@@ -270,7 +310,9 @@ class SmartRecruitersJobProvider:
                     resp = await client.get(url, params=params)
                     if resp.status_code == 404:
                         logger.warning(f"SmartRecruiters board '{clean_token}' returned 404 Not Found.")
-                        return []
+                        raise SmartRecruitersProviderError(
+                            f"Configured SmartRecruiters board '{clean_token}' was not found (HTTP 404)."
+                        )
                     if resp.status_code == 429:
                         logger.error(f"Rate limited (429) on SmartRecruiters board '{clean_token}'.")
                         raise SmartRecruitersNetworkError(f"Rate limit exceeded (429) for SmartRecruiters board '{clean_token}'")
@@ -279,14 +321,15 @@ class SmartRecruitersJobProvider:
                         raise SmartRecruitersNetworkError(f"SmartRecruiters server error ({resp.status_code}) for '{clean_token}'")
 
                     resp.raise_for_status()
-                    data = resp.json()
+                    data = await asyncio.to_thread(resp.json)
 
                     if not isinstance(data, dict):
-                        logger.warning(f"Unexpected non-dict response for SmartRecruiters board '{clean_token}'.")
-                        return all_postings
+                        raise SmartRecruitersProviderError("Malformed SmartRecruiters response: expected an object.")
 
-                    content = data.get("content") or []
-                    if not isinstance(content, list) or not content:
+                    content = data.get("content")
+                    if not isinstance(content, list):
+                        raise SmartRecruitersProviderError("Malformed SmartRecruiters response: content must be an array.")
+                    if not content:
                         break
 
                     all_postings.extend(content)
@@ -332,7 +375,7 @@ class SmartRecruitersJobProvider:
                     return None
                 if resp.status_code >= 400:
                     return None
-                data = resp.json()
+                data = await asyncio.to_thread(resp.json)
                 return data if isinstance(data, dict) else None
             except Exception as exc:
                 logger.warning(f"Could not fetch SmartRecruiters specific opening {clean_token}/{clean_id}: {exc}")
@@ -506,6 +549,13 @@ class SmartRecruitersJobProvider:
         reqs = analyze_job_description(clean_desc, title)
         skills_required = list(dict.fromkeys(reqs.must_have_skills or reqs.required_skills))
         skills_nice_to_have = list(dict.fromkeys(reqs.preferred_skills))
+        job_ad = raw.get("jobAd") or {}
+        sections = job_ad.get("sections") if isinstance(job_ad, dict) else {}
+        has_job_description = bool(
+            isinstance(sections, dict)
+            and isinstance(sections.get("jobDescription"), dict)
+            and str(sections["jobDescription"].get("text") or "").strip()
+        )
 
         canonical_id = f"smartrecruiters_{board_token.lower()}_{job_id}"
 
@@ -568,6 +618,8 @@ class SmartRecruitersJobProvider:
             "department": department,
             "description": clean_desc,
             "jd_text": clean_desc,
+            "jd_evidence_status": "COMPLETE" if has_job_description else "INCOMPLETE",
+            "jd_evidence_source": "EMPLOYER_JOB_AD" if has_job_description else "LISTING_METADATA",
             "raw_html": raw_html,
             "skills_required": skills_required,
             "skills_nice_to_have": skills_nice_to_have,
@@ -653,7 +705,7 @@ class SmartRecruitersJobProvider:
         """
         clean_token = (board_token or "").strip()
         if not clean_token:
-            return {"board": "", "fetched": 0, "verified_active": 0, "closed": 0, "internships": 0}
+            return {"board": "", "fetched": 0, "verified_active": 0, "unique_requisitions": 0, "closed": 0, "internships": 0}
 
         if now is None:
             now = datetime.now(timezone.utc)
@@ -664,16 +716,19 @@ class SmartRecruitersJobProvider:
             raw_postings = await self.fetch_company_openings(clean_token, country=country)
         except SmartRecruitersNetworkError as exc:
             logger.warning(f"Network error during SmartRecruiters sync for {clean_token}: {exc}. Retaining previous state.")
-            return {"board": clean_token, "fetched": 0, "verified_active": 0, "closed": 0, "internships": 0, "network_error": True}
+            return {"board": clean_token, "fetched": 0, "verified_active": 0, "unique_requisitions": 0, "closed": 0, "internships": 0, "network_error": True}
         except Exception as exc:
             logger.error(f"Unexpected error during SmartRecruiters sync for {clean_token}: {exc}. Retaining previous state.")
-            return {"board": clean_token, "fetched": 0, "verified_active": 0, "closed": 0, "internships": 0, "error": str(exc)}
+            return {"board": clean_token, "fetched": 0, "verified_active": 0, "unique_requisitions": 0, "closed": 0, "internships": 0, "error": str(exc)}
 
         # Step 2: Normalize
         normalized_jobs: list[dict[str, Any]] = []
         fetched_ids: set[str] = set()
         internship_count = 0
 
+        detail_fetches = 0
+        detail_enrichment_failed = 0
+        detail_enrichment_skipped = 0
         for item in raw_postings:
             if not isinstance(item, dict):
                 continue
@@ -681,7 +736,33 @@ class SmartRecruitersJobProvider:
             if not job_id:
                 continue
 
-            job_doc = self.normalize_smartrecruiters_job(
+            job_ad = item.get("jobAd") or {}
+            sections = job_ad.get("sections") if isinstance(job_ad, dict) else {}
+            has_job_description = bool(
+                isinstance(sections, dict)
+                and isinstance(sections.get("jobDescription"), dict)
+                and str(sections["jobDescription"].get("text") or "").strip()
+            )
+            if not has_job_description:
+                if await self._claim_detail_enrichment():
+                    detail_fetches += 1
+                    detail = await self._fetch_detail_rate_limited(clean_token, job_id)
+                    detail_ad = detail.get("jobAd") or {} if detail else {}
+                    detail_sections = detail_ad.get("sections") if isinstance(detail_ad, dict) else {}
+                    detail_has_job_description = bool(
+                        isinstance(detail_sections, dict)
+                        and isinstance(detail_sections.get("jobDescription"), dict)
+                        and str(detail_sections["jobDescription"].get("text") or "").strip()
+                    )
+                    if detail and detail_has_job_description:
+                        item = {**item, **detail}
+                    else:
+                        detail_enrichment_failed += 1
+                else:
+                    detail_enrichment_skipped += 1
+
+            job_doc = await asyncio.to_thread(
+                self.normalize_smartrecruiters_job,
                 item,
                 clean_token,
                 company_name=company_name,
@@ -725,9 +806,23 @@ class SmartRecruitersJobProvider:
 
         # Step 4: Upsert Active Opportunities
         active_jobs = [j for j in normalized_jobs if j.get("is_direct_apply")]
+        deduped_active = deduplicate_opportunities(active_jobs)
         if active_jobs:
-            deduped_active = deduplicate_opportunities(active_jobs)
             for j in deduped_active:
+                existing = await db[Collections.JOBS].find_one({"id": j["id"]})
+                existing_desc = str(existing.get("jd_text") or existing.get("description") or "") if existing else ""
+                incoming_desc = str(j.get("jd_text") or j.get("description") or "")
+                existing_is_richer = bool(existing and (
+                    existing.get("jd_evidence_status") == "COMPLETE"
+                    or (len(existing_desc) > len(incoming_desc) and (existing.get("skills_required") or existing.get("responsibilities")))
+                ))
+                if existing_is_richer and j.get("jd_evidence_status") != "COMPLETE":
+                    for field in (
+                        "description", "jd_text", "raw_html", "structured_requirements", "skills_required",
+                        "skills_nice_to_have", "responsibilities", "qualifications", "jd_evidence_status", "jd_evidence_source",
+                    ):
+                        if field in existing:
+                            j[field] = existing[field]
                 update_payload = dict(j)
                 first_seen = update_payload.pop("first_seen_at", now_iso)
                 await db[Collections.JOBS].update_one(
@@ -748,8 +843,12 @@ class SmartRecruitersJobProvider:
             "board": clean_token,
             "fetched": len(raw_postings),
             "verified_active": len(active_jobs),
+            "unique_requisitions": len(deduped_active),
             "closed": len(disappeared_ids),
             "internships": internship_count,
+            "detail_enriched": detail_fetches - detail_enrichment_failed,
+            "detail_enrichment_failed": detail_enrichment_failed,
+            "detail_enrichment_skipped": detail_enrichment_skipped,
         }
 
 
@@ -771,4 +870,3 @@ def normalize_smartrecruiters_job(
     return SmartRecruitersJobProvider().normalize_smartrecruiters_job(
         raw=raw, board_token=board_token, company_name=company_name, now=now
     )
-

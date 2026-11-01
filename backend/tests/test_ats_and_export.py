@@ -50,6 +50,36 @@ def test_compute_ats_score_combines_components_correctly():
     assert score.keyword_coverage > 50  # most JD keywords appear in resume
 
 
+def test_ats_score_uses_job_skills_and_does_not_assume_cs_education():
+    score = compute_ats_score(
+        resume_text="Customer support specialist\nSkills: Zendesk, Excel",
+        jd_text="Required: Zendesk and Excel. Education is not specified.",
+        parseability_score=90,
+        recruiter_impact_score=80,
+        skill_match_score=100,
+        role_match_score=70,
+        required_skills=["Zendesk", "Excel"],
+    )
+
+    assert score.keyword_coverage == 100
+    assert score.categories[2].points_awarded == 15
+    assert "no explicit education requirement" in score.categories[2].key_findings.lower()
+
+
+def test_ats_score_reports_no_skill_alignment_when_jd_has_no_targets():
+    score = compute_ats_score(
+        resume_text="A readable resume with experience and contact details",
+        jd_text="",
+        parseability_score=90,
+        recruiter_impact_score=80,
+        skill_match_score=None,
+        role_match_score=None,
+    )
+
+    assert score.required_skills == 0
+    assert score.keyword_coverage == 0
+
+
 def test_low_component_scores_produce_low_overall():
     score = compute_ats_score(
         resume_text="completely unrelated content about gardening",

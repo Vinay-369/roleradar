@@ -28,17 +28,20 @@ Tests:
 """
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 import httpx
 import mongomock_motor
 import pytest
+import time
 
 from app.core.config import Settings
 from app.db.mongo import Collections
 from app.modules.jobs.smartrecruiters_provider import (
     SmartRecruitersJobProvider,
     SmartRecruitersNetworkError,
+    SmartRecruitersProviderError,
     is_internship_opportunity,
 )
 from app.modules.jobs.url_classifier import ApplicationUrlType
@@ -208,6 +211,15 @@ async def test_smartrecruiters_empty_board():
         assert jobs == []
 
 
+@pytest.mark.asyncio
+async def test_smartrecruiters_board_404_is_not_a_successful_empty_inventory():
+    provider = SmartRecruitersJobProvider()
+    mock_resp = httpx.Response(404, request=httpx.Request("GET", "http://test"))
+    with patch("httpx.AsyncClient.get", AsyncMock(return_value=mock_resp)):
+        with pytest.raises(SmartRecruitersProviderError, match="HTTP 404"):
+            await provider.fetch_company_openings("MissingCompany")
+
+
 # --- 4. Malformed Response Handling ---
 
 @pytest.mark.asyncio
@@ -227,6 +239,85 @@ async def test_smartrecruiters_timeout_raises_network_error():
     with patch("httpx.AsyncClient.get", AsyncMock(side_effect=httpx.TimeoutException("timeout"))):
         with pytest.raises(SmartRecruitersNetworkError):
             await provider.fetch_company_openings("SlowCompany")
+
+
+@pytest.mark.asyncio
+async def test_smartrecruiters_detail_enrichment_budget_is_shared_across_board_syncs():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["smartrecruiters_detail_budget_test"]
+    provider = SmartRecruitersJobProvider(Settings(
+        SMARTRECRUITERS_DETAIL_ENRICHMENT_LIMIT=1,
+        SMARTRECRUITERS_DETAIL_REQUEST_INTERVAL_SECONDS=0,
+    ))
+    sparse_one = {**SAMPLE_SR_INDIA_ENGINEER_RAW, "id": "detail-budget-one"}
+    sparse_one["postingUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-one"
+    sparse_one["applyUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-one/apply"
+    sparse_two = {**SAMPLE_SR_INDIA_ENGINEER_RAW, "id": "detail-budget-two"}
+    sparse_two["postingUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-two"
+    sparse_two["applyUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-two/apply"
+    detail_payload = {"jobAd": {"sections": {"jobDescription": {"text": "Required: Python."}}}}
+
+    with patch.object(provider, "fetch_company_openings", AsyncMock(side_effect=[[sparse_one], [sparse_two]])):
+        with patch.object(provider, "_fetch_detail_rate_limited", AsyncMock(return_value=detail_payload)) as detail_fetch:
+            first = await provider.sync_company_openings(db, "BoschGroup")
+            second = await provider.sync_company_openings(db, "BoschGroup")
+
+    assert first["detail_enriched"] == 1
+    assert detail_fetch.await_count == 1
+    assert second["detail_enrichment_skipped"] == 1
+    client.close()
+
+
+@pytest.mark.asyncio
+async def test_smartrecruiters_rate_limit_does_not_serialize_inflight_detail_requests():
+    provider = SmartRecruitersJobProvider(Settings(
+        SMARTRECRUITERS_DETAIL_REQUEST_INTERVAL_SECONDS=0,
+        SMARTRECRUITERS_DETAIL_REQUEST_TIMEOUT_SECONDS=1,
+    ))
+    in_flight = 0
+    max_in_flight = 0
+
+    async def detail(board: str, job_id: str):
+        nonlocal in_flight, max_in_flight
+        in_flight += 1
+        max_in_flight = max(max_in_flight, in_flight)
+        await asyncio.sleep(0.03)
+        in_flight -= 1
+        return {"id": job_id}
+
+    provider.fetch_specific_opening = detail
+    await asyncio.gather(
+        provider._fetch_detail_rate_limited("board", "one"),
+        provider._fetch_detail_rate_limited("board", "two"),
+    )
+
+    assert max_in_flight == 2
+
+
+@pytest.mark.asyncio
+async def test_smartrecruiters_detail_limit_is_shared_across_board_syncs():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["smartrecruiters_detail_budget_test"]
+    settings = Settings(
+        SMARTRECRUITERS_DETAIL_ENRICHMENT_LIMIT=1,
+        SMARTRECRUITERS_DETAIL_REQUEST_INTERVAL_SECONDS=0,
+    )
+    provider = SmartRecruitersJobProvider(settings)
+    sparse_one = {**SAMPLE_SR_INDIA_ENGINEER_RAW, "id": "detail-budget-one"}
+    sparse_one["postingUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-one"
+    sparse_one["applyUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-one/apply"
+    sparse_two = {**SAMPLE_SR_INDIA_ENGINEER_RAW, "id": "detail-budget-two"}
+    sparse_two["postingUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-two"
+    sparse_two["applyUrl"] = "https://jobs.smartrecruiters.com/BoschGroup/detail-budget-two/apply"
+    detail_payload = {"jobAd": {"sections": {"jobDescription": {"text": "Required: Python."}}}}
+
+    with patch.object(provider, "fetch_company_openings", AsyncMock(return_value=[sparse_one, sparse_two])):
+        with patch.object(provider, "_fetch_detail_rate_limited", AsyncMock(return_value=detail_payload)) as detail_fetch:
+            stats = await provider.sync_company_openings(db, "BoschGroup")
+
+    assert detail_fetch.await_count == 1
+    assert stats["detail_enrichment_skipped"] == 1
+    client.close()
 
 
 # --- 6. HTTP 429 Rate Limiting ---
@@ -393,7 +484,8 @@ async def test_smartrecruiters_inventory_reconciliation():
     provider = SmartRecruitersJobProvider()
 
     # Sync 1: Two jobs present
-    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW, SAMPLE_SR_INDIA_INTERNSHIP_RAW]):
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW, SAMPLE_SR_INDIA_INTERNSHIP_RAW]), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None):
         stats1 = await provider.sync_company_openings(db, "BoschGroup")
         assert stats1["fetched"] == 2
         assert stats1["verified_active"] == 2
@@ -404,7 +496,8 @@ async def test_smartrecruiters_inventory_reconciliation():
     assert len(active1) == 2
 
     # Sync 2: Internship disappears (closed by employer)
-    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]):
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None):
         stats2 = await provider.sync_company_openings(db, "BoschGroup")
         assert stats2["fetched"] == 1
         assert stats2["verified_active"] == 1
@@ -429,11 +522,13 @@ async def test_smartrecruiters_network_failure_preserves_active():
     provider = SmartRecruitersJobProvider()
 
     # Step 1: Initial successful sync
-    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]):
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None):
         await provider.sync_company_openings(db, "BoschGroup")
 
     # Step 2: Network failure during sync
-    with patch.object(provider, "fetch_company_openings", side_effect=SmartRecruitersNetworkError("Connection reset")):
+    with patch.object(provider, "fetch_company_openings", side_effect=SmartRecruitersNetworkError("Connection reset")), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None):
         stats = await provider.sync_company_openings(db, "BoschGroup")
         assert stats["network_error"] is True
 
@@ -451,3 +546,135 @@ def test_smartrecruiters_canonical_source_id():
     job = provider.normalize_smartrecruiters_job(SAMPLE_SR_INDIA_ENGINEER_RAW, "BoschGroup")
     assert job["id"] == "smartrecruiters_boschgroup_744000147412989"
     assert job["source"] == "smartrecruiters"
+
+
+def test_sparse_listing_marks_description_incomplete_and_does_not_invent_metadata():
+    provider = SmartRecruitersJobProvider()
+    job = provider.normalize_smartrecruiters_job(SAMPLE_SR_INDIA_ENGINEER_RAW, "board")
+    assert job["jd_evidence_status"] == "INCOMPLETE"
+    assert job["jd_evidence_source"] == "LISTING_METADATA"
+    assert "Industry: Technology" not in job["description"]
+    sparse = dict(SAMPLE_SR_INDIA_ENGINEER_RAW)
+    sparse.pop("typeOfEmployment")
+    sparse_job = provider.normalize_smartrecruiters_job(sparse, "board")
+    assert "Employment Type: Full-time" not in sparse_job["description"]
+
+
+def test_detail_description_preserves_unrecognized_optional_sections():
+    from app.modules.jobs.smartrecruiters_provider import _build_smartrecruiters_description
+    description, _ = _build_smartrecruiters_description({
+        "jobAd": {"sections": {
+            "jobDescription": {"title": "Role", "text": "Build reliable services."},
+            "teamInformation": {"title": "Team", "text": "Work with a distributed team."},
+        }}
+    })
+    assert "Build reliable services" in description
+    assert "## Team" in description
+    assert "distributed team" in description
+
+
+@pytest.mark.asyncio
+async def test_sync_fetches_detail_and_keeps_rich_data_when_later_listing_is_sparse():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["test_sr_detail_enrichment"]
+    provider = SmartRecruitersJobProvider()
+    detail = {
+        **SAMPLE_SR_INDIA_ENGINEER_RAW,
+        "jobAd": {"sections": {"jobDescription": {"text": "Required: Python, Docker. Build reliable production systems."}}},
+    }
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]), \
+         patch.object(provider, "fetch_specific_opening", new_callable=AsyncMock, return_value=detail) as fetch_detail:
+        await provider.sync_company_openings(db, "BoschGroup")
+    stored = await db[Collections.JOBS].find_one({"id": "smartrecruiters_boschgroup_744000147412989"})
+    assert fetch_detail.await_count == 1
+    assert stored["jd_evidence_status"] == "COMPLETE"
+    assert "production systems" in stored["jd_text"]
+
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]), \
+         patch.object(provider, "fetch_specific_opening", new_callable=AsyncMock, return_value=None):
+        await provider.sync_company_openings(db, "BoschGroup")
+    preserved = await db[Collections.JOBS].find_one({"id": "smartrecruiters_boschgroup_744000147412989"})
+    assert preserved["jd_evidence_status"] == "COMPLETE"
+    assert preserved["jd_text"] == stored["jd_text"]
+
+
+@pytest.mark.asyncio
+async def test_detail_fetches_are_paced():
+    provider = SmartRecruitersJobProvider()
+    provider._last_detail_request = time.monotonic()
+    with patch.object(provider, "fetch_specific_opening", new_callable=AsyncMock, return_value=None), \
+         patch("app.modules.jobs.smartrecruiters_provider.asyncio.sleep", new_callable=AsyncMock) as sleep:
+        await provider._fetch_detail_rate_limited("board", "one")
+    sleep.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_sync_reports_failed_detail_enrichment_and_keeps_sparse_record():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["test_sr_detail_failure"]
+    provider = SmartRecruitersJobProvider()
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW]), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None):
+        stats = await provider.sync_company_openings(db, "BoschGroup")
+    stored = await db[Collections.JOBS].find_one({"id": "smartrecruiters_boschgroup_744000147412989"})
+    assert stats["detail_enrichment_failed"] == 1
+    assert stored["jd_evidence_status"] == "INCOMPLETE"
+
+
+@pytest.mark.asyncio
+async def test_sync_caps_detail_fetches_and_reports_skipped_enrichment():
+    client = mongomock_motor.AsyncMongoMockClient()
+    db = client["test_sr_detail_limit"]
+    provider = SmartRecruitersJobProvider()
+    provider._detail_limit = 1
+    with patch.object(provider, "fetch_company_openings", return_value=[SAMPLE_SR_INDIA_ENGINEER_RAW, SAMPLE_SR_INDIA_INTERNSHIP_RAW]), \
+         patch.object(provider, "_fetch_detail_rate_limited", new_callable=AsyncMock, return_value=None) as fetch_detail:
+        stats = await provider.sync_company_openings(db, "board")
+    assert fetch_detail.await_count == 1
+    assert stats["detail_enrichment_failed"] == 1
+    assert stats["detail_enrichment_skipped"] == 1
+
+
+LIVE_BOSCH_REQUISITION_FIXTURE = {
+    "id": "744000155704714",
+    "name": "Senior Software Engineer (Python) - Automation & Developer Platforms",
+    "company": {"name": "Bosch Group", "identifier": "BoschGroup"},
+    "active": True,
+    "postingUrl": "https://jobs.smartrecruiters.com/BoschGroup/744000155704714-senior-software-engineer-python-automation-developer-platforms",
+    "applyUrl": "https://jobs.smartrecruiters.com/BoschGroup/744000155704714-senior-software-engineer-python-automation-developer-platforms?oga=true",
+    "location": {"city": "bangalore", "country": "in", "remote": False, "hybrid": False, "fullLocation": "bangalore, , India"},
+    "industry": {"id": "computer_software", "label": "Computer Software"},
+    "function": {"id": "engineering", "label": "Engineering"},
+    "experienceLevel": {"id": "mid_senior_level", "label": "Mid-Senior Level"},
+    "typeOfEmployment": {"id": "permanent", "label": "Full-time"},
+    "jobAd": {"sections": {
+        "jobDescription": {"title": "Job Description", "text": "<p>Senior Software Engineer (Python) - Automation &amp; Developer PlatformsWe are looking for a senior engineer who enjoys solving complex technical problems and improving the way engineers work.Our team develops internal tools, automation solutions, and engineering platforms used by multiple product teams. We help engineers build, test, validate, and release software more efficiently while ensuring quality, reliability, and maintainability. Design, develop, and maintain software and automation solutions. Contribute to Python and C/C++ based projects. Improve developer workflows, tooling, and CI/CD processes. Troubleshoot complex technical issues across software, infrastructure, and development environments. Participate in architectural discussions and technical decision making. Work closely with engineers across teams to understand problems and deliver practical solutions. Continuously identify opportunities to simplify, automate, and improve existing solutions.We are looking for engineers who: Enjoy solving difficult problems. Can understand complex systems and see the bigger picture. Challenge ideas constructively and contribute to technical discussions. Take ownership and drive solutions to completion. Collaborate effectively and help the team succeed. Are eager to learn and work across different technologies and domains.Must-have Strong software engineering experience. Excellent problem-solving and analytical skills. Experience developing production-quality software. Experience working in Linux-based environments. Strong communication and collaboration skills.Nice-to-have Experience with Python. Experience with C or C++. Experience with CI/CD systems and build automation. Experience with developer tooling, automation, or engineering platforms. Full-time position. Agile working environment using Scrum. International collaboration across multiple Bosch locations. Opportunity to build tools and platforms used by engineering teams worldwide.</p>"},
+        "qualifications": {"title": "Qualifications", "text": "<p>B.Tech\\B.E</p>"},
+        "additionalInformation": {"title": "Additional Information", "text": "<p>8 -10 Years</p>"},
+    }},
+}
+
+
+def test_live_bosch_response_structure_preserves_requirement_provenance():
+    provider = SmartRecruitersJobProvider()
+    job = provider.normalize_smartrecruiters_job(LIVE_BOSCH_REQUISITION_FIXTURE, "BoschGroup")
+    requirements = job["structured_requirements"]
+    required = {skill.casefold() for skill in job["skills_required"]}
+    preferred = {skill.casefold() for skill in job["skills_nice_to_have"]}
+    rows = requirements["requirements"]
+
+    assert job["jd_evidence_status"] == "COMPLETE"
+    assert job["source_url"] == LIVE_BOSCH_REQUISITION_FIXTURE["postingUrl"]
+    assert job["apply_url"] == LIVE_BOSCH_REQUISITION_FIXTURE["applyUrl"]
+    assert job["experience_min"] == 8
+    assert job["experience_max"] == 10
+    assert "linux" in required
+    assert {"python", "c", "c++", "ci/cd"}.issubset(preferred)
+    assert "scrum" not in required | preferred
+    assert any("Design, develop, and maintain software" in item for item in job["responsibilities"])
+    assert any("Contribute to Python and C/C++" in item for item in job["responsibilities"])
+    assert any("B.Tech" in item for item in job["qualifications"])
+    assert any(row["category"] == "MUST_HAVE" and row["evidence_type"] == "EXPLICIT" for row in rows)
+    assert any(row["category"] == "PREFERRED" and row["evidence_type"] == "EXPLICIT" for row in rows)
+    assert all("Nice-to-have" not in row["text"] for row in rows)
+    assert all(len(row["text"]) < 300 for row in rows)

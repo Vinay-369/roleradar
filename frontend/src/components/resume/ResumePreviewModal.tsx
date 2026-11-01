@@ -34,6 +34,8 @@ export function ResumePreviewModal({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFinalizedPreview, setIsFinalizedPreview] = useState<boolean | null>(null);
+  const [excludedChangeIds, setExcludedChangeIds] = useState<string[]>([]);
 
   useEffect(() => {
     setTemplate(initialTemplate);
@@ -61,12 +63,20 @@ export function ResumePreviewModal({
     setError(null);
     try {
       const token = localStorage.getItem("roleradar_token") || sessionStorage.getItem("roleradar_token");
-      const res = await fetch(`/api/tailoring/${versionId}/export/pdf?template=${selectedTpl}`, {
+      const res = await fetch(`/api/tailoring/${versionId}/preview/pdf?template=${selectedTpl}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
-        throw new Error(`Failed to generate preview (${res.status} ${res.statusText})`);
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.detail || `Failed to generate preview (${res.status} ${res.statusText})`);
       }
+      setIsFinalizedPreview(res.headers.get("X-Resume-Finalized") === "true");
+      setExcludedChangeIds(
+        (res.headers.get("X-Resume-Excluded-Changes") || "")
+          .split(",")
+          .map((changeId) => changeId.trim())
+          .filter(Boolean),
+      );
       const blob = await res.blob();
       if (pdfUrl) {
         window.URL.revokeObjectURL(pdfUrl);
@@ -84,7 +94,8 @@ export function ResumePreviewModal({
     if (!pdfUrl) return;
     const a = document.createElement("a");
     a.href = pdfUrl;
-    a.download = `resume_${company.replace(/\s+/g, "_")}_${template}.pdf`;
+    const prefix = isFinalizedPreview ? "resume" : "DRAFT_preview";
+    a.download = `${prefix}_${company.replace(/\s+/g, "_")}_${template}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -131,14 +142,29 @@ export function ResumePreviewModal({
                 <div className="min-w-0">
                   <h3 className="font-display text-sm sm:text-base font-bold text-ink-950 truncate flex items-center gap-2">
                     Resume Live Preview
+                    {isFinalizedPreview === false && (
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full shrink-0">
+                        DRAFT • NOT FINALIZED
+                      </span>
+                    )}
                     <span className="text-[11px] font-medium text-ink-600 bg-white border border-ink-200 px-2 py-0.5 rounded-full truncate">
                       {jobTitle} • {company}
                     </span>
                   </h3>
                   <p className="text-[11px] text-ink-500 flex items-center gap-1">
                     <ShieldCheck size={12} className="text-signal-600" />
-                    Truth Guard verified • 1-page ATS canvas compliant
+                    {isFinalizedPreview === false
+                      ? "Draft preview only • finalization and Truth Guard checks are still required"
+                      : isFinalizedPreview
+                        ? "Finalized resume • export integrity verified"
+                        : "Checking resume finalization status..."}
                   </p>
+                  {isFinalizedPreview === false && excludedChangeIds.length > 0 && (
+                    <p className="text-[11px] text-amber-800 flex items-center gap-1" role="status">
+                      <AlertCircle size={12} />
+                      {excludedChangeIds.length} approved edit(s) were excluded by source validation. Review their evidence and status before finalizing.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -230,7 +256,7 @@ export function ResumePreviewModal({
                 Template: <strong className="text-ink-800">{TEMPLATES.find((t) => t.id === template)?.label}</strong>
               </span>
               <span className="text-[11px] text-ink-400">
-                Pure-data rendering • Guaranteed ATS parseability
+                Preview only • Finalized export remains subject to validation
               </span>
             </div>
           </div>

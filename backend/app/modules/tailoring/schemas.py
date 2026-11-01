@@ -58,6 +58,8 @@ class TailoredResumeOut(BaseModel):
     opportunity_type: str | None = None
     opportunity_id: str | None = None
     jd_analysis_summary: dict | None = None
+    generation_notice: str | None = None
+    recommendation_note: str | None = None
     user_modified: bool | None = None
     truth_guard_audit: dict | None = None
     verification_status: str | None = None
@@ -70,4 +72,3 @@ class ChangeStatusUpdate(BaseModel):
 
 class ResumeUpdateRequest(BaseModel):
     parsed: dict
-

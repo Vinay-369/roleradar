@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Briefcase, Sparkles, FileText, RotateCcw, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { getApiErrorMessage } from "../../lib/apiClient";
 import {
   getRecommendedMatches,
   isWithinPostingAge,
@@ -262,11 +263,41 @@ export function Jobs() {
             <FileText size={13} className="text-signal-600" />
             <span>Paste External JD</span>
           </Link>
-          {liveSync.data && <span className="text-[11px] text-ink-500">Synced {liveSync.data.added_count}</span>}
-          {liveSync.error && <span className="text-[11px] text-rose-700">Refresh failed</span>}
-
         </div>
       </div>
+
+      {liveSync.data && (
+        <div role="status" className={`rounded-xl border px-3 py-2 text-xs ${
+          liveSync.data.status === "success" || liveSync.data.status === "not_configured"
+            ? "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+            : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+        }`}>
+          <p className="font-semibold">
+            {liveSync.data.status === "success"
+              ? `Refresh complete · ${liveSync.data.added_count} active openings found.`
+              : liveSync.data.status === "not_configured"
+                ? "No direct employer boards are configured."
+                : `Refresh ${liveSync.data.status} · ${liveSync.data.added_count} active openings found.`}
+          </p>
+          {liveSync.data.providers?.length ? (
+            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+              {liveSync.data.providers.map((provider) => (
+                <li key={provider.provider}>
+                  {provider.provider}: {provider.status.replaceAll("_", " ")}
+                  {provider.results?.filter((board) => board.errors?.length).map((board) => (
+                    <span key={board.board} className="ml-1">({board.board}: {board.errors?.join("; ")})</span>
+                  ))}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      )}
+      {liveSync.error && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+          {getApiErrorMessage(liveSync.error, "Live listing refresh failed. Previously verified postings remain available. Retry in a moment.")}
+        </div>
+      )}
 
       {/* Pre-Resume Discovery Banner */}
       {!hasResume && !isLoading && visibleJobs.length > 0 && (

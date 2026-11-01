@@ -120,13 +120,15 @@ async def test_approved_project_rewrite_finalizes_when_master_projects_are_struc
         db, user_id, version["master_resume_id"], version["master_resume_version"]
     )
     parsed = copy.deepcopy(master["parsed"])
-    parsed["projects_raw"] = [{
+    project = {
         "title": "Payments API",
         "tech_stack": "Python",
         "technologies": ["Python"],
         "dates": "2024",
         "bullets": [original],
-    }]
+    }
+    parsed["projects"] = [copy.deepcopy(project)]
+    parsed["projects_raw"] = [project]
     raw_text = master["raw_text"] + (
         "\n\nPROJECTS\nPayments API\nTech Stack: Python\n" + original
     )
@@ -141,6 +143,43 @@ async def test_approved_project_rewrite_finalizes_when_master_projects_are_struc
     assert finalized["is_finalized"] is True
     assert finalized["parsed"]["projects_raw"][0]["title"] == "Payments API"
     assert finalized["parsed"]["projects_raw"][0]["bullets"] == [proposed]
+    assert finalized["parsed"]["projects"][0]["bullets"] == [proposed]
+
+
+@pytest.mark.asyncio
+async def test_approved_internship_rewrite_updates_both_representations(db, settings):
+    original = "Built a data validation script using Python."
+    proposed = "Created a data validation script using Python."
+    change = {
+        **_approved_rewrite(original, proposed, change_id="internship-rewrite"),
+        "section": "INTERNSHIPS",
+    }
+    user_id, version, _ = await _create_draft(db, settings, [change])
+    master = await resume_repo.get_master_resume_version(
+        db, user_id, version["master_resume_id"], version["master_resume_version"]
+    )
+    parsed = copy.deepcopy(master["parsed"])
+    parsed["internships"] = [{
+        "company": "Northwind Labs",
+        "role": "Research Intern",
+        "dates": "2023",
+        "bullets": [original],
+    }]
+    parsed["internships_raw"] = ["Research Intern at Northwind Labs (2023)", original]
+    raw_text = master["raw_text"] + (
+        "\n\nINTERNSHIPS\nResearch Intern at Northwind Labs (2023)\n" + original
+    )
+    await db[Collections.MASTER_RESUMES].update_one(
+        {"_id": master["_id"]}, {"$set": {"parsed": parsed, "raw_text": raw_text}}
+    )
+
+    finalized = await tailoring_services.finalize_tailoring(
+        db, user_id, str(version["_id"]), settings=settings
+    )
+
+    assert finalized["is_finalized"] is True
+    assert proposed in finalized["parsed"]["internships_raw"]
+    assert finalized["parsed"]["internships"][0]["bullets"] == [proposed]
 
 
 @pytest.mark.asyncio

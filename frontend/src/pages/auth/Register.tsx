@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, Lock, Mail, Moon, Sun, Target, User } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { getApiErrorMessage } from "../../lib/apiClient";
 
 function PasswordInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [visible, setVisible] = useState(false);
@@ -50,8 +51,8 @@ export function Register() {
     try {
       await register(email, password, fullName);
       navigate("/onboarding");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? "Registration failed. Please check your details and try again.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Registration failed. Please check your details and try again."));
     } finally {
       setSubmitting(false);
     }

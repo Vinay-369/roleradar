@@ -37,6 +37,7 @@ class JobRequirement(BaseModel):
     source_heading: str | None = None
     raw_text: str | None = None
     normalized_text: str | None = None
+    evidence_type: str = "INFERRED"
 
 
 class StructuredJobRequirements(BaseModel):
@@ -338,7 +339,7 @@ def _detect_section_category(raw_line: str) -> tuple[RequirementCategory, str] |
     if any(norm == k or norm.startswith(k + " ") or norm.endswith(" " + k) or f" {k} " in norm for k in [
         "requirements", "must have", "must haves", "basic qualifications", "minimum qualifications",
         "what you need", "what youll need", "what you will need", "core requirements", "essential skills", "what were looking for",
-        "what we are looking for", "mandatory requirements", "required qualifications",
+        "what we re looking for", "what we are looking for", "mandatory requirements", "required qualifications",
         "key requirements", "what you bring", "minimum requirements", "required skills",
         "skills required", "skills", "technical skills", "tech stack", "our tech stack",
         "technologies", "tech checklist", "technical requirements", "candidate profile", "who you are",
@@ -370,6 +371,36 @@ def _detect_section_category(raw_line: str) -> tuple[RequirementCategory, str] |
         return RequirementCategory.DOMAIN, norm
 
     return None
+
+
+_INLINE_SECTION_MARKER_RE = re.compile(
+    r"(?i)(?<![\w])(?P<label>must[- ]have|nice[- ]to[- ]have|preferred(?:\s+(?:qualifications?|skills?))?|"
+    r"required\s+(?:qualifications?|skills?)|basic\s+qualifications?|responsibilities|"
+    r"what\s+you(?:'|’)ll\s+do|what\s+you\s+will\s+do)"
+    r"\s*(?::\s*|\s+(?=[A-Z•\-]))"
+)
+_REQUIREMENT_PREDICATE_RE = re.compile(
+    r"\b(?:experience|proficiency|proficient|knowledge|familiarity|ability|capability|"
+    r"skilled|expertise|certification|certified|degree|must|required|should|hands[- ]on|"
+    r"background|strong\s+.*\s+skills?|excellent\s+.*\s+skills?)\b",
+    re.IGNORECASE,
+)
+_RESPONSIBILITY_ACTION_RE = re.compile(
+    r"^(?:design\b|develop\b|contribute\b|improve\b|troubleshoot\b|participate\b|"
+    r"work\s+closely\b|identify\b|collaborate\b|build\b|architect\b|implement\b|"
+    r"create\b|support\b|manage\b|lead\b|ensure\b|execute\b|coordinate\b|"
+    r"continuously\s+identify\b)",
+    re.IGNORECASE,
+)
+
+
+def _split_inline_sections_and_sentences(text: str) -> list[str]:
+    """Restore section and sentence boundaries lost in flattened employer prose."""
+    text = _INLINE_SECTION_MARKER_RE.sub(lambda match: f"\n{match.group('label')}\n", text)
+    text = re.sub(r"(?i)(?<!\w)(?=we\s+are\s+looking\s+for\b)", "\n", text)
+    text = re.sub(r"(?i)(?<=[a-z])(?=we\s+are\s+looking\s+for\b)", "\n", text)
+    text = re.sub(r"(?<=[.!?])\s+(?=[A-Z•\-])", "\n", text)
+    return [line.strip() for line in text.splitlines() if line.strip()]
 
 
 def _extract_header_metadata(lines: list[str]) -> dict[str, str | None]:
@@ -493,7 +524,12 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
     Parses and categorizes Job Description text into structured requirements.
     Pure analytical transformation — never alters candidate profile data.
     """
-    lines = [l.strip() for l in jd_text.split("\n")]
+    normalized_jd = re.sub(
+        r"(?i)(what\s+(?:you['’]?ll\s+do|you\s+will\s+do|we['’]?re\s+looking\s+for|we\s+are\s+looking\s+for)(?:\s*\((?:must[- ]have|preferred|nice[- ]to[- ]have)\))?|nice[- ]to[- ]have|good\s+to\s+have|preferred\s+qualifications?)(?=[A-Z])",
+        r"\1\n",
+        jd_text,
+    )
+    lines = _split_inline_sections_and_sentences(normalized_jd)
     meta = _extract_header_metadata(lines)
     inferred_title = title.strip() or meta["title"] or ""
     company_name = meta["company"]
@@ -608,16 +644,28 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                             source_heading=sec_heading,
                             raw_text=line,
                             normalized_text=clean_l,
+                            evidence_type="EXPLICIT",
                         ))
                         continue
 
-                is_action = any(clean_l.lower().startswith(p) for p in [
+                is_action = bool(_RESPONSIBILITY_ACTION_RE.match(clean_l)) or any(clean_l.lower().startswith(p) for p in [
                     "responsible for", "duties include", "work with", "design and", "develop",
                     "lead", "manage", "support", "ensure", "participate", "collaborate",
                     "execute", "create", "implement", "coordinate", "requirement analysis"
                 ])
                 if is_bullet or is_action:
                     responsibilities.append(clean_l)
+                    requirements.append(JobRequirement(
+                        id=f"req_{len(requirements)}",
+                        category=RequirementCategory.RESPONSIBILITY,
+                        text=clean_l,
+                        importance_weight=0.8,
+                        source_section=RequirementCategory.RESPONSIBILITY.value,
+                        source_heading=sec_heading,
+                        raw_text=line,
+                        normalized_text=clean_l,
+                        evidence_type="INFERRED",
+                    ))
                 else:
                     role_overview_blocks.append(clean_l)
             continue
@@ -645,6 +693,15 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
         for raw_line in sec_lines:
             clean_text = _BULLET_PREFIX_RE.sub("", raw_line).strip()
             if not clean_text or len(clean_text) < 3:
+                continue
+
+            if (
+                sec_cat == RequirementCategory.PREFERRED
+                and not _BULLET_PREFIX_RE.match(raw_line)
+                and not _REQUIREMENT_PREDICATE_RE.search(clean_text)
+                and not extract_skills_from_text(clean_text)
+            ):
+                role_overview_blocks.append(clean_text)
                 continue
 
             # Skip standalone header sub-tags
@@ -699,7 +756,8 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                 must_have_skills.update(detected_skills)
                 weight = 1.0
             elif item_cat == RequirementCategory.PREFERRED:
-                preferred_skills.update(detected_skills)
+                if not any(w in clean_text.lower() for w in ["full-time", "position", "agile", "working environment"]):
+                    preferred_skills.update(detected_skills)
                 weight = 0.6
             elif item_cat == RequirementCategory.RESPONSIBILITY:
                 responsibilities.append(clean_text)
@@ -731,6 +789,7 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                 source_heading=sec_heading,
                 raw_text=raw_line,
                 normalized_text=clean_text,
+                evidence_type="EXPLICIT" if sec_cat in (RequirementCategory.MUST_HAVE, RequirementCategory.PREFERRED) or item_cat in (RequirementCategory.MUST_HAVE, RequirementCategory.PREFERRED) else "INFERRED",
             ))
 
     # Step 10b: If no skills were detected in must_have_skills and preferred_skills,
@@ -780,6 +839,7 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
                         source_heading=sec.get("heading"),
                         raw_text=raw_line,
                         normalized_text=clean_line,
+                        evidence_type="EXPLICIT",
                     ))
 
     # Step 11: Seniority Classification (Anchored Evidence)
@@ -843,7 +903,7 @@ def analyze_job_description(jd_text: str, title: str = "") -> StructuredJobRequi
     score_zone(" ".join(list(preferred_skills)), 0.5)
 
     best_domain = max(domain_scores.items(), key=lambda x: x[1])
-    assigned_domain = best_domain[0] if best_domain[1] > 0 else "Full Stack Engineering"
+    assigned_domain = best_domain[0] if best_domain[1] > 0 else None
 
     # Step 10c: Experience fallback scan across all raw lines if not yet found
     if min_years is None and max_years is None:

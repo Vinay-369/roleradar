@@ -13,10 +13,23 @@ Deterministic, mathematically precise scoring adhering to corporate enterprise s
 import re
 from dataclasses import dataclass, field
 
+from app.modules.jobs.skill_vocabulary import canonicalize_skill_name, extract_skills_from_text
+
 STOPWORDS = {
     "the", "and", "for", "with", "a", "an", "to", "of", "in", "on", "is", "are",
     "our", "we", "you", "your", "will", "this", "that", "as", "be", "or", "at",
     "by", "from", "it", "all", "any", "both", "each", "few", "more", "most",
+}
+
+# These words occur in almost every job description and are not useful ATS
+# targets.  A resume should not gain points merely because it repeats them.
+GENERIC_JD_TERMS = {
+    "candidate", "candidates", "company", "employer", "employee", "role", "position",
+    "job", "team", "teams", "work", "working", "experience", "years", "year", "skills",
+    "skill", "knowledge", "ability", "abilities", "responsibilities", "requirements",
+    "required", "preferred", "including", "looking", "seeking", "strong", "excellent",
+    "good", "best", "plus", "etc", "develop", "developed", "development", "build",
+    "building", "using", "use", "support", "supports", "provide", "ensure", "help",
 }
 
 STRONG_ACTION_VERBS = {
@@ -84,8 +97,76 @@ def _keyword_coverage(resume_text: str, jd_text: str) -> int:
     if not jd_keywords:
         return 100
     resume_keywords = _extract_keywords(resume_text)
-    covered = jd_keywords & resume_keywords
-    return round((len(covered) / len(jd_keywords)) * 100)
+    target_keywords = {keyword for keyword in jd_keywords if keyword not in GENERIC_JD_TERMS}
+    if not target_keywords:
+        return 100
+    covered = target_keywords & resume_keywords
+    return round((len(covered) / len(target_keywords)) * 100)
+
+
+def _normalise_skill(value: str) -> str:
+    """Return one comparison key for aliases and punctuation variants."""
+    canonical = canonicalize_skill_name(value)
+    return re.sub(r"[^a-z0-9]+", " ", canonical.casefold()).strip()
+
+
+def _target_terms(
+    jd_text: str,
+    required_skills: list[str] | None = None,
+    preferred_skills: list[str] | None = None,
+) -> tuple[list[str], list[str]]:
+    """Extract technical ATS targets without scoring generic JD prose.
+
+    Provider-parsed skills are authoritative when available.  The vocabulary
+    fallback keeps custom/pasted JDs useful while avoiding the old behaviour of
+    treating every common English word as a keyword.
+    """
+    required = [str(item).strip() for item in (required_skills or []) if str(item).strip()]
+    preferred = [str(item).strip() for item in (preferred_skills or []) if str(item).strip()]
+    if not required and not preferred:
+        extracted = extract_skills_from_text(jd_text)
+        required = extracted
+
+        # If the JD contains no recognized technical vocabulary, leave the
+        # technical factor unscored instead of inventing requirements from
+        # ordinary job-description prose.
+
+    def unique(items: list[str]) -> list[str]:
+        seen: set[str] = set()
+        result: list[str] = []
+        for item in items:
+            key = _normalise_skill(item)
+            if key and key not in seen:
+                seen.add(key)
+                result.append(item)
+        return result
+
+    required = unique(required)
+    preferred = [item for item in unique(preferred) if _normalise_skill(item) not in {_normalise_skill(x) for x in required}]
+    return required, preferred
+
+
+def _target_coverage(
+    resume_text: str,
+    required_skills: list[str],
+    preferred_skills: list[str],
+) -> tuple[int, int]:
+    """Return required coverage and weighted all-target coverage."""
+    resume_terms = {_normalise_skill(item) for item in extract_skills_from_text(resume_text)}
+    # A skill can be present in prose even when the extractor does not return
+    # it because it is a custom technology; compare normalized phrases too.
+    resume_normalized = re.sub(r"[^a-z0-9+#.]+", " ", resume_text.casefold())
+
+    def covered(skill: str) -> bool:
+        key = _normalise_skill(skill)
+        return key in resume_terms or bool(key and re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", resume_normalized))
+
+    required_hits = sum(covered(skill) for skill in required_skills)
+    preferred_hits = sum(covered(skill) for skill in preferred_skills)
+    required_score = round(required_hits / len(required_skills) * 100) if required_skills else 100
+    total_count = len(required_skills) + len(preferred_skills)
+    total_score = round((required_hits + 0.5 * preferred_hits) / (len(required_skills) + 0.5 * len(preferred_skills)) * 100) if total_count else 100
+    return required_score, total_score
 
 
 def _check_knockout(resume_text: str, jd_text: str) -> tuple[bool, str | None]:
@@ -94,10 +175,14 @@ def _check_knockout(resume_text: str, jd_text: str) -> tuple[bool, str | None]:
     jd_lower = jd_text.lower()
     resume_lower = resume_text.lower()
 
-    # Visa / Citizenship hard knockout
-    if "us citizenship required" in jd_lower or "security clearance required" in jd_lower:
-        if "clearance" not in resume_lower and "citizen" not in resume_lower:
-            return False, "Failed Knockout: Job requires US Citizenship or active Security Clearance."
+    # Only apply a knockout when the JD uses an explicit mandatory phrase.
+    # A casual mention of citizenship or clearance must not disqualify someone.
+    if re.search(r"\b(?:us|u\.s\.?|united states)\s+citizenship\s+(?:is\s+)?required\b", jd_lower):
+        if not re.search(r"\b(?:us|u\.s\.?|united states)\s+citizen(?:ship)?\b", resume_lower):
+            return False, "Failed Knockout: Job requires US Citizenship."
+    if re.search(r"\b(?:active\s+)?security\s+clearance\s+(?:is\s+)?required\b", jd_lower):
+        if not re.search(r"\b(?:active\s+)?(?:security\s+)?clearance\b", resume_lower):
+            return False, "Failed Knockout: Job requires an active security clearance."
 
     return True, None
 
@@ -111,7 +196,10 @@ def _calculate_keyword_density(resume_text: str, jd_text: str) -> tuple[int, flo
         return 100, 1.0, False
 
     resume_keyword_set = set(resume_words)
-    covered = jd_keywords & resume_keyword_set
+    covered = {
+        keyword for keyword in jd_keywords
+        if keyword not in GENERIC_JD_TERMS and keyword in resume_keyword_set
+    }
     coverage = round((len(covered) / len(jd_keywords)) * 100)
 
     # ATS Keyword Density measures individual term repetition frequency (keyword stuffing guard).
@@ -124,7 +212,9 @@ def _calculate_keyword_density(resume_text: str, jd_text: str) -> tuple[int, flo
     max_keyword_count = max(word_counts.values()) if word_counts else 0
     max_single_density = round((max_keyword_count / total_resume_words) * 100, 2)
 
-    over_optimized = max_single_density > 3.5 or (coverage >= 98 and total_resume_words < 60)
+    # One occurrence in a short resume is normal. Require repeated use before
+    # flagging stuffing; this avoids penalizing concise fresher resumes.
+    over_optimized = max_single_density > 3.5 and max_keyword_count >= 3
     return coverage, max_single_density, over_optimized
 
 
@@ -160,9 +250,23 @@ def compute_ats_score(
     jd_text: str,
     parseability_score: int,
     recruiter_impact_score: int,
-    skill_match_score: int,
-    role_match_score: int,
+    skill_match_score: int | None,
+    role_match_score: int | None,
+    required_skills: list[str] | None = None,
+    preferred_skills: list[str] | None = None,
 ) -> ATSScoreResult:
+    # Missing evidence is neutral when the caller cannot calculate a factor;
+    # it is not the same as evidence that the candidate failed the factor.
+    role_match_score = role_match_score if role_match_score is not None else 50
+
+    target_required, target_preferred = _target_terms(jd_text, required_skills, preferred_skills)
+    extracted_required_score, target_keyword_coverage = _target_coverage(
+        resume_text, target_required, target_preferred
+    )
+    if skill_match_score is None:
+        skill_match_score = extracted_required_score if target_required else 0
+    else:
+        skill_match_score = max(0, min(100, skill_match_score))
     # 1. Knockout Check
     knockout_passed, knockout_reason = _check_knockout(resume_text, jd_text)
     if not knockout_passed:
@@ -191,19 +295,26 @@ def compute_ats_score(
             match_guidance=MatchGuidance("needs_work", "Failed Knockout", knockout_reason or "Knockout criteria not met."),
         )
 
-    keyword_coverage, keyword_density, over_optimization_warning = _calculate_keyword_density(resume_text, jd_text)
+    # Density remains a stuffing guard, while coverage is based on actual
+    # technical targets rather than all words in the job description.
+    _, keyword_density, over_optimization_warning = _calculate_keyword_density(resume_text, jd_text)
+    keyword_coverage = target_keyword_coverage if target_required or target_preferred else 0
 
     # Category 1: Technical Keywords (Weight: 40 Points)
     # Exact Match (25 pts) + Semantic Match (15 pts) - Penalty (5 pts if over_optimized)
-    exact_pts = round(min(25, (skill_match_score / 100.0) * 25))
-    semantic_pts = round(min(15, (keyword_coverage / 100.0) * 15))
-    penalty = 5 if keyword_density > 3.2 else 0
-    cat1_score = max(0, min(40, exact_pts + semantic_pts - penalty))
-    cat1_findings = (
-        f"Exact technical skill alignment: {exact_pts}/25 pts, semantic coverage: {semantic_pts}/15 pts."
-        if penalty == 0
-        else f"Exact match: {exact_pts}/25, semantic match: {semantic_pts}/15. Deducted 5 pts for high keyword density ({keyword_density}%)."
+    has_skill_targets = bool(target_required or target_preferred)
+    exact_pts = round(
+        25 if not has_skill_targets else min(25, ((skill_match_score or 0) / 100.0) * 25)
     )
+    semantic_pts = round(15 if not has_skill_targets else min(15, (keyword_coverage / 100.0) * 15))
+    penalty = 5 if over_optimization_warning else 0
+    cat1_score = max(0, min(40, exact_pts + semantic_pts - penalty))
+    if not has_skill_targets:
+        cat1_findings = "No explicit employer skill targets were available; technical alignment is not scored."
+    elif penalty == 0:
+        cat1_findings = f"Exact technical skill alignment: {exact_pts}/25 pts, semantic coverage: {semantic_pts}/15 pts."
+    else:
+        cat1_findings = f"Exact match: {exact_pts}/25, semantic match: {semantic_pts}/15. Deducted 5 pts for high keyword density ({keyword_density}%)."
 
     # Category 2: Experience Context Alignment (Weight: 30 Points)
     # Title/Role Match (15 pts) + Action & Impact Verbs (15 pts)
@@ -213,13 +324,31 @@ def compute_ats_score(
     cat2_findings = f"Target role match: {role_pts}/15 pts. Action verbs and metric quantifications: {action_pts}/15 pts."
 
     # Category 3: Industry & Education Fit (Weight: 15 Points)
-    # Education Level (10 pts) + Domain Knowledge (5 pts)
-    has_cs_degree = bool(re.search(r"\b(b\.?e\.?|b\.?tech|m\.?tech|bca|mca|b\.?s\.?|computer|information|engineering)\b", resume_text, re.IGNORECASE))
-    edu_pts = 10 if has_cs_degree else 7
-    has_domain = bool(re.search(r"\b(dsa|oops|dbms|operating systems|computer networks|algorithms|machine learning)\b", resume_text, re.IGNORECASE))
-    domain_pts = 5 if has_domain else 3
+    # Do not award CS-specific points to every candidate.  Education is scored
+    # only when the JD asks for it; an absent requirement is a neutral fit.
+    education_requested = bool(re.search(
+        r"\b(?:bachelor|master|degree|b\.?tech|b\.?e\.?|bca|mca|computer science|engineering|mba|phd|diploma)\b",
+        jd_text,
+        re.IGNORECASE,
+    )) and not bool(re.search(
+        r"\b(?:no|not|without|doesn['’]?t\s+require)\s+(?:an?\s+)?(?:formal\s+)?(?:education|degree|qualification)s?\b|\b(?:education|degree|qualification)(?:\s+requirement)?\s+is\s+not\b",
+        jd_text,
+        re.IGNORECASE,
+    ))
+    if not education_requested:
+        edu_pts = 10
+    else:
+        has_degree_evidence = bool(re.search(
+            r"\b(?:bachelor|master|degree|b\.?tech|b\.?e\.?|bca|mca|computer science|engineering|mba|phd|diploma)\b",
+            resume_text,
+            re.IGNORECASE,
+        ))
+        edu_pts = 10 if has_degree_evidence else 0
+    has_domain = bool(target_required and skill_match_score and skill_match_score >= 50)
+    domain_pts = 5 if has_domain else (2 if not target_required else 0)
     cat3_score = edu_pts + domain_pts
-    cat3_findings = f"Accredited CS/IT degree: {edu_pts}/10 pts. Core CS fundamentals & domain concepts: {domain_pts}/5 pts."
+    edu_note = "JD has no explicit education requirement; neutral score applied" if not education_requested else "Education requirement evidence"
+    cat3_findings = f"{edu_note}: {edu_pts}/10 pts. Domain competency evidence: {domain_pts}/5 pts."
 
     # Category 4: Parsing Integrity & Formatting Risk (Weight: 15 Points)
     # Structural Headers (10 pts) + Date Formatting (5 pts)

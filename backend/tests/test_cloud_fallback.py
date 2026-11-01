@@ -184,6 +184,29 @@ async def test_ai_service_integration_with_cloud_fallback(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_ai_service_reports_deterministic_fallback_when_model_fails():
+    class UnavailableProvider:
+        async def complete(self, *args, **kwargs):
+            raise RuntimeError("simulated model outage")
+
+    ai_service = AIService(Settings(AI_PROVIDER="mock", AI_MAX_RETRIES=0))
+    ai_service._provider = UnavailableProvider()
+
+    result = await ai_service.generate_resume_rewrite(
+        master_resume_json=json.dumps({
+            "summary": "Student software engineer with Python project experience.",
+            "skills": ["Python"],
+            "experience_bullets": [],
+            "project_bullets": [],
+        }),
+        jd_text="Entry-level Python engineer",
+    )
+
+    assert result.generation_mode == "FALLBACK"
+    assert "AI model was unavailable" in result.generation_notice
+
+
+@pytest.mark.asyncio
 async def test_lmstudio_provider_initialization_and_call(monkeypatch):
     from app.core.ai_service.providers.lmstudio_provider import LMStudioProvider
 

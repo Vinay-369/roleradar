@@ -112,6 +112,31 @@ def test_student_plus_entry_level():
     assert result.status in (EligibilityStatus.ELIGIBLE, EligibilityStatus.LIKELY_ELIGIBLE)
 
 
+def test_explicit_fresher_exclusion_overrides_entry_level_metadata():
+    profile = {
+        "experience_years": 0,
+        "category": "FRESHER",
+        "preferred_locations": ["Bengaluru"],
+        "remote_preference": "any",
+    }
+    job = {
+        "title": "Applied ML Research Engineer",
+        "description": "Entry-level role. Freshers not eligible.",
+        "experience_min": 0,
+        "experience_max": 1,
+        "job_type": "full_time",
+        "location": "Bengaluru",
+        "degree_requirements": [],
+        "graduation_year_requirements": [],
+    }
+
+    result = evaluate_eligibility(profile, None, job)
+
+    assert result.checks["experience"] == "FAIL"
+    assert result.status == EligibilityStatus.EXPERIENCE_MISMATCH
+    assert any("explicitly excludes" in reason.lower() for reason in result.reasons)
+
+
 def test_fresher_plus_senior():
     profile = {
         "experience_years": 0,
@@ -335,5 +360,4 @@ def test_no_google_search_fallback_invariant():
         if not is_verified_direct:
             fallback_display = "Application link unavailable"
             assert fallback_display == "Application link unavailable"
-
 

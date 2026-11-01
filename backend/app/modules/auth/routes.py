@@ -66,7 +66,11 @@ async def login(
     return TokenResponse(access_token=token)
 
 
-@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+    dependencies=[Depends(auth_rate_limit(key_prefix="auth_forgot_password"))],
+)
 async def forgot_password(
     body: ForgotPasswordRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -82,7 +86,10 @@ async def forgot_password(
     return response
 
 
-@router.post("/reset-password")
+@router.post(
+    "/reset-password",
+    dependencies=[Depends(auth_rate_limit(key_prefix="auth_reset_password"))],
+)
 async def reset_password(
     body: ResetPasswordRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),

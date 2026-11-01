@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -21,6 +23,8 @@ class JobMatchOut(BaseModel):
     partial_skills: list[str] = []
     missing_skills: list[str] = []
     skills_required: list[str] = []
+    inferred_skills: list[str] = []
+    jd_evidence_status: str | None = None
     apply_readiness: str | None = None
     job_type: str | None = None
     employment_type: str | None = None
@@ -78,6 +82,16 @@ class JobMatchOut(BaseModel):
     role_domain: str | None = None
     contextual_requirements: list[str] = []
     quality_tier: str | None = None
-    role_confidence: str | None = None
+    completeness_status: str | None = None
     recommendation_quality: str | None = None
+    missing_required_information: list[str] = []
+    available_information: list[str] = []
+    role_confidence: str | None = None
     seniority: str | None = None
+
+
+class JobMatchLookupOut(BaseModel):
+    status: Literal["READY", "RESUME_REQUIRED", "RESUME_UNREADABLE", "UNAVAILABLE"]
+    match: JobMatchOut | None = None
+    resume_version: int | None = None
+    message: str | None = None

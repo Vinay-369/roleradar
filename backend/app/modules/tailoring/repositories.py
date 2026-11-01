@@ -31,6 +31,8 @@ async def create_version(
     opportunity_type: str | None = None,
     opportunity_id: str | None = None,
     jd_analysis_summary: dict | None = None,
+    generation_notice: str | None = None,
+    recommendation_note: str | None = None,
 ) -> dict:
     now = datetime.now(timezone.utc)
     
@@ -54,6 +56,8 @@ async def create_version(
         "opportunity_type": opportunity_type or ("INTERNSHIP" if "intern" in (job_id or "").lower() else "JOB"),
         "opportunity_id": opportunity_id or job_id,
         "jd_analysis_summary": jd_analysis_summary,
+        "generation_notice": generation_notice,
+        "recommendation_note": recommendation_note,
         "changes": changes,
         "sections_evaluated": sections_evaluated or [],
         "sections_changed": sections_changed or [],
