@@ -109,6 +109,47 @@ def _configured_board_tokens(settings: Settings, attribute: str) -> list[str]:
     return list(dict.fromkeys(token.strip() for token in tokens if isinstance(token, str) and token.strip()))
 
 
+def has_configured_direct_ats_boards(settings: Settings) -> bool:
+    """Return whether at least one enabled official employer board can be synced."""
+    return any(
+        getattr(settings, enabled_attribute, False)
+        and _configured_board_tokens(settings, companies_attribute)
+        for companies_attribute, enabled_attribute in (
+            ("ASHBY_COMPANIES", "ASHBY_ENABLED"),
+            ("GREENHOUSE_COMPANIES", "GREENHOUSE_ENABLED"),
+            ("LEVER_COMPANIES", "LEVER_ENABLED"),
+            ("SMARTRECRUITERS_COMPANIES", "SMARTRECRUITERS_ENABLED"),
+        )
+    )
+
+
+async def scheduled_job_refresh_loop(db: AsyncIOMotorDatabase, settings: Settings) -> None:
+    """Refresh configured official ATS boards periodically until application shutdown."""
+    interval_minutes = int(getattr(settings, "JOB_REFRESH_INTERVAL_MINUTES", 360))
+    if (
+        interval_minutes <= 0
+        or getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats"
+        or not has_configured_direct_ats_boards(settings)
+    ):
+        return
+
+    interval_seconds = interval_minutes * 60
+    while True:
+        try:
+            report = await refresh_live_jobs(db, settings, {}, include_report=True)
+            if isinstance(report, dict):
+                logger.info(
+                    "Scheduled direct ATS refresh completed status=%s active=%s",
+                    report.get("status"),
+                    report.get("added_count", 0),
+                )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Scheduled direct ATS refresh failed")
+        await asyncio.sleep(interval_seconds)
+
+
 async def _sync_configured_boards(
     db: AsyncIOMotorDatabase,
     settings: Settings,

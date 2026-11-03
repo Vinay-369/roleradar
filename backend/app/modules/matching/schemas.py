@@ -51,6 +51,8 @@ class JobMatchOut(BaseModel):
     posted_days_ago: int | None = None
     created_at: str | None = None
     posted_at: str | None = None
+    first_seen_at: str | None = None
+    last_seen_at: str | None = None
     updated_at: str | None = None
     registration_closing_date: str | None = None
     application_deadline: str | None = None

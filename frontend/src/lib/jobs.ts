@@ -67,6 +67,8 @@ export type JobMatch = {
   experience_text?: string | null;
   industry?: string | null;
   created_at?: string;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
   has_match?: boolean;
   verification_status?: string;
   verified_at?: string | null;
@@ -136,9 +138,16 @@ export function isWithinPostingAge(job: JobMatch, maxAgeDays: number): boolean {
     }
   }
 
-  return typeof job.posted_days_ago === "number"
-    && job.posted_days_ago >= 0
-    && job.posted_days_ago <= maxAgeDays;
+  if (typeof job.posted_days_ago === "number") {
+    return job.posted_days_ago >= 0 && job.posted_days_ago <= maxAgeDays;
+  }
+
+  const lastSeenAt = job.last_seen_at || job.first_seen_at;
+  if (!lastSeenAt) return false;
+  const seenAt = Date.parse(lastSeenAt);
+  if (Number.isNaN(seenAt)) return false;
+  const ageDays = Math.max(0, (Date.now() - seenAt) / 86_400_000);
+  return ageDays <= maxAgeDays;
 }
 
 export type JobQueryFilters = {
@@ -215,8 +224,14 @@ export async function getRecommendedMatches(
 
   const res = await apiClient.get<JobMatch[]>("/matches/recommended", { params });
   const rawTotal = res.headers["x-total-count"];
-  const parsedTotal = rawTotal ? parseInt(rawTotal, 10) : res.data.length;
-  const total = isNaN(parsedTotal) ? res.data.length : parsedTotal;
+  const parsedTotal = rawTotal ? parseInt(rawTotal, 10) : Number.NaN;
+  const page = filters?.page ?? 1;
+  const pageSize = filters?.pageSize ?? 50;
+  const total = Number.isFinite(parsedTotal)
+    ? parsedTotal
+    : res.data.length === pageSize
+      ? page * pageSize + 1
+      : (page - 1) * pageSize + res.data.length;
   return { items: res.data, total };
 }
 

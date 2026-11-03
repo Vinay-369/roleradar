@@ -243,7 +243,7 @@ def test_internship_filter_excludes_non_internship_roles():
     assert "job_type" not in query or query["job_type"] != "internship"
 
 
-def test_max_posted_days_filters_using_posted_or_first_seen_date():
+def test_max_posted_days_filters_using_posted_or_recently_seen_date():
     provider = CuratedJobProvider(None)
     query = provider._build_mongo_query({"max_posted_days": 60})
 
@@ -256,7 +256,8 @@ def test_max_posted_days_filters_using_posted_or_first_seen_date():
         for branch in freshness_clause["$or"]
     )
     assert freshness_clause["$or"][0]["posted_at"]["$gte"]
-    assert freshness_clause["$or"][1]["first_seen_at"]["$gte"]
+    assert freshness_clause["$or"][1]["last_seen_at"]["$gte"]
+    assert any(branch.get("first_seen_at") == {"$gte": freshness_clause["$or"][0]["posted_at"]["$gte"]} for branch in freshness_clause["$or"])
 
 
 @pytest.mark.parametrize(

@@ -37,6 +37,15 @@ def _attach_canonical_role_meta(job: dict) -> None:
 
 
 def _attach_compensation_meta(job: dict) -> None:
+    if (
+        job.get("source") == "adzuna"
+        and job.get("compensation_type") == "NUMERIC"
+        and (job.get("salary_min") is not None or job.get("salary_max") is not None)
+    ):
+        job["salary_currency"] = job.get("salary_currency") or "INR"
+        job["salary_period"] = job.get("salary_period") or "YEAR"
+        job["salary_unit"] = job.get("salary_unit") or "LPA"
+
     is_intern = (
         job.get("opportunity_type") == "INTERNSHIP"
         or job.get("job_type") == "internship"
@@ -168,7 +177,6 @@ def _strip_for_list(job: dict) -> dict:
     job.setdefault("verification_status", "VERIFIED_ACTIVE")
     job.setdefault("country", extract_country_from_location(job.get("location")))
     job.setdefault("contextual_requirements", [])
-    job.setdefault("posted_days_ago", 0)
     from app.modules.jobs.taxonomy import normalize_provider_experience
     normalize_provider_experience(job)
     closing_date = job.get("registration_closing_date") or job.get("application_deadline") or job.get("end_date")
@@ -196,7 +204,6 @@ def _strip_for_detail(job: dict) -> dict:
     job.setdefault("verification_status", "VERIFIED_ACTIVE")
     job.setdefault("country", extract_country_from_location(job.get("location")))
     job.setdefault("contextual_requirements", [])
-    job.setdefault("posted_days_ago", 0)
     from app.modules.jobs.taxonomy import normalize_provider_experience
     normalize_provider_experience(job)
     closing_date = job.get("registration_closing_date") or job.get("application_deadline") or job.get("end_date")
@@ -268,7 +275,10 @@ async def list_jobs(
     if isinstance(region, str) and region.lower() in ("india", "in"):
         jobs = [j for j in jobs if _is_india_job(j)]
 
-    jobs.sort(key=lambda j: (0 if _is_india_job(j) else 1, j.get("posted_days_ago", 0)))
+    jobs.sort(key=lambda j: (
+        0 if _is_india_job(j) else 1,
+        j.get("posted_days_ago") if isinstance(j.get("posted_days_ago"), (int, float)) else float("inf"),
+    ))
     return [JobOut(**_strip_for_list(j)) for j in jobs]
 
 

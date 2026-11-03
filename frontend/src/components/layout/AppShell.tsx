@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type UIEvent } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
-  Menu, Target, ArrowLeft, LogOut,
+  Menu, Target, ArrowLeft, ArrowUp, LogOut,
   User, Bot, Sun, Moon,
 } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -35,7 +35,9 @@ export function AppShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLElement>(null);
 
   const isHome = location.pathname === "/" || location.pathname === "/dashboard";
   const pageTitle = getPageTitle(location.pathname);
@@ -57,6 +59,14 @@ export function AppShell() {
     } else {
       navigate("/dashboard");
     }
+  };
+
+  const handleMainScroll = (event: UIEvent<HTMLElement>) => {
+    setShowScrollToTop(event.currentTarget.scrollTop > 240);
+  };
+
+  const scrollToTop = () => {
+    mainContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const userInitials = user?.full_name
@@ -224,11 +234,26 @@ export function AppShell() {
         </header>
 
         {/* Scrollable Page Body */}
-        <main className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-5 md:px-6 md:py-6 lg:px-8 bg-ink-50"}`}>
+        <main
+          ref={mainContentRef}
+          onScroll={handleMainScroll}
+          className={`flex-1 min-w-0 ${location.pathname.startsWith("/copilot") ? "rr-copilot-canvas overflow-hidden p-0 bg-white" : "rr-main-canvas overflow-y-auto px-4 py-5 md:px-6 md:py-6 lg:px-8 bg-ink-50"}`}
+        >
           <div key={location.pathname} className={`${location.pathname.startsWith("/copilot") ? "h-full w-full" : "rr-app-page w-full max-w-[1400px] mx-auto"} rr-page-transition`}>
             <Outlet />
           </div>
         </main>
+        {showScrollToTop && !location.pathname.startsWith("/copilot") && (
+          <button
+            type="button"
+            onClick={scrollToTop}
+            className="fixed bottom-5 right-3 z-40 inline-flex size-12 items-center justify-center rounded-full border border-white/80 bg-gradient-to-br from-signal-500 to-signal-700 text-white shadow-[0_8px_24px_rgba(15,23,42,0.22)] transition duration-200 hover:-translate-y-1 hover:from-signal-600 hover:to-signal-800 hover:shadow-[0_12px_28px_rgba(15,23,42,0.28)] active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal-600 dark:border-slate-700 dark:from-signal-600 dark:to-indigo-700 dark:hover:from-signal-500 dark:hover:to-indigo-600 sm:right-4 md:right-6"
+            aria-label="Scroll to top"
+            title="Scroll to top"
+          >
+            <ArrowUp size={19} />
+          </button>
+        )}
       </div>
     </div>
   );

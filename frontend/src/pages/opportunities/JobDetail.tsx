@@ -355,9 +355,9 @@ export function JobDetail() {
                 <span className="rounded-full border border-emerald-300 bg-emerald-100/80 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                   Complete Employer Posting
                 </span>
-              ) : job.completeness_status === "VERIFIED_PARTIAL" ? (
+              ) : job.completeness_status === "VERIFIED_PARTIAL" || job.completeness_status === "INSUFFICIENT" ? (
                 <span className="rounded-full border border-amber-300 bg-amber-100/80 px-2.5 py-1 text-[10px] font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-                  Partial Disclosure
+                  {job.completeness_status === "INSUFFICIENT" ? "Limited Employer Details" : "Partial Disclosure"}
                 </span>
               ) : null}
             </div>

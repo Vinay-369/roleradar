@@ -203,6 +203,12 @@ async def recommended_matches(
             "category": "FRESHER",
         }
         matches = await matching_services.get_or_compute_matches(db, user_id, resume, effective_profile, jobs, settings)
+        jobs_by_id = {str(job.get("id")): job for job in jobs}
+        for match in matches:
+            source_job = jobs_by_id.get(str(match.get("job_id")))
+            if source_job:
+                match.setdefault("first_seen_at", source_job.get("first_seen_at"))
+                match.setdefault("last_seen_at", source_job.get("last_seen_at"))
         if sort_by_match:
             matches = _sort_matches_by_score(matches)[skip:skip + safe_page_size]
         else:
@@ -288,7 +294,7 @@ async def recommended_matches(
             registration_closing_date=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
             application_deadline=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
             end_date=j.get("registration_closing_date") or j.get("application_deadline") or j.get("end_date"),
-            posted_days_ago=j.get("posted_days_ago", 0),
+            posted_days_ago=j.get("posted_days_ago"),
             created_at=created_str,
             has_match=False,
             source_job_id=j.get("source_job_id"),
@@ -301,6 +307,8 @@ async def recommended_matches(
             url_type=j.get("url_type", "UNVERIFIED"),
             is_direct_apply=j.get("is_direct_apply", j.get("url_type") == "DIRECT_REQUISITION"),
             posted_at=j.get("posted_at"),
+            first_seen_at=j.get("first_seen_at"),
+            last_seen_at=j.get("last_seen_at"),
             country=j.get("country") or extract_country_from_location(j.get("location")),
             opportunity_type=classification.opportunity_type.value,
             candidate_suitability=classification.suitability.value,

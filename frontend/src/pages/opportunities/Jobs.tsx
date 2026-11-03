@@ -69,6 +69,10 @@ export function Jobs() {
   );
   const [totalCount, setTotalCount] = useState<number>(restoredState?.totalCount ?? 0);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(
+    restoredState ? restoredState.loadedItems.length < restoredState.totalCount : false,
+  );
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 
   const isRestoringRef = useRef<boolean>(!!restoredState);
   const targetScrollYRef = useRef<number | null>(restoredState?.scrollY ?? null);
@@ -119,6 +123,7 @@ export function Jobs() {
     if (data) {
       setLoadedJobs(data.items.filter((job) => isWithinPostingAge(job, MAX_ACTIVE_POSTING_AGE_DAYS)));
       setTotalCount(data.total);
+      setHasMore(data.items.length >= PAGE_SIZE && data.total > PAGE_SIZE);
       setPage(1);
     }
   }, [data]);
@@ -181,8 +186,9 @@ export function Jobs() {
 
   // Progressive "Show More" Handler
   const handleShowMore = async () => {
-    if (isLoadingMore || loadedJobs.length >= totalCount) return;
+    if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
+    setLoadMoreError(null);
     const nextPage = page + 1;
     try {
       const res = await getRecommendedMatches("full_time", false, {
@@ -202,9 +208,11 @@ export function Jobs() {
         return [...prev, ...newItems];
       });
       setTotalCount(res.total);
+      setHasMore(res.items.length >= PAGE_SIZE && res.total > nextPage * PAGE_SIZE);
       setPage(nextPage);
     } catch (err) {
       console.error("Failed to load more opportunities:", err);
+      setLoadMoreError(getApiErrorMessage(err, "Could not load more jobs. Please try again."));
     } finally {
       setIsLoadingMore(false);
     }
@@ -279,18 +287,6 @@ export function Jobs() {
                 ? "No direct employer boards are configured."
                 : `Refresh ${liveSync.data.status} · ${liveSync.data.added_count} active openings found.`}
           </p>
-          {liveSync.data.providers?.length ? (
-            <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-              {liveSync.data.providers.map((provider) => (
-                <li key={provider.provider}>
-                  {provider.provider}: {provider.status.replaceAll("_", " ")}
-                  {provider.results?.filter((board) => board.errors?.length).map((board) => (
-                    <span key={board.board} className="ml-1">({board.board}: {board.errors?.join("; ")})</span>
-                  ))}
-                </li>
-              ))}
-            </ul>
-          ) : null}
         </div>
       )}
       {liveSync.error && (
@@ -427,6 +423,12 @@ export function Jobs() {
         </div>
       </div>
 
+      {stageFilter === "FRESHER" && (
+        <div role="note" className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-200">
+          Fresher search also includes verified openings where the employer did not state an experience requirement. Review the official job description before applying; these are not confirmed fresher roles.
+        </div>
+      )}
+
       {isLoading && <SkeletonCard count={4} />}
 
       {/* Low Inventory Note */}
@@ -489,7 +491,7 @@ export function Jobs() {
           ))}
 
           {/* Progressive "Show More" Action */}
-          {loadedJobs.length < totalCount ? (
+          {hasMore && loadedJobs.length < totalCount ? (
             <div className="mt-6 flex flex-col items-center justify-center gap-2 pt-2 pb-4">
               <button
                 type="button"
@@ -509,6 +511,11 @@ export function Jobs() {
               <p className="text-[11px] text-ink-400">
                 Showing {visibleJobs.length} of {totalCount} total openings matching your criteria
               </p>
+              {loadMoreError && (
+                <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">
+                  {loadMoreError}
+                </p>
+              )}
             </div>
           ) : totalCount > 0 ? (
             <div className="mt-6 text-center py-4 border-t border-ink-100">

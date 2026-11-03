@@ -247,7 +247,7 @@ class LeverJobProvider:
 
         job_id = str(raw.get("id") or "").strip()
         title = (raw.get("text") or "").strip()
-        resolved_company = company_name or raw.get("company")
+        resolved_company = company_name or raw.get("company") or board_token.replace("-", " ").title()
 
         categories = raw.get("categories") or {}
         commitment = categories.get("commitment") if isinstance(categories, dict) else None

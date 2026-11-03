@@ -213,6 +213,44 @@ async def test_curated_job_provider_returns_only_verified_active():
         assert found_status_check is True, f"Filter did not enforce VERIFIED_ACTIVE: {called_filter}"
 
 
+def test_verified_direct_jobs_are_not_hidden_for_incomplete_descriptions():
+    """Official active openings stay discoverable even when the employer provides few details."""
+    query = CuratedJobProvider(AsyncMock())._build_mongo_query({})
+
+    clauses = query["$and"]
+    assert any(
+        clause.get("verification_status") == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value
+        and clause.get("url_type") == "DIRECT_REQUISITION"
+        for clause in clauses
+    )
+    assert any(
+        set(clause.get("source", {}).get("$in", []))
+        == {"ashby", "greenhouse", "lever", "smartrecruiters"}
+        for clause in clauses
+    )
+    assert not any("completeness_status" in clause for clause in clauses)
+
+
+def test_freshness_filter_accepts_recently_seen_jobs_without_posted_date():
+    query = CuratedJobProvider(AsyncMock())._build_mongo_query({"max_posted_days": 60})
+    freshness_clause = next(
+        clause for clause in query["$and"]
+        if "$or" in clause and any(
+            isinstance(option, dict) and "last_seen_at" in option
+            for option in clause["$or"]
+        )
+    )
+
+    recently_seen_clause = next(
+        option for option in freshness_clause["$or"]
+        if isinstance(option, dict)
+        and option.get("posted_at") == {"$in": [None, ""]}
+        and isinstance(option.get("last_seen_at"), dict)
+        and "$gte" in option["last_seen_at"]
+    )
+    assert recently_seen_clause["last_seen_at"]["$gte"]
+
+
 @pytest.mark.asyncio
 async def test_fresh_user_no_resume_sees_verified_active_jobs_and_internships():
     """Requirement 1, 2, 17, 18: Discovery returns verified active jobs & internships without resume."""

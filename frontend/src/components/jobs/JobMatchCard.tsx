@@ -59,22 +59,16 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
   );
   const location = job.is_remote ? "Remote" : formatLocation(job.location);
   const compensation = formatCompensation(job);
-  const compensationDisclosed = compensation !== "Not disclosed";
+  const compensationDisclosed = !compensation.toLocaleLowerCase().includes("not disclosed");
+  const compensationLabel = compensationDisclosed
+    ? compensation
+    : `${isInternship ? "Stipend" : "Salary"} not disclosed`;
   const workplace = job.workplace_type && job.workplace_type !== "UNKNOWN"
     ? job.workplace_type.replaceAll("_", " ")
     : job.is_remote
       ? "Remote"
       : null;
 
-  const sourceLabel = job.source === "greenhouse"
-    ? "Greenhouse"
-    : job.source === "lever"
-      ? "Lever"
-      : job.source === "ashby"
-        ? "Ashby"
-        : job.source === "smartrecruiters"
-          ? "SmartRecruiters"
-          : job.source || "Employer ATS";
   const verifiedLabel = job.last_verified_at || job.verified_at
     ? (() => {
         const date = new Date(job.last_verified_at || job.verified_at || "");
@@ -92,10 +86,11 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
       if (job.verification_status === "VERIFIED_ACTIVE") return "Verified active · Continuous hiring";
       return `Posted ${job.posted_days_ago} days ago`;
     }
-    return job.verification_status === "VERIFIED_ACTIVE" ? "Verified active" : "Active listing";
+    return "Posting date not disclosed";
   })();
 
   const experienceDisplay = (() => {
+    if (job.experience_text?.trim()) return job.experience_text.trim();
     const hasMin = job.experience_min !== null && job.experience_min !== undefined;
     const hasMax = job.experience_max !== null && job.experience_max !== undefined;
     if (hasMin && hasMax) {
@@ -106,7 +101,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
     }
     if (hasMin) return `${job.experience_min}+ yrs experience`;
     if (hasMax) return `Up to ${job.experience_max} yrs experience`;
-    return null;
+    return "Experience not disclosed";
   })();
 
   const deadlineDisplay = (() => {
@@ -173,8 +168,12 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
               </span>
             </div>
             <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-              Source: {sourceLabel} · {verifiedLabel}
-              {job.quality_tier === "SECONDARY" ? " · Partial employer disclosure" : ""}
+              {verifiedLabel}
+              {job.completeness_status === "INSUFFICIENT"
+                ? " · Limited employer details"
+                : job.completeness_status === "VERIFIED_PARTIAL" || job.quality_tier === "SECONDARY"
+                  ? " · Partial employer disclosure"
+                  : ""}
             </div>
         </div>
 
@@ -208,11 +207,11 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
         )}
         {compensationDisclosed ? (
           <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            {compensation}
+            {compensationLabel}
           </span>
         ) : (
           <span className="rounded-full border border-slate-200/50 bg-slate-100/70 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-            Salary not disclosed
+            {compensationLabel}
           </span>
         )}
         {experienceDisplay && (

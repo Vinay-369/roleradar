@@ -369,7 +369,8 @@ def _multi_factor_rank_key(r: dict):
     role_rank = 0 if (c_role and c_role != "Specialized Requisition") else 1
 
     # Freshness
-    freshness = int(r.get("posted_days_ago", 0))
+    posted_days_ago = r.get("posted_days_ago")
+    freshness = int(posted_days_ago) if isinstance(posted_days_ago, (int, float)) else 9999
 
     # Direct application trust
     direct_apply_rank = 0 if (r.get("is_direct_apply") or r.get("url_type") == "DIRECT_REQUISITION") else 1

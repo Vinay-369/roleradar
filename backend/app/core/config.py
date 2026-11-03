@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     #   external config, matches the originally tested/demoed behavior).
     # "hybrid": also fetches real listings from Adzuna and merges them in.
     JOB_SOURCE_MODE: str = "direct_ats"
+    JOB_REFRESH_INTERVAL_MINUTES: int = 360
     JOB_REFRESH_TIMEOUT_SECONDS: float = 75.0
     JOB_PROVIDER_SYNC_TIMEOUT_SECONDS: float = 25.0
     JOB_PROVIDER_BOARD_CONCURRENCY: int = 8
@@ -115,6 +116,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
+        if self.JOB_REFRESH_INTERVAL_MINUTES < 0:
+            raise ValueError("JOB_REFRESH_INTERVAL_MINUTES must be zero or greater.")
         if self.MONGO_SERVER_SELECTION_TIMEOUT_MS <= 0 or self.MONGO_CONNECT_TIMEOUT_MS <= 0:
             raise ValueError("MongoDB timeout settings must be greater than zero.")
         if self.MONGO_MAX_POOL_SIZE < 1 or self.MONGO_MIN_POOL_SIZE < 0:

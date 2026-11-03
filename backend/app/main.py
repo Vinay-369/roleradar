@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -29,8 +30,28 @@ async def lifespan(app: FastAPI):
     if settings.ENV.lower() != "production":
         await ensure_demo_user(get_db())
 
-    yield
-    await close_mongo_connection()
+    from app.modules.jobs import services as jobs_services
+    scheduler_task = None
+    if (
+        settings.JOB_REFRESH_INTERVAL_MINUTES > 0
+        and settings.JOB_SOURCE_MODE == "direct_ats"
+        and jobs_services.has_configured_direct_ats_boards(settings)
+    ):
+        scheduler_task = asyncio.create_task(
+            jobs_services.scheduled_job_refresh_loop(get_db(), settings),
+            name="scheduled-direct-ats-refresh",
+        )
+
+    try:
+        yield
+    finally:
+        if scheduler_task:
+            scheduler_task.cancel()
+            try:
+                await scheduler_task
+            except asyncio.CancelledError:
+                pass
+        await close_mongo_connection()
 
 
 def create_app() -> FastAPI:
@@ -51,6 +72,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Total-Count"],
     )
 
     @app.middleware("http")
@@ -152,7 +174,16 @@ def create_app() -> FastAPI:
     from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
-    dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+    # The source checkout keeps frontend/ beside backend/, while the release
+    # image places both app/ and frontend/ directly under /app.
+    dist_candidates = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/dist")),
+    ]
+    dist_dir = next(
+        (candidate for candidate in dist_candidates if os.path.isfile(os.path.join(candidate, "index.html"))),
+        dist_candidates[0],
+    )
     if os.path.exists(dist_dir) and os.path.isfile(os.path.join(dist_dir, "index.html")):
         assets_dir = os.path.join(dist_dir, "assets")
         if os.path.exists(assets_dir):

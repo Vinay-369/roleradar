@@ -129,6 +129,9 @@ class AdzunaJobProvider:
         # unit convention for the country; for India this is annual INR,
         # so we convert to LPA (lakhs per annum) to match this project's
         # existing LPA-based filtering.
+        salary_currency = compensation.salary_currency or "INR"
+        salary_period = compensation.salary_period
+        salary_unit = compensation.salary_unit
         salary_min = None
         salary_max = None
         stipend_min = None
@@ -146,11 +149,14 @@ class AdzunaJobProvider:
             compensation_type = compensation.compensation_type
             compensation_text = compensation.compensation_text
             salary_disclosed = compensation.salary_disclosed
-        elif salary_min_raw is not None:
-            salary_min = round(salary_min_raw / 100_000, 1) if salary_min_raw else None
-            salary_max = round(salary_max_raw / 100_000, 1) if salary_max_raw else salary_min
+        elif salary_min_raw is not None or salary_max_raw is not None:
+            salary_min = round(salary_min_raw / 100_000, 1) if salary_min_raw is not None else None
+            salary_max = round(salary_max_raw / 100_000, 1) if salary_max_raw is not None else salary_min
             salary_disclosed = True
             compensation_type = "NUMERIC"
+            salary_currency = "INR"
+            salary_period = "YEAR"
+            salary_unit = "LPA"
             compensation_text = (
                 f"₹{salary_min:g}–{salary_max:g} LPA"
                 if salary_max is not None and salary_max != salary_min
@@ -211,7 +217,9 @@ class AdzunaJobProvider:
             "salary_min": salary_min,
             "salary_max": salary_max,
             "salary_disclosed": salary_disclosed,
-            "salary_currency": compensation.salary_currency or "INR",
+            "salary_currency": salary_currency,
+            "salary_period": salary_period,
+            "salary_unit": salary_unit,
             "stipend": stipend,
             "stipend_min": stipend_min,
             "stipend_max": stipend_max,

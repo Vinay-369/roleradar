@@ -82,7 +82,7 @@ async def _seed_verified_job(
         "stipend_min": 25000.0 if job_type == "internship" else None,
         "internship_duration_months": 6 if job_type == "internship" else None,
         "fresher_friendly": True,
-        "source": "live",
+        "source": "greenhouse",
         "apply_url": apply_url,
         "is_direct_apply": True,
         "url_type": "DIRECT_REQUISITION",

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { GraduationCap, Sparkles, FileText, RotateCcw, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { getApiErrorMessage } from "../../lib/apiClient";
 import {
   getRecommendedMatches,
   isWithinPostingAge,
@@ -27,8 +28,8 @@ import {
 
 const PAGE_SIZE = 20;
 const isInternshipListing = (job: JobMatch): boolean => {
-  if (job.opportunity_type) return job.opportunity_type.toUpperCase() === "INTERNSHIP";
-  return job.job_type.toLowerCase() === "internship"
+  return job.opportunity_type?.toUpperCase() === "INTERNSHIP"
+    || job.job_type.toLowerCase() === "internship"
     || /\b(intern|internship|co-?op)\b/i.test(job.job_title);
 };
 
@@ -74,6 +75,10 @@ export function Internships() {
   );
   const [totalCount, setTotalCount] = useState<number>(restoredState?.totalCount ?? 0);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(
+    restoredState ? restoredState.loadedItems.length < restoredState.totalCount : false,
+  );
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 
   const isRestoringRef = useRef<boolean>(!!restoredState);
   const targetScrollYRef = useRef<number | null>(restoredState?.scrollY ?? null);
@@ -139,6 +144,7 @@ export function Internships() {
         isInternshipListing(job) && isWithinPostingAge(job, MAX_ACTIVE_POSTING_AGE_DAYS)
       ));
       setTotalCount(data.total);
+      setHasMore(data.items.length >= PAGE_SIZE && data.total > PAGE_SIZE);
       setPage(1);
     }
   }, [data]);
@@ -201,8 +207,9 @@ export function Internships() {
 
   // Progressive "Show More" Handler
   const handleShowMore = async () => {
-    if (isLoadingMore || loadedInternships.length >= totalCount) return;
+    if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
+    setLoadMoreError(null);
     const nextPage = page + 1;
     try {
       const res = await getRecommendedMatches("internship", false, {
@@ -226,9 +233,11 @@ export function Internships() {
         return [...prev, ...newItems];
       });
       setTotalCount(res.total);
+      setHasMore(res.items.length >= PAGE_SIZE && res.total > nextPage * PAGE_SIZE);
       setPage(nextPage);
     } catch (err) {
       console.error("Failed to load more internships:", err);
+      setLoadMoreError(getApiErrorMessage(err, "Could not load more internships. Please try again."));
     } finally {
       setIsLoadingMore(false);
     }
@@ -505,7 +514,7 @@ export function Internships() {
           ))}
 
           {/* Progressive "Show More" Action */}
-          {loadedInternships.length < totalCount ? (
+          {hasMore && loadedInternships.length < totalCount ? (
             <div className="mt-6 flex flex-col items-center justify-center gap-2 pt-2 pb-4">
               <button
                 type="button"
@@ -525,6 +534,11 @@ export function Internships() {
               <p className="text-[11px] text-ink-400">
                 Showing {visibleInternships.length} of {totalCount} total internships matching your criteria
               </p>
+              {loadMoreError && (
+                <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">
+                  {loadMoreError}
+                </p>
+              )}
             </div>
           ) : totalCount > 0 ? (
             <div className="mt-6 text-center py-4 border-t border-ink-100">

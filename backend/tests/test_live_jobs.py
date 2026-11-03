@@ -14,6 +14,7 @@ You must verify the actual live HTTP call works once you have real
 Adzuna credentials -- see the README.
 """
 import asyncio
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -22,6 +23,7 @@ from mongomock_motor import AsyncMongoMockClient
 from app.core.config import Settings
 from app.modules.jobs.live_provider import AdzunaConfigError, AdzunaJobProvider
 from app.modules.jobs import services as jobs_services
+from app.modules.jobs.providers import CuratedJobProvider
 
 # A fixture shaped like Adzuna's documented /jobs/{country}/search response.
 ADZUNA_FIXTURE_RESPONSE = {
@@ -90,6 +92,27 @@ def test_transform_maps_real_job_correctly(configured_settings):
     assert job["salary_min"] == 5.0
     assert job["salary_max"] == 8.0
     assert job["salary_disclosed"] is True
+    assert job["salary_currency"] == "INR"
+    assert job["salary_period"] == "YEAR"
+    assert job["salary_unit"] == "LPA"
+
+
+def test_attach_compensation_meta_repairs_legacy_adzuna_salary_metadata():
+    from app.modules.jobs.routes import _attach_compensation_meta
+
+    job = {
+        "source": "adzuna",
+        "salary_min": 5.0,
+        "salary_max": 8.0,
+        "salary_currency": "INR",
+        "compensation_type": "NUMERIC",
+        "compensation_text": "₹5–8 LPA",
+    }
+
+    _attach_compensation_meta(job)
+
+    assert job["salary_period"] == "YEAR"
+    assert job["salary_unit"] == "LPA"
 
 
 def test_transform_detects_internship_from_title(configured_settings):
@@ -379,6 +402,138 @@ async def test_refresh_live_jobs_is_a_safe_noop_when_hybrid_but_unconfigured(db)
     )
     count = await jobs_services.refresh_live_jobs(db, settings, {})
     assert count == 0
+
+
+def test_scheduled_refresh_requires_an_enabled_configured_official_board():
+    assert not jobs_services.has_configured_direct_ats_boards(Settings(
+        _env_file=None,
+        ASHBY_COMPANIES="",
+        GREENHOUSE_COMPANIES="",
+        LEVER_COMPANIES="",
+        SMARTRECRUITERS_COMPANIES="",
+    ))
+    assert jobs_services.has_configured_direct_ats_boards(
+        Settings(ASHBY_ENABLED=True, ASHBY_COMPANIES="company-board")
+    )
+    assert not jobs_services.has_configured_direct_ats_boards(
+        Settings(
+            _env_file=None,
+            ASHBY_ENABLED=False,
+            ASHBY_COMPANIES="company-board",
+            GREENHOUSE_COMPANIES="",
+            LEVER_COMPANIES="",
+            SMARTRECRUITERS_COMPANIES="",
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_scheduled_refresh_runs_immediately_then_repeats_until_cancelled(db, monkeypatch):
+    settings = Settings(
+        JOB_SOURCE_MODE="direct_ats",
+        JOB_REFRESH_INTERVAL_MINUTES=10,
+        ASHBY_ENABLED=True,
+        ASHBY_COMPANIES="company-board",
+    )
+    refresh_count = 0
+    sleep_intervals = []
+
+    async def refresh(*args, **kwargs):
+        nonlocal refresh_count
+        refresh_count += 1
+        return {"status": "success", "added_count": 2}
+
+    async def stop_after_one_interval(seconds):
+        sleep_intervals.append(seconds)
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(jobs_services, "refresh_live_jobs", refresh)
+    monkeypatch.setattr(jobs_services.asyncio, "sleep", stop_after_one_interval)
+
+    with pytest.raises(asyncio.CancelledError):
+        await jobs_services.scheduled_job_refresh_loop(db, settings)
+
+    assert refresh_count == 1
+    assert sleep_intervals == [600]
+
+
+def test_fresher_filter_includes_unknown_experience_without_marking_it_eligible():
+    query = CuratedJobProvider(object())._build_mongo_query({"stage": "FRESHER"})
+    stage_clause = next(
+        clause for clause in query["$and"]
+        if "$or" in clause and any(
+            isinstance(option, dict) and (
+                "experience_min" in option
+                or any(
+                    isinstance(sub_option, dict) and "experience_min" in sub_option
+                    for sub_option in option.get("$and", [])
+                )
+            )
+            for option in clause["$or"]
+        )
+    )
+
+    unknown_experience_clause = next(
+        option for option in stage_clause["$or"]
+        if isinstance(option, dict)
+        and "$and" in option
+        and any(
+            isinstance(sub_option, dict)
+            and "experience_min" in sub_option
+            and sub_option["experience_min"] is None
+            for sub_option in option["$and"]
+        )
+    )
+    assert {"experience_min": None} in unknown_experience_clause["$and"]
+    assert {"experience_max": None} in unknown_experience_clause["$and"]
+    assert {"fresher_eligible": {"$ne": False}} in unknown_experience_clause["$and"]
+
+
+@pytest.mark.asyncio
+async def test_fresher_stage_includes_undisclosed_experience_but_excludes_senior_jobs(db):
+    from app.modules.jobs import repositories as jobs_repo
+
+    base = {
+        "company": "Official Employer",
+        "source": "greenhouse",
+        "url_type": "DIRECT_REQUISITION",
+        "verification_status": "VERIFIED_ACTIVE",
+        "location": "Bengaluru, India",
+        "apply_url": "https://boards.greenhouse.io/company/jobs/123",
+    }
+    await jobs_repo.upsert_jobs(db, [
+        {
+            **base,
+            "id": "entry_unknown_experience",
+            "title": "Backend Engineer",
+            "description": "Build and maintain backend services with the engineering team.",
+            "experience_min": None,
+            "experience_max": None,
+        },
+        {
+            **base,
+            "id": "senior_unknown_experience",
+            "title": "Senior Backend Engineer",
+            "description": "Build and maintain backend services with the engineering team.",
+            "experience_min": None,
+            "experience_max": None,
+        },
+        {
+            **base,
+            "id": "explicit_experience_required",
+            "title": "Backend Engineer",
+            "description": "Applicants must have 5+ years of professional experience.",
+            "experience_min": None,
+            "experience_max": None,
+        },
+    ])
+
+    results = await CuratedJobProvider(db).search({"stage": "FRESHER"})
+    result_ids = {job["id"] for job in results}
+
+    assert "entry_unknown_experience" in result_ids
+    assert "senior_unknown_experience" not in result_ids
+    assert "explicit_experience_required" not in result_ids
 
 
 @pytest.mark.asyncio

@@ -41,7 +41,7 @@ class CuratedJobProvider:
     def __init__(self, db: AsyncIOMotorDatabase):
         self._db = db
 
-    def _build_mongo_query(self, filters: dict) -> dict:
+    def _build_mongo_query(self, filters: dict, *, include_benchmarks: bool = False) -> dict:
         mongo_filter: dict = {}
 
         # 1. Lifecycle verification status
@@ -49,19 +49,29 @@ class CuratedJobProvider:
         if filters.get("include_all_statuses"):
             status_clause = {}
         else:
-            status_clause = {
+            direct_status_clause = {
                 "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
                 "url_type": ApplicationUrlType.DIRECT_REQUISITION.value,
                 "source": {"$in": DIRECT_ATS_SOURCES},
             }
+            if include_benchmarks:
+                # The default catalog view also exposes curated benchmark
+                # records, while active discovery filters remain live-only.
+                status_clause = {
+                    "$or": [
+                        direct_status_clause,
+                        {
+                            "verification_status": OpportunityLifecycleStatus.MARKET_BENCHMARK.value,
+                            "source": "curated_benchmark",
+                        },
+                    ],
+                }
+            else:
+                status_clause = direct_status_clause
 
         and_clauses: list[dict] = [status_clause] if status_clause else []
 
-        # 2. Completeness Quality: Exclude INSUFFICIENT records from primary recommendations
-        if not filters.get("include_insufficient"):
-            and_clauses.append({"completeness_status": {"$ne": "INSUFFICIENT"}})
-
-        # 3. User isolation
+        # 2. User isolation
         user_id = filters.get("user_id")
         user_clause = {"$or": [{"source": {"$ne": "custom"}}, {"user_id": user_id}]} if user_id else {"source": {"$ne": "custom"}}
         and_clauses.append(user_clause)
@@ -132,10 +142,16 @@ class CuratedJobProvider:
                             {"posted_at": {"$gte": cutoff}},
                             {
                                 "posted_at": {"$in": [None, ""]},
+                                "last_seen_at": {"$gte": cutoff},
+                            },
+                            {
+                                "posted_at": {"$in": [None, ""]},
+                                "last_seen_at": {"$in": [None, ""]},
                                 "first_seen_at": {"$gte": cutoff},
                             },
                             {
                                 "posted_at": {"$in": [None, ""]},
+                                "last_seen_at": {"$in": [None, ""]},
                                 "first_seen_at": {"$in": [None, ""]},
                                 "posted_days_ago": {"$lte": m_int},
                             },
@@ -197,11 +213,29 @@ class CuratedJobProvider:
             st_upper = stage.upper().strip()
             if st_upper == "FRESHER":
                 and_clauses.append({"$or": [
-                    {"experience_min": {"$lte": 1}},
+                    {
+                        "$and": [
+                            {"experience_min": {"$lte": 1}},
+                            {"$or": [
+                                {"experience_max": None},
+                                {"experience_max": {"$lte": 2}},
+                            ]},
+                        ]
+                    },
                     {"fresher_friendly": True},
                     {"fresher_eligible": True},
                     {"candidate_suitability": "FRESHER"},
-                    {"title": {"$regex": r"\b(fresher|trainee|junior|graduate|entry|intern)\b", "$options": "i"}},
+                    {"title": {"$regex": r"\b(fresher|graduate|entry|intern)\b|\b(?:trainee|junior)\b", "$options": "i"}},
+                    {
+                        "$and": [
+                            {"experience_min": None},
+                            {"experience_max": None},
+                            {"candidate_suitability": {"$nin": ["EXPERIENCED", "EARLY_CAREER"]}},
+                            {"fresher_eligible": {"$ne": False}},
+                            {"$nor": [{"title": {"$regex": r"\b(senior|sr\.?|lead|principal|staff|architect|director|manager|iii|iv|v)\b", "$options": "i"}}]},
+                            {"$nor": [{"description": {"$regex": r"\b(?:freshers?|new graduates?)\s+(?:(?:are|is)\s+)?(?:not eligible|ineligible|cannot apply|can't apply|not allowed to apply)\b|\bnot\s+open\s+to\s+(?:freshers?|new graduates?)\b|\bonly\s+(?:experienced|senior|mid[- ]level)\s+(?:candidates?|applicants?)\b|\b(?:[3-9]|\d{2,})\s*(?:\+|plus)?\s*(?:years?|yrs?)\b|\b(?:[3-9]|\d{2,})\s*[-–]\s*\d+\s*(?:years?|yrs?)\b", "$options": "i"}}]},
+                        ]
+                    },
                 ]})
             elif st_upper == "INTERNSHIP_SEEKER":
                 and_clauses.append({"$or": [
@@ -268,7 +302,12 @@ class CuratedJobProvider:
         return mongo_filter
 
     async def search(self, filters: dict) -> list[dict]:
-        mongo_filter = self._build_mongo_query(filters)
+        include_benchmarks = filters.get("include_benchmarks")
+        if include_benchmarks is None:
+            include_benchmarks = not (
+                filters.get("active_discovery_only") or filters.get("direct_apply_only")
+            )
+        mongo_filter = self._build_mongo_query(filters, include_benchmarks=bool(include_benchmarks))
 
         skip = int(filters.get("skip", 0))
         limit = int(filters.get("limit", 100))
@@ -288,7 +327,12 @@ class CuratedJobProvider:
         return jobs
 
     async def count(self, filters: dict) -> int:
-        mongo_filter = self._build_mongo_query(filters)
+        include_benchmarks = filters.get("include_benchmarks")
+        if include_benchmarks is None:
+            include_benchmarks = not (
+                filters.get("active_discovery_only") or filters.get("direct_apply_only")
+            )
+        mongo_filter = self._build_mongo_query(filters, include_benchmarks=bool(include_benchmarks))
         return await repo.count_filtered_jobs(self._db, mongo_filter)
 
 

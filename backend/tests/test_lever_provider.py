@@ -95,6 +95,13 @@ def test_01_lever_response_normalization():
     assert "Build high scale microservices" in norm["description"]
 
 
+def test_lever_company_falls_back_to_employer_board_name():
+    provider = LeverJobProvider()
+    norm = provider.normalize_lever_job(make_raw_lever_job(), "paytm")
+
+    assert norm["company"] == "Paytm"
+
+
 # --- 2. URL CLASSIFICATION ---
 
 def test_02_direct_requisition_urls_accepted():
