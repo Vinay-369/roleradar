@@ -301,6 +301,113 @@ ROLE_QUESTION_BANKS: dict[str, list[dict]] = {
 }
 
 
+def _specialist_role_questions(role_name: str) -> list[dict]:
+    """Return a compact specialist bank for the selected profession.
+
+    The original banks cover the main software disciplines, but the role
+    selector also contains finance, healthcare, design, operations, and other
+    professions. Those roles must not fall through to generic SWE questions.
+    """
+    lower = (role_name or "").lower()
+    focus = "the role's core workflows, tools, and quality standards"
+    tools = "the tools and standards used in the domain"
+
+    if any(term in lower for term in ("financial analyst", "accountant", "finance")):
+        focus = "financial modeling, variance analysis, forecasting, and business decisions"
+        tools = "Excel or spreadsheets, SQL, accounting controls, and scenario analysis"
+    elif any(term in lower for term in ("nurse", "healthcare", "clinical", "medical")):
+        focus = "patient assessment, care planning, clinical safety, and evidence-based decisions"
+        tools = "clinical documentation, care protocols, patient-safety checks, and privacy controls"
+    elif any(term in lower for term in ("product manager", "product management")):
+        focus = "product discovery, prioritization, experimentation, and measurable customer outcomes"
+        tools = "customer interviews, product analytics, roadmap methods, and hypothesis testing"
+    elif any(term in lower for term in ("designer", "ui/ux", "ux", "graphic")):
+        focus = "user research, interaction design, visual systems, accessibility, and critique"
+        tools = "design systems, prototypes, usability testing, accessibility standards, and design tools"
+    elif any(term in lower for term in ("marketing", "seo")):
+        focus = "audience research, campaign execution, attribution, conversion, and content performance"
+        tools = "analytics dashboards, search strategy, campaign experiments, and channel attribution"
+    elif any(term in lower for term in ("security", "cybersecurity", "information security")):
+        focus = "threat modeling, security controls, incident response, and risk reduction"
+        tools = "logging and detection, vulnerability management, identity controls, and security standards"
+    elif any(term in lower for term in ("qa", "test", "quality assurance")):
+        focus = "test strategy, risk-based coverage, automation, release quality, and defect prevention"
+        tools = "test plans, automation frameworks, CI pipelines, defect triage, and observability"
+    elif any(term in lower for term in ("mobile", "ios", "android")):
+        focus = "mobile lifecycle design, offline behavior, performance, release safety, and accessibility"
+        tools = "native or cross-platform frameworks, device testing, crash analytics, and app stores"
+    elif any(term in lower for term in ("data analyst", "operations analyst", "supply chain analyst")):
+        focus = "data investigation, metric definition, reporting, root-cause analysis, and recommendations"
+        tools = "SQL, spreadsheets, dashboards, data quality checks, and stakeholder communication"
+    elif any(term in lower for term in ("data engineer", "database administrator", "systems administrator")):
+        focus = "reliable data or infrastructure operations, automation, observability, and recovery"
+        tools = "SQL, pipelines or automation, monitoring, access controls, and backup procedures"
+    elif any(term in lower for term in ("mechanical", "civil", "electrical", "robotics", "embedded", "firmware")):
+        focus = "engineering requirements, technical design, validation, safety, and trade-offs"
+        tools = "domain calculations, technical drawings or specifications, testing, and engineering standards"
+    elif any(term in lower for term in ("teacher", "research scientist", "scientist")):
+        focus = "research or learning objectives, evidence, evaluation, communication, and improvement"
+        tools = "structured investigation, documentation, assessment methods, and domain literature"
+    elif any(term in lower for term in ("recruiter", "hr generalist", "human resources")):
+        focus = "candidate evaluation, people processes, communication, fairness, and confidentiality"
+        tools = "structured interviews, applicant tracking systems, employment policies, and people analytics"
+    elif any(term in lower for term in ("full stack", "backend", "frontend", "software", "developer", "engineer", "devops", "cloud", "sre", "data scientist", "machine learning", "ai / nlp")):
+        focus = "the named engineering stack, architecture decisions, testing, and production outcomes"
+        tools = "the frameworks, platforms, observability, and delivery practices named in the role"
+
+    templates = [
+        {
+            "category": "technical",
+            "question": f"For a {role_name}, how would you apply {focus} to solve a realistic problem?",
+            "star_hint": f"Anchor the answer in {focus}, then explain decisions, checks, and measurable results.",
+            "strategy": "Clarify the objective -> identify constraints -> choose a domain-appropriate approach -> validate the outcome.",
+            "sample_answer": f"I would first define the expected outcome and constraints, then use {tools} to choose an evidence-based approach. I would validate the result against quality and impact measures before communicating the recommendation.",
+            "pitfalls": "Giving a generic answer that does not use the role's domain methods or quality checks.",
+        },
+        {
+            "category": "technical",
+            "question": f"Which {tools} would you use in a {role_name} role, and how would you choose between alternatives?",
+            "star_hint": "Compare tools by suitability, reliability, cost, risk, and the outcome they support.",
+            "strategy": "Define the need -> compare alternatives -> explain trade-offs -> verify the choice in practice.",
+            "sample_answer": f"I would select {tools} based on the required outcome, available evidence, risks, and operational constraints. I would start with a bounded evaluation, document the trade-off, and review the result with the relevant stakeholders.",
+            "pitfalls": "Listing tools without explaining when they are appropriate or how their output is validated.",
+        },
+        {
+            "category": "technical",
+            "question": f"How would you check the quality and safety of your work as a {role_name}?",
+            "star_hint": "Name role-specific standards, review steps, evidence, and escalation paths.",
+            "strategy": "Identify risks -> build checks into the workflow -> review evidence -> document exceptions and follow-up.",
+            "sample_answer": f"I would identify the risks specific to {focus}, add checks before the final handoff, and keep evidence for important decisions. If results were uncertain or outside the standard, I would escalate early and record the corrective action.",
+            "pitfalls": "Treating quality as a final checkbox or ignoring domain-specific compliance and safety requirements.",
+        },
+        {
+            "category": "managerial",
+            "question": f"How would you prioritize competing requests in a {role_name} position?",
+            "star_hint": "Balance impact, urgency, risk, dependencies, and stakeholder expectations.",
+            "strategy": "Assess impact and risk -> surface dependencies -> agree priorities -> communicate trade-offs -> revisit with new evidence.",
+            "sample_answer": f"I would rank requests by their impact on {focus}, urgency, risk, and dependencies. I would align the order with stakeholders, communicate what will be delivered and when, and revisit priorities as facts change.",
+            "pitfalls": "Promising everything at once or prioritizing only by who asked most recently.",
+        },
+        {
+            "category": "hr",
+            "question": f"Why are you pursuing a {role_name} career, and what experience has prepared you for {focus}?",
+            "star_hint": "Connect motivation to specific evidence, learning, and the contribution you want to make.",
+            "strategy": "Explain motivation -> give a relevant example -> describe what you learned -> connect it to the role.",
+            "sample_answer": f"I am pursuing {role_name} work because I enjoy turning {focus} into useful outcomes. My strongest preparation is a concrete project or experience where I applied relevant methods, learned from feedback, and improved the result.",
+            "pitfalls": "Giving a generic motivation statement without evidence connected to the selected role.",
+        },
+        {
+            "category": "hr",
+            "question": f"Tell me about a time you had to learn something unfamiliar for a {role_name} assignment.",
+            "star_hint": "Show how you learned, applied, checked, and communicated the new knowledge.",
+            "strategy": "Set the learning goal -> use credible resources -> practice on a bounded task -> seek feedback -> measure progress.",
+            "sample_answer": f"I defined the gap, used reliable guidance related to {tools}, and applied it to a bounded task. I asked for feedback, checked the result against the expected standard, and documented what I would do differently next time.",
+            "pitfalls": "Claiming mastery after introductory exposure or failing to verify the work.",
+        },
+    ]
+    return templates
+
+
 def _additional_role_questions(role_name: str) -> list[dict]:
     """Add a larger set of cross-domain questions anchored to the selected role."""
     templates = [
@@ -427,8 +534,25 @@ def get_curated_role_questions(role_name: str, count: int = 24) -> list[dict]:
         selected = ROLE_QUESTION_BANKS["data_science"]
     elif any(k in lower for k in ["devops", "cloud", "sre", "site reliability", "infrastructure", "platform engineer", "kubernetes", "aws"]):
         selected = ROLE_QUESTION_BANKS["devops"]
-    else:
-        # Default to core software engineering / general SWE
+    elif any(k in lower for k in ["software", "developer", "engineer", "programmer", "engineering"]):
         selected = ROLE_QUESTION_BANKS["core_swe"]
+    else:
+        # Non-software professions use the specialist bank below rather than
+        # receiving unrelated software-engineering questions.
+        selected = []
 
-    return (selected + _additional_role_questions(role_name))[:count]
+    role_specific = _specialist_role_questions(role_name)
+    additional = _additional_role_questions(role_name)
+    merged: list[dict] = []
+    seen: set[str] = set()
+    for question in selected + role_specific + additional:
+        key = question["question"].strip().casefold()
+        if key not in seen:
+            seen.add(key)
+            merged.append(question)
+    return merged[:count]
+
+
+def get_role_specific_questions(role_name: str, count: int = 6) -> list[dict]:
+    """Return deterministic questions to anchor every generated interview set."""
+    return _specialist_role_questions(role_name)[:count]

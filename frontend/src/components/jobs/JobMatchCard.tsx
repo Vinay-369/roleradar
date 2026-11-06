@@ -50,7 +50,14 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
   const hasGoodFit = job.realistic_fit === "GOOD_FIT";
   const score = job.has_match ? job.overall_score : null;
   const isInternship = job.job_type === "internship" || job.opportunity_type === "INTERNSHIP";
-  const isAggregatorListing = ["adzuna", "jsearch", "jooble"].includes(job.source);
+  const isAggregatorListing = ["adzuna", "jsearch", "jooble", "remotive", "arbeitnow"].includes(job.source);
+  const aggregatorLabel: Record<string, string> = {
+    adzuna: "Adzuna",
+    jsearch: "JSearch",
+    jooble: "Jooble",
+    remotive: "Remotive",
+    arbeitnow: "Arbeitnow",
+  };
   const isVerifiedDirect = job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply;
   const hasSafeApplyUrl = Boolean(
     job.apply_url
@@ -143,7 +150,7 @@ export function JobMatchCard({ job, onViewDetail }: { job: JobMatch; onViewDetai
             )}
             {job.verification_status === "VERIFIED_ACTIVE" && isAggregatorListing && (
               <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
-                Live listing
+                Live listing · {aggregatorLabel[job.source] || "Aggregator"}
               </span>
             )}
             {job.verification_status === "MARKET_BENCHMARK" && (

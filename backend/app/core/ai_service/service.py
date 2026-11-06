@@ -37,6 +37,7 @@ from app.core.ai_service.prompts.interview import (
 from app.core.ai_service.schemas import (
     TailoringResult,
     StructuredTailoringResult,
+    InterviewQuestion,
     InterviewQuestionsResult,
 )
 from app.modules.chatbot.context import CopilotContext
@@ -582,6 +583,7 @@ class AIService:
                 schema=InterviewQuestionsResult,
                 max_retries=self._settings.AI_MAX_RETRIES,
             )
+            result = self._ensure_role_specific_interview_questions(result, target_role)
             await self._log_operation(
                 operation="generate_interview_questions", user_id=user_id, status="success",
                 meta={"prompt_version": INTERVIEW_PROMPT_VERSION, "count": len(result.questions)},
@@ -596,6 +598,31 @@ class AIService:
                 meta={"prompt_version": INTERVIEW_PROMPT_VERSION, "error": str(exc)},
             )
             return fallback
+
+    def _ensure_role_specific_interview_questions(
+        self, result: InterviewQuestionsResult, target_role: str
+    ) -> InterviewQuestionsResult:
+        """Anchor successful LLM output with deterministic role-specific questions.
+
+        Providers can return plausible but generic questions even when the
+        prompt contains the role. Keeping a small deterministic anchor at the
+        front guarantees that the user sees questions for the selected role,
+        while preserving the provider-generated personalization afterward.
+        """
+        from app.modules.interview.role_banks import get_role_specific_questions
+
+        anchored = [
+            InterviewQuestion(**question)
+            for question in get_role_specific_questions(target_role)
+        ]
+        seen = {question.question.strip().casefold() for question in anchored}
+        merged = list(anchored)
+        for question in result.questions:
+            key = question.question.strip().casefold()
+            if key not in seen:
+                seen.add(key)
+                merged.append(question)
+        return InterviewQuestionsResult(questions=merged[:30])
 
     def _fallback_interview_questions(self, resume_summary: str, jd_text: str, target_role: str, company: str) -> InterviewQuestionsResult:
         from app.core.ai_service.schemas import InterviewQuestion

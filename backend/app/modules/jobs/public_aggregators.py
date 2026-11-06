@@ -165,7 +165,7 @@ class RemotiveJobProvider:
             "posted_days_ago": posted_days_ago,
             "description": description,
         }
-        vres = verify_opportunity_sync(draft)
+        vres = verify_opportunity_sync(draft, enforce_direct_apply=False)
 
         return {
             "id": f"remotive_{result.get('id', '')}",
@@ -323,7 +323,7 @@ class ArbeitnowJobProvider:
             "posted_days_ago": posted_days_ago,
             "description": description,
         }
-        vres = verify_opportunity_sync(draft)
+        vres = verify_opportunity_sync(draft, enforce_direct_apply=False)
 
         return {
             "id": f"arbeitnow_{slug}",
@@ -490,7 +490,7 @@ class JoobleJobProvider:
             "posted_days_ago": posted_days_ago,
             "description": description,
         }
-        vres = verify_opportunity_sync(draft)
+        vres = verify_opportunity_sync(draft, enforce_direct_apply=False)
 
         return {
             "id": f"jooble_{job_id}",

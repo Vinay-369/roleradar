@@ -223,8 +223,12 @@ Provider synchronization can be triggered on-demand or via scheduled jobs:
    Set up a recurring worker or cron job (e.g., every 2–4 hours) to invoke the sync endpoint or directly execute the provider refresh script:
    ```bash
    # Example crontab (every 2 hours)
-   0 */2 * * * curl -X POST https://api.roleradar.example.com/api/jobs/sync -H "Authorization: Bearer $SYNC_SERVICE_TOKEN"
-   ```
+    0 */2 * * * curl -X POST https://api.roleradar.example.com/api/jobs/sync -H "Authorization: Bearer $SYNC_SERVICE_TOKEN"
+    ```
+
+### Fresher and Internship Coverage
+
+Direct employer ATS feeds are the primary source, but entry-level openings are often published through job aggregators before they appear in a configured employer board. Set `PUBLIC_AGGREGATORS_ENABLED=true` to enable the out-of-band fallback lane. RoleRadar supports zero-auth Remotive and Arbeitnow feeds, plus optional JSearch, Jooble, and Adzuna credentials. Aggregator records retain their source, redirect URL, posting date, and verification status; they are shown only when a fresher or internship search has no direct ATS results and are labeled as aggregator listings in the UI.
 
 ---
 

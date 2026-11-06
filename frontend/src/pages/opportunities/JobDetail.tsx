@@ -146,7 +146,8 @@ export function JobDetail() {
     (skill) => !requiredSkillKeys.has(skill.toLowerCase().replace(/[^a-z0-9]/g, ""))
   );
 
-  const isVerifiedActive = job.verification_status === "VERIFIED_ACTIVE" && job.is_direct_apply;
+  const isVerifiedActive = job.verification_status === "VERIFIED_ACTIVE";
+  const isVerifiedDirect = isVerifiedActive && job.is_direct_apply;
   const isBenchmark = job.verification_status === "MARKET_BENCHMARK";
   const isClosed = job.verification_status === "CLOSED" || job.verification_status === "EXPIRED";
 
@@ -170,8 +171,8 @@ export function JobDetail() {
   })();
 
   const isSafeHttpUrl = (url?: string | null) => Boolean(url && (url.startsWith("https://") || url.startsWith("http://")));
-  const hasDirectApply = Boolean(isVerifiedActive && isSafeHttpUrl(job.apply_url) && !job.apply_url.includes("example.com"));
-  const isAggregatorListing = ["adzuna", "jsearch", "jooble"].includes(job.source);
+  const hasDirectApply = Boolean(isVerifiedDirect && isSafeHttpUrl(job.apply_url) && !job.apply_url.includes("example.com"));
+  const isAggregatorListing = ["adzuna", "jsearch", "jooble", "remotive", "arbeitnow"].includes(job.source);
   const hasProviderApply = Boolean(isVerifiedActive && isAggregatorListing && isSafeHttpUrl(job.apply_url));
 
   const postedText = (() => {
@@ -349,7 +350,11 @@ export function JobDetail() {
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs dark:border-emerald-800 dark:bg-emerald-950/40">
               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="font-bold">Verified active listing · Direct employer application</span>
+                <span className="font-bold">
+                  {isVerifiedDirect
+                    ? "Verified active listing · Direct employer application"
+                    : "Verified active listing · Application link provided by job source"}
+                </span>
               </div>
               {job.completeness_status === "VERIFIED_COMPLETE" ? (
                 <span className="rounded-full border border-emerald-300 bg-emerald-100/80 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">

@@ -537,6 +537,46 @@ async def test_fresher_stage_includes_undisclosed_experience_but_excludes_senior
 
 
 @pytest.mark.asyncio
+async def test_fresher_stage_rejects_explicit_experience_even_when_provider_flag_is_fresher(db):
+    from app.modules.jobs import repositories as jobs_repo
+
+    base = {
+        "company": "Official Employer",
+        "source": "greenhouse",
+        "url_type": "DIRECT_REQUISITION",
+        "verification_status": "VERIFIED_ACTIVE",
+        "location": "Bengaluru, India",
+        "apply_url": "https://boards.greenhouse.io/company/jobs/456",
+    }
+    await jobs_repo.upsert_jobs(db, [
+        {
+            **base,
+            "id": "flagged_but_requires_experience",
+            "title": "Software Engineer",
+            "description": "Freshers may apply, but applicants must have 2+ years of experience.",
+            "experience_min": 0,
+            "experience_max": 2,
+            "fresher_friendly": True,
+            "fresher_eligible": True,
+        },
+        {
+            **base,
+            "id": "genuine_entry_level",
+            "title": "Software Engineer",
+            "description": "Entry-level role. Fresh graduates welcome.",
+            "experience_min": 0,
+            "experience_max": 1,
+            "fresher_friendly": True,
+            "fresher_eligible": True,
+        },
+    ])
+
+    result_ids = {job["id"] for job in await CuratedJobProvider(db).search({"stage": "FRESHER"})}
+    assert "flagged_but_requires_experience" not in result_ids
+    assert "genuine_entry_level" in result_ids
+
+
+@pytest.mark.asyncio
 async def test_aggregator_jobs_remain_outside_direct_ats_curated_search(db):
     """Aggregator listings do not enter the strict direct-ATS discovery feed."""
     from app.modules.jobs import repositories as jobs_repo

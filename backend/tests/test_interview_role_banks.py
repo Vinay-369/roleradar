@@ -1,7 +1,15 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
+
+from app.core.ai_service import service as ai_service_module
+from app.core.ai_service.schemas import InterviewQuestion, InterviewQuestionsResult
+from app.core.ai_service.service import AIService
 from app.modules.interview.role_banks import (
     ROLE_QUESTION_BANKS,
     get_curated_role_questions,
+    get_role_specific_questions,
 )
 from app.core.ai_service.prompts.interview import build_interview_user_prompt
 
@@ -67,6 +75,57 @@ def test_curated_fallback_has_more_questions_in_every_round(role):
     assert all(count >= 4 for count in counts.values())
     assert len({question["question"] for question in questions}) == len(questions)
     assert any(role in question["question"] for question in questions)
+
+
+def test_non_software_roles_get_distinct_domain_questions():
+    finance_questions = get_curated_role_questions("Financial Analyst")
+    nursing_questions = get_curated_role_questions("Registered Nurse")
+
+    finance_text = " ".join(question["question"] for question in finance_questions).lower()
+    nursing_text = " ".join(question["question"] for question in nursing_questions).lower()
+
+    assert finance_questions != nursing_questions
+    assert "financial modeling" in finance_text
+    assert "patient assessment" in nursing_text
+    assert not any("software engineer" in question["question"].lower() for question in nursing_questions)
+
+
+def test_role_specific_anchor_contains_selected_role():
+    questions = get_role_specific_questions("Cybersecurity Analyst")
+    assert len(questions) == 6
+    assert all("cybersecurity analyst" in question["question"].lower() for question in questions)
+
+
+@pytest.mark.asyncio
+async def test_successful_ai_generation_keeps_role_specific_anchor(monkeypatch):
+    service = AIService.__new__(AIService)
+    service._settings = SimpleNamespace(AI_MAX_RETRIES=0, AI_PROVIDER="test")
+    service._provider = object()
+    service._log_operation = AsyncMock()
+    monkeypatch.setattr(
+        ai_service_module,
+        "generate_structured",
+        AsyncMock(
+            return_value=InterviewQuestionsResult(
+                questions=[
+                    InterviewQuestion(
+                        question="Tell me about a challenging project.",
+                        category="hr",
+                    )
+                ]
+            )
+        ),
+    )
+
+    result = await service.generate_interview_questions(
+        resume_summary="Candidate background",
+        jd_text="Security monitoring and incident response",
+        target_role="Cybersecurity Analyst",
+        company="Example Security",
+    )
+
+    assert "cybersecurity analyst" in result.questions[0].question.lower()
+    assert any(question.question == "Tell me about a challenging project." for question in result.questions)
 
 
 @pytest.mark.parametrize(

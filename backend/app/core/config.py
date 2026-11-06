@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     JOB_REFRESH_TIMEOUT_SECONDS: float = 75.0
     JOB_PROVIDER_SYNC_TIMEOUT_SECONDS: float = 25.0
     JOB_PROVIDER_BOARD_CONCURRENCY: int = 8
+    # Optional live aggregator lane for fresher and internship coverage. It is
+    # opt-in because aggregator URLs are disclosed redirects, not direct ATS
+    # requisitions, and should be reviewed for regional relevance.
+    PUBLIC_AGGREGATORS_ENABLED: bool = False
+    PUBLIC_AGGREGATOR_REFRESH_INTERVAL_MINUTES: int = 180
+    REMOTIVE_ENABLED: bool = True
+    ARBEITNOW_ENABLED: bool = True
     GREENHOUSE_ENABLED: bool = True
     GREENHOUSE_COMPANIES: str = ""
     GREENHOUSE_REQUEST_TIMEOUT_SECONDS: int = 15
@@ -118,6 +125,8 @@ class Settings(BaseSettings):
     def validate_production_secrets(self) -> "Settings":
         if self.JOB_REFRESH_INTERVAL_MINUTES < 0:
             raise ValueError("JOB_REFRESH_INTERVAL_MINUTES must be zero or greater.")
+        if self.PUBLIC_AGGREGATOR_REFRESH_INTERVAL_MINUTES < 0:
+            raise ValueError("PUBLIC_AGGREGATOR_REFRESH_INTERVAL_MINUTES must be zero or greater.")
         if self.MONGO_SERVER_SELECTION_TIMEOUT_MS <= 0 or self.MONGO_CONNECT_TIMEOUT_MS <= 0:
             raise ValueError("MongoDB timeout settings must be greater than zero.")
         if self.MONGO_MAX_POOL_SIZE < 1 or self.MONGO_MIN_POOL_SIZE < 0:

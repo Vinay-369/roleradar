@@ -195,7 +195,9 @@ class AdzunaJobProvider:
             "posted_days_ago": posted_days_ago,
             "description": description,
         }
-        vres = verify_opportunity_sync(draft)
+        # Aggregator redirects are accepted into the clearly labelled
+        # aggregator feed; they are not presented as direct employer ATS URLs.
+        vres = verify_opportunity_sync(draft, enforce_direct_apply=False)
 
         return {
             "id": f"adzuna_{result.get('id', '')}",

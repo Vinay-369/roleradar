@@ -123,17 +123,36 @@ def has_configured_direct_ats_boards(settings: Settings) -> bool:
     )
 
 
+def has_configured_public_aggregators(settings: Settings) -> bool:
+    """Return whether the opt-in public aggregator lane should be refreshed."""
+    return bool(
+        getattr(settings, "PUBLIC_AGGREGATORS_ENABLED", False)
+        and (
+            getattr(settings, "REMOTIVE_ENABLED", True)
+            or getattr(settings, "ARBEITNOW_ENABLED", True)
+            or getattr(settings, "ADZUNA_APP_ID", None)
+            and getattr(settings, "ADZUNA_APP_KEY", None)
+            or getattr(settings, "JSEARCH_RAPIDAPI_KEY", None)
+            or getattr(settings, "JOOBLE_API_KEY", None)
+        )
+    )
+
+
 async def scheduled_job_refresh_loop(db: AsyncIOMotorDatabase, settings: Settings) -> None:
     """Refresh configured official ATS boards periodically until application shutdown."""
-    interval_minutes = int(getattr(settings, "JOB_REFRESH_INTERVAL_MINUTES", 360))
-    if (
-        interval_minutes <= 0
-        or getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats"
-        or not has_configured_direct_ats_boards(settings)
-    ):
+    if getattr(settings, "JOB_SOURCE_MODE", "curated") != "direct_ats":
         return
 
-    interval_seconds = interval_minutes * 60
+    intervals = []
+    if has_configured_direct_ats_boards(settings):
+        intervals.append(int(getattr(settings, "JOB_REFRESH_INTERVAL_MINUTES", 360)))
+    if has_configured_public_aggregators(settings):
+        intervals.append(int(getattr(settings, "PUBLIC_AGGREGATOR_REFRESH_INTERVAL_MINUTES", 180)))
+    intervals = [interval for interval in intervals if interval > 0]
+    if not intervals:
+        return
+
+    interval_seconds = min(intervals) * 60
     while True:
         try:
             report = await refresh_live_jobs(db, settings, {}, include_report=True)
@@ -247,6 +266,77 @@ async def sync_all_smartrecruiters_boards(db: AsyncIOMotorDatabase, settings: Se
     )
 
 
+async def sync_public_aggregators(db: AsyncIOMotorDatabase, settings: Settings) -> dict:
+    """Fetch opt-in public listings and persist them for non-blocking discovery.
+
+    Aggregator records retain their source and redirect URL. They are only used
+    as a fresher/internship fallback when no verified direct ATS records exist.
+    """
+    if not getattr(settings, "PUBLIC_AGGREGATORS_ENABLED", False):
+        return {"provider": "PublicAggregators", "status": "disabled", "fetched": 0, "verified_active": 0, "errors": []}
+
+    from app.modules.jobs.jsearch_provider import JSearchJobProvider
+    from app.modules.jobs.live_provider import AdzunaJobProvider, AdzunaConfigError
+    from app.modules.jobs.public_aggregators import ArbeitnowJobProvider, JoobleJobProvider, RemotiveJobProvider
+
+    providers: list[tuple[str, object]] = []
+    if getattr(settings, "REMOTIVE_ENABLED", True):
+        providers.append(("Remotive", RemotiveJobProvider(settings)))
+    if getattr(settings, "ARBEITNOW_ENABLED", True):
+        providers.append(("Arbeitnow", ArbeitnowJobProvider(settings)))
+    jsearch = JSearchJobProvider(settings)
+    if jsearch.is_configured:
+        providers.append(("JSearch", jsearch))
+    jooble = JoobleJobProvider(settings)
+    if jooble.is_configured:
+        providers.append(("Jooble", jooble))
+    try:
+        adzuna = AdzunaJobProvider(settings)
+    except AdzunaConfigError:
+        adzuna = None
+    if adzuna is not None:
+        providers.append(("Adzuna", adzuna))
+
+    if not providers:
+        return {"provider": "PublicAggregators", "status": "not_configured", "fetched": 0, "verified_active": 0, "errors": []}
+
+    async def fetch(provider_name: str, provider: object) -> dict:
+        jobs: list[dict] = []
+        errors: list[str] = []
+        for query in ({}, {"job_type": "internship"}):
+            try:
+                result = await asyncio.wait_for(
+                    provider.search(query),
+                    timeout=max(1.0, float(getattr(settings, "JOB_PROVIDER_SYNC_TIMEOUT_SECONDS", 25.0))),
+                )
+                jobs.extend(item for item in result if isinstance(item, dict))
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                errors.append(f"{provider_name}: {_public_provider_error(exc)}")
+        return {"provider": provider_name, "jobs": jobs, "errors": errors}
+
+    results = await asyncio.gather(*(fetch(name, provider) for name, provider in providers))
+    jobs = deduplicate_opportunities([job for result in results for job in result["jobs"]])
+    if jobs:
+        await repo.upsert_jobs(db, jobs)
+    errors = [error for result in results for error in result["errors"]]
+    return {
+        "provider": "PublicAggregators",
+        "status": "partial" if errors else "success",
+        "fetched": sum(len(result["jobs"]) for result in results),
+        "verified_active": sum(
+            1 for job in jobs if job.get("verification_status") == OpportunityLifecycleStatus.VERIFIED_ACTIVE.value
+        ),
+        "unique_requisitions": len(jobs),
+        "errors": errors,
+        "providers": [
+            {"provider": result["provider"], "fetched": len(result["jobs"]), "errors": result["errors"]}
+            for result in results
+        ],
+    }
+
+
 
 async def _run_provider_sync(provider_name: str, sync_coro) -> dict:
     try:
@@ -295,6 +385,8 @@ async def _perform_live_job_refresh(db: AsyncIOMotorDatabase, settings: Settings
         asyncio.create_task(_run_provider_sync(name, call(db, settings))): name
         for name, call in provider_calls.items()
     }
+    if has_configured_public_aggregators(settings):
+        provider_tasks[asyncio.create_task(sync_public_aggregators(db, settings))] = "PublicAggregators"
     refresh_timeout = max(0.1, float(getattr(settings, "JOB_REFRESH_TIMEOUT_SECONDS", 75.0)))
     try:
         done, pending = await asyncio.wait(provider_tasks, timeout=refresh_timeout)

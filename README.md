@@ -120,9 +120,14 @@ Backend settings are read from environment variables and `.env`; see [`backend/.
 | `LMSTUDIO_BASE_URL`, `LMSTUDIO_MODEL` | Local LM Studio endpoint and model |
 | `CLOUD_FALLBACK_PROVIDER`, `CLOUD_FALLBACK_API_KEY`, `CLOUD_FALLBACK_MODEL` | Cloud provider configuration |
 | `JOB_SOURCE_MODE` and provider settings | Job feed behavior and configured sources |
+| `PUBLIC_AGGREGATORS_ENABLED` | Enables the scheduled live fallback lane for fresher/internship coverage |
+| `REMOTIVE_ENABLED`, `ARBEITNOW_ENABLED` | Zero-auth public remote job sources |
+| `JSEARCH_RAPIDAPI_KEY`, `JOOBLE_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Optional higher-volume aggregator credentials |
 | `UPLOAD_DIR`, `GENERATED_DIR`, `MAX_UPLOAD_MB` | Resume file storage and upload limit |
 
 Keep real credentials in your local environment file or deployment secret store. Do not commit them to version control.
+
+For fresher and internship coverage, enable `PUBLIC_AGGREGATORS_ENABLED=true`. RoleRadar refreshes these sources out of band, stores the listing timestamp and source URL, and only uses them as a clearly disclosed fallback when no verified direct employer ATS listing is available. This keeps the normal feed fast while providing additional genuine live opportunities.
 
 ## Project layout
 

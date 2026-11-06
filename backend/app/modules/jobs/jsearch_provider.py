@@ -232,7 +232,7 @@ class JSearchJobProvider:
             "posted_days_ago": posted_days_ago,
             "description": description,
         }
-        vres = verify_opportunity_sync(draft)
+        vres = verify_opportunity_sync(draft, enforce_direct_apply=False)
 
         return {
             "id": f"jsearch_{job_id_suffix}",

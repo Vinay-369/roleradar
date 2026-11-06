@@ -32,11 +32,15 @@ async def lifespan(app: FastAPI):
 
     from app.modules.jobs import services as jobs_services
     scheduler_task = None
-    if (
+    direct_refresh_enabled = (
         settings.JOB_REFRESH_INTERVAL_MINUTES > 0
-        and settings.JOB_SOURCE_MODE == "direct_ats"
         and jobs_services.has_configured_direct_ats_boards(settings)
-    ):
+    )
+    aggregator_refresh_enabled = (
+        settings.PUBLIC_AGGREGATOR_REFRESH_INTERVAL_MINUTES > 0
+        and jobs_services.has_configured_public_aggregators(settings)
+    )
+    if settings.JOB_SOURCE_MODE == "direct_ats" and (direct_refresh_enabled or aggregator_refresh_enabled):
         scheduler_task = asyncio.create_task(
             jobs_services.scheduled_job_refresh_loop(get_db(), settings),
             name="scheduled-direct-ats-refresh",

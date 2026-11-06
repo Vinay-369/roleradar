@@ -267,6 +267,13 @@ async def list_jobs(
     # blocking on external ATS synchronizations (decoupled in Phase 16C).
     jobs = await services.search_jobs(db, filters, user_id=str(current_user["_id"]))
 
+    # Direct employer ATS listings remain the primary feed. When a fresher or
+    # internship search has no direct results, include the separately marked
+    # live aggregator lane populated by the scheduled sync worker.
+    if not jobs and (stage == "FRESHER" or job_type == "internship" or opportunity_type == "INTERNSHIP"):
+        aggregator_filters = {**filters, "include_aggregators": True}
+        jobs = await services.search_jobs(db, aggregator_filters, user_id=str(current_user["_id"]))
+
     from app.modules.jobs.location_normalization import is_india_opportunity
 
     def _is_india_job(j: dict) -> bool:

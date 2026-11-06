@@ -543,7 +543,12 @@ def validate_protected_sections(
 
 
 def measure_and_enforce_one_page_fit(
-    content: str | dict, candidate_name: str = "Candidate", template: str = "modern", max_pages: int = 1, required_skills: list[str] | None = None
+    content: str | dict,
+    candidate_name: str = "Candidate",
+    template: str = "modern",
+    max_pages: int = 1,
+    required_skills: list[str] | None = None,
+    preserve_source_content: bool = False,
 ) -> tuple[str | dict, bool, int]:
     """
     Renders the tailored resume directly into the real PDF layout, measures actual page count using PyMuPDF,
@@ -563,8 +568,8 @@ def measure_and_enforce_one_page_fit(
         page_count = doc.page_count
         doc.close()
 
-        if page_count <= max_pages:
-            return parsed, True, page_count
+        if page_count <= max_pages or preserve_source_content:
+            return parsed, page_count <= max_pages, page_count
 
         # Iterative intelligent trimming on structured object
         # NEVER delete entire project entities. Only trim excess non-metric sub-bullets within projects that have > 2 bullets.
@@ -627,8 +632,8 @@ def measure_and_enforce_one_page_fit(
     page_count = doc.page_count
     doc.close()
 
-    if page_count <= max_pages:
-        return final_text, True, page_count
+    if page_count <= max_pages or preserve_source_content:
+        return final_text, page_count <= max_pages, page_count
 
     lines = final_text.splitlines()
     trimmed_lines = list(lines)
@@ -665,6 +670,7 @@ def validate_final_tailored_resume(
     master_parsed: dict,
     final_parsed: dict,
     candidate_profile: Any = None,
+    source_resume_text: str = "",
 ) -> tuple[bool, list[str]]:
     """
     Comprehensive Truth Guard whole-document audit of the final tailored resume against master resume truth.
@@ -728,7 +734,9 @@ def validate_final_tailored_resume(
             return [part for child in value for part in collect_strings(child)]
         return []
 
-    source_text = "\n".join(collect_strings(master_parsed))
+    source_text = "\n".join(
+        part for part in [source_resume_text, "\n".join(collect_strings(master_parsed))] if part
+    )
     source_text_lower = source_text.lower()
     source_skills = {
         canonicalize_skill_name(str(skill)).lower()

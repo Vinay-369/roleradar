@@ -720,7 +720,10 @@ async def generate_tailoring(
             changes.append(sum_chg)
 
         # Skills Reordering
-        skills_order = result.skills.ordered_skills if result.skills.ordered_skills else reordered_skills
+        # The deterministic reorder is authoritative. The model may return
+        # the original order even after identifying JD matches, so never let
+        # that response undo the ATS-prioritized candidate-skill ordering.
+        skills_order = reordered_skills
         if was_reordered or (skills_order and skills_order != master_skills):
             reorder_chg = {
                 "change_id": "chg_skills_reorder",
@@ -1181,8 +1184,9 @@ async def finalize_tailoring(
     page_budget = strategy_info.get("page_budget", 1)
     template_variant = strategy_info.get("template_variant", "modern")
     if strategy_info.get("section_order"):
-        final_parsed["_strategy"] = copy.deepcopy(strategy_info)
-        final_parsed["_ordered_sections"] = list(strategy_info["section_order"])
+        if changes_list or manual_edits:
+            final_parsed["_strategy"] = copy.deepcopy(strategy_info)
+            final_parsed["_ordered_sections"] = list(strategy_info["section_order"])
 
     candidate_name = final_parsed.get("personal", {}).get("name") or "Candidate"
     job = await jobs_repo.get_job_by_id(db, version.get("job_id", ""))
@@ -1199,6 +1203,7 @@ async def finalize_tailoring(
         template=template_variant,
         max_pages=page_budget,
         required_skills=required_tech,
+        preserve_source_content=True,
     )
     if manual_edits:
         final_text = render_text_from_structured(final_parsed)
@@ -1232,6 +1237,7 @@ async def finalize_tailoring(
         master_parsed,
         final_parsed,
         candidate_profile=source_validation_profile,
+        source_resume_text=master_raw_text,
     )
 
     # This ledger currently covers delivery bullets only. Other final facts

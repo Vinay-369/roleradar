@@ -18,6 +18,7 @@ from app.modules.jobs.url_classifier import ApplicationUrlType
 from app.modules.jobs.verification import OpportunityLifecycleStatus
 
 DIRECT_ATS_SOURCES = ("ashby", "greenhouse", "lever", "smartrecruiters")
+PUBLIC_AGGREGATOR_SOURCES = ("adzuna", "jsearch", "jooble", "remotive", "arbeitnow")
 
 
 class OpportunityProvider(Protocol):
@@ -68,6 +69,16 @@ class CuratedJobProvider:
                 }
             else:
                 status_clause = direct_status_clause
+            if filters.get("include_aggregators"):
+                status_clause = {
+                    "$or": [
+                        direct_status_clause,
+                        {
+                            "verification_status": OpportunityLifecycleStatus.VERIFIED_ACTIVE.value,
+                            "source": {"$in": PUBLIC_AGGREGATOR_SOURCES},
+                        },
+                    ],
+                }
 
         and_clauses: list[dict] = [status_clause] if status_clause else []
 
@@ -212,6 +223,31 @@ class CuratedJobProvider:
         if isinstance(stage, str) and stage.strip() and stage.upper() != "ALL":
             st_upper = stage.upper().strip()
             if st_upper == "FRESHER":
+                # Classification flags can be stale or provider-supplied, so
+                # never let them override an explicit seniority or experience
+                # requirement in the title/JD.
+                and_clauses.append({
+                    "$nor": [
+                        {
+                            "title": {
+                                "$regex": r"\b(senior|sr\.?|lead|principal|staff|architect|director|manager|iii|iv|v)\b",
+                                "$options": "i",
+                            }
+                        },
+                        {
+                            "experience_min": {"$gte": 2},
+                        },
+                        {
+                            "experience_max": {"$gt": 2},
+                        },
+                        {
+                            "description": {
+                                "$regex": r"\b(?:[2-9]|\d{2,})\s*(?:\+|(?:-|to)\s*\d+)?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:relevant\s+|professional\s+|hands[- ]on\s+|work\s+)?experience\b",
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                })
                 and_clauses.append({"$or": [
                     {
                         "$and": [

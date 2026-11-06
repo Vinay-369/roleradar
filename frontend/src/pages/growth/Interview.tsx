@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   MessageCircleQuestion, Sparkles,
@@ -289,6 +289,8 @@ function QuestionCard({
 }
 
 export function Interview() {
+  const { jobId: targetJobId } = useParams<{ jobId?: string }>();
+  const [searchParams] = useSearchParams();
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: getProfile });
   const profile = profileQuery.data;
   const { data: canonicalRoles } = useQuery({
@@ -296,23 +298,31 @@ export function Interview() {
     queryFn: getCanonicalRoles,
   });
 
-  const defaultRole = profile?.target_roles?.[0] || "";
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const requestedRole = searchParams.get("role") || "";
+  const defaultRole = requestedRole || profile?.target_roles?.[0] || "";
+  const [selectedRole, setSelectedRole] = useState<string>(requestedRole);
   const [activeTab, setActiveTab] = useState<"technical" | "managerial" | "hr">("technical");
   const [filterView, setFilterView] = useState<"all" | "bookmarked" | "pending">("all");
 
-  const effectiveRole = selectedRole || defaultRole;
+  useEffect(() => {
+    setSelectedRole(requestedRole);
+  }, [requestedRole]);
+
+  const useJobContext = Boolean(targetJobId && !selectedRole);
+  const activeRole = selectedRole || defaultRole;
   const roleOptions = canonicalRoles?.length ? canonicalRoles : ALL_JOB_ROLES;
 
   const interviewQuery = useQuery({
-    queryKey: ["interview-questions", effectiveRole],
+    queryKey: ["interview-questions", useJobContext ? targetJobId : null, activeRole],
     queryFn: async (): Promise<InterviewPrep & { usedCuratedFallback?: boolean }> => {
       try {
-        return await getInterviewQuestions({ role: effectiveRole });
+        return await getInterviewQuestions(
+          useJobContext ? { jobId: targetJobId } : { role: activeRole },
+        );
       } catch (generationError) {
         try {
-          return {
-            ...(await getCuratedInterviewQuestions(effectiveRole)),
+            return {
+            ...(await getCuratedInterviewQuestions(activeRole)),
             usedCuratedFallback: true,
           };
         } catch {
@@ -320,9 +330,10 @@ export function Interview() {
         }
       }
     },
-    enabled: Boolean(effectiveRole) && profileQuery.isFetched,
+    enabled: profileQuery.isFetched && Boolean(useJobContext ? targetJobId : activeRole),
     staleTime: 5 * 60 * 1000,
   });
+  const displayRole = selectedRole || interviewQuery.data?.job_title || defaultRole;
 
   // Stored mastered and bookmarked questions
   const [masteredMap, setMasteredMap] = useState<Record<string, boolean>>(() => {
@@ -378,22 +389,22 @@ export function Interview() {
 
   // Compute stats
   const masteredCount = useMemo(() => {
-    return currentQuestions.filter((q) => masteredMap[`${effectiveRole}_${activeTab}_${q.question}`]).length;
-  }, [currentQuestions, effectiveRole, activeTab, masteredMap]);
+    return currentQuestions.filter((q) => masteredMap[`${displayRole}_${activeTab}_${q.question}`]).length;
+  }, [currentQuestions, displayRole, activeTab, masteredMap]);
 
   const bookmarkCount = useMemo(() => {
-    return currentQuestions.filter((q) => bookmarkMap[`${effectiveRole}_${activeTab}_${q.question}`]).length;
-  }, [currentQuestions, effectiveRole, activeTab, bookmarkMap]);
+    return currentQuestions.filter((q) => bookmarkMap[`${displayRole}_${activeTab}_${q.question}`]).length;
+  }, [currentQuestions, displayRole, activeTab, bookmarkMap]);
 
   // Filtered view
   const displayedQuestions = useMemo(() => {
     return currentQuestions.filter((q) => {
-      const qKey = `${effectiveRole}_${activeTab}_${q.question}`;
+      const qKey = `${displayRole}_${activeTab}_${q.question}`;
       if (filterView === "bookmarked") return !!bookmarkMap[qKey];
       if (filterView === "pending") return !masteredMap[qKey];
       return true;
     });
-  }, [currentQuestions, effectiveRole, activeTab, filterView, bookmarkMap, masteredMap]);
+  }, [currentQuestions, displayRole, activeTab, filterView, bookmarkMap, masteredMap]);
 
   const readinessPercent = currentQuestions.length > 0
     ? Math.round((masteredCount / currentQuestions.length) * 100)
@@ -425,7 +436,7 @@ export function Interview() {
         </div>
         <RoleDropdownSelector
           label="Select Target Job Role:"
-          selectedRole={selectedRole}
+          selectedRole={displayRole}
           onRoleChange={setSelectedRole}
           roles={roleOptions}
           includeAllOption={false}
@@ -530,16 +541,25 @@ export function Interview() {
       {/* Round Header Summary */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 text-xs text-ink-500">
         <span>
-          Showing <strong>{displayedQuestions.length} essential questions</strong> specifically tailored for <strong>{effectiveRole}</strong>
+          Showing <strong>{displayedQuestions.length} essential questions</strong> specifically tailored for <strong>{displayRole || "your selected role"}</strong>
         </span>
         <span className="text-[11px] font-semibold text-signal-700">Interactive Model Answers & Timers Included ✓</span>
       </div>
 
       {/* Question Cards List */}
       <div className="space-y-4">
-        {interviewQuery.isLoading ? (
+        {profileQuery.isLoading || interviewQuery.isLoading ? (
           <div className="rounded-xl border border-ink-100 bg-white p-8 text-center text-sm text-ink-500">
-            Preparing role-specific questions for {effectiveRole}…
+            {displayRole
+              ? `Preparing role-specific questions for ${displayRole}…`
+              : "Loading your target role…"}
+          </div>
+        ) : !displayRole ? (
+          <div className="rounded-xl border border-signal-500/20 bg-signal-500/5 p-6 text-center">
+            <p className="text-sm font-semibold text-ink-900">Select a role to start interview preparation.</p>
+            <p className="mt-1 text-xs text-ink-600">
+              Choose a role above, or complete your profile target roles to open preparation automatically next time.
+            </p>
           </div>
         ) : interviewQuery.isError ? (
           <div className="rounded-xl border border-alert-600/20 bg-alert-600/5 p-6 text-center">
@@ -566,13 +586,13 @@ export function Interview() {
             </p>
           )}
           {displayedQuestions.map((q, idx) => {
-          const qKey = `${effectiveRole}_${activeTab}_${q.question}`;
+          const qKey = `${displayRole}_${activeTab}_${q.question}`;
           return (
             <QuestionCard
               key={idx}
               q={q}
               index={idx}
-              role={effectiveRole}
+              role={displayRole}
               isMastered={!!masteredMap[qKey]}
               isBookmarked={!!bookmarkMap[qKey]}
               onToggleMastered={() => toggleMastered(qKey)}
